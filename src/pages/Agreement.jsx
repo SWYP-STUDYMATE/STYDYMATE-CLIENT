@@ -42,11 +42,7 @@ const Agreement = () => {
     if (!localStorage.getItem("accessToken")) {
       navigate("/", { replace: true });
     }
-    // [백엔드 협업 필요]
-    // 네이버 로그인 후 응답에 isNewUser(또는 isAgreementRequired) 플래그를 내려주세요.
-    // 예시: { ..., isNewUser: true }
-    // 프론트는 localStorage.setItem('isNewUser', res.data.isNewUser) 등으로 저장
-    // 아래는 임시 로직입니다.
+
     if (localStorage.getItem('isNewUser') !== 'true') {
       navigate("/main", { replace: true });
     }

@@ -13,25 +13,36 @@ export default function Navercallback() {
     const error = params.get("error");
     const errorDescription = params.get("error_description");
 
+    // 콘솔로 code, state, error 찍기
+    console.log("네이버 콜백 code:", code);
+    console.log("네이버 콜백 state:", state);
     if (error) {
+      console.log("네이버 콜백 error:", error, errorDescription);
       setMessage("네이버 로그인 실패: " + (errorDescription || error));
     } else if (code && state) {
-      // 네이버 code, state를 백엔드로 전달
       const fetchTokens = async () => { 
         try {
-          // [백엔드 협업 필요]
-          // /login/tokens 응답에 name(사용자 이름) 필드를 포함시켜 주세요.
-          // 예시 응답: { accessToken: "...", refreshToken: "...", name: "홍길동" }
-          const res = await api.get(`http://localhost:8080/login/tokens?code=${code}&state=${state}`);
-          if (res.data && res.data.accessToken && res.data.refreshToken) {
+          // 백엔드 요청 URL도 콘솔에 찍기
+          const url = `/login/oauth2/code/naver?code=${code}&state=${state}`;
+          console.log("백엔드 요청 URL:", url);
+
+          const res = await api.get(url);
+          // 백엔드 응답 전체 콘솔에 찍기
+          console.log("백엔드 응답:", res.data);
+
+          if (typeof res.data === "string") {
+            localStorage.setItem("accessToken", res.data);
+            localStorage.setItem("isNewUser", "true"); // 임시로 신규회원 플래그 추가
+            setMessage("토큰(문자열) 저장 완료! 약관 동의 페이지로 이동합니다...");
+            setTimeout(() => {
+              navigate("/agreement");
+            }, 2000);
+          } else if (res.data && res.data.accessToken && res.data.refreshToken) {
             localStorage.setItem("accessToken", res.data.accessToken);
             localStorage.setItem("refreshToken", res.data.refreshToken);
             if (res.data.name) {
               localStorage.setItem("userName", res.data.name);
             }
-            // [백엔드 협업 필요]
-            // isNewUser(또는 isAgreementRequired) 플래그를 응답에 포함시켜 주세요.
-            // 예시: { ..., isNewUser: true }
             if (typeof res.data.isNewUser !== 'undefined') {
               localStorage.setItem('isNewUser', String(res.data.isNewUser));
             }
@@ -43,6 +54,8 @@ export default function Navercallback() {
             setMessage("토큰을 받아오지 못했습니다.");
           }
         } catch (e) {
+          // 에러 객체도 콘솔에 찍기
+          console.error("토큰 요청 실패:", e);
           setMessage("토큰 요청 실패: " + (e.response?.data?.message || e.message));
         }
       };

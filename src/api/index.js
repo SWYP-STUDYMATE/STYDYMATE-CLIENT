@@ -22,7 +22,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     // accessToken 만료(401) & 재시도 안 했을 때만
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response &&
+      (error.response.status === 401 || error.response.status === 400) && // [임시] 400도 refresh 시도 (나중에 삭제)
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
       try {
         const refreshToken = localStorage.getItem("refreshToken");
@@ -48,3 +52,6 @@ api.interceptors.response.use(
 );
 
 export default api; 
+// [임시] 400도 refresh 시도: if (error.response.status === 401 || error.response.status === 400)
+// [임시] refreshToken을 text/plain(문자열)로 전송
+// 나중에 400 관련 코드와 text/plain 관련 코드는 삭제하세요! 

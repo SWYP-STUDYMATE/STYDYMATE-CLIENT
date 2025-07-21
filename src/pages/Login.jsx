@@ -1,15 +1,15 @@
-import api from "../api/index";
 import { useCallback } from "react";
 import Header from "../components/Header";
+import api from "../api";
 
-const SERVER_URI = "http://localhost:8080";
 
 export default function Login() {
   const handleNaverLogin = useCallback(async () => {
     try {
-      const res = await api.get(`${SERVER_URI}/login/naver`);
-      if (res.data.naverLoginUrl) {
-        window.location.href = res.data.naverLoginUrl;
+      const response = await api.get("/login/naver");
+      const loginUrl = response.data;
+      if (loginUrl) {
+        window.location.href = loginUrl;
       } else {
         alert("네이버 로그인 URL을 받아오지 못했습니다.");
       }

@@ -10,7 +10,7 @@ export default function App() {
     <div className="bg-[#FAFAFA] min-h-screen">
     <Routes>
       <Route path='/' element={<Login />}/>
-      <Route path='/naver/callback' element={<Navercallback />}/>
+      <Route path='/login/oauth2/code/naver' element={<Navercallback />}/>
       <Route path='/agreement' element={<Agreement />}/>
       <Route path='/signup-complete' element={<SignupComplete />}/>
       <Route path='/main' element={<Main />}/>
