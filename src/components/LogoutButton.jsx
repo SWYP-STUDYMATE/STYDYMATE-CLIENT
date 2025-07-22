@@ -7,6 +7,7 @@ export default function LogoutButton() {
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
+      console.log("로그아웃 API 호출 성공");
     } catch (e) {
       // 실패해도 localStorage는 비움
       console.error("로그아웃 실패", e);
