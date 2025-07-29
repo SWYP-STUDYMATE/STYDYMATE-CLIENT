@@ -12,4 +12,10 @@ export default defineConfig({
     },
     historyApiFallback: true,
   },
+  define: {
+    global: 'window'
+  },
+  optimizeDeps: {
+    include: ['sockjs-client', 'stompjs']
+  }
 })
