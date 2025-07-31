@@ -5,6 +5,7 @@ import SignupComplete from './pages/Login/SignupComplete'
 import Main from './pages/Main'
 import OnboardingInfoRouter from "./pages/Onboarding/OnboardingInfoRouter";
 import { Routes, Route } from 'react-router-dom'
+import ChatPage from './pages/Chat/ChatPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
       <Route path='/signup-complete' element={<SignupComplete />}/>
       <Route path='/main' element={<Main />}/>
       <Route path='/onboarding-info/:step' element={<OnboardingInfoRouter />}/>
+      <Route path="/chat" element={<ChatPage />} />
     </Routes> 
     </div>
   )
