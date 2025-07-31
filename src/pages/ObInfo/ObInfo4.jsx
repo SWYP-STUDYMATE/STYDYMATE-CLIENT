@@ -4,6 +4,7 @@ import ProgressBar from "../../components/PrograssBar";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
+import api from "../../api";
 
 export default function OnboardingInfo4() {
   const [intro, setIntro] = useState("");
@@ -17,10 +18,16 @@ export default function OnboardingInfo4() {
     }
   };
 
-  const handleNext = () => {
-    setIntroStore(intro);
-    // 다음 단계로 이동 (예: 5단계)
-    navigate("/onboarding-info/5");
+  const handleNext = async () => {
+    try {
+      await api.post("/user/self-bio", { selfBio: intro });
+      setIntroStore(intro);
+      console.log(intro);
+      navigate("/onboarding-info/complete");
+    } catch (e) {
+      alert("자기소개 저장에 실패했습니다.");
+      console.error(e);
+    }
   };
 
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/index";
+import useProfileStore from "../../store/profileStore";
 
 export default function Navercallback() {
   const [message, setMessage] = useState("네이버 로그인 처리 중...");
@@ -38,6 +39,15 @@ export default function Navercallback() {
             }
             if (typeof res.data.isNewUser !== 'undefined') {
               localStorage.setItem('isNewUser', String(res.data.isNewUser));
+            }
+            // 유저 이름을 zustand에 저장 (동기화)
+            try {
+              const nameRes = await api.get("/user/name");
+              const setName = useProfileStore.getState().setName;
+              setName(nameRes.data.name);
+              console.log("유저 이름 저장 완료:", nameRes.data.name);
+            } catch (e) {
+              console.error("유저 이름 불러오기 실패:", e);
             }
             setMessage("네이버 로그인 성공! 메인 페이지로 이동합니다...");
             setTimeout(() => {

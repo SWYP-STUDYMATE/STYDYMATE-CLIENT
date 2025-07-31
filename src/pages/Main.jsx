@@ -5,6 +5,7 @@ import api from "../api";
 import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
 import useProfileStore from "../store/profileStore";
+import CommonChecklistItem from "../components/CommonChecklist";
 
 export default function Main() {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export default function Main() {
       <LogoutButton />
       <TokenTest />
       <ProgressBar total={100} value={50} />
+      <CommonChecklistItem label="취업/진학" checked={true} onChange={() => {}} />
     </div>
   );
 }

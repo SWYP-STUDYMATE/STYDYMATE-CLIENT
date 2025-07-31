@@ -4,6 +4,38 @@ import ProgressBar from "../../components/PrograssBar";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
+import api from "../../api";
+
+// 이미지 리사이즈 및 압축 함수
+function resizeAndCompressImage(file, maxWidth, maxHeight, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new window.Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      // 비율 유지하며 리사이즈
+      if (width > maxWidth) {
+        height *= maxWidth / width;
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        width *= maxHeight / height;
+        height = maxHeight;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      // 압축 (quality: 0~1)
+      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+      callback(compressedBase64);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
 export default function OnboardingInfo3() {
   const [image, setImage] = useState(null);
@@ -11,15 +43,15 @@ export default function OnboardingInfo3() {
   const fileInputRef = useRef();
   const setProfileImage = useProfileStore((state) => state.setProfileImage);
   const navigate = useNavigate();
+
   // 파일 선택
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result); // 미리보기만
-      };
-      reader.readAsDataURL(file);
+      // 최대 300x300, 품질 0.7로 압축
+      resizeAndCompressImage(file, 300, 300, 0.7, (compressedBase64) => {
+        setImage(compressedBase64); // 미리보기 및 서버 전송용
+      });
     }
   };
 
@@ -41,17 +73,20 @@ export default function OnboardingInfo3() {
 
   // 건너뛰기
   const handleSkip = () => {
-    // TODO: 다음 단계로 이동
-    alert("건너뛰기");
     navigate("/onboarding-info/4");
   };
 
   // 사진 저장 후 다음 단계로 이동
-  const handleNext = () => {
-    setProfileImage(image); // zustand 저장
-    alert("사진이 저장되었습니다. 다음 단계로 이동합니다.");
-    navigate("/onboarding-info/4");
-    // 예: 서버로 업로드 등
+  const handleNext = async () => {
+    try {
+      await api.post("/user/profile-image", { profileImage: image });
+      setProfileImage(image); // zustand 저장
+      alert("사진이 저장되었습니다. 다음 단계로 이동합니다.");
+      navigate("/onboarding-info/4");
+    } catch (e) {
+      alert("프로필 이미지 저장에 실패했습니다.");
+      console.error(e);
+    }
   };
 
   return (

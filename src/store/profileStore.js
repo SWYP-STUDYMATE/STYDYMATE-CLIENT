@@ -6,6 +6,8 @@ const useProfileStore = create(
     (set) => ({
       englishName: "",
       setEnglishName: (name) => set({ englishName: name }),
+      name: "",
+      setName: (name) => set({ name }),
       residence: "",
       setResidence: (residence) => set({ residence }),
       profileImage: null,

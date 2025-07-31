@@ -9,6 +9,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       // '/login/naver': 'http://localhost:8080',
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
     historyApiFallback: true,
   },
