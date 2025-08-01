@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { fetchChatHistory, initStompClient } from "../../api/chat";
 import EmptyPlaceholder from "./EmptyPlaceholder";
-import { Phone, Video } from "lucide-react";
+import { Phone, Video, Camera, Smile, Mic } from "lucide-react";
 
 export default function ChatWindow({
   room,
@@ -12,10 +12,17 @@ export default function ChatWindow({
 }) {
   if (!room) return null;
 
-  const partner = room.participants?.find((u) => u.id !== currentUserId) || {
+  // 현재 로그인한 사용자 정보
+  const currentUser = room.participants.find((u) => u.id === currentUserId) || {
     name: "",
     profileImage: "",
   };
+  // 상대방 정보
+  const partner = room.participants.find((u) => u.id !== currentUserId) || {
+    name: "",
+    profileImage: "",
+  };
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef();
@@ -76,21 +83,15 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-[600px] w-full">
-      <header className="flex items-center justify-between">
+    <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-full w-full">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
-          <button
-            onClick={onBack}
-            className="mr-4 text-gray-500 hover:text-gray-700"
-          >
-            ←
-          </button>
           <img
-            src={partner.profileImage}
-            alt={partner.name}
-            className="w-8 h-8 rounded-full"
+            src={currentUser.profileImage}
+            alt={currentUser.name}
+            className="w-10 h-10 rounded-full"
           />
-          <span className="text-lg font-semibold ml-2">{partner.name}</span>
+          <span className="ml-3 text-lg font-semibold">{currentUser.name}</span>
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -110,8 +111,10 @@ export default function ChatWindow({
             <Video className="w-5 h-5 text-gray-600" />
           </button>
         </div>
-      </header>
+      </div>
+
       <div className="border-b border-gray-200 mx-6 my-4" />
+
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto space-y-2">
         {messages.length === 0 ? (
           <EmptyPlaceholder />
@@ -181,20 +184,27 @@ export default function ChatWindow({
           })
         )}
       </div>
-      <div className="mt-4 flex-shrink-0 flex items-center space-x-2">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 border rounded-lg px-3 py-2 resize-none focus:outline-none"
-          placeholder="메시지를 입력하세요"
-          rows={1}
-        />
+
+      {/* 입력 영역 */}
+      <div className="mt-4 flex items-center px-4">
+        <div className="flex-1 flex items-center bg-gray-100 rounded-lg px-4 py-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type your message"
+            className="flex-1 bg-transparent outline-none"
+          />
+          <Smile className="w-5 h-5 text-gray-500 mr-2 cursor-pointer" />
+        </div>
         <button
-          onClick={sendMessage}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          onClick={() => {
+            /* 음성 메시지 로직 */
+          }}
+          className="ml-4 p-3 bg-green-500 rounded-lg"
         >
-          전송
+          <Mic className="w-5 h-5 text-white" />
         </button>
       </div>
     </div>

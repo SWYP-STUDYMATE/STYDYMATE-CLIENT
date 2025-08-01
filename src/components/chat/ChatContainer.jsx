@@ -27,9 +27,9 @@ export default function ChatContainer() {
   return (
     <div className="flex flex-col h-full bg-gray-100">
       <Header />
-      <div className="flex flex-1 p-6 space-x-6">
+      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
         <Sidebar active="chat" />
-        <div className="w-80">
+        <div className="w-80 flex-shrink-0">
           <ChatRoomList rooms={rooms} onSelectRoom={setCurrentRoom} />
         </div>
         <div className="flex-1">
