@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
-import api from "../api"; // api.js (Axios 인스턴스) import
+import api from "../api";
 import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
+import CommonButton from "../components/CommonButton";
 import useProfileStore from "../store/profileStore";
 
 export default function Main() {
@@ -24,12 +25,8 @@ export default function Main() {
         // 2. 프로필 이미지 URL 가져오기
         const profileResponse = await api.get("/user/profile");
         setProfileImage(profileResponse.data.url);
-
-        // 3. 거주지 정보 등 기타 정보 가져오기 (필요 시)
-        // ...
       } catch (error) {
         console.error("프로필 정보를 가져오는데 실패했습니다.", error);
-        // 에러 처리 (예: 로그인 페이지로 리다이렉트)
         navigate("/", { replace: true });
       }
     };
@@ -50,6 +47,10 @@ export default function Main() {
   const nickname = englishName || "회원";
   const residence = useProfileStore((state) => state.residence);
   const profileImage = useProfileStore((state) => state.profileImage);
+
+  const handleGoToChat = () => {
+    navigate("/chat");
+  };
 
   return (
     <div className="bg-[#fafafa] min-h-screen flex flex-col items-center justify-center">
@@ -73,6 +74,9 @@ export default function Main() {
       <LogoutButton />
       <TokenTest />
       <ProgressBar total={100} value={50} />
+      <div className="mt-8 w-64">
+        <CommonButton text="채팅방으로 이동(테스트)" onClick={handleGoToChat} />
+      </div>
     </div>
   );
 }

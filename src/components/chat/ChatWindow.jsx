@@ -1,8 +1,12 @@
-// src/components/chat/ChatWindow.jsx
 import React, { useEffect, useState, useRef } from "react";
-import { fetchChatHistory, initStompClient } from "../../api/chat";
-import EmptyPlaceholder from "./EmptyPlaceholder";
-import { Phone, Video, Camera, Smile, Mic } from "lucide-react";
+import {
+  fetchChatHistory,
+  initStompClient,
+  uploadChatImages,
+} from "../../api/chat";
+import ChatHeader from "./ChatHeader";
+import ChatMessageList from "./ChatMessageList";
+import ChatInputArea from "./ChatInputArea";
 
 export default function ChatWindow({
   room,
@@ -12,26 +16,17 @@ export default function ChatWindow({
 }) {
   if (!room) return null;
 
-  // 현재 로그인한 사용자 정보
-  const currentUser = room.participants.find((u) => u.id === currentUserId) || {
-    name: "",
-    profileImage: "",
-  };
-  // 상대방 정보
-  const partner = room.participants.find((u) => u.id !== currentUserId) || {
-    name: "",
-    profileImage: "",
-  };
-
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const scrollRef = useRef();
+  const [selectedImageFiles, setSelectedImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const clientRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchChatHistory(room.roomId).then((history) => {
       setMessages(history);
-      scrollToBottom();
     });
     clientRef.current = initStompClient(room.roomId, (msg) => {
       setMessages((prev) => [...prev, msg]);
@@ -40,25 +35,56 @@ export default function ChatWindow({
         message: msg.message,
         sentAt: msg.sentAt,
       });
-      scrollToBottom();
     });
     return () => clientRef.current.disconnect();
   }, [room.roomId]);
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
-    }, 50);
+  const handleEmojiClick = (emojiObject) => {
+    setInput((prev) => prev + emojiObject.emoji);
+    setShowEmojiPicker(false);
   };
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  const sendMessage = async () => {
+    let finalImageUrls = [];
+    let finalMessageType = "TEXT";
+    let messageContent = input.trim();
+
+    if (selectedImageFiles.length > 0) {
+      try {
+        finalImageUrls = await uploadChatImages(
+          room.roomId,
+          selectedImageFiles
+        );
+        setSelectedImageFiles([]); // 업로드 후 선택된 파일 초기화
+        setImagePreviews([]); // 업로드 후 미리보기 초기화
+
+        if (messageContent && finalImageUrls.length > 0) {
+          finalMessageType = "MIXED";
+        } else if (finalImageUrls.length > 0) {
+          finalMessageType = "IMAGE";
+        }
+      } catch (error) {
+        console.error("이미지 업로드 실패:", error);
+        alert("이미지 업로드에 실패했습니다.");
+        return; // 업로드 실패 시 중단
+      }
+    } else if (messageContent) {
+      finalMessageType = "TEXT";
+    }
+
+    if (!messageContent && finalImageUrls.length === 0) return; // 빈 메시지 전송 방지
+
     clientRef.current.send(
       "/pub/chat/message",
       {},
-      JSON.stringify({ roomId: room.roomId, message: input })
+      JSON.stringify({
+        roomId: room.roomId,
+        message: messageContent,
+        imageUrls: finalImageUrls,
+        messageType: finalMessageType,
+      })
     );
-    setInput("");
+    setInput(""); // 텍스트 입력 초기화
   };
 
   const handleKeyDown = (e) => {
@@ -66,6 +92,28 @@ export default function ChatWindow({
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    setSelectedImageFiles(files);
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews(newPreviews);
+
+    // 파일 입력 필드 초기화 (동일 파일 재선택 가능하도록)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImagePreview = (indexToRemove) => {
+    setSelectedImageFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+    setImagePreviews((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
   };
 
   const formatTimestamp = (dateStr) => {
@@ -84,129 +132,30 @@ export default function ChatWindow({
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-full w-full">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <img
-            src={currentUser.profileImage}
-            alt={currentUser.name}
-            className="w-10 h-10 rounded-full"
-          />
-          <span className="ml-3 text-lg font-semibold">{currentUser.name}</span>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => {
-              /* 전화 로직 */
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <Phone className="w-5 h-5 text-gray-600" />
-          </button>
-          <button
-            onClick={() => {
-              /* 영상통화 로직 */
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <Video className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-      </div>
+      <ChatHeader room={room} currentUserId={currentUserId} />
 
       <div className="border-b border-gray-200 mx-6 my-4" />
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto space-y-2">
-        {messages.length === 0 ? (
-          <EmptyPlaceholder />
-        ) : (
-          messages.map((msg, idx) => {
-            const isMine = msg.sender.id === currentUserId;
-            const prevMsg = messages[idx - 1];
-            const sameUser = prevMsg && prevMsg.sender.id === msg.sender.id;
-            const showAvatar = !sameUser;
-            const isLast = idx === messages.length - 1;
+      <ChatMessageList
+        messages={messages}
+        currentUserId={currentUserId}
+        formatTimestamp={formatTimestamp}
+      />
 
-            return (
-              <div
-                key={msg.messageId}
-                className={`flex items-end ${
-                  isMine ? "justify-end" : "justify-start"
-                }`}
-              >
-                {!isMine && showAvatar && (
-                  <img
-                    src={msg.sender.profileImage}
-                    alt={msg.sender.name}
-                    className="w-8 h-8 rounded-full mr-2 flex-shrink-0"
-                  />
-                )}
-                <div
-                  className={`flex flex-col max-w-[60%] ${
-                    !isMine && sameUser ? "pl-10" : ""
-                  } ${isMine && sameUser ? "pr-10" : ""}`}
-                >
-                  {showAvatar && !isMine && (
-                    <p className="text-sm font-medium mb-1">
-                      {msg.sender.name}
-                    </p>
-                  )}
-                  <div className="flex items-end">
-                    {isMine && isLast && (
-                      <span className="mr-2 text-xs text-gray-400">
-                        {formatTimestamp(msg.sentAt)}
-                      </span>
-                    )}
-                    <p
-                      className={`px-4 py-2 rounded-lg whitespace-pre-wrap ${
-                        isMine
-                          ? "bg-green-100 text-gray-900 self-end"
-                          : "bg-gray-100 text-gray-900"
-                      }`}
-                    >
-                      {msg.message}
-                    </p>
-                    {!isMine && isLast && (
-                      <span className="ml-2 text-xs text-gray-400">
-                        {formatTimestamp(msg.sentAt)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {isMine && showAvatar && (
-                  <img
-                    src={msg.sender.profileImage}
-                    alt={msg.sender.name}
-                    className="w-8 h-8 rounded-full ml-2 flex-shrink-0"
-                  />
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* 입력 영역 */}
-      <div className="mt-4 flex items-center px-4">
-        <div className="flex-1 flex items-center bg-gray-100 rounded-lg px-4 py-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message"
-            className="flex-1 bg-transparent outline-none"
-          />
-          <Smile className="w-5 h-5 text-gray-500 mr-2 cursor-pointer" />
-        </div>
-        <button
-          onClick={() => {
-            /* 음성 메시지 로직 */
-          }}
-          className="ml-4 p-3 bg-green-500 rounded-lg"
-        >
-          <Mic className="w-5 h-5 text-white" />
-        </button>
-      </div>
+      <ChatInputArea
+        input={input}
+        setInput={setInput}
+        sendMessage={sendMessage}
+        handleKeyDown={handleKeyDown}
+        showEmojiPicker={showEmojiPicker}
+        setShowEmojiPicker={setShowEmojiPicker}
+        handleEmojiClick={handleEmojiClick}
+        selectedImageFiles={selectedImageFiles}
+        imagePreviews={imagePreviews}
+        handleFileChange={handleFileChange}
+        removeImagePreview={removeImagePreview}
+        fileInputRef={fileInputRef}
+      />
     </div>
   );
 }

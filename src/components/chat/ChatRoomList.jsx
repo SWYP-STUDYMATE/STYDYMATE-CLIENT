@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createChatRoom } from "../../api/chat";
 import { MessageCircle, Search } from "lucide-react";
 
-export default function ChatRoomList({ rooms, onSelectRoom }) {
+export default function ChatRoomList({ rooms, onSelectRoom, onNewRoomCreated }) {
   const [filter, setFilter] = useState("전체");
   const [query, setQuery] = useState("");
 
@@ -89,7 +89,7 @@ export default function ChatRoomList({ rooms, onSelectRoom }) {
                 roomName: name,
                 participantIds: [],
               });
-              // rooms 업데이트는 부모에서 handleNewRoom 등을 추가 구현 필요
+              onNewRoomCreated();
             }}
             className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors"
           >
