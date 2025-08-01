@@ -1,9 +1,18 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import api from "../../api";
 
 export default function Login() {
   const [autoLogin, setAutoLogin] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+      navigate("/main", { replace: true });
+    }
+  }, [navigate]);
 
   const handleNaverLogin = useCallback(async () => {
     try {

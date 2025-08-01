@@ -6,6 +6,7 @@ import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
 import CommonButton from "../components/CommonButton";
 import useProfileStore from "../store/profileStore";
+import CommonChecklistItem from "../components/CommonChecklist";
 
 export default function Main() {
   const navigate = useNavigate();
@@ -74,9 +75,13 @@ export default function Main() {
       <LogoutButton />
       <TokenTest />
       <ProgressBar total={100} value={50} />
+
       <div className="mt-8 w-64">
         <CommonButton text="채팅방으로 이동(테스트)" onClick={handleGoToChat} />
       </div>
+
+      <CommonChecklistItem label="취업/진학" checked={true} onChange={() => {}} />
+
     </div>
   );
 }

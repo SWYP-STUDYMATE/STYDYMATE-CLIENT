@@ -23,10 +23,17 @@ export default function OnboardingInfo() {
   const isButtonEnabled = inputValue.length > 0;
 
   // 버튼 클릭 시만 저장
-  const handleNext = () => {
+  const handleNext = async () => {
     if (window.confirm(`입력한 이름이 "${inputValue}" 맞습니까?`)) {
-      setEnglishName(inputValue);
-      navigate("/onboarding-info/2");
+      try {
+        await api.post("/user/english-name", { englishName: inputValue });
+        setEnglishName(inputValue);
+        navigate("/onboarding-info/2");
+        console.log("영어 이름 저장 완료:", inputValue);
+      } catch (e) {
+        alert("영어 이름 저장에 실패했습니다.");
+        console.error(e);
+      }
     }
     // 아니요를 누르면 아무 동작 없이 입력창으로 돌아감
   };

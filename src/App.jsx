@@ -3,7 +3,11 @@ import Navercallback from './pages/Login/Navercallback'
 import Agreement from './pages/Login/Agreement'
 import SignupComplete from './pages/Login/SignupComplete'
 import Main from './pages/Main'
-import OnboardingInfoRouter from "./pages/Onboarding/OnboardingInfoRouter";
+import OnboardingInfoRouter from "./pages/ObInfo/ObInfoRouter";
+import ObLangRouter from "./pages/ObLang/ObLangRouter";
+import ObIntRouter from "./pages/ObInt/ObIntRouter";
+import ObPartnerRouter from "./pages/ObPartner/ObPartnerRouter";
+import ObScheduleRouter from "./pages/ObSchadule/ObSchaduleRouter";
 import { Routes, Route } from 'react-router-dom'
 import ChatPage from './pages/Chat/ChatPage';
 
@@ -18,6 +22,10 @@ export default function App() {
       <Route path='/main' element={<Main />}/>
       <Route path='/onboarding-info/:step' element={<OnboardingInfoRouter />}/>
       <Route path="/chat" element={<ChatPage />} />
+      <Route path='/onboarding-lang/:step' element={<ObLangRouter />}/>
+      <Route path='/onboarding-int/:step' element={<ObIntRouter />}/>
+      <Route path='/onboarding-partner/:step' element={<ObPartnerRouter />}/>
+      <Route path='/onboarding-schedule/:step' element={<ObScheduleRouter />}/>
     </Routes> 
     </div>
   )
