@@ -1,96 +1,161 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import {
   fetchChatHistory,
-  initStompClient
-} from '../../api/chat';
+  initStompClient,
+  uploadChatImages,
+} from "../../api/chat";
+import ChatHeader from "./ChatHeader";
+import ChatMessageList from "./ChatMessageList";
+import ChatInputArea from "./ChatInputArea";
 
-export default function ChatWindow({ room, onBack }) {
+export default function ChatWindow({
+  room,
+  onBack,
+  onNewMessage,
+  currentUserId,
+}) {
+  if (!room) return null;
+
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const stompClient = useRef(null);
-  const scrollRef = useRef();
+  const [input, setInput] = useState("");
+  const [selectedImageFiles, setSelectedImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const clientRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const history = await fetchChatHistory(room.roomId);
-        setMessages(history);
-        scrollToBottom();
-      } catch (err) {
-        console.error(err);
-      }
-    })();
-
-    stompClient.current = initStompClient(room.roomId, msg => {
-      setMessages(prev => [...prev, msg]);
-      scrollToBottom();
+    fetchChatHistory(room.roomId).then((history) => {
+      setMessages(history);
     });
-
-    return () => stompClient.current.disconnect();
+    clientRef.current = initStompClient(room.roomId, (msg) => {
+      setMessages((prev) => [...prev, msg]);
+      onNewMessage({
+        roomId: room.roomId,
+        message: msg.message,
+        sentAt: msg.sentAt,
+      });
+    });
+    return () => clientRef.current.disconnect();
   }, [room.roomId]);
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
-    }, 50);
+  const handleEmojiClick = (emojiObject) => {
+    setInput((prev) => prev + emojiObject.emoji);
+    setShowEmojiPicker(false);
   };
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    stompClient.current.send(
-      '/pub/chat/message',
+  const sendMessage = async () => {
+    let finalImageUrls = [];
+    let finalMessageType = "TEXT";
+    let messageContent = input.trim();
+
+    if (selectedImageFiles.length > 0) {
+      try {
+        finalImageUrls = await uploadChatImages(
+          room.roomId,
+          selectedImageFiles
+        );
+        setSelectedImageFiles([]); // 업로드 후 선택된 파일 초기화
+        setImagePreviews([]); // 업로드 후 미리보기 초기화
+
+        if (messageContent && finalImageUrls.length > 0) {
+          finalMessageType = "MIXED";
+        } else if (finalImageUrls.length > 0) {
+          finalMessageType = "IMAGE";
+        }
+      } catch (error) {
+        console.error("이미지 업로드 실패:", error);
+        alert("이미지 업로드에 실패했습니다.");
+        return; // 업로드 실패 시 중단
+      }
+    } else if (messageContent) {
+      finalMessageType = "TEXT";
+    }
+
+    if (!messageContent && finalImageUrls.length === 0) return; // 빈 메시지 전송 방지
+
+    clientRef.current.send(
+      "/pub/chat/message",
       {},
-      JSON.stringify({ roomId: room.roomId, message: input })
+      JSON.stringify({
+        roomId: room.roomId,
+        message: messageContent,
+        imageUrls: finalImageUrls,
+        messageType: finalMessageType,
+      })
     );
-    setInput('');
+    setInput(""); // 텍스트 입력 초기화
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    setSelectedImageFiles(files);
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews(newPreviews);
+
+    // 파일 입력 필드 초기화 (동일 파일 재선택 가능하도록)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImagePreview = (indexToRemove) => {
+    setSelectedImageFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+    setImagePreviews((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const formatTimestamp = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const isToday =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+    const hours = date.getHours() % 12 || 12;
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = date.getHours() < 12 ? "am" : "pm";
+    const timeStr = `${hours}:${minutes}${ampm}`;
+    return isToday ? `Today ${timeStr}` : timeStr;
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      <header className="flex items-center p-4 bg-gray-100 border-b">
-        <button
-          onClick={onBack}
-          className="mr-4 text-blue-500 hover:underline"
-        >
-          ← 목록
-        </button>
-        <h2 className="text-xl font-bold">{room.roomName}</h2>
-      </header>
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 bg-white"
-      >
-        {messages.map(msg => (
-          <div key={msg.messageId} className="flex mb-4 items-start">
-            <img
-              src={msg.sender.profileImage}
-              alt={msg.sender.name}
-              className="w-8 h-8 rounded-full mr-3"
-            />
-            <div>
-              <p className="text-sm font-medium">{msg.sender.name}</p>
-              <p className="mt-1 p-2 bg-gray-100 rounded">{msg.message}</p>
-              <span className="text-xs text-gray-400">
-                {new Date(msg.sentAt).toLocaleTimeString()}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="p-4 bg-gray-50 border-t flex">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          className="flex-1 border rounded px-3 py-2 mr-2 focus:outline-none"
-          placeholder="메시지를 입력하세요"
-        />
-        <button
-          onClick={sendMessage}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          전송
-        </button>
-      </div>
+    <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-full w-full">
+      <ChatHeader room={room} currentUserId={currentUserId} />
+
+      <div className="border-b border-gray-200 mx-6 my-4" />
+
+      <ChatMessageList
+        messages={messages}
+        currentUserId={currentUserId}
+        formatTimestamp={formatTimestamp}
+      />
+
+      <ChatInputArea
+        input={input}
+        setInput={setInput}
+        sendMessage={sendMessage}
+        handleKeyDown={handleKeyDown}
+        showEmojiPicker={showEmojiPicker}
+        setShowEmojiPicker={setShowEmojiPicker}
+        handleEmojiClick={handleEmojiClick}
+        selectedImageFiles={selectedImageFiles}
+        imagePreviews={imagePreviews}
+        handleFileChange={handleFileChange}
+        removeImagePreview={removeImagePreview}
+        fileInputRef={fileInputRef}
+      />
     </div>
   );
 }

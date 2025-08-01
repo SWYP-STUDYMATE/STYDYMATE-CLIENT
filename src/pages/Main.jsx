@@ -4,42 +4,64 @@ import LogoutButton from "../components/LogoutButton";
 import api from "../api";
 import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
+import CommonButton from "../components/CommonButton";
 import useProfileStore from "../store/profileStore";
 import CommonChecklistItem from "../components/CommonChecklist";
 
 export default function Main() {
   const navigate = useNavigate();
   const { search } = useLocation();
+  const { setProfileImage, setEnglishName, setResidence } = useProfileStore(); // 스토어 action 가져오기
 
   useEffect(() => {
     const params = new URLSearchParams(search);
     const accessToken = params.get("accessToken");
-    const refreshToken = params.get("refreshToken");
+
+    const fetchUserProfile = async () => {
+      try {
+        // 1. 사용자 이름(닉네임) 가져오기
+        const nameResponse = await api.get("/user/name");
+        setEnglishName(nameResponse.data.name);
+
+        // 2. 프로필 이미지 URL 가져오기
+        const profileResponse = await api.get("/user/profile");
+        setProfileImage(profileResponse.data.url);
+      } catch (error) {
+        console.error("프로필 정보를 가져오는데 실패했습니다.", error);
+        navigate("/", { replace: true });
+      }
+    };
 
     if (accessToken) {
-      // URL 파라미터에서 토큰을 꺼내 저장
       localStorage.setItem("accessToken", accessToken);
-      if (refreshToken) {
-        localStorage.setItem("refreshToken", refreshToken);
-      }
-      // 파라미터 제거 후 URL 복원
+      // URL에서 토큰 파라미터 제거
       navigate("/main", { replace: true });
-    } else if (!localStorage.getItem("accessToken")) {
-      // 토큰이 없으면 로그인 페이지로 리다이렉트
+      fetchUserProfile(); // 토큰 저장 후 즉시 프로필 정보 요청
+    } else if (localStorage.getItem("accessToken")) {
+      fetchUserProfile(); // 페이지 새로고침 시 프로필 정보 요청
+    } else {
       navigate("/", { replace: true });
     }
-  }, [search, navigate]);
+  }, [search, navigate, setProfileImage, setEnglishName]);
 
   const englishName = useProfileStore((state) => state.englishName);
   const nickname = englishName || "회원";
   const residence = useProfileStore((state) => state.residence);
   const profileImage = useProfileStore((state) => state.profileImage);
 
+  const handleGoToChat = () => {
+    navigate("/chat");
+  };
+
   return (
     <div className="bg-[#fafafa] min-h-screen flex flex-col items-center justify-center">
       <div className="w-[120px] h-[120px] rounded-full bg-[#e7e7e7] flex items-center justify-center overflow-hidden mb-6">
         {profileImage ? (
-          <img src={profileImage} alt="프로필" className="object-cover w-full h-full" />
+          <img
+            src={profileImage}
+            alt="프로필"
+            className="object-cover w-full h-full"
+          />
         ) : (
           <span className="text-[#929292] text-xl">No Image</span>
         )}
@@ -53,7 +75,13 @@ export default function Main() {
       <LogoutButton />
       <TokenTest />
       <ProgressBar total={100} value={50} />
+
+      <div className="mt-8 w-64">
+        <CommonButton text="채팅방으로 이동(테스트)" onClick={handleGoToChat} />
+      </div>
+
       <CommonChecklistItem label="취업/진학" checked={true} onChange={() => {}} />
+
     </div>
   );
 }
