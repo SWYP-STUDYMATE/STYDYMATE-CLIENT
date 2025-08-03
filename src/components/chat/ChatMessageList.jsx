@@ -50,9 +50,7 @@ export default function ChatMessageList({
                 } ${isMine && sameUser ? "pr-10" : ""}`}
               >
                 {showAvatar && !isMine && (
-                  <p className="text-sm font-medium mb-1">
-                    {msg.sender.name}
-                  </p>
+                  <p className="text-sm font-medium mb-1">{msg.sender.name}</p>
                 )}
                 <div className="flex items-end">
                   {isMine && isLast && (
@@ -66,13 +64,21 @@ export default function ChatMessageList({
                     <div className="flex flex-wrap gap-1">
                       {msg.imageUrls.map((url, imgIdx) => (
                         <img
-                            key={imgIdx}
-                            src={url}
-                            alt="채팅 이미지"
-                            className="max-w-xs max-h-xs h-auto rounded-lg object-contain"
-                          />
+                          key={imgIdx}
+                          src={url}
+                          alt="채팅 이미지"
+                          className="max-w-xs max-h-xs h-auto rounded-lg object-contain"
+                        />
                       ))}
                     </div>
+                  ) : msg.messageType === "AUDIO" && msg.audioUrl ? (
+                    <audio
+                      controls
+                      preload="metadata"
+                      crossOrigin="anonymous"
+                      src={msg.audioUrl}
+                      className="max-w-xs"
+                    />
                   ) : (
                     <p
                       className={`px-4 py-2 rounded-lg whitespace-pre-wrap ${

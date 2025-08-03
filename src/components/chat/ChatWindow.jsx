@@ -3,6 +3,7 @@ import {
   fetchChatHistory,
   initStompClient,
   uploadChatImages,
+  uploadChatAudio,
 } from "../../api/chat";
 import ChatHeader from "./ChatHeader";
 import ChatMessageList from "./ChatMessageList";
@@ -44,35 +45,48 @@ export default function ChatWindow({
     setShowEmojiPicker(false);
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (text, images, audio) => {
     let finalImageUrls = [];
+    let finalAudioUrl = null;
     let finalMessageType = "TEXT";
-    let messageContent = input.trim();
+    let messageContent = text ? text.trim() : "";
 
-    if (selectedImageFiles.length > 0) {
+    if (images && images.length > 0) {
       try {
-        finalImageUrls = await uploadChatImages(
-          room.roomId,
-          selectedImageFiles
-        );
-        setSelectedImageFiles([]); // 업로드 후 선택된 파일 초기화
-        setImagePreviews([]); // 업로드 후 미리보기 초기화
-
-        if (messageContent && finalImageUrls.length > 0) {
-          finalMessageType = "MIXED";
-        } else if (finalImageUrls.length > 0) {
-          finalMessageType = "IMAGE";
-        }
+        finalImageUrls = await uploadChatImages(room.roomId, images);
       } catch (error) {
         console.error("이미지 업로드 실패:", error);
         alert("이미지 업로드에 실패했습니다.");
-        return; // 업로드 실패 시 중단
+        return;
       }
-    } else if (messageContent) {
-      finalMessageType = "TEXT";
     }
 
-    if (!messageContent && finalImageUrls.length === 0) return; // 빈 메시지 전송 방지
+    if (audio) {
+      try {
+        finalAudioUrl = await uploadChatAudio(room.roomId, audio);
+      } catch (error) {
+        console.error("오디오 업로드 실패:", error);
+        alert("오디오 업로드에 실패했습니다.");
+        return;
+      }
+    }
+
+    if (messageContent) {
+      if (finalImageUrls.length > 0 || finalAudioUrl) {
+        finalMessageType = "MIXED";
+      } else {
+        finalMessageType = "TEXT";
+      }
+    } else {
+      if (finalImageUrls.length > 0) {
+        finalMessageType = "IMAGE";
+      } else if (finalAudioUrl) {
+        finalMessageType = "AUDIO";
+      }
+    }
+
+    if (!messageContent && finalImageUrls.length === 0 && !finalAudioUrl)
+      return;
 
     clientRef.current.send(
       "/pub/chat/message",
@@ -81,10 +95,13 @@ export default function ChatWindow({
         roomId: room.roomId,
         message: messageContent,
         imageUrls: finalImageUrls,
+        audioUrl: finalAudioUrl,
         messageType: finalMessageType,
       })
     );
-    setInput(""); // 텍스트 입력 초기화
+    setInput("");
+    setImagePreviews([]);
+    setSelectedImageFiles([]);
   };
 
   const handleKeyDown = (e) => {

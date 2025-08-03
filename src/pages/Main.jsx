@@ -80,8 +80,11 @@ export default function Main() {
         <CommonButton text="채팅방으로 이동(테스트)" onClick={handleGoToChat} />
       </div>
 
-      <CommonChecklistItem label="취업/진학" checked={true} onChange={() => {}} />
-
+      <CommonChecklistItem
+        label="취업/진학"
+        checked={true}
+        onChange={() => {}}
+      />
     </div>
   );
 }
