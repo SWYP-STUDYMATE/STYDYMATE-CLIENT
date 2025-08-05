@@ -29,6 +29,21 @@ export default function Login() {
     }
   }, []);
 
+  const handleGoogleLogin = useCallback(async () => {
+    try {
+      const response = await api.get("/login/google");
+      const loginUrl = response.data;
+      if (loginUrl) {
+        window.location.href = loginUrl;
+      } else {
+        alert("네이버 로그인 URL을 받아오지 못했습니다.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("구글 로그인 요청에 실패했습니다.");
+    }
+  }, []);
+
   return (
     <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
       <Header />
@@ -84,12 +99,22 @@ export default function Login() {
       </div>
       <div className="w-[720px] mx-auto">
         <button
-          className="flex justify-center items-center w-full py-[14px] bg-[#09AA5C] text-[#FFFFFF] text-[18px] font-black leading-[28px] rounded-[6px] cursor-pointer focus:outline-none"
+          className="flex justify-center items-center w-full py-[14px] bg-[#09AA5C] text-[#FFFFFF] text-[18px] font-bold leading-[28px] rounded-[6px] cursor-pointer focus:outline-none"
           onClick={handleNaverLogin}
           tabIndex={0}
         >
           <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/naverlogo.png')] bg-contain bg-no-repeat bg-center"></span>
-          네이버로 간편 로그인
+          네이버로 로그인
+        </button>
+      </div>
+      <div className="w-[720px] mx-auto mt-[20px]">
+        <button
+          className="flex justify-center items-center w-full py-[14px] bg-[#FAFAFA] text-[#171717] text-[18px] font-bold leading-[24px] rounded-[6px] cursor-pointer focus:outline-none shadow-[0_0_0_1px_rgba(0,0,0,0.08)]"
+          onClick={handleGoogleLogin}
+          tabIndex={0}
+        >
+          <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/googlelogo.png')] bg-contain bg-no-repeat bg-center"></span>
+          Google 로그인
         </button>
       </div>
     </div>

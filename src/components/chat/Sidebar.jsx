@@ -11,8 +11,12 @@ export default function Sidebar({ active = "chat" }) {
     navigate("/main");
   };
 
+  const handleChatClick = () => {
+    navigate("/chat");
+  };
+
   return (
-    <aside className="w-20 bg-[#00C471] flex flex-col items-center py-6 space-y-8 rounded-xl">
+    <aside className="min-w-20 bg-[#00C471] flex flex-col items-center py-6 space-y-8 rounded-xl">
       <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden">
         <img
           src={profileImage || "/default-profile.png"}
@@ -30,6 +34,12 @@ export default function Sidebar({ active = "chat" }) {
           active === "home" ? "text-white" : "text-green-200"
         }`}
         onClick={handleHomeClick}
+      />
+      <MessageCircle
+        className={`w-6 h-6 cursor-pointer ${
+          active === "chat" ? "text-white" : "text-green-200"
+        }`}
+        onClick={handleChatClick}
       />
       <Calendar
         className={`w-6 h-6 cursor-pointer ${

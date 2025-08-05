@@ -7,6 +7,14 @@ import TokenTest from "../components/TokenTest";
 import CommonButton from "../components/CommonButton";
 import useProfileStore from "../store/profileStore";
 import CommonChecklistItem from "../components/CommonChecklist";
+import MainHeader from "../components/MainHeader";
+import Sidebar from "../components/chat/Sidebar";
+import GreetingCard from "../components/GreetingCard";
+import StudyStats from "../components/StudyStats";
+import LanguageProfile from "../components/LanguageProfile";
+import LanguageExchangeMates from "../components/LanguageExchangeMates";
+import AchievementBadges from "../components/AchievementBadges";
+
 
 export default function Main() {
   const navigate = useNavigate();
@@ -20,6 +28,7 @@ export default function Main() {
     const fetchUserProfile = async () => {
       try {
         // 1. 사용자 이름(닉네임) 가져오기
+        // TODO: 현재 네이버로부터 한국어 이름을 받아오는 주소이기 때문에 추후 영어 닉네임 받아오는 api 주소로 변경
         const nameResponse = await api.get("/user/name");
         setEnglishName(nameResponse.data.name);
 
@@ -54,34 +63,35 @@ export default function Main() {
   };
 
   return (
-    <div className="bg-[#fafafa] min-h-screen flex flex-col items-center justify-center">
-      <div className="w-[120px] h-[120px] rounded-full bg-[#e7e7e7] flex items-center justify-center overflow-hidden mb-6">
-        {profileImage ? (
-          <img
-            src={profileImage}
-            alt="프로필"
-            className="object-cover w-full h-full"
-          />
-        ) : (
-          <span className="text-[#929292] text-xl">No Image</span>
-        )}
+    <div className="bg-[#fafafa] min-h-screen flex flex-col">
+      <MainHeader/>
+      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
+          <Sidebar active="home" />
+        <div className="flex-1 flex flex-col">
+          {/* 상단 섹션 - 2단 레이아웃 */}
+          <div className="flex space-x-6">
+            {/* 왼쪽 열 */}
+            <div className="flex-1 flex flex-col">
+              <GreetingCard userName={englishName} />
+              <div className="mt-6">
+                <StudyStats />
+              </div>
+              <div className="mt-6">
+                <LanguageProfile />
+              </div>
+            </div>
+            {/* 오른쪽 열 */}
+            <div className="w-[540px] flex flex-col">
+              <LanguageExchangeMates />
+            </div>
+          </div>
+          
+          {/* 하단 섹션 - 전체 너비 */}
+          <div className="mt-6">
+            <AchievementBadges />
+          </div>
+        </div>
       </div>
-      <h1 className="text-3xl font-bold mb-4">{nickname}님, 환영합니다!</h1>
-      <p className="mb-8">거주지&시간대: {residence}</p>
-      <p className="mb-8">
-        임시로 만든 메인페이지입니다. <br />
-        테스트 주구창창 여기다 다 될거임
-      </p>
-      <LogoutButton />
-      <TokenTest />
-      <ProgressBar total={100} value={50} />
-
-      <div className="mt-8 w-64">
-        <CommonButton text="채팅방으로 이동(테스트)" onClick={handleGoToChat} />
-      </div>
-
-      <CommonChecklistItem label="취업/진학" checked={true} onChange={() => {}} />
-
     </div>
   );
 }

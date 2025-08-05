@@ -14,6 +14,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/login/oauth2/code/naver': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
     historyApiFallback: true,
   },
