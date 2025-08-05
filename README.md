@@ -6,6 +6,7 @@
 - `/login/oauth2/code/naver` - 네이버 OAuth 콜백
 - `/agreement` - 약관 동의 페이지
 - `/signup-complete` - 회원가입 완료 페이지
+- `/onboarding-info/google` - Google 회원가입 (성별, 생년월일, 약관동의)
 
 ### 메인 페이지
 - `/main` - 메인 대시보드
@@ -17,7 +18,6 @@
 - `/onboarding-info/2` - 기본 정보 입력
 - `/onboarding-info/3` - 추가 정보 입력
 - `/onboarding-info/4` - 최종 확인
-- `/onboarding-info/google` - Google 회원가입 (성별, 생년월일, 약관동의)
 - `/onboarding-info/complete` - 온보딩 완료
 
 #### 언어 정보 (ObLang)
