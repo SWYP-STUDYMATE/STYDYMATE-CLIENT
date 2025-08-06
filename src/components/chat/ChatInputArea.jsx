@@ -8,7 +8,6 @@ export default function ChatInputArea({
   sendMessage,
   showEmojiPicker,
   setShowEmojiPicker,
-  handleEmojiClick,
   selectedImageFiles,
   imagePreviews,
   handleFileChange,
@@ -21,16 +20,24 @@ export default function ChatInputArea({
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
 
+  // 이모지 클릭 핸들러 수정
+  const handleEmojiSelect = (emojiObject) => {
+    setInput((prev) => prev + emojiObject.emoji);
+    setShowEmojiPicker(false); // 이모지 선택 후 피커 닫기
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeTypes = [
-        'audio/webm; codecs=opus',
-        'audio/ogg; codecs=opus',
-        'audio/webm',
-        'audio/mp4',
+        "audio/webm; codecs=opus",
+        "audio/ogg; codecs=opus",
+        "audio/webm",
+        "audio/mp4",
       ];
-      const supportedType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+      const supportedType = mimeTypes.find((type) =>
+        MediaRecorder.isTypeSupported(type)
+      );
 
       if (!supportedType) {
         alert("브라우저가 음성 녹음을 지원하지 않습니다.");
@@ -108,6 +115,13 @@ export default function ChatInputArea({
 
   return (
     <div className="mt-4 flex flex-col px-4">
+      {/* 이모지 피커를 입력창 위에 표시 */}
+      {showEmojiPicker && (
+        <div className="mb-2">
+          <Picker onEmojiClick={handleEmojiSelect} />
+        </div>
+      )}
+
       {imagePreviews.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 p-2 border rounded-lg bg-gray-50">
           {imagePreviews.map((src, idx) => (
@@ -158,7 +172,6 @@ export default function ChatInputArea({
           >
             <Smile className="w-5 h-5 text-gray-500" />
           </button>
-          {showEmojiPicker && <Picker onEmojiClick={handleEmojiClick} />}
         </div>
         <button
           onClick={isRecording ? stopRecording : startRecording}
