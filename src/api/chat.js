@@ -84,3 +84,25 @@ export function initStompClient(roomId, onMessage) {
   );
   return client;
 }
+
+export function initGlobalStompClient(onRoomCreated) {
+  const token = localStorage.getItem("accessToken");
+  const socketUrl = `http://localhost:8080/ws/chat?token=${token}`;
+  const socket = new SockJS(socketUrl);
+  const client = over(socket);
+
+  client.connect(
+        { Authorization: `Bearer ${token}` },
+        (frame) => {
+          console.log("Global STOMP Connected:", frame);
+          client.subscribe(`/user/queue/rooms`, (message) => {
+            console.log("Received new room notification:", JSON.parse(message.body));
+            onRoomCreated(JSON.parse(message.body));
+          });
+        },
+        (error) => {
+          console.error("Global STOMP Error:", error);
+        }
+      );
+      return client;
+    }

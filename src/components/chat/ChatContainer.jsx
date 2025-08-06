@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { fetchChatRooms } from "../../api/chat";
+import { fetchChatRooms, initGlobalStompClient } from "../../api/chat";
 import Sidebar from "./Sidebar";
 import ChatRoomList from "./ChatRoomList";
 import EmptyPlaceholder from "./EmptyPlaceholder";
@@ -11,8 +11,22 @@ export default function ChatContainer() {
   const [currentRoom, setCurrentRoom] = useState(null);
 
   useEffect(() => {
-    fetchChatRooms().then(setRooms);
+    reloadChatRooms();
+
+    const globalClient = initGlobalStompClient((newRoom) => {
+        console.log("새 방 알림 수신:", newRoom);
+        reloadChatRooms();
+        setCurrentRoom(null); // 새로운 방 생성 시 현재 선택된 방 초기화
+    });
+
+    return () => {
+        globalClient.disconnect();
+    };
   }, []);
+
+  const reloadChatRooms = () => {
+    fetchChatRooms().then(setRooms);
+  };
 
   const handleNewMessage = ({ roomId, message, sentAt }) => {
     setRooms((prev) =>
@@ -30,7 +44,11 @@ export default function ChatContainer() {
       <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
         <Sidebar active="chat" />
         <div className="w-80 flex-shrink-0">
-          <ChatRoomList rooms={rooms} onSelectRoom={setCurrentRoom} />
+          <ChatRoomList
+            rooms={rooms}
+            onSelectRoom={setCurrentRoom}
+            onNewRoomCreated={reloadChatRooms}
+          />
         </div>
         <div className="flex-1">
           {currentRoom ? (

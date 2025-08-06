@@ -50,7 +50,7 @@ export default function ChatWindow({ room, onNewMessage, currentUserId }) {
         roomId: room.roomId,
         message: text.trim(),
         imageUrls: finalImageUrls,
-        audioUrl: audioData, // Base64 Data URL
+        audioData: audioData, // Base64 Data URL
         messageType: audioData
           ? "AUDIO"
           : finalImageUrls.length
