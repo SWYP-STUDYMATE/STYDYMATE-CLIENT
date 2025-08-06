@@ -1,0 +1,25 @@
+import React from 'react';
+
+export default function MainHeader() {
+  return (
+    <div className="bg-white border-b border-[#e5e8eb] h-[81px] w-full flex items-center justify-between px-10">
+      {/* 로고 */}
+      <div className="w-16 h-14 flex items-center justify-center">
+        <img 
+          src="/assets/image286.png" 
+          alt="Language MATES Logo" 
+          className="w-full h-full object-contain"
+        />
+      </div>
+      
+      {/* 알림 아이콘 */}
+      <div className="w-10 h-10 flex items-center justify-center">
+        <img 
+          src="/assets/Vector.png" 
+          alt="Notification Icon" 
+          className="w-6 h-6 cursor-pointer transition-colors"
+        />
+      </div>
+    </div>
+  );
+}

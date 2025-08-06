@@ -23,6 +23,7 @@ export default function ObInt3() {
         setLoading(false);
       } catch (error) {
         console.error("학습 스타일 데이터를 불러오지 못했습니다:", error);
+        // 다른 페이지와 동일한 에러 처리
         alert("학습 스타일 데이터를 불러오지 못했습니다.");
         setLoading(false);
       }

@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from "react";
-import Header from "./Header";
-import ProgressBar from "./PrograssBar";
-import CommonButton from "./CommonButton";
-import { getUserName } from "../api";
+import Header from "../../components/Header";
+import CommonButton from "../../components/CommonButton";
+import { useNavigate } from "react-router-dom";
+import { getUserName } from "../../api";
 
-export default function CompleteOnboarding({
-  userName: propUserName = "회원",
-  onboarding = "언어 설정",
-  subText = "두 번째 단계",
-  step = 2,
-  totalSteps = 5,
-  onNext,
-}) {
-  const [userName, setUserName] = useState(propUserName);
+export default function ObSchaduleComplete() {
+  const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +25,11 @@ export default function CompleteOnboarding({
     fetchUserName();
   }, []);
 
+  const handleNext = () => {
+    // 다음 온보딩 단계로 이동하거나 메인 페이지로 이동
+    navigate("/main");
+  };
+
   if (loading) {
     return (
       <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
@@ -47,21 +46,21 @@ export default function CompleteOnboarding({
       <Header />
       <div className="mx-auto mt-[52px] w-[720px]">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
-          {userName}님, {onboarding}이 완료되었어요! ({step}/{totalSteps})
+          {userName}님, 온보딩이 완료되었습니다! 🎉
         </h1>
         <p className="text-[16px] font-medium text-[#767676] mt-[12px] leading-[24px]">    
-          {userName}님, Language Mate를 찾기위한 {subText}를 완료하셨어요!
+        지금부터 간단한 영어 레벨 테스트를 진행해 나에게 딱 맞는 파트너와 학습 방법을 추천해 드릴게요.
         </p>
       </div>
       <div className="mx-auto mt-[100px] w-[720px] flex justify-center">
         <div
           className="w-[720px] h-[405px] bg-center bg-no-repeat bg-contain"
-          style={{ backgroundImage: "url('/assets/party3.png')" }}
+          style={{ backgroundImage: "url('/assets/party4.png')" }}
         />
       </div>
       <div className="mx-auto mt-[151px] w-[720px] flex justify-center">
-        <CommonButton text="다음 단계" onClick={onNext} variant="complete" className="w-full max-w-[720px]" />
+        <CommonButton text="레벨 테스트 시작하기" onClick={handleNext} variant="complete" className="w-full max-w-[720px]" />
       </div>
     </div>
   );
-}
+} 

@@ -16,23 +16,16 @@ export default function ObSchadule2() {
     const fetchGroupSizes = async () => {
       try {
         setLoading(true);
-        // Mock 데이터 사용 (API가 준비되지 않은 경우)
-        const mockData = [
-          { id: 1, name: "1:1", description: "1:1" },
-          { id: 2, name: "3명", description: "3명" },
-          { id: 3, name: "4명", description: "4명" },
-          { id: 4, name: "상관없음", description: "상관없음" }
-        ];
         
-        // 실제 API 호출 시 사용할 코드 (주석 처리)
-        // const response = await api.get("/onboard/schedule/group-sizes");
-        // setGroupSizes(response.data || []);
+        // 실제 API 호출
+        const response = await api.get("/onboard/schedule/group-sizes");
+        console.log("그룹 크기 데이터 응답:", response.data);
         
-        setGroupSizes(mockData);
+        // API 응답 데이터 구조에 맞게 설정
+        setGroupSizes(response.data || []);
         setLoading(false);
       } catch (error) {
         console.error("그룹 규모 데이터를 불러오지 못했습니다:", error);
-        alert("그룹 규모 데이터를 불러오지 못했습니다.");
         setLoading(false);
       }
     };
@@ -54,8 +47,8 @@ export default function ObSchadule2() {
     };
 
     try {
-      // Mock API 호출 (실제 구현 시 주석 해제)
-      // await api.post("/onboard/schedule/group-sizes", requestData);
+      // 실제 API 호출
+      await api.post("/onboard/schedule/group-size", requestData);
       console.log("그룹 규모 데이터 전송 성공:", requestData);
       navigate("/onboarding-schedule/3");
     } catch (error) {
@@ -83,10 +76,10 @@ export default function ObSchadule2() {
           <div className="flex flex-col gap-[12px]">
             {groupSizes.map((item) => (
               <CommonChecklistItem
-                key={item.id}
-                label={item.description}
-                checked={selected.includes(item.id)}
-                onChange={() => handleSelect(item.id)}
+                key={item.groupSizeId}
+                label={item.groupSize}
+                checked={selected.includes(item.groupSizeId)}
+                onChange={() => handleSelect(item.groupSizeId)}
                 type="checkbox"
               />
             ))}

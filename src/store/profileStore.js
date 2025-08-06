@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// TODO: API 구현 완료 후 getUserProfile() API로 대체 예정
+// 현재는 클라이언트 상태로 관리, 서버 DB와 동기화 필요
 const useProfileStore = create(
   persist(
     (set) => ({

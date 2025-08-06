@@ -1,17 +1,48 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import { useNavigate } from "react-router-dom";
 import CommonButton from "../../components/CommonButton";
-import useProfileStore from "../../store/profileStore";
+import { getUserName } from "../../api";
 
 export default function SignupComplete() {
   const navigate = useNavigate();
-  const userName = useProfileStore((state) => state.name) || "회원";
+  const [userName, setUserName] = useState("회원");
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!localStorage.getItem("accessToken")) {
       navigate("/", { replace: true });
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      try {
+        const userData = await getUserName();
+        setUserName(userData.name || "회원");
+      } catch (error) {
+        console.error("사용자 이름 조회 실패:", error);
+        setUserName("회원");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserName();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-[#fafafa] min-h-screen">
+        <div className="bg-white w-[768px] min-h-screen mx-auto">
+          <Header />
+          <div className="flex items-center justify-center h-full">
+            <div className="text-[16px] text-[#767676]">로딩 중...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#fafafa] min-h-screen">
       <div className="bg-white w-[768px] min-h-screen mx-auto">

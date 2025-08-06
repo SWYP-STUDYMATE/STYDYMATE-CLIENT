@@ -1,5 +1,4 @@
 import axios from "axios";
-import useProfileStore from "../store/profileStore";
 
 const api = axios.create({
   baseURL: "/api",
@@ -130,14 +129,37 @@ api.interceptors.response.use(
   }
 );
 
-// 유저 이름 저장 (API + zustand 동기화)
-export const saveUserName = async (name) => {
-  const res = await api.post("/user/name", { name });
-  // zustand에도 동기화
-  const setName = useProfileStore.getState().setName;
-  setName(name);
-  return res;
+// 유저 이름 조회
+export const getUserName = async () => {
+  const res = await api.get("/user/name");
+  return res.data;
 };
+
+// TODO: API 구현 완료 후 Zustand 스토어 대체할 함수들
+// export const getUserProfile = async () => {
+//   const res = await api.get("/user/profile");
+//   return res.data;
+// };
+
+// export const getUserLanguageInfo = async () => {
+//   const res = await api.get("/user/language-info");
+//   return res.data;
+// };
+
+// export const getUserMotivationInfo = async () => {
+//   const res = await api.get("/user/motivation-info");
+//   return res.data;
+// };
+
+// export const getUserPartnerInfo = async () => {
+//   const res = await api.get("/user/partner-info");
+//   return res.data;
+// };
+
+// export const getUserScheduleInfo = async () => {
+//   const res = await api.get("/user/schedule-info");
+//   return res.data;
+// };
 
 export default api;
 

@@ -6,39 +6,9 @@ import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 
-// 이미지 리사이즈 및 압축 함수
-function resizeAndCompressImage(file, maxWidth, maxHeight, quality, callback) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new window.Image();
-    img.onload = () => {
-      let width = img.width;
-      let height = img.height;
-      // 비율 유지하며 리사이즈
-      if (width > maxWidth) {
-        height *= maxWidth / width;
-        width = maxWidth;
-      }
-      if (height > maxHeight) {
-        width *= maxHeight / height;
-        height = maxHeight;
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      // 압축 (quality: 0~1)
-      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-      callback(compressedBase64);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
 export default function OnboardingInfo3() {
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // 실제 파일 저장용
   const [capture, setCapture] = useState(null); // capture 상태 추가
   const fileInputRef = useRef();
   const setProfileImage = useProfileStore((state) => state.setProfileImage);
@@ -48,10 +18,15 @@ export default function OnboardingInfo3() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 최대 300x300, 품질 0.7로 압축
-      resizeAndCompressImage(file, 300, 300, 0.7, (compressedBase64) => {
-        setImage(compressedBase64); // 미리보기 및 서버 전송용
-      });
+      // 실제 파일 저장
+      setImageFile(file);
+      
+      // 미리보기용 URL 생성 (압축 없이)
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -78,9 +53,23 @@ export default function OnboardingInfo3() {
 
   // 사진 저장 후 다음 단계로 이동
   const handleNext = async () => {
+    if (!imageFile) {
+      alert("이미지 파일을 선택해주세요.");
+      return;
+    }
+
     try {
-      await api.post("/user/profile-image", { profileImage: image });
-      setProfileImage(image); // zustand 저장
+      // FormData를 사용하여 파일 업로드
+      const formData = new FormData();
+      formData.append('file', imageFile);
+
+      await api.post("/user/profile-image", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      setProfileImage(image); // zustand 저장 (미리보기용 Base64)
       alert("사진이 저장되었습니다. 다음 단계로 이동합니다.");
       navigate("/onboarding-info/4");
     } catch (e) {
