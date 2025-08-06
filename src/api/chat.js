@@ -50,6 +50,18 @@ export async function uploadChatImages(roomId, files) {
   return res.data.data;
 }
 
+// REST: 채팅 오디오 업로드
+export async function uploadChatAudio(roomId, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await axios.post(`/api/chat/rooms/${roomId}/audio`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data.data;
+}
+
 // WS+STOMP: 초기화 및 메시지 발송/구독
 export function initStompClient(roomId, onMessage) {
   const token = localStorage.getItem("accessToken");

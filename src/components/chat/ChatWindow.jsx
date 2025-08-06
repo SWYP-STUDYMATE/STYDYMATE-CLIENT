@@ -8,26 +8,19 @@ import ChatHeader from "./ChatHeader";
 import ChatMessageList from "./ChatMessageList";
 import ChatInputArea from "./ChatInputArea";
 
-export default function ChatWindow({
-  room,
-  onBack,
-  onNewMessage,
-  currentUserId,
-}) {
+export default function ChatWindow({ room, onNewMessage, currentUserId }) {
   if (!room) return null;
 
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedImageFiles, setSelectedImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const clientRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    fetchChatHistory(room.roomId).then((history) => {
-      setMessages(history);
-    });
+    fetchChatHistory(room.roomId).then(setMessages);
     clientRef.current = initStompClient(room.roomId, (msg) => {
       setMessages((prev) => [...prev, msg]);
       onNewMessage({
@@ -39,95 +32,57 @@ export default function ChatWindow({
     return () => clientRef.current.disconnect();
   }, [room.roomId]);
 
-  const handleEmojiClick = (emojiObject) => {
-    setInput((prev) => prev + emojiObject.emoji);
-    setShowEmojiPicker(false);
-  };
-
-  const sendMessage = async () => {
+  const sendMessage = async (text, images, audioData) => {
     let finalImageUrls = [];
-    let finalMessageType = "TEXT";
-    let messageContent = input.trim();
-
-    if (selectedImageFiles.length > 0) {
+    if (images.length) {
       try {
-        finalImageUrls = await uploadChatImages(
-          room.roomId,
-          selectedImageFiles
-        );
-        setSelectedImageFiles([]); // 업로드 후 선택된 파일 초기화
-        setImagePreviews([]); // 업로드 후 미리보기 초기화
-
-        if (messageContent && finalImageUrls.length > 0) {
-          finalMessageType = "MIXED";
-        } else if (finalImageUrls.length > 0) {
-          finalMessageType = "IMAGE";
-        }
-      } catch (error) {
-        console.error("이미지 업로드 실패:", error);
-        alert("이미지 업로드에 실패했습니다.");
-        return; // 업로드 실패 시 중단
+        finalImageUrls = await uploadChatImages(room.roomId, images);
+      } catch {
+        alert("이미지 업로드 실패");
+        return;
       }
-    } else if (messageContent) {
-      finalMessageType = "TEXT";
     }
-
-    if (!messageContent && finalImageUrls.length === 0) return; // 빈 메시지 전송 방지
 
     clientRef.current.send(
       "/pub/chat/message",
       {},
       JSON.stringify({
         roomId: room.roomId,
-        message: messageContent,
+        message: text.trim(),
         imageUrls: finalImageUrls,
-        messageType: finalMessageType,
+        audioUrl: audioData, // Base64 Data URL
+        messageType: audioData
+          ? "AUDIO"
+          : finalImageUrls.length
+          ? "IMAGE"
+          : text.trim()
+          ? "TEXT"
+          : "TEXT",
       })
     );
-    setInput(""); // 텍스트 입력 초기화
+
+    setInput("");
+    setSelectedImageFiles([]);
+    setImagePreviews([]);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      sendMessage(input, selectedImageFiles, null);
     }
   };
 
-  const handleFileChange = (event) => {
-    const files = Array.from(event.target.files);
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
     setSelectedImageFiles(files);
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews(newPreviews);
-
-    // 파일 입력 필드 초기화 (동일 파일 재선택 가능하도록)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+    e.target.value = "";
   };
 
-  const removeImagePreview = (indexToRemove) => {
-    setSelectedImageFiles((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
-    );
-    setImagePreviews((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
-    );
-  };
-
-  const formatTimestamp = (dateStr) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const isToday =
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth() &&
-      date.getDate() === now.getDate();
-    const hours = date.getHours() % 12 || 12;
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const ampm = date.getHours() < 12 ? "am" : "pm";
-    const timeStr = `${hours}:${minutes}${ampm}`;
-    return isToday ? `Today ${timeStr}` : timeStr;
+  const removeImagePreview = (idx) => {
+    setSelectedImageFiles((prev) => prev.filter((_, i) => i !== idx));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
   };
 
   return (
@@ -139,22 +94,24 @@ export default function ChatWindow({
       <ChatMessageList
         messages={messages}
         currentUserId={currentUserId}
-        formatTimestamp={formatTimestamp}
+        formatTimestamp={(dateStr) => {
+          /* ... */
+        }}
       />
 
       <ChatInputArea
         input={input}
         setInput={setInput}
         sendMessage={sendMessage}
-        handleKeyDown={handleKeyDown}
         showEmojiPicker={showEmojiPicker}
         setShowEmojiPicker={setShowEmojiPicker}
-        handleEmojiClick={handleEmojiClick}
+        handleEmojiClick={(e, emoji) => setInput((t) => t + emoji.emoji)}
         selectedImageFiles={selectedImageFiles}
         imagePreviews={imagePreviews}
         handleFileChange={handleFileChange}
         removeImagePreview={removeImagePreview}
         fileInputRef={fileInputRef}
+        handleKeyDown={handleKeyDown}
       />
     </div>
   );
