@@ -1,21 +1,38 @@
 import React, { useState } from "react";
-import { createChatRoom } from "../../api/chat";
-import { MessageCircle, Search } from "lucide-react";
+import { createChatRoom, joinChatRoom } from "../../api/chat";
+import { MessageCircle, Search, Plus } from "lucide-react";
 
-export default function ChatRoomList({ rooms, onSelectRoom, onNewRoomCreated }) {
-  const [filter, setFilter] = useState("전체");
+export default function ChatRoomList({
+  rooms,
+  onSelectRoom,
+  onNewRoomCreated,
+  onJoinRoom,
+}) {
   const [query, setQuery] = useState("");
 
-  const filteredRooms = rooms
-    .filter((r) => r.roomName.includes(query))
-    .filter((r) => {
-      if (filter === "전체") return true;
-      if (filter === "개인") return r.participants.length === 2;
-      if (filter === "그룹") return r.participants.length > 2;
-      return true;
-    });
+  // 모든 채팅방을 하나의 목록으로 합치기
+  const allRooms = [...rooms];
+  const filteredRooms = allRooms.filter((r) => r.roomName.includes(query));
 
   const myId = localStorage.getItem("userId");
+
+  const handleRoomClick = async (room) => {
+    // 이미 참여 중인 방이면 바로 선택
+    if (room.participants.some((p) => p.userId === myId)) {
+      onSelectRoom(room);
+      return;
+    }
+
+    // 참여하지 않은 방이면 참여 후 선택
+    try {
+      await joinChatRoom(room.roomId);
+      onJoinRoom();
+      onSelectRoom(room);
+    } catch (error) {
+      console.error("채팅방 참여 실패:", error);
+      alert("채팅방 참여에 실패했습니다.");
+    }
+  };
 
   return (
     <div className="flex flex-col h-full space-y-4">
@@ -29,71 +46,84 @@ export default function ChatRoomList({ rooms, onSelectRoom, onNewRoomCreated }) 
           <Search className="w-4 h-4 text-gray-500 mr-2" />
           <input
             type="text"
-            placeholder="파트너를 검색해보세요"
+            placeholder="채팅방을 검색해보세요"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 bg-transparent focus:outline-none text-sm text-gray-700"
           />
         </div>
-
-        <div className="flex w-full space-x-2 mt-3">
-          {["전체", "개인", "그룹"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilter(type)}
-              className={`flex-1 text-center px-4 py-1 rounded-xl text-sm font-medium transition-colors ${
-                filter === type
-                  ? "bg-[#00C471] text-white"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="flex-1 px-4">
         <div className="bg-white rounded-xl shadow-lg p-4 h-full overflow-y-auto space-y-2">
-          {filteredRooms.map((room) => {
-            const other = room.participants.find((p) => p.userId !== myId);
-            const name = other ? other.name : room.roomName;
-            return (
-              <div
-                key={room.roomId}
-                onClick={() => onSelectRoom(room)}
-                className="flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-lg"
-              >
-                <img
-                  src={other?.profileImage}
-                  alt=""
-                  className="w-10 h-10 rounded-full mr-3"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-800 truncate">{name}</p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {room.lastMessage}
-                  </p>
+          {/* 모든 채팅방 목록 */}
+          {filteredRooms.length > 0 ? (
+            filteredRooms.map((room) => {
+              const isParticipating = room.participants.some(
+                (p) => p.userId === myId
+              );
+              const other = room.participants.find((p) => p.userId !== myId);
+              const name = other ? other.name : room.roomName;
+
+              return (
+                <div
+                  key={room.roomId}
+                  onClick={() => handleRoomClick(room)}
+                  className="flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-lg border border-gray-100"
+                >
+                  <img
+                    src={other?.profileImage || "/assets/basicProfilePic.png"}
+                    alt=""
+                    className="w-10 h-10 rounded-full mr-3"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 truncate">{name}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {isParticipating
+                        ? room.lastMessage || "메시지가 없습니다"
+                        : `참여자 ${room.participants.length}명`}
+                    </p>
+                  </div>
+                  <span className="text-xs text-gray-400 ml-2">
+                    {isParticipating && room.lastMessageAt
+                      ? new Date(room.lastMessageAt).toLocaleTimeString()
+                      : ""}
+                  </span>
                 </div>
-                <span className="text-xs text-gray-400 ml-2">
-                  {new Date(room.lastMessageAt).toLocaleTimeString()}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              채팅방이 없습니다
+            </div>
+          )}
+
+          {/* 새 채팅방 생성 버튼 */}
           <button
             onClick={async () => {
               const name = prompt("새 채팅방 이름을 입력하세요");
               if (!name) return;
-              const newRoom = await createChatRoom({
-                roomName: name,
-                participantIds: [],
-              });
-              onNewRoomCreated();
+
+              try {
+                const newRoom = await createChatRoom({
+                  roomName: name,
+                  roomType: "GROUP",
+                  isPublic: true,
+                  maxParticipants: 4,
+                  participantIds: [],
+                });
+
+                // 새로 생성된 방을 즉시 선택
+                onSelectRoom(newRoom);
+                onNewRoomCreated();
+              } catch (error) {
+                console.error("채팅방 생성 실패:", error);
+                alert("채팅방 생성에 실패했습니다.");
+              }
             }}
-            className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors"
+            className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors flex items-center justify-center"
           >
-            + 새 채팅방
+            <Plus className="w-4 h-4 mr-1" />새 채팅방
           </button>
         </div>
       </div>

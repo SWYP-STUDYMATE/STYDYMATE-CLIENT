@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
 export default function EmptyPlaceholder() {
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full bg-white rounded-xl shadow-lg p-8">
+    <div className="flex flex-col items-center justify-center w-full h-full">
       <img
         src="/assets/nochattinghistory.png"
         alt="No messages"

@@ -15,7 +15,6 @@ import LanguageProfile from "../components/LanguageProfile";
 import LanguageExchangeMates from "../components/LanguageExchangeMates";
 import AchievementBadges from "../components/AchievementBadges";
 
-
 export default function Main() {
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -24,6 +23,7 @@ export default function Main() {
   useEffect(() => {
     const params = new URLSearchParams(search);
     const accessToken = params.get("accessToken");
+    const userId = params.get("userId");
 
     const fetchUserProfile = async () => {
       try {
@@ -43,6 +43,9 @@ export default function Main() {
 
     if (accessToken) {
       localStorage.setItem("accessToken", accessToken);
+      if (userId) {
+        localStorage.setItem("userId", userId);
+      }
       // URL에서 토큰 파라미터 제거
       navigate("/main", { replace: true });
       fetchUserProfile(); // 토큰 저장 후 즉시 프로필 정보 요청
@@ -63,7 +66,6 @@ export default function Main() {
   };
 
   return (
-
     <div className="bg-[#fafafa] min-h-screen flex flex-col items-center justify-center">
       <div className="w-[120px] h-[120px] rounded-full bg-[#e7e7e7] flex items-center justify-center overflow-hidden mb-6">
         <img
@@ -96,37 +98,36 @@ export default function Main() {
         onChange={() => {}}
       />
 
-    <div className="bg-[#fafafa] min-h-screen flex flex-col">
-      <MainHeader/>
-      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
+      <div className="bg-[#fafafa] min-h-screen flex flex-col">
+        <MainHeader />
+        <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
           <Sidebar active="home" />
-        <div className="flex-1 flex flex-col">
-          {/* 상단 섹션 - 2단 레이아웃 */}
-          <div className="flex space-x-6">
-            {/* 왼쪽 열 */}
-            <div className="flex-1 flex flex-col">
-              <GreetingCard userName={englishName} />
-              <div className="mt-6">
-                <StudyStats />
+          <div className="flex-1 flex flex-col">
+            {/* 상단 섹션 - 2단 레이아웃 */}
+            <div className="flex space-x-6">
+              {/* 왼쪽 열 */}
+              <div className="flex-1 flex flex-col">
+                <GreetingCard userName={englishName} />
+                <div className="mt-6">
+                  <StudyStats />
+                </div>
+                <div className="mt-6">
+                  <LanguageProfile />
+                </div>
               </div>
-              <div className="mt-6">
-                <LanguageProfile />
+              {/* 오른쪽 열 */}
+              <div className="w-[540px] flex flex-col">
+                <LanguageExchangeMates />
               </div>
             </div>
-            {/* 오른쪽 열 */}
-            <div className="w-[540px] flex flex-col">
-              <LanguageExchangeMates />
+
+            {/* 하단 섹션 - 전체 너비 */}
+            <div className="mt-6">
+              <AchievementBadges />
             </div>
-          </div>
-          
-          {/* 하단 섹션 - 전체 너비 */}
-          <div className="mt-6">
-            <AchievementBadges />
           </div>
         </div>
       </div>
-
-    </div>
     </div>
   );
 }

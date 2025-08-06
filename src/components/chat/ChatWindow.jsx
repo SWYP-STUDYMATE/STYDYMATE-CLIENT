@@ -3,12 +3,18 @@ import {
   fetchChatHistory,
   initStompClient,
   uploadChatImages,
+  leaveChatRoom,
 } from "../../api/chat";
 import ChatHeader from "./ChatHeader";
 import ChatMessageList from "./ChatMessageList";
 import ChatInputArea from "./ChatInputArea";
 
-export default function ChatWindow({ room, onNewMessage, currentUserId }) {
+export default function ChatWindow({
+  room,
+  onNewMessage,
+  currentUserId,
+  onLeaveRoom,
+}) {
   if (!room) return null;
 
   const [messages, setMessages] = useState([]);
@@ -31,6 +37,18 @@ export default function ChatWindow({ room, onNewMessage, currentUserId }) {
     });
     return () => clientRef.current.disconnect();
   }, [room.roomId]);
+
+  const handleLeaveRoom = async () => {
+    try {
+      await leaveChatRoom(room.roomId);
+      if (onLeaveRoom) {
+        onLeaveRoom();
+      }
+    } catch (error) {
+      console.error("채팅방 나가기 실패:", error);
+      alert("채팅방 나가기에 실패했습니다.");
+    }
+  };
 
   const sendMessage = async (text, images, audioData) => {
     let finalImageUrls = [];
@@ -87,7 +105,11 @@ export default function ChatWindow({ room, onNewMessage, currentUserId }) {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-full w-full">
-      <ChatHeader room={room} currentUserId={currentUserId} />
+      <ChatHeader
+        room={room}
+        currentUserId={currentUserId}
+        onLeaveRoom={handleLeaveRoom}
+      />
 
       <div className="border-b border-gray-200 mx-6 my-4" />
 
@@ -95,7 +117,25 @@ export default function ChatWindow({ room, onNewMessage, currentUserId }) {
         messages={messages}
         currentUserId={currentUserId}
         formatTimestamp={(dateStr) => {
-          /* ... */
+          const date = new Date(dateStr);
+          const now = new Date();
+          const diffInHours = (now - date) / (1000 * 60 * 60);
+
+          if (diffInHours < 24) {
+            return date.toLocaleTimeString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
+          } else {
+            return date.toLocaleDateString("ko-KR", {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
+          }
         }}
       />
 
@@ -105,7 +145,6 @@ export default function ChatWindow({ room, onNewMessage, currentUserId }) {
         sendMessage={sendMessage}
         showEmojiPicker={showEmojiPicker}
         setShowEmojiPicker={setShowEmojiPicker}
-        handleEmojiClick={(e, emoji) => setInput((t) => t + emoji.emoji)}
         selectedImageFiles={selectedImageFiles}
         imagePreviews={imagePreviews}
         handleFileChange={handleFileChange}
