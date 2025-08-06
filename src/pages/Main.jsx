@@ -56,15 +56,15 @@ export default function Main() {
   return (
     <div className="bg-[#fafafa] min-h-screen flex flex-col items-center justify-center">
       <div className="w-[120px] h-[120px] rounded-full bg-[#e7e7e7] flex items-center justify-center overflow-hidden mb-6">
-        {profileImage ? (
-          <img
-            src={profileImage}
-            alt="프로필"
-            className="object-cover w-full h-full"
-          />
-        ) : (
-          <span className="text-[#929292] text-xl">No Image</span>
-        )}
+        <img
+          src={profileImage || "/assets/basicProfilePic.png"}
+          alt="프로필"
+          className="object-cover w-full h-full"
+          onError={(e) => {
+            e.target.onerror = null; // 무한 루프 방지
+            e.target.src = "/assets/basicProfilePic.png";
+          }}
+        />
       </div>
       <h1 className="text-3xl font-bold mb-4">{nickname}님, 환영합니다!</h1>
       <p className="mb-8">거주지&시간대: {residence}</p>

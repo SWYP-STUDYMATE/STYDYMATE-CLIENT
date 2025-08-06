@@ -1,5 +1,5 @@
-import React from 'react';
-import ChatContainer from '../../components/chat/ChatContainer';
+import React from "react";
+import ChatContainer from "../../components/chat/ChatContainer";
 
 export default function ChatPage() {
   return (

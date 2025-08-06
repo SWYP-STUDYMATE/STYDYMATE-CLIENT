@@ -10,17 +10,9 @@ export default function ChatContainer() {
   const [rooms, setRooms] = useState([]);
   const [currentRoom, setCurrentRoom] = useState(null);
 
-  const fetchAndSetRooms = () => {
-    fetchChatRooms().then(setRooms);
-  };
-
   useEffect(() => {
-    fetchAndSetRooms();
+    fetchChatRooms().then(setRooms);
   }, []);
-
-  const handleNewRoomCreated = () => {
-    fetchAndSetRooms();
-  };
 
   const handleNewMessage = ({ roomId, message, sentAt }) => {
     setRooms((prev) =>
@@ -38,7 +30,7 @@ export default function ChatContainer() {
       <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
         <Sidebar active="chat" />
         <div className="w-80 flex-shrink-0">
-          <ChatRoomList rooms={rooms} onSelectRoom={setCurrentRoom} onNewRoomCreated={handleNewRoomCreated} />
+          <ChatRoomList rooms={rooms} onSelectRoom={setCurrentRoom} />
         </div>
         <div className="flex-1">
           {currentRoom ? (
