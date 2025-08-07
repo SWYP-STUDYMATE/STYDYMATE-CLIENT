@@ -66,33 +66,32 @@ export default function Main() {
   };
 
   return (
-      <div className="bg-[#fafafa] min-h-screen flex flex-col">
-        <MainHeader />
-        <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
-          <Sidebar active="home" />
-          <div className="flex-1 flex flex-col">
-            {/* 상단 섹션 - 2단 레이아웃 */}
-            <div className="flex space-x-6">
-              {/* 왼쪽 열 */}
-              <div className="flex-1 flex flex-col">
-                <GreetingCard userName={englishName} />
-                <div className="mt-6">
-                  <StudyStats />
-                </div>
-                <div className="mt-6">
-                  <LanguageProfile />
-                </div>
+    <div className="bg-[#fafafa] min-h-screen flex flex-col">
+      <MainHeader />
+      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
+        <Sidebar active="home" />
+        <div className="flex-1 flex flex-col">
+          {/* 상단 섹션 - 2단 레이아웃 */}
+          <div className="flex space-x-6">
+            {/* 왼쪽 열 */}
+            <div className="flex-1 flex flex-col">
+              <GreetingCard userName={englishName} />
+              <div className="mt-6">
+                <StudyStats />
               </div>
-              {/* 오른쪽 열 */}
-              <div className="w-[540px] flex flex-col">
-                <LanguageExchangeMates />
+              <div className="mt-6">
+                <LanguageProfile />
               </div>
             </div>
+            {/* 오른쪽 열 */}
+            <div className="w-[540px] flex flex-col">
+              <LanguageExchangeMates />
+            </div>
+          </div>
 
-            {/* 하단 섹션 - 전체 너비 */}
-            <div className="mt-6">
-              <AchievementBadges />
-            </div>
+          {/* 하단 섹션 - 전체 너비 */}
+          <div className="mt-6">
+            <AchievementBadges />
           </div>
         </div>
       </div>
