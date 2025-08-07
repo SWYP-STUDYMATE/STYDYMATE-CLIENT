@@ -35,6 +35,7 @@ export default function ChatContainer() {
     };
   }, []);
 
+  
   const reloadChatRooms = async () => {
     try {
       const roomsData = await fetchChatRooms();
