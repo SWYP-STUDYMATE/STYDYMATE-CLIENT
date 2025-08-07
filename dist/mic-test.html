@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>마이크 녹음 테스트</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        button { font-size: 1.2em; padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #status { font-size: 1.1em; margin-top: 20px; }
+        #audioPlayback { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>마이크 녹음 기능 테스트</h1>
+    <p>아래 버튼을 눌러 녹음을 테스트하세요.</p>
+    <button id="startButton">녹음 시작</button>
+    <button id="stopButton" disabled>녹음 중지</button>
+    <div id="status">대기 중</div>
+    <audio id="audioPlayback" controls></audio>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const statusDiv = document.getElementById('status');
+        const audioPlayback = document.getElementById('audioPlayback');
+
+        let mediaRecorder;
+        let audioChunks = [];
+
+        startButton.onclick = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                statusDiv.textContent = '녹음 중...';
+                audioChunks = [];
+
+                const mimeTypes = [
+                    'audio/webm; codecs=opus',
+                    'audio/ogg; codecs=opus',
+                    'audio/webm',
+                    'audio/mp4',
+                ];
+                const supportedType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+                
+                if (!supportedType) {
+                    statusDiv.textContent = '오류: 브라우저가 지원하는 녹음 형식이 없습니다.';
+                    return;
+                }
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: supportedType });
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: supportedType });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayback.src = audioUrl;
+                    statusDiv.innerHTML = `녹음 완료. Blob 크기: <b>${audioBlob.size}</b> bytes. <br>아래 플레이어에서 확인하세요.`;
+                    console.log("Blob 생성됨:", audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+
+            } catch (err) {
+                statusDiv.textContent = `오류: ${err.name} - ${err.message}`;
+                console.error("녹음 시작 실패:", err);
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        };
+
+        stopButton.onclick = () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        };
+    </script>
+</body>
+</html>
