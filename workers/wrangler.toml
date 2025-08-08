@@ -64,14 +64,14 @@ CORS_ORIGIN = "https://preview.languagemate.kr,https://staging.languagemate.kr"
 LOG_LEVEL = "info"
 API_VERSION = "v1"
 
-# Staging Routes
+# Staging Routes (Workers 전용 서브도메인 제안)
 [[env.staging.routes]]
-pattern = "api-staging.languagemate.kr"
+pattern = "workers-staging.languagemate.kr"
 zone_name = "languagemate.kr"
 
-# Staging Custom Domains (optional)
+# Staging Custom Domains (path 포함 매핑)
 [[env.staging.routes]]
-pattern = "staging-api.languagemate.kr/*"
+pattern = "workers-staging.languagemate.kr/*"
 zone_name = "languagemate.kr"
 
 # Production 환경
@@ -95,14 +95,14 @@ CORS_ORIGIN = "https://languagemate.kr,https://www.languagemate.kr"
 LOG_LEVEL = "error"
 API_VERSION = "v1"
 
-# Production Routes
+# Production Routes (Workers 전용 서브도메인 제안)
 [[env.production.routes]]
-pattern = "api.languagemate.kr"
+pattern = "workers.languagemate.kr"
 zone_name = "languagemate.kr"
 
-# Production Custom Domains
+# Production Custom Domains (path 포함 매핑)
 [[env.production.routes]]
-pattern = "api.languagemate.kr/*"
+pattern = "workers.languagemate.kr/*"
 zone_name = "languagemate.kr"
 
 # Observability (all environments)

@@ -14,7 +14,6 @@ import { analyticsRoutes } from './routes/analytics';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';
-import { Variables } from './types';
 import { successResponse } from './utils/response';
 
 // Export Durable Object
@@ -39,7 +38,7 @@ export interface Env {
 const API_VERSION = 'v1';
 
 // Create Hono app with typed context
-const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = new Hono<{ Bindings: Env }>();
 
 // 기본 미들웨어 설정
 setupMiddleware(app);
@@ -112,7 +111,7 @@ http_requests_total{method="GET",endpoint="/health"} 1
 });
 
 // API v1 라우트 그룹
-const v1 = new Hono<{ Bindings: Env; Variables: Variables }>();
+const v1 = new Hono<{ Bindings: Env }>();
 
 // v1 API 라우트 등록
 v1.route('/level-test', levelTestRoutes);

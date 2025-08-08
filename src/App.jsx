@@ -34,7 +34,7 @@ const SessionScheduleNew = lazyLoad(() => import('./pages/Session/SessionSchedul
 
 export default function App() {
   return (
-    <div className="bg-[#FAFAFA] min-h-screen">
+    <div className="page-bg min-h-screen">
       <Routes>
         <Route path='/' element={<Login />} />
         <Route path='/login/oauth2/code/naver' element={<Navercallback />} />

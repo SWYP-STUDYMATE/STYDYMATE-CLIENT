@@ -40,14 +40,14 @@ export default function VideoControls({
 
   const buttonVariants = {
     dark: {
-      normal: "bg-[#333333] hover:bg-[#414141] text-white",
-      active: "bg-[#00C471] hover:bg-[#00B267] text-white",
-      danger: "bg-[#EA4335] hover:bg-[#D33B2C] text-white"
+      normal: "bg-[var(--black-400)] hover:bg-[var(--black-300)] text-white",
+      active: "bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white",
+      danger: "bg-[var(--red)] hover:bg-[#D33B2C] text-white"
     },
     light: {
-      normal: "bg-[#F1F3F5] hover:bg-[#E7E7E7] text-[#111111]",
-      active: "bg-[#00C471] hover:bg-[#00B267] text-white",
-      danger: "bg-[#EA4335] hover:bg-[#D33B2C] text-white"
+      normal: "bg-[var(--neutral-100)] hover:bg-[var(--black-50)] text-[var(--black-500)]",
+      active: "bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white",
+      danger: "bg-[var(--red)] hover:bg-[#D33B2C] text-white"
     }
   };
 
@@ -184,7 +184,7 @@ export default function VideoControls({
       )}
 
       {/* Divider */}
-      <div className={`w-px h-10 ${variant === 'dark' ? 'bg-[#333333]' : 'bg-[#E7E7E7]'
+      <div className={`w-px h-10 ${variant === 'dark' ? 'bg-[var(--black-400)]' : 'bg-[var(--black-50)]'
         } mx-2`} />
 
       {/* End Call */}
