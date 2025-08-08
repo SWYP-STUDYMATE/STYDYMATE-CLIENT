@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
+import useLevelTestStore from '../../store/levelTestStore';
 
 export default function LevelTestStart() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
+  const { resetTest, setTestStatus } = useLevelTestStore();
 
   const handleStart = () => {
     setIsAnimating(true);
+    resetTest(); // 테스트 초기화
+    setTestStatus('connection-check');
     setTimeout(() => {
       navigate('/level-test/check');
     }, 300);

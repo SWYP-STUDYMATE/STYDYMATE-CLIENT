@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import { Mic, Wifi, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import useLevelTestStore from '../../store/levelTestStore';
 
 export default function LevelTestCheck() {
   const navigate = useNavigate();
   const [micPermission, setMicPermission] = useState('checking');
   const [internetConnection, setInternetConnection] = useState('checking');
   const [isChecking, setIsChecking] = useState(true);
+  
+  const { setConnectionStatus, setTestStatus } = useLevelTestStore();
 
   useEffect(() => {
     checkPermissions();
@@ -19,15 +22,19 @@ export default function LevelTestCheck() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
       setMicPermission('granted');
+      setConnectionStatus({ microphone: true });
     } catch (error) {
       setMicPermission('denied');
+      setConnectionStatus({ microphone: false });
     }
 
     // Check internet connection
     if (navigator.onLine) {
       setInternetConnection('connected');
+      setConnectionStatus({ internet: true });
     } else {
       setInternetConnection('disconnected');
+      setConnectionStatus({ internet: false });
     }
 
     setTimeout(() => {
@@ -37,6 +44,7 @@ export default function LevelTestCheck() {
 
   const handleContinue = () => {
     if (micPermission === 'granted' && internetConnection === 'connected') {
+      setTestStatus('recording');
       navigate('/level-test/recording');
     }
   };
