@@ -29,7 +29,7 @@
         "id": 3,
         "title": "레벨 테스트 시작 페이지 구현",
         "description": "AI 레벨 테스트 진입 화면 (12.33.06.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "랭메 캐릭터 애니메이션, 테스트 안내 문구, 시작하기 버튼",
@@ -40,7 +40,7 @@
         "id": 4,
         "title": "ConnectionChecker 컴포넌트 구현",
         "description": "마이크/인터넷 연결 상태 확인 (12.33.11.png)",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "3"
@@ -53,7 +53,7 @@
         "id": 5,
         "title": "AudioRecorder 컴포넌트 개발",
         "description": "음성 녹음 기능 구현 (12.33.17.png)",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "4"
@@ -66,7 +66,7 @@
         "id": 6,
         "title": "CountdownTimer 컴포넌트",
         "description": "3분 카운트다운 타이머 구현",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "5"
@@ -79,7 +79,7 @@
         "id": 7,
         "title": "레벨 테스트 질문 페이지 구현",
         "description": "4개 음성 질문 답변 페이지",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "5",
@@ -132,7 +132,7 @@
         "id": 11,
         "title": "levelTestStore 구현",
         "description": "레벨 테스트 상태 관리 스토어",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "현재 질문 번호, 녹음 데이터, 연결 상태, 타이머, 테스트 결과 관리",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T07:21:31.772Z"
+      "updated": "2025-08-08T09:11:54.069Z"
     }
   }
 }

@@ -17,8 +17,7 @@ const useLevelTestStore = create(
       },
       
       // 타이머
-      timerSeconds: 180, // 3분 = 180초 (CountdownTimer 컴포넌트용)
-      timeRemaining: 180, // 3분 = 180초 (기존 호환성 유지)
+      timeRemaining: 180, // 3분 = 180초
       isTimerRunning: false,
       
       // 녹음 데이터
@@ -27,49 +26,11 @@ const useLevelTestStore = create(
       
       // 테스트 질문들
       questions: [
-        {
-          id: 1,
-          question: "Please introduce yourself. Include your name, age, and occupation.",
-          korean: "자기소개를 해주세요. 이름, 나이, 직업 등을 포함해서 말씀해주세요."
-        },
-        {
-          id: 2,
-          question: "How do you usually study English?",
-          korean: "평소 영어 학습은 어떻게 하고 계신가요?"
-        },
-        {
-          id: 3,
-          question: "Describe a movie or drama you watched recently.",
-          korean: "가장 최근에 본 영화나 드라마에 대해 설명해주세요."
-        },
-        {
-          id: 4,
-          question: "What is your goal in learning English?",
-          korean: "영어를 배우는 목표가 무엇인가요?"
-        }
+        "자기소개를 해주세요. 이름, 나이, 직업 등을 포함해서 말씀해주세요.",
+        "평소 영어 학습은 어떻게 하고 계신가요?",
+        "가장 최근에 본 영화나 드라마에 대해 설명해주세요.",
+        "영어를 배우는 목표가 무엇인가요?"
       ],
-      
-      // 질문 관련 헬퍼 메서드들
-      getCurrentQuestion: () => {
-        const state = get();
-        return state.questions[state.currentQuestionIndex];
-      },
-      
-      getProgress: () => {
-        const state = get();
-        return ((state.currentQuestionIndex + 1) / state.totalQuestions) * 100;
-      },
-      
-      isFirstQuestion: () => get().currentQuestionIndex === 0,
-      isLastQuestion: () => {
-        const state = get();
-        return state.currentQuestionIndex === state.totalQuestions - 1;
-      },
-      
-      hasCompletedAllQuestions: () => {
-        const state = get();
-        return state.recordings.length === state.totalQuestions;
-      },
       
       // 테스트 결과
       testResult: null, // {level, scores, feedback, date}
@@ -89,16 +50,13 @@ const useLevelTestStore = create(
       startTimer: () => set({ isTimerRunning: true }),
       stopTimer: () => set({ isTimerRunning: false }),
       decrementTimer: () => set((state) => ({
-        timerSeconds: Math.max(0, state.timerSeconds - 1),
         timeRemaining: Math.max(0, state.timeRemaining - 1)
       })),
-      resetTimer: () => set({ timerSeconds: 180, timeRemaining: 180, isTimerRunning: false }),
-      setTimerSeconds: (seconds) => set({ timerSeconds: seconds, timeRemaining: seconds }),
+      resetTimer: () => set({ timeRemaining: 180, isTimerRunning: false }),
       
       // 질문 네비게이션
       nextQuestion: () => set((state) => ({
         currentQuestionIndex: Math.min(state.totalQuestions - 1, state.currentQuestionIndex + 1),
-        timerSeconds: 180, // 새 질문마다 타이머 리셋
         timeRemaining: 180, // 새 질문마다 타이머 리셋
       })),
       
@@ -120,42 +78,6 @@ const useLevelTestStore = create(
       setCurrentRecording: (recording) => set({ currentRecording: recording }),
       
       clearCurrentRecording: () => set({ currentRecording: null }),
-      
-      // AudioRecorder 컴포넌트용 메서드들
-      startRecording: (blob) => set((state) => ({
-        currentRecording: {
-          blob,
-          startTime: Date.now(),
-          questionIndex: state.currentQuestionIndex
-        }
-      })),
-      
-      stopRecording: () => set((state) => {
-        if (state.currentRecording) {
-          const duration = Math.floor((Date.now() - state.currentRecording.startTime) / 1000);
-          return {
-            recordings: [...state.recordings, {
-              ...state.currentRecording,
-              duration,
-              timestamp: new Date().toISOString()
-            }],
-            currentRecording: null
-          };
-        }
-        return state;
-      }),
-      
-      updateRecordingDuration: (duration) => set((state) => {
-        if (state.currentRecording) {
-          return {
-            currentRecording: {
-              ...state.currentRecording,
-              duration
-            }
-          };
-        }
-        return state;
-      }),
       
       getRecordingForQuestion: (questionIndex) => {
         const state = get();
@@ -179,7 +101,6 @@ const useLevelTestStore = create(
           internet: false,
           audioLevel: 0,
         },
-        timerSeconds: 180,
         timeRemaining: 180,
         isTimerRunning: false,
         recordings: [],

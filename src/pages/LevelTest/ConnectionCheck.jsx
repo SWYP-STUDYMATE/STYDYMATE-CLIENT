@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
+import useLevelTestStore from '../../stores/levelTestStore';
 
 export default function ConnectionCheck() {
   const navigate = useNavigate();
+  const { setConnectionStatus, setCurrentStep } = useLevelTestStore();
   const [micPermission, setMicPermission] = useState('checking'); // checking, granted, denied
   const [internetConnection, setInternetConnection] = useState('checking'); // checking, connected, disconnected
   const [isReady, setIsReady] = useState(false);
@@ -16,10 +18,18 @@ export default function ConnectionCheck() {
   useEffect(() => {
     if (micPermission === 'granted' && internetConnection === 'connected') {
       setIsReady(true);
+      setConnectionStatus({ 
+        microphone: true, 
+        internet: true 
+      });
     } else {
       setIsReady(false);
+      setConnectionStatus({ 
+        microphone: micPermission === 'granted', 
+        internet: internetConnection === 'connected' 
+      });
     }
-  }, [micPermission, internetConnection]);
+  }, [micPermission, internetConnection, setConnectionStatus]);
 
   const checkInternetConnection = () => {
     setInternetConnection('checking');
@@ -60,6 +70,7 @@ export default function ConnectionCheck() {
   };
 
   const handleNext = () => {
+    setCurrentStep('recording');
     navigate('/level-test/recording');
   };
 
