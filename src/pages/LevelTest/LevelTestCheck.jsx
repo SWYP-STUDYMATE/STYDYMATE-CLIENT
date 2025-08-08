@@ -9,20 +9,31 @@ export default function LevelTestCheck() {
   const [micPermission, setMicPermission] = useState('checking');
   const [internetConnection, setInternetConnection] = useState('checking');
   const [isChecking, setIsChecking] = useState(true);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [mediaStream, setMediaStream] = useState(null);
   
-  const { setConnectionStatus, setTestStatus } = useLevelTestStore();
+  const { setConnectionStatus, setTestStatus, setAudioLevel: setStoreAudioLevel } = useLevelTestStore();
 
   useEffect(() => {
     checkPermissions();
+    return () => {
+      // Cleanup
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, []);
 
   const checkPermissions = async () => {
     // Check microphone permission
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
+      setMediaStream(stream);
       setMicPermission('granted');
       setConnectionStatus({ microphone: true });
+      
+      // Start audio level monitoring
+      startAudioLevelMonitoring(stream);
     } catch (error) {
       setMicPermission('denied');
       setConnectionStatus({ microphone: false });
@@ -49,10 +60,39 @@ export default function LevelTestCheck() {
     }
   };
 
+  const startAudioLevelMonitoring = (stream) => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const microphone = audioContext.createMediaStreamSource(stream);
+    const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+
+    analyser.smoothingTimeConstant = 0.8;
+    analyser.fftSize = 1024;
+
+    microphone.connect(analyser);
+    analyser.connect(scriptProcessor);
+    scriptProcessor.connect(audioContext.destination);
+
+    scriptProcessor.onaudioprocess = () => {
+      const array = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(array);
+      const arraySum = array.reduce((a, value) => a + value, 0);
+      const average = arraySum / array.length;
+      const normalizedLevel = Math.min(100, Math.round(average));
+      
+      setAudioLevel(normalizedLevel);
+      setStoreAudioLevel(normalizedLevel);
+    };
+  };
+
   const handleRetry = () => {
     setIsChecking(true);
     setMicPermission('checking');
     setInternetConnection('checking');
+    setAudioLevel(0);
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+    }
     checkPermissions();
   };
 
@@ -140,11 +180,22 @@ export default function LevelTestCheck() {
                   <div className="w-10 h-10 bg-[#E6F9F1] rounded-full flex items-center justify-center">
                     <Mic className="w-5 h-5 text-[#00C471]" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-[14px] font-medium text-[#111111]">마이크</p>
                     <p className="text-[12px] text-[#929292]">
                       {getStatusText('mic', micPermission)}
                     </p>
+                    {micPermission === 'granted' && (
+                      <div className="mt-2">
+                        <div className="w-full bg-[#F1F3F5] rounded-full h-2">
+                          <div 
+                            className="bg-[#00C471] h-2 rounded-full transition-all duration-200"
+                            style={{ width: `${audioLevel}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-[#929292] mt-1">오디오 레벨: {audioLevel}%</p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {getStatusIcon(micPermission)}
