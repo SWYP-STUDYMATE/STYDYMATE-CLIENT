@@ -525,7 +525,7 @@
         "id": 43,
         "title": "Workers KV 캐싱 시스템",
         "description": "세션 데이터 캐싱",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "31"
@@ -763,7 +763,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T10:11:04.248Z"
+      "updated": "2025-08-08T10:12:06.295Z"
     }
   }
 }

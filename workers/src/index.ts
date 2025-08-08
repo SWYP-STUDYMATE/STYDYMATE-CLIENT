@@ -110,6 +110,7 @@ v1.route('/upload', uploadRoutes);
 v1.route('/whisper', whisperRoutes);
 v1.route('/llm', llmRoutes);
 v1.route('/images', imagesRoutes);
+v1.route('/cache', cacheRoutes);
 v1.route('/transcribe', transcribeRoutes);
 
 // API 버전 라우팅

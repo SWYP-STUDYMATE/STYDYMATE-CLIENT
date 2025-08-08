@@ -150,6 +150,20 @@ export default function VideoSessionRoom() {
         case 'screen-share-stopped':
           handleRemoteScreenShare(false);
           break;
+        case 'subtitle':
+          // 파트너로부터 받은 자막 표시
+          if (message.subtitle && isSubtitleEnabled) {
+            setTranscripts(prev => [...prev, {
+              ...message.subtitle,
+              isRemote: true,
+              timestamp: Date.now()
+            }]);
+          }
+          break;
+        case 'language-change':
+          // 파트너가 언어를 변경했을 때
+          setCurrentLanguage(message.language);
+          break;
         default:
           break;
       }

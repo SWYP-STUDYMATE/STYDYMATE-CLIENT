@@ -22,16 +22,16 @@ Automates the deployment of Cloudflare Workers to staging and production environ
 
 The following secrets must be configured in GitHub repository settings:
 
-| Secret Name | Description | Required For |
-|------------|-------------|--------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers deployment permissions | All deployments |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID | All deployments |
-| `CLOUDFLARE_ZONE_ID` | Zone ID for cache purging | Production only |
-| `JWT_SECRET_STAGING` | JWT secret for staging environment | Staging |
-| `JWT_SECRET_PRODUCTION` | JWT secret for production environment | Production |
-| `INTERNAL_SECRET` | Shared secret for internal service communication | All environments |
-| `CF_IMAGES_API_TOKEN` | Cloudflare Images API token | All environments |
-| `CF_ACCOUNT_HASH` | Cloudflare account hash for Images | All environments |
+| Secret Name             | Description                                              | Required For     |
+| ----------------------- | -------------------------------------------------------- | ---------------- |
+| `CLOUDFLARE_API_TOKEN`  | Cloudflare API token with Workers deployment permissions | All deployments  |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID                               | All deployments  |
+| `CLOUDFLARE_ZONE_ID`    | Zone ID for cache purging                                | Production only  |
+| `JWT_SECRET_STAGING`    | JWT secret for staging environment                       | Staging          |
+| `JWT_SECRET_PRODUCTION` | JWT secret for production environment                    | Production       |
+| `INTERNAL_SECRET`       | Shared secret for internal service communication         | All environments |
+| `CF_IMAGES_API_TOKEN`   | Cloudflare Images API token                              | All environments |
+| `CF_ACCOUNT_HASH`       | Cloudflare account hash for Images                       | All environments |
 
 #### Workflow Jobs
 

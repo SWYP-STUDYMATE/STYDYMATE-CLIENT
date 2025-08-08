@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Phone, Video, MoreVertical, LogOut } from "lucide-react";
+import OptimizedImage from '../OptimizedImage';
+import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
 
 export default function ChatHeader({ room, currentUserId, onLeaveRoom }) {
   const [showMenu, setShowMenu] = useState(false);
