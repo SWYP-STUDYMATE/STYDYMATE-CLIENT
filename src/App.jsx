@@ -21,6 +21,8 @@ import VideoSessionRoom from './pages/Session/VideoSessionRoom';
 import VideoConnectionCheck from './pages/Session/VideoSessionCheck';
 import AudioSessionRoom from './pages/Session/AudioSessionRoom';
 import VideoControlsDemo from './pages/Session/VideoControlsDemo';
+import SessionList from './pages/Session/SessionList';
+import ProfilePage from './pages/Profile/ProfilePage';
 
 export default function App() {
   return (

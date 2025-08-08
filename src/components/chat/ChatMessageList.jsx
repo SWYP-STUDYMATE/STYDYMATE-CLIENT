@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import EmptyPlaceholder from "./EmptyPlaceholder";
+import VoiceMessage from "./VoiceMessage";
 
 export default function ChatMessageList({
   messages,
@@ -79,12 +80,10 @@ export default function ChatMessageList({
                           ))}
                         </div>
                       ) : msg.messageType === "AUDIO" && msg.audioUrl ? (
-                        <audio
-                          controls
-                          preload="metadata"
-                          crossOrigin="anonymous"
-                          src={msg.audioUrl}
-                          className="max-w-xs"
+                        <VoiceMessage
+                          audioUrl={msg.audioUrl}
+                          duration={msg.audioDuration}
+                          isMine={false}
                         />
                       ) : (
                         <div className="bg-pink-200 text-gray-900 px-4 py-2 rounded-lg rounded-tl-none whitespace-pre-wrap">
@@ -122,12 +121,10 @@ export default function ChatMessageList({
                           ))}
                         </div>
                       ) : msg.messageType === "AUDIO" && msg.audioUrl ? (
-                        <audio
-                          controls
-                          preload="metadata"
-                          crossOrigin="anonymous"
-                          src={msg.audioUrl}
-                          className="max-w-xs"
+                        <VoiceMessage
+                          audioUrl={msg.audioUrl}
+                          duration={msg.audioDuration}
+                          isMine={true}
                         />
                       ) : (
                         <div className="bg-[#00C471] text-white px-4 py-2 rounded-lg rounded-tr-none whitespace-pre-wrap">

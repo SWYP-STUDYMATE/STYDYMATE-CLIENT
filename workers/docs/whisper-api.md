@@ -63,14 +63,14 @@ const response = await fetch('https://studymate-api.wjstks3474.workers.dev/api/w
 
 #### Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `audio` | File/String/Binary | Required | Audio file (multipart), base64 string (JSON), or raw binary |
-| `task` | String | `transcribe` | Task type: `transcribe` or `translate` |
-| `language` | String | `auto` | Language code (e.g., 'en', 'ko', 'ja') or 'auto' for detection |
-| `vad_filter` | Boolean | `true` | Enable Voice Activity Detection |
-| `initial_prompt` | String | - | Context to help with transcription accuracy |
-| `prefix` | String | - | Text to prepend to the transcription |
+| Parameter        | Type               | Default      | Description                                                    |
+| ---------------- | ------------------ | ------------ | -------------------------------------------------------------- |
+| `audio`          | File/String/Binary | Required     | Audio file (multipart), base64 string (JSON), or raw binary    |
+| `task`           | String             | `transcribe` | Task type: `transcribe` or `translate`                         |
+| `language`       | String             | `auto`       | Language code (e.g., 'en', 'ko', 'ja') or 'auto' for detection |
+| `vad_filter`     | Boolean            | `true`       | Enable Voice Activity Detection                                |
+| `initial_prompt` | String             | -            | Context to help with transcription accuracy                    |
+| `prefix`         | String             | -            | Text to prepend to the transcription                           |
 
 #### Response
 

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Env } from '../index';
-import { processAudio, analyzeText, calculateLevel } from '../services/ai';
+import { processAudio, analyzeText, calculateLevel, evaluateLanguageLevel } from '../services/ai';
 import { saveToR2, getFromR2 } from '../services/storage';
 
 export const levelTestRoutes = new Hono<{ Bindings: Env }>();
@@ -22,8 +22,12 @@ levelTestRoutes.post('/audio', async (c) => {
     const audioBuffer = await audioFile.arrayBuffer();
     await saveToR2(c.env.STORAGE, audioKey, audioBuffer, audioFile.type);
 
-    // Whisper로 음성 인식
-    const transcription = await processAudio(c.env.AI, audioBuffer);
+    // Whisper로 음성 인식 (언어 설정 추가)
+    const transcription = await processAudio(c.env.AI, audioBuffer, {
+      task: 'transcribe',
+      language: 'en', // 영어로 고정
+      vad_filter: true
+    });
 
     // 결과 캐싱
     const cacheKey = `transcript:${userId}:${questionId}`;
@@ -44,7 +48,7 @@ levelTestRoutes.post('/audio', async (c) => {
   }
 });
 
-// AI 분석 요청
+// AI 분석 요청 (개선된 버전)
 levelTestRoutes.post('/analyze', async (c) => {
   try {
     const { userId, responses } = await c.req.json();
@@ -53,33 +57,101 @@ levelTestRoutes.post('/analyze', async (c) => {
       return c.json({ error: 'Invalid request data' }, 400);
     }
 
-    // 모든 응답 텍스트 수집
-    const allTranscripts = await Promise.all(
-      responses.map(async (r: any) => {
+    // 레벨테스트 질문들
+    const questions = [
+      "Introduce yourself and tell me about your background.",
+      "What are your hobbies and why do you enjoy them?", 
+      "Describe your typical day from morning to evening.",
+      "What are your future goals and how do you plan to achieve them?"
+    ];
+
+    // 각 응답에 대한 개별 평가
+    const evaluations = await Promise.all(
+      responses.map(async (r: any, index: number) => {
         const cacheKey = `transcript:${userId}:${r.questionId}`;
         const cached = await c.env.CACHE.get(cacheKey);
-        return cached ? JSON.parse(cached).transcription : '';
+        
+        if (!cached) return null;
+        
+        const { transcription } = JSON.parse(cached);
+        const question = questions[index] || questions[0];
+        
+        // 개별 응답 평가
+        const evaluation = await evaluateLanguageLevel(
+          c.env.AI,
+          transcription.text || '',
+          question
+        );
+        
+        return {
+          questionId: r.questionId,
+          question,
+          transcription: transcription.text,
+          evaluation
+        };
       })
     );
 
-    // AI로 텍스트 분석
-    const analysis = await analyzeText(c.env.AI, allTranscripts.join(' '));
+    // 유효한 평가만 필터링
+    const validEvaluations = evaluations.filter(e => e !== null);
+
+    // 전체 점수 계산
+    const totalScores = {
+      grammar: 0,
+      vocabulary: 0,
+      fluency: 0,
+      taskAchievement: 0,
+      communication: 0
+    };
+
+    validEvaluations.forEach(eval => {
+      if (eval?.evaluation.scores) {
+        totalScores.grammar += eval.evaluation.scores.grammar || 0;
+        totalScores.vocabulary += eval.evaluation.scores.vocabulary || 0;
+        totalScores.fluency += eval.evaluation.scores.fluency || 0;
+        totalScores.taskAchievement += eval.evaluation.scores.taskAchievement || 0;
+        totalScores.communication += eval.evaluation.scores.communication || 0;
+      }
+    });
+
+    // 평균 점수 계산
+    const avgScores = {
+      grammar: Math.round(totalScores.grammar / validEvaluations.length),
+      vocabulary: Math.round(totalScores.vocabulary / validEvaluations.length),
+      fluency: Math.round(totalScores.fluency / validEvaluations.length),
+      taskAchievement: Math.round(totalScores.taskAchievement / validEvaluations.length),
+      communication: Math.round(totalScores.communication / validEvaluations.length)
+    };
+
+    // 최종 레벨 결정
+    const avgScore = Object.values(avgScores).reduce((a, b) => a + b, 0) / 5;
+    let finalLevel: string;
     
-    // CEFR 레벨 계산
-    const level = calculateLevel(analysis);
+    if (avgScore >= 90) finalLevel = 'C2';
+    else if (avgScore >= 80) finalLevel = 'C1';
+    else if (avgScore >= 70) finalLevel = 'B2';
+    else if (avgScore >= 60) finalLevel = 'B1';
+    else if (avgScore >= 50) finalLevel = 'A2';
+    else finalLevel = 'A1';
 
     // 결과 저장
     const resultKey = `level-test-result:${userId}`;
-    await c.env.CACHE.put(resultKey, JSON.stringify({
-      level,
-      analysis,
+    const result = {
+      level: finalLevel,
+      scores: avgScores,
+      evaluations: validEvaluations,
+      feedback: validEvaluations.map(e => e?.evaluation.feedback).join('\n\n'),
+      suggestions: validEvaluations.flatMap(e => e?.evaluation.suggestions || []),
       timestamp: new Date().toISOString()
-    }), { expirationTtl: 2592000 }); // 30일 캐시
+    };
+    
+    await c.env.CACHE.put(resultKey, JSON.stringify(result), { 
+      expirationTtl: 2592000 // 30일 캐시
+    });
 
     return c.json({
       success: true,
-      level,
-      analysis
+      ...result
     });
   } catch (error) {
     console.error('Analysis error:', error);
