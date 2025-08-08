@@ -143,7 +143,7 @@
         "id": 12,
         "title": "매칭 프로필 페이지 구현",
         "description": "사용자 상세 프로필 화면 (12.35.19.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [],
         "details": "프로필 정보, Active Now 상태, 관심사 태그, Start a Chat 버튼",
@@ -193,7 +193,7 @@
         "id": 16,
         "title": "세션 목록 페이지 구현",
         "description": "학습 세션 목록 화면 (1.49.26.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [],
         "details": "세션 카드 리스트, 예정된 세션, 완료된 세션 구분",
@@ -265,7 +265,7 @@
         "id": 22,
         "title": "1:1 비디오 세션 룸 구현",
         "description": "1대1 화상 통화 화면",
-        "status": "done",
+        "status": "pending",
         "priority": "high",
         "dependencies": [
           "19"
@@ -394,7 +394,7 @@
         "id": 33,
         "title": "Whisper 음성인식 API 구현",
         "description": "Cloudflare Workers AI Whisper 통합",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "32"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:27:20.278Z"
+      "updated": "2025-08-08T09:28:21.767Z"
     }
   }
 }

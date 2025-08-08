@@ -56,3 +56,8 @@ body,
 .animate-glow {
   animation: glow 2s ease-in-out infinite;
 }
+
+/* Mirror effect for front-facing camera */
+.mirror {
+  transform: scaleX(-1);
+}

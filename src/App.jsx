@@ -17,6 +17,7 @@ import LevelTestComplete from './pages/LevelTest/LevelTestComplete';
 import LevelTestResult from './pages/LevelTest/LevelTestResult';
 import Schedule from './pages/Schedule/Schedule';
 import AudioConnectionCheck from './pages/Session/AudioConnectionCheck';
+import VideoSessionRoom from './pages/Session/VideoSessionRoom';
 import VideoConnectionCheck from './pages/Session/VideoSessionCheck';
 import AudioSessionRoom from './pages/Session/AudioSessionRoom';
 import VideoControlsDemo from './pages/Session/VideoControlsDemo';
@@ -43,6 +44,7 @@ export default function App() {
       <Route path='/level-test/result' element={<LevelTestResult />}/>
       <Route path='/schedule' element={<Schedule />}/>
       <Route path='/session/audio-check' element={<AudioConnectionCheck />}/>
+      <Route path='/session/video/:roomId' element={<VideoSessionRoom />}/>
       <Route path='/session/video-check' element={<VideoConnectionCheck />}/>
       <Route path='/session/audio/:roomId' element={<AudioSessionRoom />}/>
       <Route path='/session/video-controls-demo' element={<VideoControlsDemo />}/>
