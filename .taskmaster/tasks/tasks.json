@@ -733,7 +733,6 @@
         "status": "pending",
         "priority": "high",
         "dependencies": [
-          "51",
           "52"
         ],
         "details": "모든 기능 통합 테스트, 버그 수정, 사용성 테스트",
