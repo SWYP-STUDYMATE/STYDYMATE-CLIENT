@@ -25,30 +25,30 @@ import VideoControlsDemo from './pages/Session/VideoControlsDemo';
 export default function App() {
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
-    <Routes>
-      <Route path='/' element={<Login />}/>
-      <Route path='/login/oauth2/code/naver' element={<Navercallback />}/>
-      <Route path='/agreement' element={<Agreement />}/>
-      <Route path='/signup-complete' element={<SignupComplete />}/>
-      <Route path='/main' element={<Main />}/>
-      <Route path='/onboarding-info/:step' element={<OnboardingInfoRouter />}/>
-      <Route path="/chat" element={<ChatPage />} />
-      <Route path='/onboarding-lang/:step' element={<ObLangRouter />}/>
-      <Route path='/onboarding-int/:step' element={<ObIntRouter />}/>
-      <Route path='/onboarding-partner/:step' element={<ObPartnerRouter />}/>
-      <Route path='/onboarding-schedule/:step' element={<ObScheduleRouter />}/>
-      <Route path='/level-test' element={<LevelTestStart />}/>
-      <Route path='/level-test/check' element={<LevelTestCheck />}/>
-      <Route path='/level-test/recording' element={<LevelTestRecording />}/>
-      <Route path='/level-test/complete' element={<LevelTestComplete />}/>
-      <Route path='/level-test/result' element={<LevelTestResult />}/>
-      <Route path='/schedule' element={<Schedule />}/>
-      <Route path='/session/audio-check' element={<AudioConnectionCheck />}/>
-      <Route path='/session/video/:roomId' element={<VideoSessionRoom />}/>
-      <Route path='/session/video-check' element={<VideoConnectionCheck />}/>
-      <Route path='/session/audio/:roomId' element={<AudioSessionRoom />}/>
-      <Route path='/session/video-controls-demo' element={<VideoControlsDemo />}/>
-    </Routes> 
+      <Routes>
+        <Route path='/' element={<Login />} />
+        <Route path='/login/oauth2/code/naver' element={<Navercallback />} />
+        <Route path='/agreement' element={<Agreement />} />
+        <Route path='/signup-complete' element={<SignupComplete />} />
+        <Route path='/main' element={<Main />} />
+        <Route path='/onboarding-info/:step' element={<OnboardingInfoRouter />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path='/onboarding-lang/:step' element={<ObLangRouter />} />
+        <Route path='/onboarding-int/:step' element={<ObIntRouter />} />
+        <Route path='/onboarding-partner/:step' element={<ObPartnerRouter />} />
+        <Route path='/onboarding-schedule/:step' element={<ObScheduleRouter />} />
+        <Route path='/level-test' element={<LevelTestStart />} />
+        <Route path='/level-test/check' element={<LevelTestCheck />} />
+        <Route path='/level-test/recording' element={<LevelTestRecording />} />
+        <Route path='/level-test/complete' element={<LevelTestComplete />} />
+        <Route path='/level-test/result' element={<LevelTestResult />} />
+        <Route path='/schedule' element={<Schedule />} />
+        <Route path='/session/audio-check' element={<AudioConnectionCheck />} />
+        <Route path='/session/video/:roomId' element={<VideoSessionRoom />} />
+        <Route path='/session/video-check' element={<VideoConnectionCheck />} />
+        <Route path='/session/audio/:roomId' element={<AudioSessionRoom />} />
+        <Route path='/session/video-controls-demo' element={<VideoControlsDemo />} />
+      </Routes>
     </div>
   )
 }
