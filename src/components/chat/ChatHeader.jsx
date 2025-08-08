@@ -42,10 +42,13 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom }) {
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center">
-        <img
-          src={partner.profileImage || "/assets/basicProfilePic.png"}
+        <OptimizedImage
+          src={partner.profileImage || DEFAULT_PROFILE_IMAGE}
           alt={partner.name}
           className="w-10 h-10 rounded-full"
+          width={40}
+          height={40}
+          loading="eager"
         />
         <span className="ml-3 text-lg font-semibold">{room.roomName}</span>
       </div>
