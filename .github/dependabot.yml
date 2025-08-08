@@ -1,0 +1,50 @@
+version: 2
+updates:
+  # Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+    assignees:
+      - "minhan"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    
+  # Workers dependencies
+  - package-ecosystem: "npm"
+    directory: "/workers"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "workers"
+    assignees:
+      - "minhan"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+      
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
