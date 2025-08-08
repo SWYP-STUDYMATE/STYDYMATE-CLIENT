@@ -420,7 +420,7 @@
         "id": 35,
         "title": "LLM 텍스트 생성 API",
         "description": "Workers AI LLM 통합",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "32"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:32:44.004Z"
+      "updated": "2025-08-08T09:32:58.643Z"
     }
   }
 }
