@@ -15,7 +15,7 @@ export default function VideoSessionRoom() {
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isPipMode, setIsPipMode] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
-  
+
   // Partner info (mock data - replace with actual data from API)
   const [partnerInfo, setPartnerInfo] = useState({
     name: 'John Doe',
@@ -46,9 +46,9 @@ export default function VideoSessionRoom() {
   useEffect(() => {
     // Check if Picture-in-Picture API is supported
     setPipSupported('pictureInPictureEnabled' in document);
-    
+
     initializeCall();
-    
+
     return () => {
       cleanup();
     };
@@ -77,7 +77,7 @@ export default function VideoSessionRoom() {
   const initializeCall = async () => {
     try {
       // Get user media (video and audio)
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
@@ -89,7 +89,7 @@ export default function VideoSessionRoom() {
           autoGainControl: true
         }
       });
-      
+
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
@@ -97,10 +97,10 @@ export default function VideoSessionRoom() {
 
       // Setup WebSocket connection for signaling
       setupWebSocket();
-      
+
       // Create peer connection
       setupPeerConnection();
-      
+
     } catch (error) {
       console.error('Failed to initialize call:', error);
       setConnectionState('failed');
@@ -110,7 +110,7 @@ export default function VideoSessionRoom() {
   const setupWebSocket = () => {
     // Replace with actual WebSocket URL
     wsRef.current = new WebSocket(`wss://your-signaling-server.com/room/${roomId}`);
-    
+
     wsRef.current.onopen = () => {
       console.log('WebSocket connected');
       wsRef.current.send(JSON.stringify({ type: 'join', roomId }));
@@ -118,7 +118,7 @@ export default function VideoSessionRoom() {
 
     wsRef.current.onmessage = async (event) => {
       const message = JSON.parse(event.data);
-      
+
       switch (message.type) {
         case 'offer':
           await handleOffer(message.offer);
@@ -192,7 +192,7 @@ export default function VideoSessionRoom() {
     peerConnectionRef.current.onconnectionstatechange = () => {
       const state = peerConnectionRef.current.connectionState;
       console.log('Connection state:', state);
-      
+
       if (state === 'connected') {
         setConnectionState('connected');
       } else if (state === 'failed' || state === 'disconnected') {
@@ -203,7 +203,7 @@ export default function VideoSessionRoom() {
     // Monitor ICE connection state for signal strength
     peerConnectionRef.current.oniceconnectionstatechange = () => {
       const state = peerConnectionRef.current.iceConnectionState;
-      
+
       if (state === 'connected' || state === 'completed') {
         // Get connection stats for signal strength
         peerConnectionRef.current.getStats().then(stats => {
@@ -226,7 +226,7 @@ export default function VideoSessionRoom() {
     try {
       const offer = await peerConnectionRef.current.createOffer();
       await peerConnectionRef.current.setLocalDescription(offer);
-      
+
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
           type: 'offer',
@@ -243,7 +243,7 @@ export default function VideoSessionRoom() {
       await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await peerConnectionRef.current.createAnswer();
       await peerConnectionRef.current.setLocalDescription(answer);
-      
+
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
           type: 'answer',
@@ -281,20 +281,22 @@ export default function VideoSessionRoom() {
     console.log('Remote screen share:', isSharing);
   };
 
-  const handleMicToggle = (state) => {
-    setIsMuted(!state);
+  const handleMicToggle = () => {
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = state;
+        track.enabled = !newMutedState;
       });
     }
   };
 
-  const handleCameraToggle = (state) => {
-    setIsCameraOn(state);
+  const handleCameraToggle = () => {
+    const newCameraState = !isCameraOn;
+    setIsCameraOn(newCameraState);
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach(track => {
-        track.enabled = state;
+        track.enabled = newCameraState;
       });
     }
   };
@@ -306,26 +308,26 @@ export default function VideoSessionRoom() {
           video: true,
           audio: false
         });
-        
+
         screenStreamRef.current = screenStream;
-        
+
         // Replace video track with screen share
         const screenTrack = screenStream.getVideoTracks()[0];
         const sender = peerConnectionRef.current.getSenders().find(
           s => s.track && s.track.kind === 'video'
         );
-        
+
         if (sender) {
           sender.replaceTrack(screenTrack);
         }
-        
+
         // Listen for screen share end
         screenTrack.onended = () => {
           stopScreenShare();
         };
-        
+
         setIsScreenSharing(true);
-        
+
         // Notify remote user
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({
@@ -343,20 +345,20 @@ export default function VideoSessionRoom() {
   const stopScreenShare = () => {
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach(track => track.stop());
-      
+
       // Replace screen share with camera
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
       const sender = peerConnectionRef.current.getSenders().find(
         s => s.track && s.track.kind === 'video'
       );
-      
+
       if (sender && videoTrack) {
         sender.replaceTrack(videoTrack);
       }
-      
+
       screenStreamRef.current = null;
       setIsScreenSharing(false);
-      
+
       // Notify remote user
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({
@@ -368,7 +370,7 @@ export default function VideoSessionRoom() {
 
   const handlePictureInPicture = async () => {
     if (!pipSupported) return;
-    
+
     try {
       if (!isPipMode && remoteVideoRef.current) {
         await remoteVideoRef.current.requestPictureInPicture();
@@ -387,13 +389,14 @@ export default function VideoSessionRoom() {
     navigate('/sessions');
   };
 
-  const handleLanguageChange = (lang) => {
-    setCurrentLanguage(lang);
+  const handleLanguageToggle = () => {
+    const newLang = currentLanguage === 'en' ? 'ko' : 'en';
+    setCurrentLanguage(newLang);
     // Send language change to partner via WebSocket
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'language-change',
-        language: lang
+        language: newLang
       }));
     }
   };
@@ -403,26 +406,26 @@ export default function VideoSessionRoom() {
     if (document.pictureInPictureElement) {
       document.exitPictureInPicture();
     }
-    
+
     // Stop all tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
     }
-    
+
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach(track => track.stop());
     }
-    
+
     // Close peer connection
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
     }
-    
+
     // Close WebSocket
     if (wsRef.current) {
       wsRef.current.close();
     }
-    
+
     // Clear interval
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
@@ -433,7 +436,7 @@ export default function VideoSessionRoom() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -442,11 +445,10 @@ export default function VideoSessionRoom() {
 
   const getSignalIcon = () => {
     if (signalStrength === 0) return <SignalZero className="w-5 h-5 text-red-500" />;
-    return <Signal className={`w-5 h-5 ${
-      signalStrength === 3 ? 'text-green-500' : 
-      signalStrength === 2 ? 'text-yellow-500' : 
-      'text-orange-500'
-    }`} />;
+    return <Signal className={`w-5 h-5 ${signalStrength === 3 ? 'text-green-500' :
+        signalStrength === 2 ? 'text-yellow-500' :
+          'text-orange-500'
+      }`} />;
   };
 
   return (
@@ -461,18 +463,18 @@ export default function VideoSessionRoom() {
               <span className="text-sm">1:1 세션</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Connection Status */}
             <div className="flex items-center gap-2">
               {getSignalIcon()}
               <span className="text-sm text-[#929292]">
-                {connectionState === 'connected' ? '연결됨' : 
-                 connectionState === 'connecting' ? '연결 중...' : 
-                 '연결 끊김'}
+                {connectionState === 'connected' ? '연결됨' :
+                  connectionState === 'connecting' ? '연결 중...' :
+                    '연결 끊김'}
               </span>
             </div>
-            
+
             {/* Screen Share Indicator */}
             {isScreenSharing && (
               <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-full">
@@ -480,14 +482,14 @@ export default function VideoSessionRoom() {
                 <span className="text-sm text-blue-500">화면 공유 중</span>
               </div>
             )}
-            
+
             {/* Duration */}
             {connectionState === 'connected' && (
               <div className="text-white font-mono">
                 {formatDuration(duration)}
               </div>
             )}
-            
+
             {/* PiP Button */}
             {pipSupported && connectionState === 'connected' && (
               <button
@@ -536,7 +538,7 @@ export default function VideoSessionRoom() {
                 playsInline
                 className="w-full h-full object-cover"
               />
-              
+
               {/* Partner Info Overlay */}
               <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">
                 <div className="flex items-center gap-3">
@@ -551,7 +553,7 @@ export default function VideoSessionRoom() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Remote user indicators */}
               <div className="absolute top-4 right-4 flex items-center gap-2">
                 {/* Add remote user status indicators here */}
@@ -567,7 +569,7 @@ export default function VideoSessionRoom() {
                 playsInline
                 className={`w-full h-full object-cover ${!isCameraOn ? 'hidden' : ''}`}
               />
-              
+
               {!isCameraOn && (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
@@ -578,7 +580,7 @@ export default function VideoSessionRoom() {
                   </div>
                 </div>
               )}
-              
+
               {/* Local user indicators */}
               <div className="absolute bottom-4 right-4 flex items-center gap-2">
                 {isMuted && (
@@ -595,24 +597,23 @@ export default function VideoSessionRoom() {
       {/* Controls */}
       <div className="p-6 flex justify-center">
         <VideoControls
-          onMicToggle={handleMicToggle}
-          onCameraToggle={handleCameraToggle}
-          onEndCall={handleEndCall}
-          onScreenShare={handleScreenShare}
-          onLanguageChange={handleLanguageChange}
-          initialMicState={true}
-          initialCameraState={true}
-          showLanguageButton={true}
-          showCameraToggle={true}
-          showScreenShareButton={true}
-          showSettingsButton={false}
-          showParticipantsButton={false}
-          showChatButton={false}
-          showRaiseHandButton={false}
-          showMoreButton={false}
-          currentLanguage={currentLanguage}
+          isMuted={isMuted}
+          isVideoOn={isCameraOn}
           isScreenSharing={isScreenSharing}
-          disabled={connectionState !== 'connected'}
+          currentLanguage={currentLanguage}
+          onToggleMute={handleMicToggle}
+          onToggleVideo={handleCameraToggle}
+          onToggleScreenShare={handleScreenShare}
+          onToggleLanguage={handleLanguageToggle}
+          onEndCall={handleEndCall}
+          showVideo={true}
+          showScreenShare={true}
+          showLanguageToggle={true}
+          showSettings={false}
+          showFullscreen={false}
+          showParticipants={false}
+          className={connectionState !== 'connected' ? 'opacity-50 pointer-events-none' : ''}
+          variant="dark"
         />
       </div>
     </div>
