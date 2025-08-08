@@ -63,7 +63,7 @@ app.get('/', (c) => {
       levelTest: `/api/${API_VERSION}/level-test`,
       webrtc: `/api/${API_VERSION}/room`,
       upload: `/api/${API_VERSION}/upload`,
-      llm: `/api/${API_VERSION}/llm`
+      whisper: `/api/${API_VERSION}/whisper`
     }
   });
 });
