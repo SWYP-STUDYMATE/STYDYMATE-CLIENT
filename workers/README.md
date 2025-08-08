@@ -8,6 +8,7 @@ Cloudflare Workers로 구축된 STUDYMATE 백엔드 API 서비스입니다.
 - **LLM 텍스트 생성**: 다양한 LLM 모델을 사용한 텍스트 생성 및 채팅
 - **WebRTC**: Durable Objects를 사용한 실시간 화상/음성 통화
 - **파일 업로드**: R2 스토리지를 사용한 파일 저장
+- **이미지 처리**: Cloudflare Images를 사용한 이미지 최적화 및 변환
 
 ## API 엔드포인트
 

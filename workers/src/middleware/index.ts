@@ -41,13 +41,13 @@ export function setupMiddleware(app: Hono<{ Bindings: Env; Variables: Variables 
     // ETag
     app.use('*', etag());
 
-      // 개발 환경에서만 pretty JSON 사용
-  app.use('*', async (c, next) => {
-    if (c.env.ENVIRONMENT === 'development') {
-      return prettyJSON()(c, next);
-    }
-    return next();
-  });
+    // 개발 환경에서만 pretty JSON 사용
+    app.use('*', async (c, next) => {
+        if (c.env.ENVIRONMENT === 'development') {
+            return prettyJSON()(c, next);
+        }
+        return next();
+    });
 
     // 성능 모니터링 (3초 이상 걸리는 요청 감지)
     app.use('*', performanceMonitor(3000));

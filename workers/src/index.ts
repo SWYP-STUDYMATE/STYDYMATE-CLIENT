@@ -5,7 +5,7 @@ import { levelTestRoutes } from './routes/levelTest';
 import { webrtcRoutes } from './routes/webrtc';
 import { uploadRoutes } from './routes/upload';
 import whisperRoutes from './routes/whisper';
-import { llmRoutes } from './routes/llm';
+import llmRoutes from './routes/llm';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { Variables } from './types';

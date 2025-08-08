@@ -276,11 +276,84 @@ export async function generateChatCompletion(
     }
 }
 
+// 언어 레벨 평가 함수
+export async function evaluateLanguageLevel(
+  ai: Ai,
+  transcription: string,
+  question: string
+): Promise<any> {
+  try {
+    const prompt = `Evaluate the following English response for language proficiency.
+
+Question asked: "${question}"
+Student's response: "${transcription}"
+
+Evaluate the response across these 6 dimensions and provide a score (0-100) for each:
+1. Pronunciation clarity (based on transcription quality)
+2. Fluency and flow
+3. Grammar accuracy
+4. Vocabulary range and appropriateness
+5. Coherence and organization
+6. Interaction and responsiveness to the question
+
+Also provide:
+- Brief feedback on overall performance
+- 2-3 specific suggestions for improvement
+- Estimated CEFR level (A1-C2)
+
+Respond in JSON format:
+{
+  "scores": {
+    "pronunciation": number,
+    "fluency": number,
+    "grammar": number,
+    "vocabulary": number,
+    "coherence": number,
+    "interaction": number
+  },
+  "feedback": "string",
+  "suggestions": ["string", "string", "string"],
+  "estimatedLevel": "string"
+}`;
+
+    const response = await generateChatCompletion(ai, [
+      { role: 'system', content: 'You are an expert English language assessor. Provide fair and constructive evaluations.' },
+      { role: 'user', content: prompt }
+    ], {
+      temperature: 0.3,
+      max_tokens: 600,
+      response_format: { type: 'json_object' }
+    });
+
+    try {
+      return JSON.parse(response.text);
+    } catch {
+      // Fallback evaluation
+      return {
+        scores: {
+          pronunciation: 70,
+          fluency: 70,
+          grammar: 70,
+          vocabulary: 70,
+          coherence: 70,
+          interaction: 70
+        },
+        feedback: "Good effort in responding to the question.",
+        suggestions: ["Practice speaking more fluently", "Expand vocabulary range", "Work on grammar accuracy"],
+        estimatedLevel: "B1"
+      };
+    }
+  } catch (error) {
+    console.error('Language evaluation error:', error);
+    throw new Error('Failed to evaluate language level');
+  }
+}
+
 // 레벨 피드백 생성
 export async function generateLevelFeedback(
-    ai: Ai,
-    analysis: LanguageAnalysis,
-    level: CEFRLevel
+  ai: Ai,
+  analysis: LanguageAnalysis,
+  level: CEFRLevel
 ): Promise<string> {
     try {
         const prompt = `Based on the following language assessment results, provide personalized feedback and learning recommendations.

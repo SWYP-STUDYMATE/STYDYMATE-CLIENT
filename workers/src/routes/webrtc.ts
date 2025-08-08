@@ -10,36 +10,36 @@ export const webrtcRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 // Create a new room
 webrtcRoutes.post('/create', auth({ optional: true }), async (c) => {
   const { roomType = 'audio', maxParticipants = 4, metadata = {} } = await c.req.json();
-  
+
   // Validate room type
   if (!['audio', 'video'].includes(roomType)) {
     throw validationError('Invalid room type. Must be "audio" or "video"');
   }
-  
+
   // Validate max participants
   if (maxParticipants < 2 || maxParticipants > 10) {
     throw validationError('Max participants must be between 2 and 10');
   }
-  
+
   // Generate unique room ID
   const roomId = crypto.randomUUID();
-  
+
   // Create Durable Object instance
   const id = c.env.ROOM.idFromName(roomId);
   const room = c.env.ROOM.get(id);
-  
+
   // Initialize room
   const response = await room.fetch(new Request('http://room/init', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ roomType, maxParticipants, metadata })
   }));
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to initialize room');
   }
-  
+
   const data = {
     roomId,
     roomType,
@@ -49,14 +49,14 @@ webrtcRoutes.post('/create', auth({ optional: true }), async (c) => {
     joinUrl: `/api/v1/room/${roomId}/join`,
     createdAt: new Date().toISOString()
   };
-  
+
   // Cache room info
   await c.env.CACHE.put(
     `room:${roomId}`,
     JSON.stringify(data),
     { expirationTtl: 3600 } // 1 hour
   );
-  
+
   return createdResponse(c, data, `/api/v1/room/${roomId}`);
 });
 
@@ -64,35 +64,35 @@ webrtcRoutes.post('/create', auth({ optional: true }), async (c) => {
 webrtcRoutes.post('/:roomId/join', auth({ optional: true }), async (c) => {
   const roomId = c.req.param('roomId');
   const { userId, userName, userMetadata = {} } = await c.req.json();
-  
+
   if (!userId || !userName) {
     throw validationError('userId and userName are required');
   }
-  
+
   // Check if room exists in cache
   const cachedRoom = await c.env.CACHE.get(`room:${roomId}`);
   if (!cachedRoom) {
     // Try to get room info from Durable Object
     const id = c.env.ROOM.idFromName(roomId);
     const room = c.env.ROOM.get(id);
-    
+
     const infoResponse = await room.fetch(new Request('http://room/info'));
     if (!infoResponse.ok) {
       throw notFoundError('Room');
     }
   }
-  
+
   // Get Durable Object instance
   const id = c.env.ROOM.idFromName(roomId);
   const room = c.env.ROOM.get(id);
-  
+
   // Join room
   const response = await room.fetch(new Request('http://room/join', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, userName, userMetadata })
   }));
-  
+
   if (!response.ok) {
     const error = await response.json();
     if (response.status === 409) {
@@ -100,9 +100,9 @@ webrtcRoutes.post('/:roomId/join', auth({ optional: true }), async (c) => {
     }
     throw new Error(error.message || 'Failed to join room');
   }
-  
+
   const result = await response.json();
-  
+
   return successResponse(c, {
     ...result,
     websocketUrl: `/api/v1/room/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`
@@ -113,25 +113,25 @@ webrtcRoutes.post('/:roomId/join', auth({ optional: true }), async (c) => {
 webrtcRoutes.post('/:roomId/leave', auth({ optional: true }), async (c) => {
   const roomId = c.req.param('roomId');
   const { userId } = await c.req.json();
-  
+
   if (!userId) {
     throw validationError('userId is required');
   }
-  
+
   const id = c.env.ROOM.idFromName(roomId);
   const room = c.env.ROOM.get(id);
-  
+
   const response = await room.fetch(new Request('http://room/leave', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId })
   }));
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to leave room');
   }
-  
+
   return successResponse(c, await response.json());
 });
 
@@ -141,21 +141,21 @@ webrtcRoutes.get('/:roomId/ws', async (c) => {
   const userId = c.req.query('userId');
   const userName = c.req.query('userName') || 'Anonymous';
   const upgrade = c.req.header('Upgrade');
-  
+
   if (!upgrade || upgrade !== 'websocket') {
     throw validationError('Expected WebSocket upgrade header');
   }
-  
+
   if (!userId) {
     throw validationError('userId parameter is required');
   }
-  
+
   const id = c.env.ROOM.idFromName(roomId);
   const room = c.env.ROOM.get(id);
-  
+
   // Forward WebSocket request with query parameters
   const wsUrl = `http://room/websocket?userId=${userId}&userName=${encodeURIComponent(userName)}`;
-  
+
   return room.fetch(new Request(wsUrl, {
     headers: c.req.raw.headers
   }));
@@ -165,21 +165,21 @@ webrtcRoutes.get('/:roomId/ws', async (c) => {
 webrtcRoutes.patch('/:roomId/settings', auth({ optional: true }), async (c) => {
   const roomId = c.req.param('roomId');
   const settings = await c.req.json();
-  
+
   const id = c.env.ROOM.idFromName(roomId);
   const room = c.env.ROOM.get(id);
-  
+
   const response = await room.fetch(new Request('http://room/settings', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(settings)
   }));
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to update settings');
   }
-  
+
   // Update cache if room exists
   const cachedRoom = await c.env.CACHE.get(`room:${roomId}`);
   if (cachedRoom) {
@@ -190,25 +190,25 @@ webrtcRoutes.patch('/:roomId/settings', auth({ optional: true }), async (c) => {
       { expirationTtl: 3600 }
     );
   }
-  
+
   return successResponse(c, await response.json());
 });
 
 // Get room info
 webrtcRoutes.get('/:roomId/info', async (c) => {
   const roomId = c.req.param('roomId');
-  
+
   // Check cache first
   const cachedRoom = await c.env.CACHE.get(`room:${roomId}`);
   if (cachedRoom) {
     return successResponse(c, JSON.parse(cachedRoom));
   }
-  
+
   const id = c.env.ROOM.idFromName(roomId);
   const room = c.env.ROOM.get(id);
-  
+
   const response = await room.fetch(new Request('http://room/info'));
-  
+
   if (!response.ok) {
     if (response.status === 404) {
       throw notFoundError('Room');
@@ -216,16 +216,16 @@ webrtcRoutes.get('/:roomId/info', async (c) => {
     const error = await response.json();
     throw new Error(error.message || 'Failed to get room info');
   }
-  
+
   const data = await response.json();
-  
+
   // Cache the result
   await c.env.CACHE.put(
     `room:${roomId}`,
     JSON.stringify(data),
     { expirationTtl: 3600 }
   );
-  
+
   return successResponse(c, data);
 });
 

@@ -20,7 +20,7 @@ export default function SessionCalendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month'); // month, week, day
 
-    const {
+  const {
     sessions,
     upcomingSessions,
     loadUpcomingSessions,

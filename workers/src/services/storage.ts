@@ -9,7 +9,7 @@ export async function saveToR2(
 ): Promise<R2Object> {
   try {
     const httpMetadata: R2HTTPMetadata = {};
-    
+
     if (contentType) {
       httpMetadata.contentType = contentType;
     }
@@ -123,12 +123,12 @@ export function generateUniqueFileName(
   const random = Math.random().toString(36).substring(2, 8);
   const extension = originalName.split('.').pop();
   const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
-  
+
   // Sanitize filename
   const sanitized = nameWithoutExt
     .replace(/[^a-zA-Z0-9_-]/g, '_')
     .substring(0, 50);
-  
+
   return `${userId}/${timestamp}_${random}_${sanitized}.${extension}`;
 }
 

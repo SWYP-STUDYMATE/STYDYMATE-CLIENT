@@ -22,6 +22,7 @@ import LanguageProfile from '../../components/LanguageProfile';
 import AchievementBadges from '../../components/AchievementBadges';
 import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
 import LanguageLevelProgress from '../../components/profile/LanguageLevelProgress';
+import ProfileImageUpload from '../../components/ProfileImageUpload';
 
 export default function ProfilePage() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Env } from '../index';
 import { Variables, LevelTestSubmission, LevelTestResult } from '../types';
-import { processAudio, analyzeText, calculateLevel, evaluateLanguageLevel } from '../services/ai';
+import { processAudio, analyzeText, calculateLevel, evaluateLanguageLevel, generateLevelFeedback } from '../services/ai';
 import { saveToR2, getFromR2 } from '../services/storage';
 import { successResponse, createdResponse, setCacheHeaders } from '../utils/response';
 import { validationError, notFoundError } from '../middleware/error-handler';

@@ -609,7 +609,7 @@
         "id": 49,
         "title": "Workers 배포 파이프라인",
         "description": "자동 배포 설정",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "46"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:52:25.559Z"
+      "updated": "2025-08-08T09:53:15.390Z"
     }
   }
 }

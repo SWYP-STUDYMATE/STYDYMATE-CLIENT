@@ -33,6 +33,10 @@ id = "42a956e075ea4bda84dade92a95a0756"
 [vars]
 ENVIRONMENT = "development"
 CORS_ORIGIN = "http://localhost:3000"
+# Cloudflare Images 설정은 실제로는 wrangler secret으로 설정해야 합니다:
+# wrangler secret put CF_ACCOUNT_ID
+# wrangler secret put CF_IMAGES_API_TOKEN
+# wrangler secret put CF_ACCOUNT_HASH
 
 # Production 환경
 [env.production]

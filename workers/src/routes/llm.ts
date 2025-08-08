@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { Env } from '../index';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -20,7 +21,7 @@ app.post('/generate', async (c) => {
     }>();
 
     const model = body.model || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-    
+
     // 메시지 형식 준비
     let messages;
     if (body.messages) {
@@ -59,13 +60,13 @@ app.post('/generate', async (c) => {
       max_tokens: body.max_tokens || 1000
     });
 
-    return successResponse(c, {
+    return c.json( {
       response: response.response,
       usage: response.usage,
       model: model
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('LLM generation error:', error);
     return c.json({ error: error.message || 'Text generation failed' }, 500);
   }
@@ -127,9 +128,9 @@ Response in JSON format with this structure:
 
     const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
-        { 
-          role: 'system', 
-          content: 'You are a professional English language assessment expert. Always respond with valid JSON.' 
+        {
+          role: 'system',
+          content: 'You are a professional English language assessment expert. Always respond with valid JSON.'
         },
         { role: 'user', content: prompt }
       ],
@@ -139,13 +140,13 @@ Response in JSON format with this structure:
 
     try {
       const evaluation = JSON.parse(response.response);
-      return successResponse(c, {
+      return c.json( {
         evaluation,
         evaluatedText: text
       });
     } catch (parseError) {
       // JSON 파싱 실패 시 텍스트 응답 반환
-      return successResponse(c, {
+      return c.json( {
         evaluation: {
           textResponse: response.response,
           scores: {
@@ -163,7 +164,7 @@ Response in JSON format with this structure:
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('English evaluation error:', error);
     return c.json({ error: error.message || 'Evaluation failed' }, 500);
   }
@@ -199,9 +200,9 @@ Provide a response in JSON format:
 
     const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
-        { 
-          role: 'system', 
-          content: 'You are a grammar expert. Always respond with valid JSON.' 
+        {
+          role: 'system',
+          content: 'You are a grammar expert. Always respond with valid JSON.'
         },
         { role: 'user', content: prompt }
       ],
@@ -211,7 +212,7 @@ Provide a response in JSON format:
 
     try {
       const result = JSON.parse(response.response);
-      return successResponse(c, result);
+      return c.json( result);
     } catch (parseError) {
       return c.json({
         error: 'Failed to parse grammar check response',
@@ -219,7 +220,7 @@ Provide a response in JSON format:
       }, 400);
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Grammar check error:', error);
     return c.json({ error: error.message || 'Grammar check failed' }, 500);
   }
@@ -271,9 +272,9 @@ Provide comprehensive feedback in JSON format:
 
     const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
-        { 
-          role: 'system', 
-          content: 'You are an experienced English conversation coach. Always respond with valid JSON.' 
+        {
+          role: 'system',
+          content: 'You are an experienced English conversation coach. Always respond with valid JSON.'
         },
         { role: 'user', content: prompt }
       ],
@@ -283,14 +284,14 @@ Provide comprehensive feedback in JSON format:
 
     try {
       const feedback = JSON.parse(response.response);
-      return successResponse(c, {
+      return c.json( {
         feedback,
         conversationLength: conversation.length,
         topic,
         level
       });
     } catch (parseError) {
-      return successResponse(c, {
+      return c.json( {
         feedback: {
           textResponse: response.response
         },
@@ -300,7 +301,7 @@ Provide comprehensive feedback in JSON format:
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Conversation feedback error:', error);
     return c.json({ error: error.message || 'Feedback generation failed' }, 500);
   }
@@ -308,7 +309,7 @@ Provide comprehensive feedback in JSON format:
 
 // 사용 가능한 모델 목록
 app.get('/models', (c) => {
-  return successResponse(c, {
+  return c.json( {
     available_models: [
       {
         id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
