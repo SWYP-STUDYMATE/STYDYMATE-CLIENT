@@ -1,418 +1,290 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { Env } from '../index';
-import {
-    uploadImage,
-    createDirectUploadURL,
-    getImageURL,
-    generateSignedURL,
-    deleteImage,
-    listImages,
-    getImageDetails,
-    createVariant,
-    DEFAULT_VARIANTS
-} from '../services/images';
 
-export const imagesRoutes = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>();
 
-// 이미지 업로드
-imagesRoutes.post('/upload', async (c) => {
-    try {
-        const contentType = c.req.header('content-type') || '';
+// CORS 설정
+app.use('/*', cors());
 
-        let imageData: ArrayBuffer | string;
-        let metadata: Record<string, any> = {};
-        let filename = 'image.png';
-        let requireSignedURLs = false;
+// 이미지 업로드 엔드포인트
+app.post('/upload', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('image') as File;
+    const userId = formData.get('userId') as string;
+    const type = formData.get('type') as string || 'profile'; // profile, chat, etc.
 
-        if (contentType.includes('multipart/form-data')) {
-            // 폼 데이터로 업로드
-            const formData = await c.req.formData();
-            const file = formData.get('image') as File;
-
-            if (!file) {
-                return c.json({ error: 'No image file provided' }, 400);
-            }
-
-            imageData = await file.arrayBuffer();
-            filename = file.name;
-
-            // 메타데이터 파싱
-            const metadataStr = formData.get('metadata') as string;
-            if (metadataStr) {
-                try {
-                    metadata = JSON.parse(metadataStr);
-                } catch (e) {
-                    // 메타데이터 파싱 실패 시 무시
-                }
-            }
-
-            const requireSigned = formData.get('requireSignedURLs');
-            requireSignedURLs = requireSigned === 'true';
-        } else {
-            // JSON으로 업로드 (Base64)
-            const body = await c.req.json();
-
-            if (!body.image) {
-                return c.json({ error: 'No image data provided' }, 400);
-            }
-
-            imageData = body.image;
-            metadata = body.metadata || {};
-            filename = body.filename || filename;
-            requireSignedURLs = body.requireSignedURLs || false;
-        }
-
-        // 사용자 ID를 메타데이터에 추가
-        const userId = c.req.header('x-user-id');
-        if (userId) {
-            metadata.userId = userId;
-        }
-
-        const result = await uploadImage(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            imageData,
-            {
-                filename,
-                metadata,
-                requireSignedURLs
-            }
-        );
-
-        // 기본 변형 URL들 생성
-        const variants: Record<string, string> = {};
-        for (const variant of result.variants) {
-            variants[variant] = getImageURL(c.env.CF_ACCOUNT_HASH, result.id, variant);
-        }
-
-        return c.json({
-            success: true,
-            id: result.id,
-            variants,
-            requireSignedURLs: result.requireSignedURLs,
-            metadata: result.metadata
-        });
-    } catch (error) {
-        console.error('Image upload error:', error);
-        return c.json({
-            error: 'Failed to upload image',
-            message: error.message
-        }, 500);
+    if (!file || !userId) {
+      return c.json({ error: 'Image file and userId are required' }, 400);
     }
+
+    // 파일 타입 검증
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      return c.json({ error: 'Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed' }, 400);
+    }
+
+    // 파일 크기 검증 (최대 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return c.json({ error: 'File size exceeds 10MB limit' }, 400);
+    }
+
+    // 고유 파일명 생성
+    const timestamp = Date.now();
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${type}/${userId}/${timestamp}.${fileExt}`;
+
+    // R2에 원본 이미지 저장
+    const arrayBuffer = await file.arrayBuffer();
+    await c.env.STORAGE.put(fileName, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        userId,
+        type,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+
+    // 이미지 변형 URL 생성
+    const baseUrl = `https://${c.req.header('host')}`;
+    const variants = {
+      original: `${baseUrl}/api/images/serve/${fileName}`,
+      thumbnail: `${baseUrl}/api/images/transform/${fileName}?width=150&height=150&fit=cover`,
+      medium: `${baseUrl}/api/images/transform/${fileName}?width=400&height=400&fit=contain`,
+      large: `${baseUrl}/api/images/transform/${fileName}?width=800&height=800&fit=contain`
+    };
+
+    // 메타데이터 캐싱
+    await c.env.CACHE.put(
+      `image:${fileName}`,
+      JSON.stringify({
+        fileName,
+        userId,
+        type,
+        originalName: file.name,
+        size: file.size,
+        contentType: file.type,
+        uploadedAt: new Date().toISOString(),
+        variants
+      }),
+      { expirationTtl: 86400 * 30 } // 30일 캐시
+    );
+
+    return c.json({
+      success: true,
+      fileName,
+      variants,
+      size: file.size,
+      type: file.type
+    });
+
+  } catch (error: any) {
+    console.error('Image upload error:', error);
+    return c.json({ error: error.message || 'Failed to upload image' }, 500);
+  }
 });
 
-// 직접 업로드 URL 생성
-imagesRoutes.post('/direct-upload', async (c) => {
-    try {
-        const body = await c.req.json();
-
-        const result = await createDirectUploadURL(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            {
-                expiry: body.expiry ? new Date(body.expiry) : undefined,
-                metadata: body.metadata,
-                requireSignedURLs: body.requireSignedURLs
-            }
-        );
-
-        return c.json({
-            success: true,
-            id: result.id,
-            uploadURL: result.uploadURL
-        });
-    } catch (error) {
-        console.error('Direct upload URL error:', error);
-        return c.json({
-            error: 'Failed to create direct upload URL',
-            message: error.message
-        }, 500);
+// 이미지 변환 엔드포인트
+app.get('/transform/*', async (c) => {
+  try {
+    const path = c.req.param('*');
+    if (!path) {
+      return c.json({ error: 'Image path is required' }, 400);
     }
-});
 
-// 이미지 목록 조회
-imagesRoutes.get('/list', async (c) => {
-    try {
-        const page = parseInt(c.req.query('page') || '1');
-        const perPage = parseInt(c.req.query('per_page') || '20');
+    // 쿼리 파라미터 파싱
+    const { searchParams } = new URL(c.req.url);
+    const width = parseInt(searchParams.get('width') || '0');
+    const height = parseInt(searchParams.get('height') || '0');
+    const quality = parseInt(searchParams.get('quality') || '85');
+    const fit = searchParams.get('fit') || 'contain'; // contain, cover, fill, inside, outside
+    const format = searchParams.get('format') || 'auto'; // auto, webp, avif, jpeg, png
 
-        const result = await listImages(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            { page, perPage }
-        );
-
-        // 각 이미지에 대한 URL 추가
-        const imagesWithUrls = result.images.map(img => ({
-            ...img,
-            urls: {
-                public: getImageURL(c.env.CF_ACCOUNT_HASH, img.id, 'public'),
-                thumbnail: getImageURL(c.env.CF_ACCOUNT_HASH, img.id, 'thumbnail')
-            }
-        }));
-
-        return c.json({
-            success: true,
-            images: imagesWithUrls,
-            pagination: {
-                total: result.total,
-                page: result.page,
-                perPage: result.perPage,
-                totalPages: Math.ceil(result.total / result.perPage)
-            }
-        });
-    } catch (error) {
-        console.error('Image list error:', error);
-        return c.json({
-            error: 'Failed to list images',
-            message: error.message
-        }, 500);
+    // R2에서 원본 이미지 가져오기
+    const object = await c.env.STORAGE.get(path);
+    if (!object) {
+      return c.json({ error: 'Image not found' }, 404);
     }
-});
 
-// 이미지 상세 정보
-imagesRoutes.get('/:imageId', async (c) => {
-    try {
-        const imageId = c.req.param('imageId');
-
-        const result = await getImageDetails(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            imageId
-        );
-
-        // 변형 URL들 추가
-        const variants: Record<string, string> = {};
-        for (const variant of result.variants) {
-            variants[variant] = getImageURL(c.env.CF_ACCOUNT_HASH, result.id, variant);
+    // 캐시 키 생성
+    const cacheKey = `transformed:${path}:w${width}:h${height}:q${quality}:${fit}:${format}`;
+    
+    // 캐시 확인
+    const cached = await c.env.CACHE.get(cacheKey, { type: 'arrayBuffer' });
+    if (cached) {
+      return new Response(cached, {
+        headers: {
+          'Content-Type': format === 'auto' ? 'image/webp' : `image/${format}`,
+          'Cache-Control': 'public, max-age=31536000',
+          'X-Cache': 'HIT'
         }
-
-        return c.json({
-            success: true,
-            ...result,
-            urls: variants
-        });
-    } catch (error) {
-        console.error('Image details error:', error);
-        return c.json({
-            error: 'Failed to get image details',
-            message: error.message
-        }, 500);
+      });
     }
+
+    // 이미지 변환 (Workers에서는 직접 변환 불가, URL 변환 사용)
+    // 실제로는 Cloudflare Images API를 사용하거나 Images 바인딩 사용
+    const imageBuffer = await object.arrayBuffer();
+
+    // 간단한 응답 (실제로는 변환된 이미지)
+    // TODO: Images 바인딩으로 실제 변환 구현
+    return new Response(imageBuffer, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
+        'Cache-Control': 'public, max-age=31536000',
+        'X-Cache': 'MISS'
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Image transform error:', error);
+    return c.json({ error: error.message || 'Failed to transform image' }, 500);
+  }
 });
 
-// Signed URL 생성
-imagesRoutes.post('/:imageId/signed-url', async (c) => {
-    try {
-        const imageId = c.req.param('imageId');
-        const body = await c.req.json();
-
-        const signedURL = await generateSignedURL(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            imageId,
-            body.variant || 'public',
-            body.expiry || 3600
-        );
-
-        return c.json({
-            success: true,
-            signedURL,
-            expiresIn: body.expiry || 3600
-        });
-    } catch (error) {
-        console.error('Signed URL error:', error);
-        return c.json({
-            error: 'Failed to generate signed URL',
-            message: error.message
-        }, 500);
+// 원본 이미지 제공 엔드포인트
+app.get('/serve/*', async (c) => {
+  try {
+    const path = c.req.param('*');
+    if (!path) {
+      return c.json({ error: 'Image path is required' }, 400);
     }
+
+    // R2에서 이미지 가져오기
+    const object = await c.env.STORAGE.get(path);
+    if (!object) {
+      return c.json({ error: 'Image not found' }, 404);
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('Cache-Control', 'public, max-age=31536000');
+    
+    // 보안을 위한 Content-Security-Policy 추가
+    headers.set('Content-Security-Policy', "default-src 'none'; img-src 'self';");
+    headers.set('X-Content-Type-Options', 'nosniff');
+
+    return new Response(object.body, { headers });
+
+  } catch (error: any) {
+    console.error('Image serve error:', error);
+    return c.json({ error: error.message || 'Failed to serve image' }, 500);
+  }
 });
 
-// 이미지 삭제
-imagesRoutes.delete('/:imageId', async (c) => {
-    try {
-        const imageId = c.req.param('imageId');
+// 이미지 삭제 엔드포인트
+app.delete('/:fileName', async (c) => {
+  try {
+    const fileName = c.req.param('fileName');
+    const userId = c.req.header('x-user-id');
 
-        await deleteImage(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            imageId
-        );
-
-        return c.json({
-            success: true,
-            message: 'Image deleted successfully'
-        });
-    } catch (error) {
-        console.error('Image deletion error:', error);
-        return c.json({
-            error: 'Failed to delete image',
-            message: error.message
-        }, 500);
+    if (!fileName || !userId) {
+      return c.json({ error: 'fileName and userId are required' }, 400);
     }
+
+    // 메타데이터 확인으로 소유권 검증
+    const metadata = await c.env.CACHE.get(`image:${fileName}`, { type: 'json' });
+    if (!metadata || metadata.userId !== userId) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
+    // R2에서 삭제
+    await c.env.STORAGE.delete(fileName);
+
+    // 캐시에서 메타데이터 삭제
+    await c.env.CACHE.delete(`image:${fileName}`);
+
+    return c.json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+
+  } catch (error: any) {
+    console.error('Image delete error:', error);
+    return c.json({ error: error.message || 'Failed to delete image' }, 500);
+  }
 });
 
-// 프로필 이미지 업로드 (특화 엔드포인트)
-imagesRoutes.post('/profile/upload', async (c) => {
-    try {
-        const formData = await c.req.formData();
-        const file = formData.get('image') as File;
-        const userId = c.req.header('x-user-id');
+// 사용자 이미지 목록 조회
+app.get('/list/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    const type = c.req.query('type'); // optional filter by type
 
-        if (!file) {
-            return c.json({ error: 'No image file provided' }, 400);
-        }
+    if (!userId) {
+      return c.json({ error: 'userId is required' }, 400);
+    }
 
-        if (!userId) {
-            return c.json({ error: 'User ID required' }, 401);
-        }
+    // R2에서 사용자 이미지 목록 조회
+    const prefix = type ? `${type}/${userId}/` : userId;
+    const list = await c.env.STORAGE.list({ prefix, limit: 1000 });
 
-        const imageData = await file.arrayBuffer();
-
-        // 프로필 이미지용 메타데이터
-        const metadata = {
-            userId,
-            type: 'profile',
-            uploadedAt: new Date().toISOString()
+    const images = await Promise.all(
+      list.objects.map(async (obj) => {
+        // 캐시에서 메타데이터 조회
+        const metadata = await c.env.CACHE.get(`image:${obj.key}`, { type: 'json' });
+        
+        return {
+          key: obj.key,
+          size: obj.size,
+          uploadedAt: obj.uploaded.toISOString(),
+          metadata: metadata || {
+            fileName: obj.key,
+            contentType: obj.httpMetadata?.contentType
+          }
         };
+      })
+    );
 
-        const result = await uploadImage(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            imageData,
-            {
-                filename: `profile-${userId}-${Date.now()}.${file.name.split('.').pop()}`,
-                metadata,
-                requireSignedURLs: false
-            }
-        );
+    return c.json({
+      success: true,
+      images,
+      count: images.length
+    });
 
-        // 프로필용 변형 URL들
-        const profileUrls = {
-            small: getImageURL(c.env.CF_ACCOUNT_HASH, result.id, 'avatar-sm'),
-            medium: getImageURL(c.env.CF_ACCOUNT_HASH, result.id, 'avatar-md'),
-            large: getImageURL(c.env.CF_ACCOUNT_HASH, result.id, 'avatar-lg'),
-            original: getImageURL(c.env.CF_ACCOUNT_HASH, result.id, 'public')
-        };
-
-        return c.json({
-            success: true,
-            id: result.id,
-            urls: profileUrls,
-            metadata
-        });
-    } catch (error) {
-        console.error('Profile image upload error:', error);
-        return c.json({
-            error: 'Failed to upload profile image',
-            message: error.message
-        }, 500);
-    }
+  } catch (error: any) {
+    console.error('Image list error:', error);
+    return c.json({ error: error.message || 'Failed to list images' }, 500);
+  }
 });
 
-// 변형(Variant) 생성
-imagesRoutes.post('/variants', async (c) => {
-    try {
-        const body = await c.req.json();
+// 이미지 메타데이터 조회
+app.get('/info/:fileName', async (c) => {
+  try {
+    const fileName = c.req.param('fileName');
 
-        if (!body.id || !body.options) {
-            return c.json({
-                error: 'Variant ID and options are required'
-            }, 400);
-        }
-
-        await createVariant(
-            c.env.CF_ACCOUNT_ID,
-            c.env.CF_IMAGES_API_TOKEN,
-            {
-                id: body.id,
-                options: body.options
-            }
-        );
-
-        return c.json({
-            success: true,
-            message: 'Variant created successfully'
-        });
-    } catch (error) {
-        console.error('Variant creation error:', error);
-        return c.json({
-            error: 'Failed to create variant',
-            message: error.message
-        }, 500);
+    if (!fileName) {
+      return c.json({ error: 'fileName is required' }, 400);
     }
+
+    // 캐시에서 메타데이터 조회
+    const metadata = await c.env.CACHE.get(`image:${fileName}`, { type: 'json' });
+    if (!metadata) {
+      // R2에서 직접 조회
+      const object = await c.env.STORAGE.head(fileName);
+      if (!object) {
+        return c.json({ error: 'Image not found' }, 404);
+      }
+
+      return c.json({
+        fileName,
+        size: object.size,
+        uploadedAt: object.uploaded.toISOString(),
+        contentType: object.httpMetadata?.contentType,
+        customMetadata: object.customMetadata
+      });
+    }
+
+    return c.json(metadata);
+
+  } catch (error: any) {
+    console.error('Image info error:', error);
+    return c.json({ error: error.message || 'Failed to get image info' }, 500);
+  }
 });
 
-// 기본 변형 초기화
-imagesRoutes.post('/variants/init', async (c) => {
-    try {
-        const results = [];
-
-        for (const variant of DEFAULT_VARIANTS) {
-            try {
-                await createVariant(
-                    c.env.CF_ACCOUNT_ID,
-                    c.env.CF_IMAGES_API_TOKEN,
-                    variant
-                );
-                results.push({
-                    id: variant.id,
-                    success: true
-                });
-            } catch (error) {
-                results.push({
-                    id: variant.id,
-                    success: false,
-                    error: error.message
-                });
-            }
-        }
-
-        return c.json({
-            success: true,
-            results
-        });
-    } catch (error) {
-        console.error('Variant initialization error:', error);
-        return c.json({
-            error: 'Failed to initialize variants',
-            message: error.message
-        }, 500);
-    }
-});
-
-// 외부 이미지 변환 프록시
-imagesRoutes.get('/transform', async (c) => {
-    try {
-        const url = c.req.query('url');
-        if (!url) {
-            return c.json({ error: 'URL parameter required' }, 400);
-        }
-
-        // 변환 옵션 파싱
-        const options: any = {};
-        const width = c.req.query('w');
-        const height = c.req.query('h');
-        const fit = c.req.query('fit');
-        const quality = c.req.query('q');
-        const format = c.req.query('f');
-
-        if (width) options.width = parseInt(width);
-        if (height) options.height = parseInt(height);
-        if (fit) options.fit = fit;
-        if (quality) options.quality = parseInt(quality);
-        if (format) options.format = format;
-
-        // Cloudflare Images 변환 URL로 리다이렉트
-        const transformUrl = `https://imagedelivery.net/${c.env.CF_ACCOUNT_HASH}/${Object.entries(options).map(([k, v]) => `${k}=${v}`).join(',')}/${encodeURIComponent(url)}`;
-
-        return c.redirect(transformUrl);
-    } catch (error) {
-        console.error('Transform proxy error:', error);
-        return c.json({
-            error: 'Failed to transform image',
-            message: error.message
-        }, 500);
-    }
-});
+export default app;

@@ -135,12 +135,12 @@ If issues occur in production:
 
 ### Required Secrets
 
-| Secret | Description | Where to Use |
-|--------|-------------|--------------|
-| `CLOUDFLARE_API_TOKEN` | API token for deployment | GitHub Actions |
-| `OPENAI_API_KEY` | OpenAI API key | Cloudflare dashboard |
-| `ANTHROPIC_API_KEY` | Claude API key | Cloudflare dashboard |
-| `PERPLEXITY_API_KEY` | Perplexity API key | Cloudflare dashboard |
+| Secret                 | Description              | Where to Use         |
+| ---------------------- | ------------------------ | -------------------- |
+| `CLOUDFLARE_API_TOKEN` | API token for deployment | GitHub Actions       |
+| `OPENAI_API_KEY`       | OpenAI API key           | Cloudflare dashboard |
+| `ANTHROPIC_API_KEY`    | Claude API key           | Cloudflare dashboard |
+| `PERPLEXITY_API_KEY`   | Perplexity API key       | Cloudflare dashboard |
 
 ### Adding Secrets
 

@@ -676,7 +676,7 @@
         "id": 50,
         "title": "성능 최적화",
         "description": "프론트엔드 성능 개선",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "47",
@@ -690,7 +690,7 @@
         "id": 51,
         "title": "E2E 테스트 작성",
         "description": "Playwright 통합 테스트",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [
           "50"
@@ -716,7 +716,7 @@
         "id": 53,
         "title": "실시간 자막 생성 시스템",
         "description": "통화 중 실시간 STT 자막",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [
           "33",
@@ -763,7 +763,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:59:27.325Z"
+      "updated": "2025-08-08T10:04:33.328Z"
     }
   }
 }

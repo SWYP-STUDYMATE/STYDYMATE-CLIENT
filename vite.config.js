@@ -1,6 +1,8 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { visualizer } from 'rollup-plugin-visualizer'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -9,7 +11,66 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      tailwindcss()
+      tailwindcss(),
+      // 번들 분석 플러그인
+      visualizer({
+        open: false,
+        filename: 'dist/stats.html',
+        gzipSize: true,
+        brotliSize: true
+      }),
+      // PWA 플러그인
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'assets/*.png'],
+        manifest: {
+          name: 'STUDYMATE',
+          short_name: 'STUDYMATE',
+          description: '언어 교환 학습 플랫폼',
+          theme_color: '#3B82F6',
+          background_color: '#ffffff',
+          display: 'standalone',
+          icons: [
+            {
+              src: '/assets/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: '/assets/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png'
+            }
+          ]
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/api\./i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-cache',
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 5 * 60 // 5분
+                }
+              }
+            },
+            {
+              urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'image-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 30 * 24 * 60 * 60 // 30일
+                }
+              }
+            }
+          ]
+        }
+      })
     ],
     server: {
       port: 3000,

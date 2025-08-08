@@ -6,6 +6,7 @@ import { webrtcRoutes } from './routes/webrtc';
 import { uploadRoutes } from './routes/upload';
 import whisperRoutes from './routes/whisper';
 import llmRoutes from './routes/llm';
+import imagesRoutes from './routes/images';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { Variables } from './types';
@@ -65,7 +66,8 @@ app.get('/', (c) => {
       webrtc: `/api/${API_VERSION}/room`,
       upload: `/api/${API_VERSION}/upload`,
       whisper: `/api/${API_VERSION}/whisper`,
-      llm: `/api/${API_VERSION}/llm`
+      llm: `/api/${API_VERSION}/llm`,
+      images: `/api/${API_VERSION}/images`
     }
   });
 });
@@ -103,6 +105,7 @@ v1.route('/room', webrtcRoutes);
 v1.route('/upload', uploadRoutes);
 v1.route('/whisper', whisperRoutes);
 v1.route('/llm', llmRoutes);
+v1.route('/images', imagesRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);
@@ -130,6 +133,11 @@ app.use('/api/whisper/*', async (c, next) => {
 
 app.use('/api/llm/*', async (c, next) => {
   c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/llm instead`);
+  return v1.fetch(c.req.raw, c.env);
+});
+
+app.use('/api/images/*', async (c, next) => {
+  c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/images instead`);
   return v1.fetch(c.req.raw, c.env);
 });
 

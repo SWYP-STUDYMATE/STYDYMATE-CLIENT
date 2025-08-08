@@ -4,22 +4,39 @@ on:
   push:
     branches:
       - main
+      - develop
     paths:
       - 'workers/**'
       - '.github/workflows/deploy-workers.yml'
   pull_request:
     branches:
       - main
+      - develop
     paths:
       - 'workers/**'
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip tests (use with caution)'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '20.x'
+  WRANGLER_VERSION: '3.x'
 
 jobs:
-  test:
-    name: Test Workers
+  lint-and-test:
+    name: Lint and Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,27 +57,43 @@ jobs:
         run: npm ci
       
       - name: Run linting
-        run: npm run lint || true
+        id: lint
+        run: |
+          echo "::group::ESLint Output"
+          npm run lint
+          echo "::endgroup::"
       
       - name: Run type checking
-        run: npm run typecheck || true
+        id: typecheck
+        run: |
+          echo "::group::TypeScript Check"
+          npm run typecheck
+          echo "::endgroup::"
       
-      - name: Run tests
-        run: npm test || true
+      - name: Run unit tests
+        id: test
+        run: |
+          echo "::group::Test Results"
+          npm test -- --coverage
+          echo "::endgroup::"
         env:
           CI: true
+      
+      - name: Upload test coverage
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: workers/coverage
+          retention-days: 7
 
-  deploy-staging:
-    name: Deploy to Staging
-    needs: test
+  analyze-bundle:
+    name: Analyze Bundle Size
+    needs: lint-and-test
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     defaults:
       run:
         working-directory: ./workers
-    environment:
-      name: staging
-      url: https://staging.studymate-api.workers.dev
     
     steps:
       - name: Checkout code
@@ -76,31 +109,143 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Build and analyze
+        run: |
+          npm run build
+          echo "Bundle size analysis:"
+          find dist -name "*.js" -exec wc -c {} + | sort -n
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [lint-and-test]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    defaults:
+      run:
+        working-directory: ./workers
+    environment:
+      name: staging
+      url: https://api-staging.languagemate.kr
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: workers/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Create deployment
+        id: create_deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              task: 'deploy:staging',
+              auto_merge: false,
+              required_contexts: [],
+              environment: 'staging',
+              description: 'Deploying to Cloudflare Workers staging'
+            });
+            core.setOutput('deployment_id', deployment.data.id);
+      
       - name: Deploy to Staging
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: 'workers'
           environment: 'staging'
           command: deploy --env staging
+          secrets: |
+            JWT_SECRET
+            INTERNAL_SECRET
+            CF_IMAGES_API_TOKEN
+            CF_ACCOUNT_HASH
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET_STAGING }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+          CF_IMAGES_API_TOKEN: ${{ secrets.CF_IMAGES_API_TOKEN }}
+          CF_ACCOUNT_HASH: ${{ secrets.CF_ACCOUNT_HASH }}
       
-      - name: Run smoke tests
+      - name: Run deployment tests
+        id: deployment_tests
         run: |
-          echo "Running smoke tests against staging..."
-          curl -f https://staging.studymate-api.workers.dev/health || exit 1
-        continue-on-error: true
+          echo "Running deployment smoke tests..."
+          sleep 15  # Wait for deployment to propagate
+          
+          # Health check
+          echo "::group::Health Check"
+          curl -f -s https://api-staging.languagemate.kr/health | jq
+          echo "::endgroup::"
+          
+          # API status check
+          echo "::group::API Status"
+          curl -f -s https://api-staging.languagemate.kr/api/status | jq
+          echo "::endgroup::"
+          
+          # Test critical endpoints
+          echo "::group::Critical Endpoints Test"
+          endpoints=(
+            "/api/v1/models"
+            "/api/v1/room/test/info"
+          )
+          
+          for endpoint in "${endpoints[@]}"; do
+            echo "Testing $endpoint..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" "https://api-staging.languagemate.kr$endpoint")
+            if [[ $response -ge 200 && $response -lt 500 ]]; then
+              echo "✅ $endpoint - Status: $response"
+            else
+              echo "❌ $endpoint - Status: $response"
+              exit 1
+            fi
+          done
+          echo "::endgroup::"
+      
+      - name: Update deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment_id = '${{ steps.create_deployment.outputs.deployment_id }}';
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: parseInt(deployment_id),
+              state: state,
+              target_url: 'https://api-staging.languagemate.kr',
+              description: state === 'success' ? 'Deployment successful' : 'Deployment failed'
+            });
 
   deploy-production:
     name: Deploy to Production
-    needs: test
+    needs: [lint-and-test, analyze-bundle]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     defaults:
       run:
         working-directory: ./workers
     environment:
       name: production
-      url: https://api.studymate.workers.dev
+      url: https://api.languagemate.kr
     
     steps:
       - name: Checkout code
@@ -117,28 +262,10 @@ jobs:
         run: npm ci
       
       - name: Build Workers
-        run: npm run build || true
+        run: npm run build
       
-      - name: Deploy to Production
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'workers'
-          command: deploy
-      
-      - name: Verify deployment
-        run: |
-          echo "Verifying production deployment..."
-          sleep 10
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://api.studymate.workers.dev/health)
-          if [ $response -eq 200 ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment verification failed with status code: $response"
-            exit 1
-          fi
-      
-      - name: Create deployment annotation
+      - name: Create deployment
+        id: create_deployment
         uses: actions/github-script@v7
         with:
           script: |
@@ -146,26 +273,175 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: context.sha,
-              task: 'deploy',
+              task: 'deploy:production',
               auto_merge: false,
               required_contexts: [],
               environment: 'production',
-              description: 'Cloudflare Workers deployment'
+              description: 'Deploying to Cloudflare Workers production'
             });
+            core.setOutput('deployment_id', deployment.data.id);
+      
+      - name: Deploy to Production
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'workers'
+          command: deploy --env production
+          secrets: |
+            JWT_SECRET
+            INTERNAL_SECRET
+            CF_IMAGES_API_TOKEN
+            CF_ACCOUNT_HASH
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET_PRODUCTION }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+          CF_IMAGES_API_TOKEN: ${{ secrets.CF_IMAGES_API_TOKEN }}
+          CF_ACCOUNT_HASH: ${{ secrets.CF_ACCOUNT_HASH }}
+      
+      - name: Verify production deployment
+        id: verify
+        run: |
+          echo "Verifying production deployment..."
+          sleep 20  # Wait for deployment to propagate
+          
+          # Comprehensive health check
+          echo "::group::Health Check"
+          health_response=$(curl -s https://api.languagemate.kr/health)
+          echo "$health_response" | jq
+          
+          if [[ $(echo "$health_response" | jq -r '.status') != "healthy" ]]; then
+            echo "❌ Health check failed"
+            exit 1
+          fi
+          echo "::endgroup::"
+          
+          # Performance check
+          echo "::group::Performance Check"
+          response_time=$(curl -s -o /dev/null -w "%{time_total}" https://api.languagemate.kr/health)
+          echo "Response time: ${response_time}s"
+          
+          if (( $(echo "$response_time > 1.0" | bc -l) )); then
+            echo "⚠️  Warning: Response time is high (${response_time}s)"
+          fi
+          echo "::endgroup::"
+      
+      - name: Clear CDN cache
+        if: success()
+        run: |
+          echo "Clearing Cloudflare cache..."
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":false,"files":["https://api.languagemate.kr/","https://api.languagemate.kr/health","https://api.languagemate.kr/api/status"]}'
+      
+      - name: Update deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment_id = '${{ steps.create_deployment.outputs.deployment_id }}';
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
             
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              deployment_id: deployment.data.id,
-              state: 'success',
-              target_url: 'https://api.studymate.workers.dev',
-              description: 'Deployment successful'
+              deployment_id: parseInt(deployment_id),
+              state: state,
+              target_url: 'https://api.languagemate.kr',
+              description: state === 'success' ? 'Deployment successful' : 'Deployment failed',
+              environment_url: 'https://api.languagemate.kr'
             });
+      
+      - name: Notify deployment
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `🚀 **Production Deployment Successful**
+            
+            - **Version**: \`${context.sha.substring(0, 7)}\`
+            - **Deployed by**: @${context.actor}
+            - **Environment**: Production
+            - **URL**: https://api.languagemate.kr
+            
+            [View deployment](https://github.com/${context.repo.owner}/${context.repo.repo}/commit/${context.sha})`;
+            
+            // Create a deployment comment if this is from a PR
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: message
+              });
+            }
+
+  post-deployment-monitoring:
+    name: Post-deployment Monitoring
+    needs: [deploy-production]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Monitor for 5 minutes
+        run: |
+          echo "Starting post-deployment monitoring..."
+          
+          for i in {1..10}; do
+            echo "Check $i/10..."
+            
+            # Check health endpoint
+            if ! curl -f -s https://api.languagemate.kr/health > /dev/null; then
+              echo "❌ Health check failed at check $i"
+              exit 1
+            fi
+            
+            # Check response times
+            response_time=$(curl -s -o /dev/null -w "%{time_total}" https://api.languagemate.kr/health)
+            echo "Response time: ${response_time}s"
+            
+            if (( $(echo "$response_time > 2.0" | bc -l) )); then
+              echo "❌ Response time too high at check $i"
+              exit 1
+            fi
+            
+            sleep 30
+          done
+          
+          echo "✅ Post-deployment monitoring completed successfully"
+      
+      - name: Create monitoring report
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
+            const message = `${status} **Post-deployment Monitoring Report**
+            
+            - **Status**: ${{ job.status }}
+            - **Duration**: 5 minutes
+            - **Checks performed**: Health endpoint, Response time
+            
+            ${status === '❌' ? '⚠️  Issues detected during monitoring. Please investigate.' : '✅ All systems operational.'}`;
+            
+            // Create an issue if monitoring failed
+            if ('${{ job.status }}' !== 'success') {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 Post-deployment monitoring failed',
+                body: message,
+                labels: ['bug', 'production', 'high-priority']
+              });
+            }
 
   rollback:
     name: Rollback Production
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: failure() && needs.deploy-production.result == 'failure'
+    needs: [deploy-production]
     defaults:
       run:
         working-directory: ./workers
@@ -173,10 +449,39 @@ jobs:
       name: production
     
     steps:
-      - name: Checkout code
+      - name: Get previous successful deployment
+        id: get_previous
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployments = await github.rest.repos.listDeployments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: 'production',
+              per_page: 10
+            });
+            
+            // Find the last successful deployment before the current one
+            for (const deployment of deployments.data) {
+              if (deployment.sha !== context.sha) {
+                const statuses = await github.rest.repos.listDeploymentStatuses({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  deployment_id: deployment.id
+                });
+                
+                if (statuses.data[0]?.state === 'success') {
+                  core.setOutput('sha', deployment.sha);
+                  core.setOutput('deployment_id', deployment.id);
+                  break;
+                }
+              }
+            }
+      
+      - name: Checkout previous version
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.rollback_to_sha || github.sha }}
+          ref: ${{ steps.get_previous.outputs.sha }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -192,16 +497,35 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: 'workers'
-          command: deploy
+          command: deploy --env production
+          secrets: |
+            JWT_SECRET
+            INTERNAL_SECRET
+            CF_IMAGES_API_TOKEN
+            CF_ACCOUNT_HASH
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET_PRODUCTION }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+          CF_IMAGES_API_TOKEN: ${{ secrets.CF_IMAGES_API_TOKEN }}
+          CF_ACCOUNT_HASH: ${{ secrets.CF_ACCOUNT_HASH }}
       
       - name: Notify rollback
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({
+            await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '🔄 Production has been rolled back to commit: ' + context.sha
+              title: '🔄 Production rolled back automatically',
+              body: `Production has been automatically rolled back due to deployment failure.
+              
+              - **Failed deployment**: ${context.sha}
+              - **Rolled back to**: ${{ steps.get_previous.outputs.sha }}
+              - **Triggered by**: @${context.actor}
+              
+              Please investigate the failure before attempting another deployment.`,
+              labels: ['bug', 'production', 'rollback']
             });
