@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Pause, Play } from 'lucide-react';
-import useLevelTestStore from '../stores/levelTestStore';
+import useLevelTestStore from '../store/levelTestStore';
 
 const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
   const [isRecording, setIsRecording] = useState(false);

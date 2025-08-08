@@ -119,7 +119,7 @@
         "id": 10,
         "title": "레벨 테스트 결과 페이지",
         "description": "AI 분석 결과 표시 페이지",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "9"
@@ -228,7 +228,7 @@
         "id": 19,
         "title": "비디오 세션 연결 체크 페이지",
         "description": "화상 통화 전 연결 확인 (1.52.48.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "카메라 테스트, 마이크 테스트, 미리보기",
@@ -239,7 +239,7 @@
         "id": 20,
         "title": "1:1 오디오 세션 룸 구현",
         "description": "1대1 음성 통화 화면 (1.51.30.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "18"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:18:40.805Z"
+      "updated": "2025-08-08T09:20:01.301Z"
     }
   }
 }
