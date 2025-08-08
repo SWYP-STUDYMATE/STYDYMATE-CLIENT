@@ -1,0 +1,58 @@
+name = "studymate-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-08"
+node_compat = true
+
+# Account ID는 실제 값으로 교체 필요
+# account_id = "your-account-id"
+
+# Workers AI 바인딩
+[ai]
+binding = "AI"
+
+# Durable Objects 바인딩 (WebRTC 룸 관리)
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "WebRTCRoom"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["WebRTCRoom"]
+
+# R2 Storage 바인딩 (파일 저장)
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "studymate-storage"
+
+# KV Namespace 바인딩 (캐싱)
+[[kv_namespaces]]
+binding = "CACHE"
+id = "studymate-cache"
+
+# Environment Variables
+[vars]
+ENVIRONMENT = "development"
+CORS_ORIGIN = "http://localhost:3000"
+
+# Production 환경
+[env.production]
+name = "studymate-api-production"
+[env.production.vars]
+ENVIRONMENT = "production"
+CORS_ORIGIN = "https://languagemate.kr"
+
+# Staging 환경
+[env.staging]
+name = "studymate-api-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+CORS_ORIGIN = "https://preview.languagemate.kr"
+
+# Routes
+[env.production.routes]
+pattern = "api.languagemate.kr"
+zone_name = "languagemate.kr"
+
+[env.staging.routes]
+pattern = "api-staging.languagemate.kr"
+zone_name = "languagemate.kr"
