@@ -7,7 +7,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss()
+    ],
     server: {
       port: 3000,
       proxy: {
@@ -37,17 +40,48 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: mode !== 'production',
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            ui: ['lucide-react', 'react-select', 'emoji-picker-react'],
-            utils: ['axios', 'zustand', 'jwt-decode'],
-            realtime: ['sockjs-client', 'stompjs']
-          }
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: mode === 'production',
+          drop_debugger: mode === 'production'
         }
       },
-      chunkSizeWarningLimit: 1000
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            // node_modules 기반 청킹
+            if (id.includes('node_modules')) {
+              if (id.includes('react-router') || id.includes('react-dom')) {
+                return 'react-vendor';
+              }
+              if (id.includes('lucide-react') || id.includes('react-select') || id.includes('emoji-picker-react')) {
+                return 'ui-vendor';
+              }
+              if (id.includes('axios') || id.includes('zustand') || id.includes('jwt-decode')) {
+                return 'utils-vendor';
+              }
+              if (id.includes('sockjs') || id.includes('stomp')) {
+                return 'realtime-vendor';
+              }
+              return 'vendor';
+            }
+          },
+          // 청크 파일명 최적화
+          chunkFileNames: (chunkInfo) => {
+            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+            return `js/[name]-${facadeModuleId}-[hash].js`;
+          },
+          assetFileNames: 'assets/[name]-[hash][extname]'
+        }
+      },
+      // 압축 및 트리쉐이킹 최적화
+      cssCodeSplit: true,
+      chunkSizeWarningLimit: 1000,
+      // Preload 지시어 삽입
+      modulePreload: {
+        polyfill: true
+      }
     }
   }
 })

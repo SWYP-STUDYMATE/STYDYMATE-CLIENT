@@ -20,7 +20,7 @@
     "logs:staging": "wrangler tail --env staging"
   },
   "dependencies": {
-    "hono": "^3.12.0",
+    "hono": "^4.0.0",
     "@cloudflare/ai": "^1.0.0"
   },
   "devDependencies": {
