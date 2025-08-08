@@ -235,7 +235,7 @@ app.post('/conversation-feedback', async (c) => {
     }>();
 
     if (!conversation || conversation.length === 0) {
-      return c.json({ error: 'Conversation is required');
+      return c.json({ error: 'Conversation is required' }, 400);
     }
 
     const conversationText = conversation

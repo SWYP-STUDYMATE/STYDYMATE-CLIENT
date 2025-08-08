@@ -250,8 +250,239 @@ levelTestRoutes.get('/audio/:userId/:questionId', async (c) => {
   }
 });
 
-// 전체 테스트 제출
+// 개별 질문 제출 (새로운 엔드포인트)
 levelTestRoutes.post('/submit', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const audio = formData.get('audio') as File;
+    const questionNumber = formData.get('questionNumber') as string;
+    const userId = formData.get('userId') as string;
+
+    if (!audio || !questionNumber || !userId) {
+      throw validationError('Missing required fields');
+    }
+
+    const qNum = parseInt(questionNumber);
+    if (qNum < 1 || qNum > TEST_QUESTIONS.length) {
+      throw validationError('Invalid question number');
+    }
+
+    // R2에 오디오 파일 저장
+    const audioKey = `level-test/${userId}/question_${qNum}.webm`;
+    const audioBuffer = await audio.arrayBuffer();
+    await saveToR2(c.env.STORAGE, audioKey, audioBuffer, audio.type);
+
+    // Whisper로 음성 인식
+    const transcription = await processAudio(c.env.AI, audioBuffer, {
+      task: 'transcribe',
+      language: 'en',
+      vad_filter: true,
+      initial_prompt: TEST_QUESTIONS[qNum - 1].text
+    });
+
+    // 임시 저장
+    const progressKey = `level-test-progress:${userId}`;
+    const progress = await c.env.CACHE.get(progressKey);
+    const progressData = progress ? JSON.parse(progress) : { answers: [] };
+    
+    progressData.answers[qNum - 1] = {
+      questionNumber: qNum,
+      audioKey,
+      transcription: transcription.text,
+      timestamp: new Date().toISOString()
+    };
+
+    await c.env.CACHE.put(progressKey, JSON.stringify(progressData), {
+      expirationTtl: 86400 // 24시간
+    });
+
+    return successResponse(c, {
+      questionNumber: qNum,
+      transcription: transcription.text,
+      saved: true
+    });
+  } catch (error) {
+    console.error('Submit error:', error);
+    return c.json({ error: 'Failed to submit answer' }, 500);
+  }
+});
+
+// 테스트 완료 및 평가 (새로운 엔드포인트)
+levelTestRoutes.post('/complete', async (c) => {
+  try {
+    const { userId } = await c.req.json();
+    
+    if (!userId) {
+      throw validationError('User ID is required');
+    }
+
+    // 진행 상황 가져오기
+    const progressKey = `level-test-progress:${userId}`;
+    const progress = await c.env.CACHE.get(progressKey);
+    
+    if (!progress) {
+      throw validationError('No test data found');
+    }
+
+    const progressData = JSON.parse(progress);
+    const answers = progressData.answers || [];
+
+    if (answers.length < 2) {
+      throw validationError('Insufficient answers for evaluation');
+    }
+
+    // 각 답변 평가
+    const evaluations = await Promise.all(
+      answers.map(async (answer: any) => {
+        if (!answer || !answer.transcription) return null;
+
+        const question = TEST_QUESTIONS[answer.questionNumber - 1];
+        const evaluation = await evaluateLanguageLevel(
+          c.env.AI,
+          answer.transcription,
+          question.text
+        );
+
+        return {
+          questionNumber: answer.questionNumber,
+          question: question.text,
+          transcription: answer.transcription,
+          evaluation,
+          difficulty: question.difficulty
+        };
+      })
+    );
+
+    // 유효한 평가만 필터링
+    const validEvaluations = evaluations.filter(e => e !== null);
+
+    // 점수 계산
+    const scoreCategories = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'coherence', 'interaction'];
+    const totalScores: Record<string, number> = {};
+    
+    scoreCategories.forEach(category => {
+      totalScores[category] = 0;
+    });
+
+    validEvaluations.forEach(evaluation => {
+      if (evaluation?.evaluation.scores) {
+        scoreCategories.forEach(category => {
+          totalScores[category] += evaluation.evaluation.scores[category] || 0;
+        });
+      }
+    });
+
+    // 평균 점수
+    const avgScores: Record<string, number> = {};
+    scoreCategories.forEach(category => {
+      avgScores[category] = Math.round(totalScores[category] / validEvaluations.length);
+    });
+
+    // 전체 평균
+    const overallScore = Math.round(
+      Object.values(avgScores).reduce((a, b) => a + b, 0) / scoreCategories.length
+    );
+
+    // CEFR 레벨 결정
+    let level: string;
+    if (overallScore >= 85) level = 'C2';
+    else if (overallScore >= 75) level = 'C1';
+    else if (overallScore >= 65) level = 'B2';
+    else if (overallScore >= 55) level = 'B1';
+    else if (overallScore >= 45) level = 'A2';
+    else level = 'A1';
+
+    // LLM으로 상세 피드백 생성
+    const feedbackResponse = await generateLevelFeedback(
+      c.env.AI,
+      {
+        grammar: avgScores.grammar || 0,
+        vocabulary: avgScores.vocabulary || 0,
+        fluency: avgScores.fluency || 0,
+        pronunciation: avgScores.pronunciation || 0,
+        taskAchievement: avgScores.coherence || 0,
+        interaction: avgScores.interaction || 0
+      },
+      level as any
+    );
+
+    // 강점과 개선점
+    const strengths = [];
+    const improvements = [];
+    
+    Object.entries(avgScores).forEach(([category, score]) => {
+      if (score >= 70) {
+        strengths.push(`Strong ${category} skills`);
+      } else if (score < 50) {
+        improvements.push(`Focus on improving ${category}`);
+      }
+    });
+
+    // 결과 저장
+    const result = {
+      userId,
+      level,
+      overallScore,
+      scores: avgScores,
+      strengths,
+      improvements,
+      feedback: feedbackResponse,
+      evaluations: validEvaluations,
+      timestamp: new Date().toISOString()
+    };
+
+    // 결과 캐시
+    const resultKey = `level-test-result:${userId}`;
+    await c.env.CACHE.put(resultKey, JSON.stringify(result), {
+      expirationTtl: 2592000 // 30일
+    });
+
+    // 진행 상황 삭제
+    await c.env.CACHE.delete(progressKey);
+
+    return successResponse(c, result);
+  } catch (error) {
+    console.error('Complete error:', error);
+    return c.json({ 
+      error: 'Failed to complete test',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// 테스트 진행 상황 조회
+levelTestRoutes.get('/progress/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    const progressKey = `level-test-progress:${userId}`;
+    
+    const progress = await c.env.CACHE.get(progressKey);
+    if (!progress) {
+      return successResponse(c, {
+        userId,
+        completedQuestions: 0,
+        totalQuestions: TEST_QUESTIONS.length,
+        answers: []
+      });
+    }
+
+    const progressData = JSON.parse(progress);
+    const completedQuestions = progressData.answers?.filter((a: any) => a !== null).length || 0;
+
+    return successResponse(c, {
+      userId,
+      completedQuestions,
+      totalQuestions: TEST_QUESTIONS.length,
+      answers: progressData.answers || []
+    });
+  } catch (error) {
+    console.error('Progress error:', error);
+    return c.json({ error: 'Failed to get progress' }, 500);
+  }
+});
+
+// 전체 테스트 제출 (기존 엔드포인트 - 백업용)
+levelTestRoutes.post('/submit-all', async (c) => {
   try {
     const formData = await c.req.formData();
     const userInfo = formData.get('userInfo');
