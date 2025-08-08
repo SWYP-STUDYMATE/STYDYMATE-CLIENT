@@ -143,7 +143,7 @@ export default function VideoControls({
           <div className="relative">
             <Users className="w-6 h-6" />
             {participantCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[#00C471] text-white text-xs 
+              <span className="absolute -top-2 -right-2 bg-[var(--green-500)] text-white text-xs 
                 rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                 {participantCount}
               </span>

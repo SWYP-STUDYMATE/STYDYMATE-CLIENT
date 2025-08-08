@@ -1,4 +1,4 @@
-import { Context } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { Env } from '../index';
 
 // 메트릭 타입 정의
@@ -55,7 +55,7 @@ const PERFORMANCE_THRESHOLDS = {
 };
 
 // 분석 미들웨어
-export async function analyticsMiddleware(c: Context<{ Bindings: Env }>, next: Function) {
+export const analyticsMiddleware: MiddlewareHandler = async (c, next) => {
     const startTime = Date.now();
     const startCpu = c.executionCtx.cpuTime || 0;
 
@@ -132,7 +132,7 @@ export async function analyticsMiddleware(c: Context<{ Bindings: Env }>, next: F
         console.error('Analytics middleware error:', error);
         // 분석 오류가 요청을 실패시키지 않도록 함
     }
-}
+};
 
 // Analytics Engine에 이벤트 전송
 async function sendToAnalyticsEngine(env: Env, event: AnalyticsEvent) {
@@ -197,10 +197,10 @@ function checkPerformanceThresholds(metrics: RequestMetrics, env: Env) {
 }
 
 // 에러 추적 미들웨어
-export async function errorTrackingMiddleware(c: Context<{ Bindings: Env }>, next: Function) {
-    try {
-        await next();
-    } catch (error: any) {
+export const errorTrackingMiddleware: MiddlewareHandler = async (c, next) => {
+  try {
+    await next();
+  } catch (error: any) {
         // 에러 정보 저장
         c.set('error', {
             message: error.message,
@@ -228,9 +228,9 @@ export async function errorTrackingMiddleware(c: Context<{ Bindings: Env }>, nex
         });
 
         // 에러 재발생
-        throw error;
-    }
-}
+    throw error;
+  }
+};
 
 // 메트릭 집계 함수
 export async function getAggregatedMetrics(

@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
 import { timing } from 'hono/timing';
 import { levelTestRoutes } from './routes/levelTest';
@@ -47,13 +47,13 @@ setupMiddleware(app);
 app.use('*', timing());
 
 // Analytics 및 에러 추적 미들웨어
-app.use('*', errorTrackingMiddleware);
-app.use('*', analyticsMiddleware);
+app.use(errorTrackingMiddleware as MiddlewareHandler);
+app.use(analyticsMiddleware as MiddlewareHandler);
 
 // CORS middleware
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
-    origin: c.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (c.env as Env).CORS_ORIGIN || 'http://localhost:3000',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key'],
     exposeHeaders: ['Content-Length', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],

@@ -730,7 +730,7 @@
         "id": 55,
         "title": "최종 통합 QA",
         "description": "전체 시스템 품질 검증",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "52"
@@ -749,7 +749,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T10:54:01.916Z"
+      "updated": "2025-08-08T10:57:39.922Z"
     }
   }
 }

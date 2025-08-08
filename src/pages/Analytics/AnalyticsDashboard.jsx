@@ -79,7 +79,7 @@ export default function AnalyticsDashboard() {
   const { topPaths, errorsByStatus, geoDistribution } = dashboardData || {};
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] p-6">
+    <div className="min-h-screen page-bg p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -269,8 +269,8 @@ function MetricCard({ icon: Icon, title, value, change, color }) {
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-full`} style={{ backgroundColor: `${color}20` }}>
-          <Icon className="w-6 h-6" style={{ color }} />
+        <div className={`p-3 rounded-full ${color === '#00C471' ? 'metric-pill-success' : color === '#45B7D1' ? 'metric-pill-info' : color === '#FF6B6B' ? 'metric-pill-danger' : 'metric-pill-warning'}`}>
+          <Icon className="w-6 h-6" />
         </div>
         <span className={`text-[14px] font-semibold ${isGoodChange ? 'text-[#00C471]' : 'text-[#FF6B6B]'}`}>
           {change}
