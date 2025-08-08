@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { Env } from '../index';
+import { Variables } from '../types';
 import { successResponse } from '../utils/response';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // CORS 설정
 app.use('/*', cors());
@@ -37,8 +38,11 @@ app.post('/generate', async (c) => {
     }
 
     // 스트리밍 응답
+    const env = c.env as Env;
+    const ai = env.AI as any;
+
     if (body.stream) {
-      const stream = await c.env.AI.run(model, {
+      const stream = await ai.run(model, {
         messages,
         stream: true,
         temperature: body.temperature || 0.7,
@@ -55,7 +59,7 @@ app.post('/generate', async (c) => {
     }
 
     // 일반 응답
-    const response = await c.env.AI.run(model, {
+    const response = await ai.run(model, {
       messages,
       temperature: body.temperature || 0.7,
       max_tokens: body.max_tokens || 1000
@@ -67,7 +71,7 @@ app.post('/generate', async (c) => {
       model: model
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('LLM generation error:', error);
     return c.json({ error: error.message || 'Text generation failed' }, 500);
   }
@@ -127,7 +131,9 @@ Response in JSON format with this structure:
   }
 }`;
 
-    const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    const env = c.env as Env;
+    const ai = env.AI as any;
+    const response = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         {
           role: 'system',
@@ -165,7 +171,7 @@ Response in JSON format with this structure:
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('English evaluation error:', error);
     return c.json({ error: error.message || 'Evaluation failed' }, 500);
   }
@@ -199,7 +205,9 @@ Provide a response in JSON format:
   "suggestions": ["general writing improvement suggestions"]
 }`;
 
-    const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    const env = c.env as Env;
+    const ai = env.AI as any;
+    const response = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         {
           role: 'system',
@@ -221,7 +229,7 @@ Provide a response in JSON format:
       }, 400);
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Grammar check error:', error);
     return c.json({ error: error.message || 'Grammar check failed' }, 500);
   }
@@ -271,7 +279,9 @@ Provide comprehensive feedback in JSON format:
   "nextSteps": ["recommendation 1", "recommendation 2"]
 }`;
 
-    const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    const env = c.env as Env;
+    const ai = env.AI as any;
+    const response = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         {
           role: 'system',
@@ -302,7 +312,7 @@ Provide comprehensive feedback in JSON format:
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Conversation feedback error:', error);
     return c.json({ error: error.message || 'Feedback generation failed' }, 500);
   }

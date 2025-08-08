@@ -125,6 +125,10 @@ upstream_protocol = "https"
 cpu_ms = 50  # 50ms CPU time per request
 startup_cpu_ms = 100  # 100ms CPU time for startup
 
+# Analytics Engine binding
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+
 # Compatibility settings
 [compatibility]
 include_future_compat_date = false
