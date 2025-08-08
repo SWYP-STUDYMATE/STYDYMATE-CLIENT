@@ -143,7 +143,7 @@
         "id": 12,
         "title": "매칭 프로필 페이지 구현",
         "description": "사용자 상세 프로필 화면 (12.35.19.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [],
         "details": "프로필 정보, Active Now 상태, 관심사 태그, Start a Chat 버튼",
@@ -193,7 +193,7 @@
         "id": 16,
         "title": "세션 목록 페이지 구현",
         "description": "학습 세션 목록 화면 (1.49.26.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [],
         "details": "세션 카드 리스트, 예정된 세션, 완료된 세션 구분",
@@ -265,7 +265,7 @@
         "id": 22,
         "title": "1:1 비디오 세션 룸 구현",
         "description": "1대1 화상 통화 화면",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "19"
@@ -302,7 +302,7 @@
         "id": 25,
         "title": "DashboardLayout 구현",
         "description": "사이드바 포함 대시보드 레이아웃",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [],
         "details": "80px 사이드바, 메인 컨텐츠 영역, 반응형 디자인",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:28:21.767Z"
+      "updated": "2025-08-08T09:30:17.478Z"
     }
   }
 }
