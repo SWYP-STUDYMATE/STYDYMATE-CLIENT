@@ -80,7 +80,7 @@ app.post('/evaluate-english', async (c) => {
     }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required');
+      return c.json({ error: 'Text is required' }, 400);
     }
 
     const prompt = `You are an expert English language assessor. Evaluate the following English text for language proficiency.
@@ -175,7 +175,7 @@ app.post('/check-grammar', async (c) => {
     const { text } = await c.req.json<{ text: string }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required');
+      return c.json({ error: 'Text is required' }, 400);
     }
 
     const prompt = `Check the grammar of the following text and provide corrections:
