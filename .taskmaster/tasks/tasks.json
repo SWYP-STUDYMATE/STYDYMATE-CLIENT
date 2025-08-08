@@ -716,7 +716,7 @@
         "id": 53,
         "title": "실시간 자막 생성 시스템",
         "description": "통화 중 실시간 STT 자막",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "33",
@@ -730,7 +730,7 @@
         "id": 54,
         "title": "번역 기능 통합",
         "description": "실시간 번역 서비스",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [
           "53"
@@ -763,7 +763,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T10:12:06.295Z"
+      "updated": "2025-08-08T10:15:36.443Z"
     }
   }
 }

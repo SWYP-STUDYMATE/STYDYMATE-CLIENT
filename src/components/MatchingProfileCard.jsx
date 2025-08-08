@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Clock, Globe, MessageCircle, Star } from 'lucide-react';
+import OptimizedImage from './OptimizedImage';
+import { DEFAULT_PROFILE_IMAGE } from '../utils/imageUtils';
 
 export default function MatchingProfileCard({ user, onClick }) {
     const navigate = useNavigate();
@@ -54,10 +56,13 @@ export default function MatchingProfileCard({ user, onClick }) {
             <div className="flex items-start gap-4 mb-4">
                 {/* 프로필 이미지 */}
                 <div className="relative">
-                    <img
-                        src={user.profileImage || '/assets/basicProfilePic.png'}
+                    <OptimizedImage
+                        src={user.profileImage || DEFAULT_PROFILE_IMAGE}
                         alt={user.name}
                         className="w-16 h-16 rounded-full object-cover"
+                        width={64}
+                        height={64}
+                        loading="lazy"
                     />
                     {/* 온라인 상태 표시 */}
                     <div
