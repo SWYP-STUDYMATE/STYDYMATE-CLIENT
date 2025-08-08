@@ -642,8 +642,35 @@ export default function VideoSessionRoom() {
         )}
       </div>
 
+      {/* Subtitle Display */}
+      <SubtitleDisplay 
+        transcripts={transcripts}
+        isVisible={isSubtitleEnabled}
+        position={subtitlePosition}
+        maxLines={2}
+      />
+
       {/* Controls */}
-      <div className="p-6 flex justify-center">
+      <div className="p-6 flex flex-col items-center gap-4">
+        {/* Subtitle Controller */}
+        <SubtitleController
+          isEnabled={isSubtitleEnabled}
+          onToggle={toggleSubtitle}
+          position={subtitlePosition}
+          onPositionChange={setSubtitlePosition}
+          className="mb-2"
+        />
+        
+        {/* Live Transcription Component */}
+        {isSubtitleEnabled && (
+          <LiveTranscription
+            isActive={isTranscribing && connectionState === 'connected'}
+            onTranscript={handleTranscript}
+            language={currentLanguage}
+            className="mb-2"
+          />
+        )}
+        
         <VideoControls
           isMuted={isMuted}
           isVideoOn={isCameraOn}

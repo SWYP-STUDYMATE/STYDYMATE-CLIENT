@@ -193,4 +193,5 @@ app.post('/', validateAuth, async (c) => {
   }
 });
 
+export { app as transcribeRoutes };
 export default app;
