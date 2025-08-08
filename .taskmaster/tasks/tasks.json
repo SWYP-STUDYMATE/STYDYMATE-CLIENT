@@ -348,7 +348,7 @@
         "id": 29,
         "title": "matchingStore 구현",
         "description": "매칭 상태 관리 스토어",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [],
         "details": "매칭 상태, 추천 사용자, 필터 설정 관리",
@@ -359,7 +359,7 @@
         "id": 30,
         "title": "sessionStore 구현",
         "description": "세션 상태 관리 스토어",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [],
         "details": "현재 세션, 예약된 세션, 통화 상태 관리",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:21:23.928Z"
+      "updated": "2025-08-08T09:22:17.447Z"
     }
   }
 }

@@ -17,7 +17,7 @@ import LevelTestComplete from './pages/LevelTest/LevelTestComplete';
 import LevelTestResult from './pages/LevelTest/LevelTestResult';
 import Schedule from './pages/Schedule/Schedule';
 import AudioConnectionCheck from './pages/Session/AudioConnectionCheck';
-import VideoConnectionCheck from './pages/Session/VideoConnectionCheck';
+import VideoConnectionCheck from './pages/Session/VideoSessionCheck';
 
 export default function App() {
   return (
