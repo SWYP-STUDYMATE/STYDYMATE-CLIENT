@@ -1,0 +1,11 @@
+# Task ID: 15
+# Title: HashtagList 컴포넌트
+# Status: done
+# Dependencies: 13
+# Priority: low
+# Description: 관심사 해시태그 표시
+# Details:
+태그 스타일링, 클릭 이벤트, 동적 표시
+
+# Test Strategy:
+태그 렌더링 테스트

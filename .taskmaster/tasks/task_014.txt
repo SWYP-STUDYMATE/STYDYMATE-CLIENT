@@ -1,0 +1,11 @@
+# Task ID: 14
+# Title: UserStatusIndicator 컴포넌트
+# Status: done
+# Dependencies: 13
+# Priority: low
+# Description: Active Now 상태 표시
+# Details:
+온라인/오프라인 상태, 색상 인디케이터, 실시간 업데이트
+
+# Test Strategy:
+상태 표시 정확도 테스트

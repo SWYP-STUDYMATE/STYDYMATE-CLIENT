@@ -1,0 +1,11 @@
+# Task ID: 39
+# Title: WebRTC 시그널링 구현
+# Status: done
+# Dependencies: 38
+# Priority: high
+# Description: P2P 연결 협상 로직
+# Details:
+ICE candidate 교환, SDP offer/answer, Trickle ICE
+
+# Test Strategy:
+P2P 연결 성공률 테스트

@@ -1,0 +1,11 @@
+# Task ID: 23
+# Title: 4인 비디오 세션 룸 구현
+# Status: done
+# Dependencies: 22
+# Priority: medium
+# Description: 최대 4명 화상 통화 화면 (1.52.53.png, 1.53.04.png)
+# Details:
+4분할 화면, 발언자 하이라이트, 갤러리/스피커 뷰 전환
+
+# Test Strategy:
+그룹 화상 통화 테스트

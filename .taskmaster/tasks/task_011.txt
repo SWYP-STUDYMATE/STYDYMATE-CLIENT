@@ -1,0 +1,11 @@
+# Task ID: 11
+# Title: levelTestStore 구현
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: 레벨 테스트 상태 관리 스토어
+# Details:
+현재 질문 번호, 녹음 데이터, 연결 상태, 타이머, 테스트 결과 관리
+
+# Test Strategy:
+상태 변경 및 지속성 테스트

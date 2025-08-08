@@ -1,0 +1,11 @@
+# Task ID: 52
+# Title: Cloudflare Analytics 설정
+# Status: done
+# Dependencies: 49
+# Priority: low
+# Description: 모니터링 대시보드 구축
+# Details:
+성능 메트릭, 에러 추적, 사용량 모니터링, 실시간 대시보드
+
+# Test Strategy:
+모니터링 데이터 수집 확인

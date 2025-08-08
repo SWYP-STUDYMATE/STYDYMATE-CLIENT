@@ -1,0 +1,11 @@
+# Task ID: 53
+# Title: 실시간 자막 생성 시스템
+# Status: done
+# Dependencies: 33, 48
+# Priority: low
+# Description: 통화 중 실시간 STT 자막
+# Details:
+실시간 음성 스트림 처리, Whisper API 연동, 자막 동기화
+
+# Test Strategy:
+자막 지연시간 및 정확도 테스트

@@ -12,7 +12,7 @@ export default function AudioSessionCheck() {
   const [connectionSpeed, setConnectionSpeed] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
-  
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
@@ -41,7 +41,7 @@ export default function AudioSessionCheck() {
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
-    
+
     const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
     setAudioLevel(Math.min(average / 128, 1));
 
@@ -51,16 +51,16 @@ export default function AudioSessionCheck() {
   // 마이크 테스트
   const testMicrophone = async () => {
     setMicStatus('testing');
-    
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           sampleRate: 44100,
-        } 
+        }
       });
-      
+
       streamRef.current = stream;
 
       // 오디오 시각화 설정
@@ -74,7 +74,7 @@ export default function AudioSessionCheck() {
       const options = {
         mimeType: 'audio/webm;codecs=opus'
       };
-      
+
       if (!MediaRecorder.isTypeSupported(options.mimeType)) {
         options.mimeType = 'audio/webm';
       }
@@ -92,7 +92,7 @@ export default function AudioSessionCheck() {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setRecordedBlob(blob);
         setIsRecording(false);
-        
+
         // 자동 재생으로 마이크 테스트 완료
         const audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
@@ -107,7 +107,7 @@ export default function AudioSessionCheck() {
       mediaRecorderRef.current.start();
       setIsRecording(true);
       visualizeAudio();
-      
+
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
@@ -117,7 +117,7 @@ export default function AudioSessionCheck() {
           }
         }
       }, 3000);
-      
+
     } catch (error) {
       console.error('Microphone test failed:', error);
       setMicStatus('failed');
@@ -127,30 +127,30 @@ export default function AudioSessionCheck() {
   // 스피커 테스트
   const testSpeaker = async () => {
     setSpeakerStatus('testing');
-    
+
     try {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
+
       // 테스트 톤 생성 (440Hz, 0.5초)
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = 440; // A4 음
       gainNode.gain.value = 0.3; // 볼륨 30%
-      
+
       oscillator.start();
-      
+
       // 페이드 아웃
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      
+
       setTimeout(() => {
         oscillator.stop();
         setSpeakerStatus('success');
       }, 500);
-      
+
     } catch (error) {
       console.error('Speaker test failed:', error);
       setSpeakerStatus('failed');
@@ -160,31 +160,31 @@ export default function AudioSessionCheck() {
   // 연결 테스트
   const testConnection = async () => {
     setConnectionStatus('testing');
-    
+
     try {
       // 간단한 속도 테스트 (실제로는 더 정교한 방법 필요)
       const startTime = Date.now();
-      
+
       // 1MB 정도의 더미 데이터 다운로드
       const response = await fetch('https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png', {
         cache: 'no-cache'
       });
-      
+
       const data = await response.blob();
       const endTime = Date.now();
       const duration = (endTime - startTime) / 1000; // 초 단위
       const sizeInMB = data.size / (1024 * 1024);
       const speedMbps = (sizeInMB * 8) / duration;
-      
+
       setConnectionSpeed(speedMbps);
-      
+
       // 최소 1Mbps 이상이면 성공
       if (speedMbps >= 1) {
         setConnectionStatus('success');
       } else {
         setConnectionStatus('failed');
       }
-      
+
     } catch (error) {
       console.error('Connection test failed:', error);
       setConnectionStatus('failed');
@@ -203,32 +203,32 @@ export default function AudioSessionCheck() {
       case 'idle':
         return null;
       case 'testing':
-        return <Loader2 className="w-5 h-5 animate-spin text-[#4285F4]" />;
+        return <Loader2 className="w-5 h-5 animate-spin text-[var(--blue)]" />;
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-[#00C471]" />;
+        return <CheckCircle className="w-5 h-5 text-[var(--green-500)]" />;
       case 'failed':
-        return <XCircle className="w-5 h-5 text-[#EA4335]" />;
+        return <XCircle className="w-5 h-5 text-[var(--red)]" />;
       default:
         return null;
     }
   };
 
-  const allTestsPassed = micStatus === 'success' && 
-                         speakerStatus === 'success' && 
-                         connectionStatus === 'success';
+  const allTestsPassed = micStatus === 'success' &&
+    speakerStatus === 'success' &&
+    connectionStatus === 'success';
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
+    <div className="min-h-screen page-bg flex flex-col">
       <div className="max-w-[768px] w-full mx-auto flex flex-col min-h-screen">
         {/* 헤더 */}
         <div className="px-6 py-4 bg-white border-b border-[#E7E7E7]">
           <div className="flex items-center justify-between">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
             <h1 className="text-[18px] font-bold text-[#111111]">음성 세션 연결 확인</h1>
@@ -242,7 +242,7 @@ export default function AudioSessionCheck() {
             <h2 className="text-[24px] font-bold text-[#111111] mb-2">
               세션 시작 전 확인사항
             </h2>
-            <p className="text-[16px] text-[#606060]">
+            <p className="text-[16px] text-[var(--black-300)]">
               원활한 음성 통화를 위해 디바이스를 테스트합니다
             </p>
           </div>
@@ -250,15 +250,15 @@ export default function AudioSessionCheck() {
           {/* 테스트 항목들 */}
           <div className="space-y-4 mb-8">
             {/* 마이크 테스트 */}
-            <div className="bg-white rounded-[10px] p-6 border border-[#E7E7E7]">
+            <div className="bg-white rounded-[10px] p-6 border border-[var(--black-50)]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
-                    {isRecording ? <Mic className="w-6 h-6 text-[#00C471]" /> : <MicOff className="w-6 h-6 text-[#00C471]" />}
+                  <div className="w-12 h-12 bg-[rgba(0,196,113,0.12)] rounded-full flex items-center justify-center mr-4">
+                    {isRecording ? <Mic className="w-6 h-6 text-[var(--green-500)]" /> : <MicOff className="w-6 h-6 text-[var(--green-500)]" />}
                   </div>
                   <div>
                     <h3 className="text-[16px] font-medium text-[#111111]">마이크 테스트</h3>
-                    <p className="text-[14px] text-[#929292]">
+                    <p className="text-[14px] text-[var(--black-200)]">
                       {micStatus === 'idle' && '테스트를 시작하세요'}
                       {micStatus === 'testing' && '3초간 말씀해주세요...'}
                       {micStatus === 'success' && '정상 작동'}
@@ -268,13 +268,13 @@ export default function AudioSessionCheck() {
                 </div>
                 {getStatusIcon(micStatus)}
               </div>
-              
+
               {/* 오디오 레벨 표시 */}
               {isRecording && (
                 <div className="mt-4">
-                  <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#00C471] transition-all duration-100"
+                  <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--green-500)] transition-all duration-100"
                       style={{ width: `${audioLevel * 100}%` }}
                     />
                   </div>
@@ -283,15 +283,15 @@ export default function AudioSessionCheck() {
             </div>
 
             {/* 스피커 테스트 */}
-            <div className="bg-white rounded-[10px] p-6 border border-[#E7E7E7]">
+            <div className="bg-white rounded-[10px] p-6 border border-[var(--black-50)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-[#E8F4FD] rounded-full flex items-center justify-center mr-4">
-                    <Volume2 className="w-6 h-6 text-[#4285F4]" />
+                  <div className="w-12 h-12 bg-[rgba(66,133,244,0.12)] rounded-full flex items-center justify-center mr-4">
+                    <Volume2 className="w-6 h-6 text-[var(--blue)]" />
                   </div>
                   <div>
                     <h3 className="text-[16px] font-medium text-[#111111]">스피커 테스트</h3>
-                    <p className="text-[14px] text-[#929292]">
+                    <p className="text-[14px] text-[var(--black-200)]">
                       {speakerStatus === 'idle' && '테스트를 시작하세요'}
                       {speakerStatus === 'testing' && '테스트 음이 재생됩니다...'}
                       {speakerStatus === 'success' && '정상 작동'}
@@ -304,18 +304,18 @@ export default function AudioSessionCheck() {
             </div>
 
             {/* 연결 테스트 */}
-            <div className="bg-white rounded-[10px] p-6 border border-[#E7E7E7]">
+            <div className="bg-white rounded-[10px] p-6 border border-[var(--black-50)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-[#FFF5E6] rounded-full flex items-center justify-center mr-4">
-                    {connectionStatus === 'failed' ? 
-                      <WifiOff className="w-6 h-6 text-[#FFA500]" /> : 
-                      <Wifi className="w-6 h-6 text-[#FFA500]" />
+                  <div className="w-12 h-12 bg-[rgba(255,165,0,0.12)] rounded-full flex items-center justify-center mr-4">
+                    {connectionStatus === 'failed' ?
+                      <WifiOff className="w-6 h-6 text-[var(--warning-yellow)]" /> :
+                      <Wifi className="w-6 h-6 text-[var(--warning-yellow)]" />
                     }
                   </div>
                   <div>
                     <h3 className="text-[16px] font-medium text-[#111111]">인터넷 연결</h3>
-                    <p className="text-[14px] text-[#929292]">
+                    <p className="text-[14px] text-[var(--black-200)]">
                       {connectionStatus === 'idle' && '테스트를 시작하세요'}
                       {connectionStatus === 'testing' && '연결 속도 측정 중...'}
                       {connectionStatus === 'success' && `연결 양호 (${connectionSpeed?.toFixed(1)} Mbps)`}
@@ -329,7 +329,7 @@ export default function AudioSessionCheck() {
           </div>
 
           {/* 안내 메시지 */}
-          <div className="bg-[#F8F9FA] rounded-[10px] p-4 mb-8">
+          <div className="bg-[var(--neutral-100)] rounded-[10px] p-4 mb-8">
             <p className="text-[14px] text-[#606060]">
               💡 모든 테스트를 통과해야 원활한 음성 통화가 가능합니다.
               문제가 있다면 디바이스 설정을 확인해주세요.

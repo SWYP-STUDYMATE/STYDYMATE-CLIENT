@@ -1,0 +1,11 @@
+# Task ID: 29
+# Title: matchingStore 구현
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 매칭 상태 관리 스토어
+# Details:
+매칭 상태, 추천 사용자, 필터 설정 관리
+
+# Test Strategy:
+상태 관리 테스트

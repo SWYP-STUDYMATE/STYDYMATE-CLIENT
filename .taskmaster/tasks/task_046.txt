@@ -1,0 +1,11 @@
+# Task ID: 46
+# Title: 프론트엔드-Workers API 연동
+# Status: done
+# Dependencies: 44, 45
+# Priority: high
+# Description: 프론트엔드와 Workers 통합
+# Details:
+API 클라이언트 설정, 엔드포인트 연결, 에러 핸들링
+
+# Test Strategy:
+API 통합 테스트

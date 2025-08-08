@@ -1,0 +1,11 @@
+# Task ID: 54
+# Title: 번역 기능 통합
+# Status: done
+# Dependencies: 53
+# Priority: low
+# Description: 실시간 번역 서비스
+# Details:
+Workers AI 번역 모델 통합, 언어 자동 감지
+
+# Test Strategy:
+번역 품질 테스트

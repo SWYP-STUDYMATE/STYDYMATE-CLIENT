@@ -1,0 +1,11 @@
+# Task ID: 33
+# Title: Whisper 음성인식 API 구현
+# Status: done
+# Dependencies: 32
+# Priority: high
+# Description: Cloudflare Workers AI Whisper 통합
+# Details:
+whisper-large-v3-turbo 모델 사용, 오디오 처리, 텍스트 변환
+
+# Test Strategy:
+음성 인식 정확도 테스트

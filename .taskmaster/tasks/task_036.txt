@@ -1,0 +1,11 @@
+# Task ID: 36
+# Title: 레벨 평가 알고리즘
+# Status: done
+# Dependencies: 33, 35
+# Priority: medium
+# Description: CEFR 기준 언어 레벨 산정
+# Details:
+음성 텍스트 분석, 6개 영역 평가, A1-C2 레벨 계산
+
+# Test Strategy:
+레벨 평가 정확도 테스트

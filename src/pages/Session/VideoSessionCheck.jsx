@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
-import { 
-  Camera, CameraOff, Mic, MicOff, Volume2, 
-  Wifi, WifiOff, CheckCircle, XCircle, 
-  Loader2, Monitor, Settings 
+import {
+  Camera, CameraOff, Mic, MicOff, Volume2,
+  Wifi, WifiOff, CheckCircle, XCircle,
+  Loader2, Monitor, Settings
 } from 'lucide-react';
 
 export default function VideoSessionCheck() {
@@ -20,7 +20,7 @@ export default function VideoSessionCheck() {
   const [cameras, setCameras] = useState([]);
   const [microphones, setMicrophones] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -34,7 +34,7 @@ export default function VideoSessionCheck() {
       const audioDevices = devices.filter(device => device.kind === 'audioinput');
       setCameras(videoDevices);
       setMicrophones(audioDevices);
-      
+
       if (videoDevices.length > 0) setSelectedCamera(videoDevices[0].deviceId);
       if (audioDevices.length > 0) setSelectedMic(audioDevices[0].deviceId);
     });
@@ -59,7 +59,7 @@ export default function VideoSessionCheck() {
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
-    
+
     const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
     setAudioLevel(Math.min(average / 128, 1));
 
@@ -69,14 +69,14 @@ export default function VideoSessionCheck() {
   // 카메라 테스트
   const testCamera = async () => {
     setCameraStatus('testing');
-    
+
     try {
       // 기존 스트림 정리
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           deviceId: selectedCamera ? { exact: selectedCamera } : undefined,
           width: { ideal: 1280 },
@@ -84,15 +84,15 @@ export default function VideoSessionCheck() {
         },
         audio: false
       });
-      
+
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-      
+
       setCameraStatus('success');
-      
+
     } catch (error) {
       console.error('Camera test failed:', error);
       setCameraStatus('failed');
@@ -102,17 +102,17 @@ export default function VideoSessionCheck() {
   // 마이크 테스트
   const testMicrophone = async () => {
     setMicStatus('testing');
-    
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: selectedMic ? { exact: selectedMic } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           sampleRate: 44100,
-        } 
+        }
       });
-      
+
       // 오디오 시각화 설정
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
       analyserRef.current = audioContextRef.current.createAnalyser();
@@ -121,7 +121,7 @@ export default function VideoSessionCheck() {
       analyserRef.current.fftSize = 256;
 
       visualizeAudio();
-      
+
       // 3초 후 성공으로 표시
       setTimeout(() => {
         stream.getTracks().forEach(track => track.stop());
@@ -131,7 +131,7 @@ export default function VideoSessionCheck() {
         setAudioLevel(0);
         setMicStatus('success');
       }, 3000);
-      
+
     } catch (error) {
       console.error('Microphone test failed:', error);
       setMicStatus('failed');
@@ -141,28 +141,28 @@ export default function VideoSessionCheck() {
   // 스피커 테스트
   const testSpeaker = async () => {
     setSpeakerStatus('testing');
-    
+
     try {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
+
       // 테스트 톤 생성
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = 440; // A4 음
       gainNode.gain.value = 0.3;
-      
+
       oscillator.start();
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      
+
       setTimeout(() => {
         oscillator.stop();
         setSpeakerStatus('success');
       }, 500);
-      
+
     } catch (error) {
       console.error('Speaker test failed:', error);
       setSpeakerStatus('failed');
@@ -172,27 +172,27 @@ export default function VideoSessionCheck() {
   // 연결 테스트
   const testConnection = async () => {
     setConnectionStatus('testing');
-    
+
     try {
       const startTime = Date.now();
       const response = await fetch('https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png', {
         cache: 'no-cache'
       });
-      
+
       const data = await response.blob();
       const endTime = Date.now();
       const duration = (endTime - startTime) / 1000;
       const sizeInMB = data.size / (1024 * 1024);
       const speedMbps = (sizeInMB * 8) / duration;
-      
+
       setConnectionSpeed(speedMbps);
-      
+
       if (speedMbps >= 2) { // 화상통화는 더 높은 속도 필요
         setConnectionStatus('success');
       } else {
         setConnectionStatus('failed');
       }
-      
+
     } catch (error) {
       console.error('Connection test failed:', error);
       setConnectionStatus('failed');
@@ -222,10 +222,10 @@ export default function VideoSessionCheck() {
     }
   };
 
-  const allTestsPassed = cameraStatus === 'success' && 
-                         micStatus === 'success' && 
-                         speakerStatus === 'success' && 
-                         connectionStatus === 'success';
+  const allTestsPassed = cameraStatus === 'success' &&
+    micStatus === 'success' &&
+    speakerStatus === 'success' &&
+    connectionStatus === 'success';
 
   return (
     <div className="min-h-screen page-bg flex flex-col">
@@ -233,12 +233,12 @@ export default function VideoSessionCheck() {
         {/* 헤더 */}
         <div className="px-6 py-4 bg-white border-b border-[#E7E7E7]">
           <div className="flex items-center justify-between">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
             <h1 className="text-[18px] font-bold text-[#111111]">화상 세션 연결 확인</h1>
@@ -257,10 +257,10 @@ export default function VideoSessionCheck() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[14px] text-[#606060] mb-2">카메라 선택</label>
-                 <select
+                <select
                   value={selectedCamera}
                   onChange={(e) => setSelectedCamera(e.target.value)}
-                   className="w-full px-4 py-2 border border-[var(--black-50)] rounded-lg focus:outline-none focus:border-[var(--blue)]"
+                  className="w-full px-4 py-2 border border-[var(--black-50)] rounded-lg focus:outline-none focus:border-[var(--blue)]"
                 >
                   {cameras.map(camera => (
                     <option key={camera.deviceId} value={camera.deviceId}>
@@ -271,10 +271,10 @@ export default function VideoSessionCheck() {
               </div>
               <div>
                 <label className="block text-[14px] text-[#606060] mb-2">마이크 선택</label>
-                 <select
+                <select
                   value={selectedMic}
                   onChange={(e) => setSelectedMic(e.target.value)}
-                   className="w-full px-4 py-2 border border-[var(--black-50)] rounded-lg focus:outline-none focus:border-[var(--blue)]"
+                  className="w-full px-4 py-2 border border-[var(--black-50)] rounded-lg focus:outline-none focus:border-[var(--blue)]"
                 >
                   {microphones.map(mic => (
                     <option key={mic.deviceId} value={mic.deviceId}>
@@ -294,11 +294,11 @@ export default function VideoSessionCheck() {
             <div>
               <h2 className="text-[20px] font-bold text-[#111111] mb-4">카메라 미리보기</h2>
               <div className="relative aspect-video bg-black rounded-[10px] overflow-hidden">
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  playsInline 
-                  muted 
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
                   className="w-full h-full object-cover"
                 />
                 {cameraStatus === 'idle' && (
@@ -328,8 +328,8 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                       <div className="w-10 h-10 bg-[rgba(234,67,53,0.1)] rounded-full flex items-center justify-center mr-3">
-                         <Camera className="w-5 h-5 text-[var(--red)]" />
+                      <div className="w-10 h-10 bg-[rgba(234,67,53,0.1)] rounded-full flex items-center justify-center mr-3">
+                        <Camera className="w-5 h-5 text-[var(--red)]" />
                       </div>
                       <div>
                         <h3 className="text-[14px] font-medium text-[#111111]">카메라</h3>
@@ -349,8 +349,8 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                       <div className="w-10 h-10 bg-[rgba(0,196,113,0.12)] rounded-full flex items-center justify-center mr-3">
-                         <Mic className="w-5 h-5 text-[var(--green-500)]" />
+                      <div className="w-10 h-10 bg-[rgba(0,196,113,0.12)] rounded-full flex items-center justify-center mr-3">
+                        <Mic className="w-5 h-5 text-[var(--green-500)]" />
                       </div>
                       <div>
                         <h3 className="text-[14px] font-medium text-[#111111]">마이크</h3>
@@ -364,12 +364,12 @@ export default function VideoSessionCheck() {
                     </div>
                     {getStatusIcon(micStatus)}
                   </div>
-                  
+
                   {/* 오디오 레벨 표시 */}
                   {micStatus === 'testing' && (
                     <div className="mt-3">
                       <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-[var(--green-500)] transition-all duration-100"
                           style={{ width: `${audioLevel * 100}%` }}
                         />
@@ -382,8 +382,8 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                       <div className="w-10 h-10 bg-[rgba(66,133,244,0.12)] rounded-full flex items-center justify-center mr-3">
-                         <Volume2 className="w-5 h-5 text-[var(--blue)]" />
+                      <div className="w-10 h-10 bg-[rgba(66,133,244,0.12)] rounded-full flex items-center justify-center mr-3">
+                        <Volume2 className="w-5 h-5 text-[var(--blue)]" />
                       </div>
                       <div>
                         <h3 className="text-[14px] font-medium text-[#111111]">스피커</h3>
@@ -403,10 +403,10 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                       <div className="w-10 h-10 bg-[rgba(255,165,0,0.12)] rounded-full flex items-center justify-center mr-3">
-                         {connectionStatus === 'failed' ? 
-                           <WifiOff className="w-5 h-5 text-[var(--warning-yellow)]" /> : 
-                           <Wifi className="w-5 h-5 text-[var(--warning-yellow)]" />
+                      <div className="w-10 h-10 bg-[rgba(255,165,0,0.12)] rounded-full flex items-center justify-center mr-3">
+                        {connectionStatus === 'failed' ?
+                          <WifiOff className="w-5 h-5 text-[var(--warning-yellow)]" /> :
+                          <Wifi className="w-5 h-5 text-[var(--warning-yellow)]" />
                         }
                       </div>
                       <div>
@@ -425,7 +425,7 @@ export default function VideoSessionCheck() {
               </div>
 
               {/* 안내 메시지 */}
-               <div className="mt-6 p-4 bg-[var(--neutral-100)] rounded-[10px]">
+              <div className="mt-6 p-4 bg-[var(--neutral-100)] rounded-[10px]">
                 <p className="text-[13px] text-[#606060]">
                   💡 화상 통화를 위해서는 최소 2Mbps 이상의 인터넷 속도가 필요합니다.
                   모든 테스트를 통과해야 원활한 화상 통화가 가능합니다.
@@ -438,8 +438,8 @@ export default function VideoSessionCheck() {
         {/* 하단 버튼 */}
         <div className="px-6 pb-8">
           <div className="max-w-md mx-auto">
-            {cameraStatus === 'idle' && micStatus === 'idle' && 
-             speakerStatus === 'idle' && connectionStatus === 'idle' ? (
+            {cameraStatus === 'idle' && micStatus === 'idle' &&
+              speakerStatus === 'idle' && connectionStatus === 'idle' ? (
               <CommonButton
                 onClick={runAllTests}
                 className="w-full"
@@ -465,12 +465,12 @@ export default function VideoSessionCheck() {
                 >
                   다시 테스트
                 </CommonButton>
-                {(cameraStatus === 'testing' || micStatus === 'testing' || 
+                {(cameraStatus === 'testing' || micStatus === 'testing' ||
                   speakerStatus === 'testing' || connectionStatus === 'testing') && (
-                  <p className="text-center text-[14px] text-[#929292]">
-                    테스트 진행 중... 잠시만 기다려주세요
-                  </p>
-                )}
+                    <p className="text-center text-[14px] text-[#929292]">
+                      테스트 진행 중... 잠시만 기다려주세요
+                    </p>
+                  )}
               </div>
             )}
           </div>

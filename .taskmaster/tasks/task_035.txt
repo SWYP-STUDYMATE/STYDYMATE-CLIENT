@@ -1,0 +1,11 @@
+# Task ID: 35
+# Title: LLM 텍스트 생성 API
+# Status: done
+# Dependencies: 32
+# Priority: high
+# Description: Workers AI LLM 통합
+# Details:
+llama-3-8b-instruct 모델, 프롬프트 처리, 레벨 평가
+
+# Test Strategy:
+텍스트 생성 품질 테스트

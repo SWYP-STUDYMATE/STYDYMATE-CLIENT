@@ -198,9 +198,9 @@ function checkPerformanceThresholds(metrics: RequestMetrics, env: Env) {
 
 // 에러 추적 미들웨어
 export const errorTrackingMiddleware: MiddlewareHandler = async (c, next) => {
-  try {
-    await next();
-  } catch (error: any) {
+    try {
+        await next();
+    } catch (error: any) {
         // 에러 정보 저장
         c.set('error', {
             message: error.message,
@@ -228,8 +228,8 @@ export const errorTrackingMiddleware: MiddlewareHandler = async (c, next) => {
         });
 
         // 에러 재발생
-    throw error;
-  }
+        throw error;
+    }
 };
 
 // 메트릭 집계 함수

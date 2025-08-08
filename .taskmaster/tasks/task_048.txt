@@ -1,0 +1,11 @@
+# Task ID: 48
+# Title: WebRTC 프론트엔드 통합
+# Status: done
+# Dependencies: 39, 40, 46
+# Priority: high
+# Description: 화상/음성 통화 기능 연동
+# Details:
+getUserMedia, RTCPeerConnection, 시그널링 연동
+
+# Test Strategy:
+통화 연결 성공률 테스트

@@ -1,0 +1,11 @@
+# Task ID: 40
+# Title: 미디어 트랙 관리 시스템
+# Status: done
+# Dependencies: 39
+# Priority: medium
+# Description: 오디오/비디오 트랙 제어
+# Details:
+트랙 추가/제거, 뮤트/언뮤트, 품질 조정, 화면 공유
+
+# Test Strategy:
+미디어 제어 기능 테스트

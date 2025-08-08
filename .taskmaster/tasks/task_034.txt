@@ -1,0 +1,11 @@
+# Task ID: 34
+# Title: 오디오 청킹 시스템
+# Status: done
+# Dependencies: 33
+# Priority: medium
+# Description: 대용량 오디오 파일 분할 처리
+# Details:
+37분 이상 파일 처리, 청크 분할, 병렬 처리
+
+# Test Strategy:
+대용량 파일 처리 테스트

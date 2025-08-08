@@ -1,0 +1,11 @@
+# Task ID: 47
+# Title: 레벨테스트 E2E 플로우
+# Status: done
+# Dependencies: 10, 33, 36, 46
+# Priority: high
+# Description: 레벨테스트 전체 통합
+# Details:
+녹음 → 업로드 → 음성인식 → 평가 → 결과 표시
+
+# Test Strategy:
+전체 레벨테스트 플로우 테스트

@@ -1,0 +1,11 @@
+# Task ID: 18
+# Title: 오디오 세션 연결 체크 페이지
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: 음성 통화 전 연결 확인 (1.51.12.png)
+# Details:
+마이크 테스트, 스피커 테스트, 연결 품질 체크
+
+# Test Strategy:
+오디오 디바이스 테스트

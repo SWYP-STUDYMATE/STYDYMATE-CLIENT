@@ -1,0 +1,11 @@
+# Task ID: 13
+# Title: MatchingProfileCard 컴포넌트
+# Status: done
+# Dependencies: 12
+# Priority: medium
+# Description: 매칭 프로필 카드 컴포넌트
+# Details:
+사용자 정보, 언어 레벨, 관심사 표시, 온라인 상태
+
+# Test Strategy:
+카드 렌더링 및 인터랙션 테스트

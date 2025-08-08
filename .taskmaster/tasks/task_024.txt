@@ -1,0 +1,11 @@
+# Task ID: 24
+# Title: VideoControls 컴포넌트
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: 화상/음성 통화 컨트롤 UI
+# Details:
+마이크/카메라 토글, 종료 버튼, 화면 공유, 언어 전환
+
+# Test Strategy:
+컨트롤 동작 테스트

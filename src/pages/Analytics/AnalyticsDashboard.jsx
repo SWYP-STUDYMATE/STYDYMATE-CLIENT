@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity, TrendingUp, AlertCircle, Clock, Users, Globe, Zap, Server } from 'lucide-react';
 
-// 색상 팔레트
-const COLORS = ['#00C471', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+// 색상 팔레트 (디자인 시스템 준수)
+const COLORS = ['#00C471', '#EA4335', '#4285F4', '#33D08D', '#FFA500', '#606060'];
 
 export default function AnalyticsDashboard() {
   const [dashboardData, setDashboardData] = useState(null);

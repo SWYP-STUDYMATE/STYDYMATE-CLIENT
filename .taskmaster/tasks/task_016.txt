@@ -1,0 +1,11 @@
+# Task ID: 16
+# Title: 세션 목록 페이지 구현
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 학습 세션 목록 화면 (1.49.26.png)
+# Details:
+세션 카드 리스트, 예정된 세션, 완료된 세션 구분
+
+# Test Strategy:
+세션 목록 렌더링 테스트

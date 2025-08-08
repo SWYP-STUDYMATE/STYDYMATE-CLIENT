@@ -1,0 +1,11 @@
+# Task ID: 43
+# Title: Workers KV 캐싱 시스템
+# Status: done
+# Dependencies: 31
+# Priority: low
+# Description: 세션 데이터 캐싱
+# Details:
+네임스페이스 생성, 세션 캐싱, TTL 관리
+
+# Test Strategy:
+캐시 히트율 테스트

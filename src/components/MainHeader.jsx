@@ -3,7 +3,7 @@ import OptimizedImage from './OptimizedImage';
 
 export default function MainHeader() {
   return (
-    <div className="bg-white border-b border-[#e5e8eb] h-[81px] w-full flex items-center justify-between px-10">
+    <div className="bg-white border-b border-[var(--black-50)] h-[81px] w-full flex items-center justify-between px-10">
       {/* 로고 */}
       <div className="w-16 h-14 flex items-center justify-center">
         <OptimizedImage

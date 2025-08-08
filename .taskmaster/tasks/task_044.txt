@@ -1,0 +1,11 @@
+# Task ID: 44
+# Title: Hono 라우팅 시스템
+# Status: done
+# Dependencies: 31
+# Priority: high
+# Description: Workers API 라우팅
+# Details:
+Hono 프레임워크 설정, REST API 라우트, 미들웨어
+
+# Test Strategy:
+API 엔드포인트 테스트

@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: GitHub Actions CI/CD 파이프라인 구축
+# Status: done
+# Dependencies: 1
+# Priority: high
+# Description: 자동 배포를 위한 GitHub Actions 워크플로우
+# Details:
+.github/workflows/deploy.yml 생성, main/develop 브랜치별 배포 전략
+
+# Test Strategy:
+자동 배포 트리거 테스트

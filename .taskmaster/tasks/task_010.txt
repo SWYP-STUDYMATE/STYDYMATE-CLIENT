@@ -1,0 +1,11 @@
+# Task ID: 10
+# Title: 레벨 테스트 결과 페이지
+# Status: done
+# Dependencies: 9
+# Priority: medium
+# Description: AI 분석 결과 표시 페이지
+# Details:
+RadarChart 통합, 레벨 배지, 상세 피드백, 점수 표시
+
+# Test Strategy:
+결과 데이터 렌더링 테스트

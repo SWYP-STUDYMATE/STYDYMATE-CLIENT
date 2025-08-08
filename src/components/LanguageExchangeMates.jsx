@@ -6,15 +6,15 @@ const LanguageExchangeMates = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 0부터 시작하므로 +1
-    
+
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
-    
+
     const formatDate = (date) => {
       const day = date.getDate().toString().padStart(2, '0');
       return `${month}월 ${day}일`;
     };
-    
+
     return `${formatDate(firstDay)} - ${formatDate(lastDay)}`;
   };
 
@@ -25,13 +25,13 @@ const LanguageExchangeMates = () => {
       languageExchange: "영어 ←> 한국어"
     },
     {
-      name: "Jason Park", 
+      name: "Jason Park",
       nationality: "American",
       languageExchange: "영어 ←> 한국어"
     },
     {
       name: "Edwin Simonis",
-      nationality: "British", 
+      nationality: "British",
       languageExchange: "영어 ←> 한국어"
     },
     {
@@ -45,7 +45,7 @@ const LanguageExchangeMates = () => {
     <div className="bg-white rounded-[20px] p-4 mb-4 flex items-center">
       {/* 프로필 사진 (회색 동그라미) */}
       <div className="w-[70px] h-[70px] bg-gray-300 rounded-full mr-4 flex-shrink-0"></div>
-      
+
       {/* 메이트 정보 */}
       <div className="flex-1">
         <div className="text-lg font-semibold text-[var(--black-500)] leading-[21px] mb-1">

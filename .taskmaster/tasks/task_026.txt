@@ -1,0 +1,11 @@
+# Task ID: 26
+# Title: 채팅 음성 메시지 기능
+# Status: done
+# Dependencies: None
+# Priority: low
+# Description: 채팅방 내 음성 메시지 (1.48.43.png)
+# Details:
+음성 녹음, 재생 UI, 파형 표시
+
+# Test Strategy:
+음성 메시지 송수신 테스트

@@ -6,17 +6,17 @@ const AchievementBadges = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 0부터 시작하므로 +1
-    
+
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
-    
+
     const formatDate = (date) => {
       const day = date.getDate().toString().padStart(2, '0');
       return `${month}월 ${day}일`;
     };
-    
+
     const daysInMonth = lastDay.getDate();
-    
+
     return `${formatDate(firstDay)} - ${formatDate(lastDay)} (${daysInMonth}일)`;
   };
 
@@ -52,23 +52,23 @@ const AchievementBadges = () => {
       <div className="w-[180px] h-[188px] flex flex-col items-center">
         {/* 이미지 영역 */}
         <div className="w-[150px] h-[84px] rounded mb-4 flex items-center justify-center overflow-hidden">
-          <img 
-            src={badge.imageSrc} 
+          <img
+            src={badge.imageSrc}
             alt={badge.imageAlt}
             className="w-full h-full object-contain"
           />
         </div>
-        
+
         {/* 배지 제목 */}
         <div className="text-2xl font-bold text-[var(--black-500)] leading-[31px] text-center">
           {badge.title}
         </div>
       </div>
-      
+
       {/* 비활성화 오버레이 */}
       {!badge.isActive && (
         <div className="absolute inset-0 bg-white/60 rounded-[10px] flex items-center justify-center">
-          
+
         </div>
       )}
     </div>

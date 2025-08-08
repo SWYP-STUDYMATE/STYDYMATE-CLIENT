@@ -1,0 +1,11 @@
+# Task ID: 28
+# Title: 세션 예약 시스템
+# Status: done
+# Dependencies: 17
+# Priority: low
+# Description: 학습 세션 예약 기능
+# Details:
+시간대 선택, 반복 설정, 리마인더
+
+# Test Strategy:
+예약 생성/수정/취소 테스트

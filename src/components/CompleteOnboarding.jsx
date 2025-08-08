@@ -33,23 +33,23 @@ export default function CompleteOnboarding({
 
   if (loading) {
     return (
-      <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+      <div className="bg-white h-screen w-[768px] mx-auto">
         <Header />
         <div className="flex items-center justify-center h-full">
-          <div className="text-[16px] text-[#767676]">로딩 중...</div>
+          <div className="text-[16px] text-[var(--black-300)]">로딩 중...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-white h-screen w-[768px] mx-auto">
       <Header />
       <div className="mx-auto mt-[52px] w-[720px]">
-        <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
+        <h1 className="text-[32px] font-bold leading-[42px] text-[var(--black-500)]">
           {userName}님, {onboarding}이 완료되었어요! ({step}/{totalSteps})
         </h1>
-        <p className="text-[16px] font-medium text-[#767676] mt-[12px] leading-[24px]">    
+        <p className="text-[16px] font-medium text-[var(--black-300)] mt-[12px] leading-[24px]">
           {userName}님, Language Mate를 찾기위한 {subText}를 완료하셨어요!
         </p>
       </div>

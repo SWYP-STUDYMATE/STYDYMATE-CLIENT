@@ -1,0 +1,11 @@
+# Task ID: 30
+# Title: sessionStore 구현
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 세션 상태 관리 스토어
+# Details:
+현재 세션, 예약된 세션, 통화 상태 관리
+
+# Test Strategy:
+세션 상태 업데이트 테스트

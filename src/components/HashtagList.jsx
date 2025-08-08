@@ -38,23 +38,23 @@ export default function HashtagList({
     // 변형별 스타일
     const variantStyles = {
         default: {
-            base: 'bg-[#F3F4F6] text-[#606060]',
-            hover: 'hover:bg-[#E5E7EB]',
+            base: 'bg-[var(--black-50)] text-[var(--black-300)]',
+            hover: 'hover:bg-[color-mix(in_srgb,var(--black-50),#ffffff 20%)]',
             clickable: 'cursor-pointer'
         },
         primary: {
-            base: 'bg-[#4338CA]/10 text-[#4338CA]',
-            hover: 'hover:bg-[#4338CA]/20',
+            base: 'bg-[rgba(0,196,113,0.12)] text-[var(--green-800)]',
+            hover: 'hover:bg-[rgba(0,196,113,0.2)]',
             clickable: 'cursor-pointer'
         },
         secondary: {
-            base: 'bg-[#10B981]/10 text-[#10B981]',
-            hover: 'hover:bg-[#10B981]/20',
+            base: 'bg-[rgba(0,196,113,0.12)] text-[var(--green-700)]',
+            hover: 'hover:bg-[rgba(0,196,113,0.2)]',
             clickable: 'cursor-pointer'
         },
         outline: {
-            base: 'border border-[#E5E7EB] text-[#606060]',
-            hover: 'hover:border-[#D1D5DB] hover:bg-[#F9FAFB]',
+            base: 'border border-[var(--black-50)] text-[var(--black-300)]',
+            hover: 'hover:border-[color-mix(in_srgb,var(--black-50),#000 10%)] hover:bg-[color-mix(in_srgb,var(--black-50),#fff 40%)]',
             clickable: 'cursor-pointer'
         }
     };
@@ -116,7 +116,7 @@ export default function HashtagList({
                 <span
                     className={`
             inline-flex items-center ${currentSize.padding} 
-            ${currentSize.text} text-[#9CA3AF]
+  ${currentSize.text} text-[var(--black-200)]
           `}
                 >
                     +{remainingCount}
@@ -130,8 +130,8 @@ export default function HashtagList({
                     className={`
             inline-flex items-center ${currentSize.gap} ${currentSize.padding} 
             rounded-full ${currentSize.text} transition-all duration-200
-            border border-dashed border-[#D1D5DB] text-[#9CA3AF]
-            hover:border-[#4338CA] hover:text-[#4338CA] hover:bg-[#4338CA]/5
+  border border-dashed border-[var(--black-50)] text-[var(--black-200)]
+  hover:border-[var(--green-500)] hover:text-[var(--green-500)] hover:bg-[rgba(0,196,113,0.05)]
           `}
                 >
                     <Plus className={currentSize.icon} />

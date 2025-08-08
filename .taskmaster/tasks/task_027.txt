@@ -1,0 +1,11 @@
+# Task ID: 27
+# Title: 프로필 페이지 개선
+# Status: done
+# Dependencies: None
+# Priority: low
+# Description: 사용자 프로필 화면 업데이트 (1.49.56.png, 1.50.24.png)
+# Details:
+프로필 통계, 배지 시스템, 알림 설정
+
+# Test Strategy:
+프로필 기능 테스트

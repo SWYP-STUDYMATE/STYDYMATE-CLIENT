@@ -1,0 +1,11 @@
+# Task ID: 45
+# Title: CORS 및 보안 설정
+# Status: done
+# Dependencies: 44
+# Priority: high
+# Description: API 보안 구성
+# Details:
+CORS 정책, Rate limiting, 보안 헤더
+
+# Test Strategy:
+보안 정책 검증 테스트

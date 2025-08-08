@@ -1,0 +1,11 @@
+# Task ID: 12
+# Title: 매칭 프로필 페이지 구현
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 사용자 상세 프로필 화면 (12.35.19.png)
+# Details:
+프로필 정보, Active Now 상태, 관심사 태그, Start a Chat 버튼
+
+# Test Strategy:
+프로필 데이터 렌더링 테스트

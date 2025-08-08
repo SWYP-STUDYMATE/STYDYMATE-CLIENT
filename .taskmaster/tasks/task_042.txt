@@ -1,0 +1,11 @@
+# Task ID: 42
+# Title: Cloudflare Images 통합
+# Status: done
+# Dependencies: 41
+# Priority: medium
+# Description: 이미지 처리 서비스
+# Details:
+프로필 이미지 업로드, 자동 리사이징, 변형, CDN 배포
+
+# Test Strategy:
+이미지 처리 파이프라인 테스트

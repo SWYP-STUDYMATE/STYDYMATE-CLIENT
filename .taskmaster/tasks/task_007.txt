@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: 레벨 테스트 질문 페이지 구현
+# Status: done
+# Dependencies: 5, 6
+# Priority: high
+# Description: 4개 음성 질문 답변 페이지
+# Details:
+질문 표시, 진행률 표시(01/04), 녹음 인터페이스, 제출하고 계속하기
+
+# Test Strategy:
+질문 네비게이션 및 녹음 플로우 테스트

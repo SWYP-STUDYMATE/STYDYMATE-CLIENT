@@ -1,0 +1,11 @@
+# Task ID: 32
+# Title: Workers AI 바인딩 설정
+# Status: done
+# Dependencies: 31
+# Priority: high
+# Description: Cloudflare Workers AI 연결
+# Details:
+wrangler.toml에 AI 바인딩 추가, 환경 변수 설정
+
+# Test Strategy:
+AI 바인딩 접근 테스트

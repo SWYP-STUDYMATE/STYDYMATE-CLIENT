@@ -1,0 +1,11 @@
+# Task ID: 17
+# Title: 세션 캘린더 뷰 구현
+# Status: done
+# Dependencies: 16
+# Priority: low
+# Description: 캘린더 형태 세션 관리 (1.49.37.png)
+# Details:
+월별/주별 뷰, 세션 표시, 일정 추가/수정
+
+# Test Strategy:
+캘린더 기능 테스트

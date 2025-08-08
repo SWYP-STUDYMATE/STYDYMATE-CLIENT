@@ -1,0 +1,11 @@
+# Task ID: 38
+# Title: Durable Objects Room 관리
+# Status: done
+# Dependencies: 37
+# Priority: high
+# Description: WebRTC 룸 상태 관리
+# Details:
+Room 생성/삭제, 참가자 관리(최대 4명), 상태 동기화
+
+# Test Strategy:
+룸 생성 및 참가 테스트

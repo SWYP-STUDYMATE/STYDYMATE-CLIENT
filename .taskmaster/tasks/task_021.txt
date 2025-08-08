@@ -1,0 +1,11 @@
+# Task ID: 21
+# Title: 그룹 오디오 세션 룸 구현
+# Status: done
+# Dependencies: 20
+# Priority: medium
+# Description: 최대 4명 음성 통화 화면 (1.52.03.png)
+# Details:
+4명 프로필 그리드, 발언자 표시, 개별 뮤트 상태
+
+# Test Strategy:
+그룹 음성 통화 테스트

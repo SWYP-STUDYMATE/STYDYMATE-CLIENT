@@ -1,0 +1,43 @@
+# Task ID: 49
+# Title: Workers 배포 파이프라인
+# Status: done
+# Dependencies: 46
+# Priority: medium
+# Description: 자동 배포 설정
+# Details:
+GitHub Actions 설정, wrangler deploy, 환경별 배포
+
+# Test Strategy:
+배포 자동화 테스트
+
+# Subtasks:
+## 1. Configure GitHub Actions Workflow [done]
+### Dependencies: None
+### Description: Set up a GitHub Actions workflow to automate the deployment process for Cloudflare Workers.
+### Details:
+Create and configure a YAML workflow file in the repository to trigger on push or pull request events, specifying steps for installing dependencies, running tests, and deploying using wrangler.
+
+## 2. Integrate wrangler for Deployment [done]
+### Dependencies: 49.1
+### Description: Integrate the wrangler CLI tool into the deployment pipeline for managing Cloudflare Workers deployments.
+### Details:
+Add wrangler installation and authentication steps to the pipeline, ensuring environment variables and secrets are securely managed.
+
+## 3. Implement Environment-specific Deployment Logic [done]
+### Dependencies: 49.2
+### Description: Set up logic in the pipeline to handle deployments to different environments (e.g., staging, production).
+### Details:
+Configure the workflow to select the appropriate environment based on branch or tag, and use environment-specific wrangler.toml settings.
+
+## 4. Validate Deployment and Routing Configuration [done]
+### Dependencies: 49.3
+### Description: Ensure that deployed Workers are correctly routed and accessible in each environment.
+### Details:
+Check domain bindings, routing rules, and environment variables to prevent issues such as 404 errors after deployment.
+
+## 5. Automate Post-deployment Testing [done]
+### Dependencies: 49.4
+### Description: Add automated tests to verify deployment success and application health after each deployment.
+### Details:
+Integrate health checks and endpoint tests into the pipeline to validate that deployments are live and functioning as expected.
+

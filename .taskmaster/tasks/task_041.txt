@@ -1,0 +1,11 @@
+# Task ID: 41
+# Title: R2 Storage 설정
+# Status: done
+# Dependencies: 31
+# Priority: medium
+# Description: Cloudflare R2 파일 저장소
+# Details:
+버킷 생성, 접근 권한, CORS 설정
+
+# Test Strategy:
+파일 업로드/다운로드 테스트

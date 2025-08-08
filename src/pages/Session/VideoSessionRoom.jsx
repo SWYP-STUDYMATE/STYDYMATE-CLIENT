@@ -511,10 +511,10 @@ export default function VideoSessionRoom() {
   };
 
   const getSignalIcon = () => {
-    if (signalStrength === 0) return <SignalZero className="w-5 h-5 text-red-500" />;
-    return <Signal className={`w-5 h-5 ${signalStrength === 3 ? 'text-green-500' :
-      signalStrength === 2 ? 'text-yellow-500' :
-        'text-orange-500'
+    if (signalStrength === 0) return <SignalZero className="w-5 h-5 text-[var(--red)]" />;
+    return <Signal className={`w-5 h-5 ${signalStrength === 3 ? 'text-[var(--green-500)]' :
+      signalStrength === 2 ? 'text-[var(--warning-yellow)]' :
+        'text-[var(--blue)]'
       }`} />;
   };
 

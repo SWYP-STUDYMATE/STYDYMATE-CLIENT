@@ -1,0 +1,11 @@
+# Task ID: 31
+# Title: Node.js Workers 프로젝트 초기화
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Cloudflare Workers 프로젝트 생성
+# Details:
+studymate-workers 폴더 생성, wrangler init, TypeScript 설정
+
+# Test Strategy:
+wrangler dev로 로컬 테스트

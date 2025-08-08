@@ -1,0 +1,11 @@
+# Task ID: 25
+# Title: DashboardLayout 구현
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: 사이드바 포함 대시보드 레이아웃
+# Details:
+80px 사이드바, 메인 컨텐츠 영역, 반응형 디자인
+
+# Test Strategy:
+레이아웃 렌더링 테스트

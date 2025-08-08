@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: 레벨 테스트 완료 페이지
+# Status: done
+# Dependencies: 7
+# Priority: medium
+# Description: 테스트 완료 화면 구현 (12.33.20.png)
+# Details:
+완료 메시지, 진행바 애니메이션, 분석 중 표시
+
+# Test Strategy:
+완료 상태 전환 테스트
