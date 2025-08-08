@@ -564,7 +564,7 @@
         "id": 46,
         "title": "프론트엔드-Workers API 연동",
         "description": "프론트엔드와 Workers 통합",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "44",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:39:02.517Z"
+      "updated": "2025-08-08T09:39:39.879Z"
     }
   }
 }

@@ -4,7 +4,7 @@ import { timing } from 'hono/timing';
 import { levelTestRoutes } from './routes/levelTest';
 import { webrtcRoutes } from './routes/webrtc';
 import { uploadRoutes } from './routes/upload';
-import { llmRoutes } from './routes/llm';
+import whisperRoutes from './routes/whisper';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { Variables } from './types';
