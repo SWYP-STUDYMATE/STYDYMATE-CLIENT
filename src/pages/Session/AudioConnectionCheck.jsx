@@ -1,193 +1,211 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
-import { Mic, Volume2, Wifi, CheckCircle, XCircle, Loader2, PlayCircle, Settings } from 'lucide-react';
+import { Mic, MicOff, Volume2, Wifi, WifiOff, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-export default function AudioConnectionCheck() {
+export default function AudioSessionCheck() {
   const navigate = useNavigate();
-  const [micPermission, setMicPermission] = useState('checking');
-  const [speakerTest, setSpeakerTest] = useState('ready'); // ready, playing, success, failed
-  const [internetConnection, setInternetConnection] = useState('checking');
+  const [micStatus, setMicStatus] = useState('idle'); // idle, testing, success, failed
+  const [speakerStatus, setSpeakerStatus] = useState('idle');
+  const [connectionStatus, setConnectionStatus] = useState('idle');
   const [audioLevel, setAudioLevel] = useState(0);
-  const [isReady, setIsReady] = useState(false);
-  const [selectedMicrophone, setSelectedMicrophone] = useState('');
-  const [selectedSpeaker, setSelectedSpeaker] = useState('');
-  const [availableDevices, setAvailableDevices] = useState({ microphones: [], speakers: [] });
+  const [connectionSpeed, setConnectionSpeed] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState(null);
   
-  const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
-  const audioElementRef = useRef(null);
-  const animationIdRef = useRef(null);
+  const animationRef = useRef(null);
+  const streamRef = useRef(null);
 
   useEffect(() => {
-    checkInternetConnection();
-    checkMicrophonePermission();
-    getAudioDevices();
-
     return () => {
       // Cleanup
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current);
-      }
     };
   }, []);
 
-  useEffect(() => {
-    const allChecked = 
-      micPermission === 'granted' && 
-      speakerTest === 'success' && 
-      internetConnection === 'connected';
-    
-    setIsReady(allChecked);
-  }, [micPermission, speakerTest, internetConnection]);
+  // 오디오 레벨 시각화
+  const visualizeAudio = () => {
+    if (!analyserRef.current) return;
 
-  const checkInternetConnection = () => {
-    setInternetConnection('checking');
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
     
-    if (navigator.onLine) {
-      // Simple connectivity check
-      fetch('https://www.google.com/favicon.ico', { mode: 'no-cors' })
-        .then(() => {
-          setInternetConnection('connected');
-        })
-        .catch(() => {
-          setInternetConnection('connected'); // Even if fetch fails, we're online
-        });
-    } else {
-      setInternetConnection('disconnected');
-    }
+    const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+    setAudioLevel(Math.min(average / 128, 1));
 
-    // Monitor connection changes
-    window.addEventListener('online', () => setInternetConnection('connected'));
-    window.addEventListener('offline', () => setInternetConnection('disconnected'));
+    animationRef.current = requestAnimationFrame(visualizeAudio);
   };
 
-  const getAudioDevices = async () => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const microphones = devices.filter(device => device.kind === 'audioinput');
-      const speakers = devices.filter(device => device.kind === 'audiooutput');
-      
-      setAvailableDevices({ microphones, speakers });
-      
-      if (microphones.length > 0) {
-        setSelectedMicrophone(microphones[0].deviceId);
-      }
-      if (speakers.length > 0) {
-        setSelectedSpeaker(speakers[0].deviceId);
-      }
-    } catch (error) {
-      console.error('Error getting audio devices:', error);
-    }
-  };
-
-  const checkMicrophonePermission = async () => {
-    setMicPermission('checking');
+  // 마이크 테스트
+  const testMicrophone = async () => {
+    setMicStatus('testing');
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: selectedMicrophone ? { deviceId: selectedMicrophone } : true 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        } 
       });
       
-      mediaStreamRef.current = stream;
-      setMicPermission('granted');
+      streamRef.current = stream;
+
+      // 오디오 시각화 설정
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      analyserRef.current.fftSize = 256;
+
+      // MediaRecorder 설정
+      const options = {
+        mimeType: 'audio/webm;codecs=opus'
+      };
       
-      // Start audio level monitoring
-      startAudioLevelMonitoring(stream);
-    } catch (err) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setMicPermission('denied');
-      } else {
-        setMicPermission('denied');
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'audio/webm';
       }
+
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setRecordedBlob(blob);
+        setIsRecording(false);
+        
+        // 자동 재생으로 마이크 테스트 완료
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audio.play().then(() => {
+          setMicStatus('success');
+        }).catch(() => {
+          setMicStatus('failed');
+        });
+      };
+
+      // 3초간 녹음
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      visualizeAudio();
+      
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+          stream.getTracks().forEach(track => track.stop());
+          if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+          }
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Microphone test failed:', error);
+      setMicStatus('failed');
     }
   };
 
-  const startAudioLevelMonitoring = (stream) => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioContext.createAnalyser();
-    const microphone = audioContext.createMediaStreamSource(stream);
-    
-    analyser.smoothingTimeConstant = 0.8;
-    analyser.fftSize = 1024;
-    
-    microphone.connect(analyser);
-    
-    audioContextRef.current = audioContext;
-    analyserRef.current = analyser;
-    
-    const checkAudioLevel = () => {
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      analyser.getByteFrequencyData(dataArray);
-      
-      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-      const normalizedLevel = Math.min(100, Math.round(average * 1.5));
-      
-      setAudioLevel(normalizedLevel);
-      animationIdRef.current = requestAnimationFrame(checkAudioLevel);
-    };
-    
-    checkAudioLevel();
-  };
-
+  // 스피커 테스트
   const testSpeaker = async () => {
-    setSpeakerTest('playing');
+    setSpeakerStatus('testing');
     
     try {
-      // Create a simple test tone using Web Audio API
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // 테스트 톤 생성 (440Hz, 0.5초)
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      oscillator.frequency.value = 440; // A4 note
-      gainNode.gain.value = 0.3;
+      oscillator.frequency.value = 440; // A4 음
+      gainNode.gain.value = 0.3; // 볼륨 30%
       
       oscillator.start();
       
-      // Play for 1 second
+      // 페이드 아웃
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
       setTimeout(() => {
         oscillator.stop();
-        audioContext.close();
-        setSpeakerTest('success');
-      }, 1000);
+        setSpeakerStatus('success');
+      }, 500);
       
     } catch (error) {
       console.error('Speaker test failed:', error);
-      setSpeakerTest('failed');
+      setSpeakerStatus('failed');
     }
   };
 
-  const handleRetry = () => {
-    setSpeakerTest('ready');
-    checkInternetConnection();
-    checkMicrophonePermission();
+  // 연결 테스트
+  const testConnection = async () => {
+    setConnectionStatus('testing');
+    
+    try {
+      // 간단한 속도 테스트 (실제로는 더 정교한 방법 필요)
+      const startTime = Date.now();
+      
+      // 1MB 정도의 더미 데이터 다운로드
+      const response = await fetch('https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png', {
+        cache: 'no-cache'
+      });
+      
+      const data = await response.blob();
+      const endTime = Date.now();
+      const duration = (endTime - startTime) / 1000; // 초 단위
+      const sizeInMB = data.size / (1024 * 1024);
+      const speedMbps = (sizeInMB * 8) / duration;
+      
+      setConnectionSpeed(speedMbps);
+      
+      // 최소 1Mbps 이상이면 성공
+      if (speedMbps >= 1) {
+        setConnectionStatus('success');
+      } else {
+        setConnectionStatus('failed');
+      }
+      
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('failed');
+    }
   };
 
-  const handleContinue = () => {
-    // Navigate to the actual call page
-    navigate('/session/call');
+  // 전체 테스트 실행
+  const runAllTests = async () => {
+    await testMicrophone();
+    setTimeout(() => testSpeaker(), 4000);
+    setTimeout(() => testConnection(), 5000);
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'checking':
-      case 'playing':
-        return <Loader2 className="w-5 h-5 text-[#929292] animate-spin" />;
-      case 'granted':
-      case 'connected':
+      case 'idle':
+        return null;
+      case 'testing':
+        return <Loader2 className="w-5 h-5 animate-spin text-[#4285F4]" />;
       case 'success':
         return <CheckCircle className="w-5 h-5 text-[#00C471]" />;
-      case 'denied':
-      case 'disconnected':
       case 'failed':
         return <XCircle className="w-5 h-5 text-[#EA4335]" />;
       default:
@@ -195,205 +213,164 @@ export default function AudioConnectionCheck() {
     }
   };
 
-  const getStatusText = (type, status) => {
-    if (type === 'microphone') {
-      switch (status) {
-        case 'checking': return '확인 중...';
-        case 'granted': return '권한 허용됨';
-        case 'denied': return '권한 거부됨';
-        default: return '확인 필요';
-      }
-    } else if (type === 'speaker') {
-      switch (status) {
-        case 'ready': return '테스트 대기';
-        case 'playing': return '재생 중...';
-        case 'success': return '정상 작동';
-        case 'failed': return '테스트 실패';
-        default: return '확인 필요';
-      }
-    } else if (type === 'internet') {
-      switch (status) {
-        case 'checking': return '확인 중...';
-        case 'connected': return '연결됨';
-        case 'disconnected': return '연결 안됨';
-        default: return '확인 필요';
-      }
-    }
-  };
+  const allTestsPassed = micStatus === 'success' && 
+                         speakerStatus === 'success' && 
+                         connectionStatus === 'success';
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <h1 className="text-[18px] font-bold text-[#111111]">음성 통화 연결 확인</h1>
-          <div className="w-10" />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
-        <div className="mb-8">
-          <h2 className="text-[24px] font-bold text-[#111111] mb-2">
-            통화 환경을 확인하고 있어요
-          </h2>
-          <p className="text-[16px] text-[#606060]">
-            원활한 통화를 위해 아래 항목들을 체크해주세요
-          </p>
-        </div>
-
-        {/* Check Items */}
-        <div className="space-y-4 mb-8">
-          {/* Microphone Check */}
-          <div className="bg-white rounded-[12px] p-6 border border-[#E7E7E7]">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
-                  <Mic className="w-6 h-6 text-[#00C471]" />
-                </div>
-                <div>
-                  <h3 className="text-[16px] font-medium text-[#111111]">마이크</h3>
-                  <p className="text-[14px] text-[#606060]">
-                    {getStatusText('microphone', micPermission)}
-                  </p>
-                </div>
-              </div>
-              {getStatusIcon(micPermission)}
-            </div>
-            
-            {/* Audio Level Indicator */}
-            {micPermission === 'granted' && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[12px] text-[#929292]">마이크 입력 레벨</span>
-                  <span className="text-[12px] text-[#929292]">{audioLevel}%</span>
-                </div>
-                <div className="w-full h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#00C471] transition-all duration-100"
-                    style={{ width: `${audioLevel}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Speaker Check */}
-          <div className="bg-white rounded-[12px] p-6 border border-[#E7E7E7]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center flex-1">
-                <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
-                  <Volume2 className="w-6 h-6 text-[#00C471]" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-[16px] font-medium text-[#111111]">스피커</h3>
-                  <p className="text-[14px] text-[#606060]">
-                    {getStatusText('speaker', speakerTest)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                {speakerTest === 'ready' && (
-                  <button
-                    onClick={testSpeaker}
-                    className="px-4 py-2 bg-[#00C471] text-white rounded-lg text-sm font-medium hover:bg-[#00A05C] transition-colors"
-                  >
-                    테스트
-                  </button>
-                )}
-                {getStatusIcon(speakerTest)}
-              </div>
-            </div>
-          </div>
-
-          {/* Internet Connection */}
-          <div className="bg-white rounded-[12px] p-6 border border-[#E7E7E7]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
-                  <Wifi className="w-6 h-6 text-[#00C471]" />
-                </div>
-                <div>
-                  <h3 className="text-[16px] font-medium text-[#111111]">인터넷 연결</h3>
-                  <p className="text-[14px] text-[#606060]">
-                    {getStatusText('internet', internetConnection)}
-                  </p>
-                </div>
-              </div>
-              {getStatusIcon(internetConnection)}
-            </div>
-          </div>
-        </div>
-
-        {/* Device Selection */}
-        <div className="bg-[#F5F5F5] rounded-[12px] p-4 mb-8">
-          <div className="flex items-center mb-3">
-            <Settings className="w-4 h-4 text-[#606060] mr-2" />
-            <span className="text-[14px] font-medium text-[#606060]">디바이스 설정</span>
-          </div>
-          
-          <div className="space-y-3">
-            <div>
-              <label className="text-[12px] text-[#929292] block mb-1">마이크</label>
-              <select 
-                value={selectedMicrophone}
-                onChange={(e) => setSelectedMicrophone(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-[#E7E7E7] rounded-lg text-[14px]"
-              >
-                {availableDevices.microphones.map(device => (
-                  <option key={device.deviceId} value={device.deviceId}>
-                    {device.label || `마이크 ${device.deviceId.slice(0, 5)}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="text-[12px] text-[#929292] block mb-1">스피커</label>
-              <select 
-                value={selectedSpeaker}
-                onChange={(e) => setSelectedSpeaker(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-[#E7E7E7] rounded-lg text-[14px]"
-                disabled={!('setSinkId' in HTMLMediaElement.prototype)}
-              >
-                {availableDevices.speakers.map(device => (
-                  <option key={device.deviceId} value={device.deviceId}>
-                    {device.label || `스피커 ${device.deviceId.slice(0, 5)}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          {!isReady && (
-            <CommonButton
-              onClick={handleRetry}
-              variant="secondary"
-              className="w-full"
+      <div className="max-w-[768px] w-full mx-auto flex flex-col min-h-screen">
+        {/* 헤더 */}
+        <div className="px-6 py-4 bg-white border-b border-[#E7E7E7]">
+          <div className="flex items-center justify-between">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              다시 확인
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <h1 className="text-[18px] font-bold text-[#111111]">음성 세션 연결 확인</h1>
+            <div className="w-10" />
+          </div>
+        </div>
+
+        {/* 메인 콘텐츠 */}
+        <div className="flex-1 px-6 py-8">
+          <div className="text-center mb-8">
+            <h2 className="text-[24px] font-bold text-[#111111] mb-2">
+              세션 시작 전 확인사항
+            </h2>
+            <p className="text-[16px] text-[#606060]">
+              원활한 음성 통화를 위해 디바이스를 테스트합니다
+            </p>
+          </div>
+
+          {/* 테스트 항목들 */}
+          <div className="space-y-4 mb-8">
+            {/* 마이크 테스트 */}
+            <div className="bg-white rounded-[10px] p-6 border border-[#E7E7E7]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
+                    {isRecording ? <Mic className="w-6 h-6 text-[#00C471]" /> : <MicOff className="w-6 h-6 text-[#00C471]" />}
+                  </div>
+                  <div>
+                    <h3 className="text-[16px] font-medium text-[#111111]">마이크 테스트</h3>
+                    <p className="text-[14px] text-[#929292]">
+                      {micStatus === 'idle' && '테스트를 시작하세요'}
+                      {micStatus === 'testing' && '3초간 말씀해주세요...'}
+                      {micStatus === 'success' && '정상 작동'}
+                      {micStatus === 'failed' && '마이크를 확인하세요'}
+                    </p>
+                  </div>
+                </div>
+                {getStatusIcon(micStatus)}
+              </div>
+              
+              {/* 오디오 레벨 표시 */}
+              {isRecording && (
+                <div className="mt-4">
+                  <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#00C471] transition-all duration-100"
+                      style={{ width: `${audioLevel * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 스피커 테스트 */}
+            <div className="bg-white rounded-[10px] p-6 border border-[#E7E7E7]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-[#E8F4FD] rounded-full flex items-center justify-center mr-4">
+                    <Volume2 className="w-6 h-6 text-[#4285F4]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[16px] font-medium text-[#111111]">스피커 테스트</h3>
+                    <p className="text-[14px] text-[#929292]">
+                      {speakerStatus === 'idle' && '테스트를 시작하세요'}
+                      {speakerStatus === 'testing' && '테스트 음이 재생됩니다...'}
+                      {speakerStatus === 'success' && '정상 작동'}
+                      {speakerStatus === 'failed' && '스피커를 확인하세요'}
+                    </p>
+                  </div>
+                </div>
+                {getStatusIcon(speakerStatus)}
+              </div>
+            </div>
+
+            {/* 연결 테스트 */}
+            <div className="bg-white rounded-[10px] p-6 border border-[#E7E7E7]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-[#FFF5E6] rounded-full flex items-center justify-center mr-4">
+                    {connectionStatus === 'failed' ? 
+                      <WifiOff className="w-6 h-6 text-[#FFA500]" /> : 
+                      <Wifi className="w-6 h-6 text-[#FFA500]" />
+                    }
+                  </div>
+                  <div>
+                    <h3 className="text-[16px] font-medium text-[#111111]">인터넷 연결</h3>
+                    <p className="text-[14px] text-[#929292]">
+                      {connectionStatus === 'idle' && '테스트를 시작하세요'}
+                      {connectionStatus === 'testing' && '연결 속도 측정 중...'}
+                      {connectionStatus === 'success' && `연결 양호 (${connectionSpeed?.toFixed(1)} Mbps)`}
+                      {connectionStatus === 'failed' && '연결이 불안정합니다'}
+                    </p>
+                  </div>
+                </div>
+                {getStatusIcon(connectionStatus)}
+              </div>
+            </div>
+          </div>
+
+          {/* 안내 메시지 */}
+          <div className="bg-[#F8F9FA] rounded-[10px] p-4 mb-8">
+            <p className="text-[14px] text-[#606060]">
+              💡 모든 테스트를 통과해야 원활한 음성 통화가 가능합니다.
+              문제가 있다면 디바이스 설정을 확인해주세요.
+            </p>
+          </div>
+        </div>
+
+        {/* 하단 버튼 */}
+        <div className="px-6 pb-8">
+          {micStatus === 'idle' && speakerStatus === 'idle' && connectionStatus === 'idle' ? (
+            <CommonButton
+              onClick={runAllTests}
+              className="w-full"
+              variant="primary"
+            >
+              전체 테스트 시작
             </CommonButton>
+          ) : allTestsPassed ? (
+            <CommonButton
+              onClick={() => navigate('/session/audio-room')}
+              className="w-full"
+              variant="success"
+            >
+              세션 시작하기
+            </CommonButton>
+          ) : (
+            <div className="space-y-3">
+              <CommonButton
+                onClick={runAllTests}
+                className="w-full"
+                variant="secondary"
+              >
+                다시 테스트
+              </CommonButton>
+              {(micStatus === 'testing' || speakerStatus === 'testing' || connectionStatus === 'testing') && (
+                <p className="text-center text-[14px] text-[#929292]">
+                  테스트 진행 중...
+                </p>
+              )}
+            </div>
           )}
-          
-          <CommonButton
-            onClick={handleContinue}
-            variant="primary"
-            disabled={!isReady}
-            className="w-full"
-          >
-            통화 시작하기
-          </CommonButton>
         </div>
       </div>
     </div>
