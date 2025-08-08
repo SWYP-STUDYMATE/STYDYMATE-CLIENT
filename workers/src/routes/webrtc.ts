@@ -25,7 +25,8 @@ webrtcRoutes.post('/create', async (c) => {
       roomId,
       roomType: roomType || 'audio',
       maxParticipants: maxParticipants || 4,
-      websocketUrl: `/api/room/${roomId}/ws`
+      websocketUrl: `/api/room/${roomId}/ws`,
+      joinUrl: `/api/room/${roomId}/join`
     });
   } catch (error) {
     console.error('Room creation error:', error);
@@ -47,13 +48,18 @@ webrtcRoutes.post('/:roomId/join', async (c) => {
     const response = await room.fetch(new Request('http://room/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, userName })
+      body: JSON.stringify({ userId, userName, roomType: c.req.query('roomType') || 'audio' })
     }));
     
     const result = await response.json();
     
     if (!response.ok) {
       return c.json(result, response.status);
+    }
+    
+    // Add WebSocket URL to response
+    if (result.success) {
+      result.websocketUrl = `/api/room/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`;
     }
     
     return c.json(result);
@@ -89,16 +95,26 @@ webrtcRoutes.post('/:roomId/leave', async (c) => {
 webrtcRoutes.get('/:roomId/ws', async (c) => {
   try {
     const roomId = c.req.param('roomId');
+    const userId = c.req.query('userId');
+    const userName = c.req.query('userName') || 'Anonymous';
     const upgrade = c.req.header('Upgrade');
     
     if (!upgrade || upgrade !== 'websocket') {
       return c.json({ error: 'Expected WebSocket' }, 426);
     }
     
+    if (!userId) {
+      return c.json({ error: 'Missing userId parameter' }, 400);
+    }
+    
     const id = c.env.ROOM.idFromName(roomId);
     const room = c.env.ROOM.get(id);
     
-    return room.fetch(new Request('http://room/websocket', {
+    // Forward WebSocket request with query parameters
+    const url = new URL(c.req.url);
+    const wsUrl = `http://room/websocket?userId=${userId}&userName=${encodeURIComponent(userName)}`;
+    
+    return room.fetch(new Request(wsUrl, {
       headers: c.req.raw.headers
     }));
   } catch (error) {
@@ -107,25 +123,25 @@ webrtcRoutes.get('/:roomId/ws', async (c) => {
   }
 });
 
-// Send signal
-webrtcRoutes.post('/:roomId/signal', async (c) => {
+// Update room settings
+webrtcRoutes.patch('/:roomId/settings', async (c) => {
   try {
     const roomId = c.req.param('roomId');
-    const signalData = await c.req.json();
+    const settings = await c.req.json();
     
     const id = c.env.ROOM.idFromName(roomId);
     const room = c.env.ROOM.get(id);
     
-    const response = await room.fetch(new Request('http://room/signal', {
-      method: 'POST',
+    const response = await room.fetch(new Request('http://room/settings', {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(signalData)
+      body: JSON.stringify(settings)
     }));
     
     return c.json(await response.json());
   } catch (error) {
-    console.error('Signal error:', error);
-    return c.json({ error: 'Failed to send signal' }, 500);
+    console.error('Settings update error:', error);
+    return c.json({ error: 'Failed to update settings' }, 500);
   }
 });
 

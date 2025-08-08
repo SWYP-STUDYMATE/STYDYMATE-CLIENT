@@ -324,7 +324,7 @@
         "id": 27,
         "title": "프로필 페이지 개선",
         "description": "사용자 프로필 화면 업데이트 (1.49.56.png, 1.50.24.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [],
         "details": "프로필 통계, 배지 시스템, 알림 설정",
@@ -460,7 +460,7 @@
         "id": 38,
         "title": "Durable Objects Room 관리",
         "description": "WebRTC 룸 상태 관리",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "37"
@@ -473,7 +473,7 @@
         "id": 39,
         "title": "WebRTC 시그널링 구현",
         "description": "P2P 연결 협상 로직",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "38"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:37:03.306Z"
+      "updated": "2025-08-08T09:38:36.876Z"
     }
   }
 }

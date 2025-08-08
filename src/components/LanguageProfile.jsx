@@ -1,19 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import useLangInfoStore from '../store/langInfoStore';
 
-const LanguageProfile = () => {
+const LanguageProfile = ({ showEditButton = true }) => {
   const navigate = useNavigate();
+  const { selectedLangOptions } = useLangInfoStore();
 
+  // 실제 데이터가 없을 경우 기본값 사용
   const profileData = {
-    teachableLanguages: [
+    teachableLanguages: selectedLangOptions?.teach || [
       { language: "영어", level: "Native" },
       { language: "스페인어", level: "Advanced Low" }
     ],
-    learningLanguages: [
+    learningLanguages: selectedLangOptions?.learn || [
       { language: "한국어", level: "Intermediate Low" },
       { language: "프랑스어", level: "Intermediate Mid" }
     ],
-    interests: [
+    interests: selectedLangOptions?.interests || [
       "자기 개발",
       "이직 준비", 
       "실전 회화/친구 사귀기",
@@ -47,13 +50,15 @@ const LanguageProfile = () => {
 
   return (
     <div className="bg-white border border-[#e6f9f1] rounded-[10px] p-6 relative">
-      {/* 수정하기 버튼 */}
-      <button
-        onClick={handleEdit}
-        className="absolute top-[34px] right-[32px] text-[15px] leading-[22px] text-[#E5E5E5] font-medium cursor-pointer"
-      >
-        수정하기
-      </button>
+      {/* 수정하기 버튼 - showEditButton prop에 따라 표시 */}
+      {showEditButton && (
+        <button
+          onClick={handleEdit}
+          className="absolute top-[34px] right-[32px] text-[15px] leading-[22px] text-[#E5E5E5] font-medium cursor-pointer"
+        >
+          수정하기
+        </button>
+      )}
 
       {/* 사용 가능한 언어 */}
       <div className="mb-8">

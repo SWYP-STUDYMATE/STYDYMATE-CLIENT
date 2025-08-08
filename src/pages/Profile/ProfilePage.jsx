@@ -159,7 +159,7 @@ export default function ProfilePage() {
         {activeTab === 'profile' && (
           <div className="space-y-6">
             {/* Language Profile */}
-            <LanguageProfile />
+            <LanguageProfile showEditButton={false} />
 
             {/* Achievement Badges */}
             <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">

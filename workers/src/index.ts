@@ -49,7 +49,6 @@ app.route('/api/level-test', levelTestRoutes);
 app.route('/api/room', webrtcRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/llm', llmRoutes);
-app.route('/api/llm', llmRoutes);
 
 // 404 handler
 app.notFound((c) => {
