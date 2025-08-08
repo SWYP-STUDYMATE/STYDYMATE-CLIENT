@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useLevelTestStore from '../../stores/levelTestStore';
+import useLevelTestStore from '../../store/levelTestStore';
 import CommonButton from '../../components/CommonButton';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 

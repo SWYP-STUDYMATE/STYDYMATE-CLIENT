@@ -381,7 +381,7 @@
         "id": 32,
         "title": "Workers AI 바인딩 설정",
         "description": "Cloudflare Workers AI 연결",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "31"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:25:36.647Z"
+      "updated": "2025-08-08T09:26:07.126Z"
     }
   }
 }
