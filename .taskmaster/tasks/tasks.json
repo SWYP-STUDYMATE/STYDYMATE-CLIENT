@@ -291,7 +291,7 @@
         "id": 24,
         "title": "VideoControls 컴포넌트",
         "description": "화상/음성 통화 컨트롤 UI",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "마이크/카메라 토글, 종료 버튼, 화면 공유, 언어 전환",
@@ -381,7 +381,7 @@
         "id": 32,
         "title": "Workers AI 바인딩 설정",
         "description": "Cloudflare Workers AI 연결",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "31"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:20:37.641Z"
+      "updated": "2025-08-08T09:21:23.928Z"
     }
   }
 }
