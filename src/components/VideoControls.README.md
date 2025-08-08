@@ -58,34 +58,34 @@ function VideoCallScreen() {
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `onMicToggle` | `(isOn: boolean) => void` | - | Callback when microphone is toggled |
-| `onCameraToggle` | `(isOn: boolean) => void` | - | Callback when camera is toggled |
-| `onEndCall` | `() => void` | - | Callback when end call is clicked |
-| `onScreenShareToggle` | `(isSharing: boolean) => void` | - | Callback when screen share is toggled |
-| `onLanguageChange` | `(langCode: string) => void` | - | Callback when language is changed |
-| `onSettingsClick` | `() => void` | - | Callback when settings button is clicked |
-| `onParticipantsClick` | `() => void` | - | Callback when participants button is clicked |
-| `onChatClick` | `() => void` | - | Callback when chat button is clicked |
-| `onRaiseHand` | `(isRaised: boolean) => void` | - | Callback when raise hand is toggled |
-| `onMoreOptionsClick` | `(action: string) => void` | - | Callback for more options menu actions |
-| `initialMicState` | `boolean` | `true` | Initial microphone state |
-| `initialCameraState` | `boolean` | `true` | Initial camera state |
-| `initialScreenShareState` | `boolean` | `false` | Initial screen share state |
-| `disabled` | `boolean` | `false` | Disable all controls |
-| `className` | `string` | `""` | Additional CSS classes |
-| `showLanguageButton` | `boolean` | `true` | Show/hide language selector |
-| `showSettingsButton` | `boolean` | `true` | Show/hide settings button |
-| `showParticipantsButton` | `boolean` | `true` | Show/hide participants button |
-| `showChatButton` | `boolean` | `true` | Show/hide chat button |
-| `showRaiseHandButton` | `boolean` | `true` | Show/hide raise hand button |
-| `showMoreButton` | `boolean` | `true` | Show/hide more options button |
-| `currentLanguage` | `string` | `"en"` | Current selected language code |
-| `participantCount` | `number` | `0` | Number of participants to display |
-| `unreadChatCount` | `number` | `0` | Number of unread messages |
-| `isHandRaised` | `boolean` | `false` | Initial hand raised state |
-| `isMobile` | `boolean` | `false` | Enable mobile layout |
+| Prop                      | Type                           | Default | Description                                  |
+| ------------------------- | ------------------------------ | ------- | -------------------------------------------- |
+| `onMicToggle`             | `(isOn: boolean) => void`      | -       | Callback when microphone is toggled          |
+| `onCameraToggle`          | `(isOn: boolean) => void`      | -       | Callback when camera is toggled              |
+| `onEndCall`               | `() => void`                   | -       | Callback when end call is clicked            |
+| `onScreenShareToggle`     | `(isSharing: boolean) => void` | -       | Callback when screen share is toggled        |
+| `onLanguageChange`        | `(langCode: string) => void`   | -       | Callback when language is changed            |
+| `onSettingsClick`         | `() => void`                   | -       | Callback when settings button is clicked     |
+| `onParticipantsClick`     | `() => void`                   | -       | Callback when participants button is clicked |
+| `onChatClick`             | `() => void`                   | -       | Callback when chat button is clicked         |
+| `onRaiseHand`             | `(isRaised: boolean) => void`  | -       | Callback when raise hand is toggled          |
+| `onMoreOptionsClick`      | `(action: string) => void`     | -       | Callback for more options menu actions       |
+| `initialMicState`         | `boolean`                      | `true`  | Initial microphone state                     |
+| `initialCameraState`      | `boolean`                      | `true`  | Initial camera state                         |
+| `initialScreenShareState` | `boolean`                      | `false` | Initial screen share state                   |
+| `disabled`                | `boolean`                      | `false` | Disable all controls                         |
+| `className`               | `string`                       | `""`    | Additional CSS classes                       |
+| `showLanguageButton`      | `boolean`                      | `true`  | Show/hide language selector                  |
+| `showSettingsButton`      | `boolean`                      | `true`  | Show/hide settings button                    |
+| `showParticipantsButton`  | `boolean`                      | `true`  | Show/hide participants button                |
+| `showChatButton`          | `boolean`                      | `true`  | Show/hide chat button                        |
+| `showRaiseHandButton`     | `boolean`                      | `true`  | Show/hide raise hand button                  |
+| `showMoreButton`          | `boolean`                      | `true`  | Show/hide more options button                |
+| `currentLanguage`         | `string`                       | `"en"`  | Current selected language code               |
+| `participantCount`        | `number`                       | `0`     | Number of participants to display            |
+| `unreadChatCount`         | `number`                       | `0`     | Number of unread messages                    |
+| `isHandRaised`            | `boolean`                      | `false` | Initial hand raised state                    |
+| `isMobile`                | `boolean`                      | `false` | Enable mobile layout                         |
 
 ## Supported Languages
 

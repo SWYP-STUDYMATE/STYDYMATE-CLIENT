@@ -93,7 +93,7 @@
         "id": 8,
         "title": "레벨 테스트 완료 페이지",
         "description": "테스트 완료 화면 구현 (12.33.20.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "7"
@@ -265,7 +265,7 @@
         "id": 22,
         "title": "1:1 비디오 세션 룸 구현",
         "description": "1대1 화상 통화 화면",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "19"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:26:07.126Z"
+      "updated": "2025-08-08T09:27:20.278Z"
     }
   }
 }
