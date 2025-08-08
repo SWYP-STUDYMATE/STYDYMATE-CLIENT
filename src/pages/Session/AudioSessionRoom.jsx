@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import VideoControls from '../../components/VideoControls';
-import { Phone, PhoneIncoming, PhoneOutgoing, Clock, Signal, SignalLow } from 'lucide-react';
+import { Phone, PhoneIncoming, PhoneOutgoing, Clock, Signal, SignalLow, Loader2 } from 'lucide-react';
 import useWebRTC from '../../hooks/useWebRTC';
 import CommonButton from '../../components/CommonButton';
 
@@ -10,7 +10,6 @@ export default function AudioSessionRoom() {
   const { roomId } = useParams();
   const [callDuration, setCallDuration] = useState(0);
   const [currentLanguage, setCurrentLanguage] = useState('ko');
-  const [partners, setPartners] = useState([]);
   
   const intervalRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -45,6 +44,8 @@ export default function AudioSessionRoom() {
       if (!audioElement) {
         audioElement = document.createElement('audio');
         audioElement.autoplay = true;
+        audioElement.id = `remote-audio-${peerId}`;
+        document.body.appendChild(audioElement);
         remoteAudiosRef.current.set(peerId, audioElement);
       }
       
@@ -57,6 +58,7 @@ export default function AudioSessionRoom() {
     remoteAudiosRef.current.forEach((audio, peerId) => {
       if (!remoteStreams.has(peerId)) {
         audio.srcObject = null;
+        audio.remove();
         remoteAudiosRef.current.delete(peerId);
       }
     });
@@ -81,6 +83,18 @@ export default function AudioSessionRoom() {
     };
   }, [connectionState]);
 
+  // 컴포넌트 언마운트시 정리
+  useEffect(() => {
+    return () => {
+      // 모든 원격 오디오 요소 제거
+      remoteAudiosRef.current.forEach((audio) => {
+        audio.srcObject = null;
+        audio.remove();
+      });
+      remoteAudiosRef.current.clear();
+    };
+  }, []);
+
   const formatDuration = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -99,7 +113,7 @@ export default function AudioSessionRoom() {
     }
     // 1초 후 이전 페이지로 이동
     setTimeout(() => {
-      navigate(-1);
+      navigate('/sessions');
     }, 1000);
   };
 
@@ -124,16 +138,10 @@ export default function AudioSessionRoom() {
   };
 
   const getConnectionText = () => {
-    switch (stats.quality) {
-      case 'good':
-        return '연결 상태 양호';
-      case 'fair':
-        return '연결 상태 보통';
-      case 'poor':
-        return '연결 상태 불안정';
-      default:
-        return '연결 확인 중';
+    if (stats.latency > 0) {
+      return `${stats.latency}ms`;
     }
+    return '연결 확인 중';
   };
 
   const getLanguageName = (code) => {
@@ -153,7 +161,7 @@ export default function AudioSessionRoom() {
       <div className="bg-[#1A1A1A] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-white text-[18px] font-medium">1:1 음성 세션</h1>
+            <h1 className="text-white text-[18px] font-medium">음성 세션</h1>
             {connectionState === 'connected' && (
               <div className="flex items-center gap-4 text-[#929292] text-sm">
                 <div className="flex items-center gap-1">
@@ -184,75 +192,73 @@ export default function AudioSessionRoom() {
       {/* 메인 콘텐츠 */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-4xl w-full">
-          {/* 프로필 영역 */}
+          {/* 연결 상태 표시 */}
           <div className="text-center mb-12">
-            {/* 프로필 이미지 */}
-            <div className="relative inline-block mb-6">
-              <img 
-                src={partner.profileImage} 
-                alt={partner.name}
-                className="w-48 h-48 rounded-full object-cover"
-              />
-              
-              {/* 통화 상태 애니메이션 */}
-              {connectionState === 'connecting' && (
-                <div className="absolute inset-0 rounded-full border-4 border-[#4285F4] animate-pulse" />
-              )}
-              {connectionState === 'connected' && (
-                <div className="absolute inset-0 rounded-full">
-                  <div className="absolute inset-0 rounded-full border-4 border-[#00C471] animate-ping" />
-                  <div className="absolute inset-0 rounded-full border-4 border-[#00C471]" />
-                </div>
-              )}
-            </div>
+            {connectionState === 'new' && (
+              <div className="text-[#606060]">
+                <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
+                <p className="text-lg">연결 준비 중...</p>
+              </div>
+            )}
 
-            {/* 파트너 정보 */}
-            <h2 className="text-white text-[28px] font-bold mb-2">{partner.name}</h2>
-            <p className="text-[#929292] text-[16px] mb-4">{partner.country} • {partner.level}</p>
-            
-            {/* 언어 정보 */}
-            <div className="flex items-center justify-center gap-4 mb-4">
-              {partner.languages.map((lang, index) => (
-                <span key={index} className="text-[#E7E7E7] text-sm bg-[#2A2A2A] px-3 py-1 rounded-full">
-                  {lang}
-                </span>
-              ))}
-            </div>
+            {connectionState === 'connecting' && (
+              <div className="text-[#4285F4]">
+                <PhoneOutgoing className="w-16 h-16 animate-pulse mx-auto mb-4" />
+                <p className="text-xl font-medium">상대방과 연결 중입니다...</p>
+              </div>
+            )}
 
-            {/* 관심사 */}
-            <div className="flex items-center justify-center gap-2">
-              {partner.interests.map((interest, index) => (
-                <span key={index} className="text-[#929292] text-sm">
-                  #{interest}
-                </span>
-              ))}
-            </div>
+            {connectionState === 'connected' && (
+              <div>
+                <div className="relative inline-block mb-6">
+                  <div className="w-48 h-48 rounded-full bg-[#1A1A1A] flex items-center justify-center">
+                    <Phone className="w-24 h-24 text-[#00C471]" />
+                  </div>
+                  <div className="absolute inset-0 rounded-full">
+                    <div className="absolute inset-0 rounded-full border-4 border-[#00C471] animate-ping" />
+                    <div className="absolute inset-0 rounded-full border-4 border-[#00C471]" />
+                  </div>
+                </div>
+                
+                <h2 className="text-white text-[28px] font-bold mb-4">통화 연결됨</h2>
+                <p className="text-[#00C471] text-lg mb-2">
+                  {remoteStreams.size}명의 참가자와 통화 중
+                </p>
+                
+                {/* 통화 품질 정보 */}
+                <div className="flex items-center justify-center gap-6 mt-6 text-sm text-[#929292]">
+                  <div>비트레이트: {stats.bitrate}kbps</div>
+                  <div>패킷 손실: {stats.packetLoss}%</div>
+                  <div>지연시간: {stats.latency}ms</div>
+                </div>
+              </div>
+            )}
 
-            {/* 통화 상태 메시지 */}
-            <div className="mt-8">
-              {callStatus === 'connecting' && (
-                <div className="flex items-center justify-center gap-2 text-[#4285F4]">
-                  <PhoneOutgoing className="w-5 h-5 animate-pulse" />
-                  <span className="text-lg">연결 중...</span>
-                </div>
-              )}
-              {callStatus === 'connected' && (
-                <div className="flex items-center justify-center gap-2 text-[#00C471]">
-                  <Phone className="w-5 h-5" />
-                  <span className="text-lg">통화 중</span>
-                </div>
-              )}
-              {callStatus === 'ended' && (
-                <div className="flex items-center justify-center gap-2 text-[#EA4335]">
-                  <Phone className="w-5 h-5" />
-                  <span className="text-lg">통화 종료</span>
-                </div>
-              )}
-            </div>
+            {connectionState === 'disconnected' && (
+              <div className="text-[#EA4335]">
+                <Phone className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-xl font-medium">통화가 종료되었습니다</p>
+              </div>
+            )}
+
+            {connectionState === 'failed' && (
+              <div className="text-[#EA4335]">
+                <Phone className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-xl font-medium">연결 실패</p>
+                <p className="text-sm mt-2">네트워크 상태를 확인해주세요</p>
+              </div>
+            )}
           </div>
 
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="bg-[#EA4335]/10 border border-[#EA4335] rounded-lg p-4 mb-8 text-center">
+              <p className="text-[#EA4335]">{error}</p>
+            </div>
+          )}
+
           {/* 음성 웨이브 시각화 (연결됨 상태에서만) */}
-          {callStatus === 'connected' && (
+          {connectionState === 'connected' && (
             <div className="bg-[#1A1A1A] rounded-lg p-6 mb-8">
               <div className="flex items-center justify-center h-24">
                 <div className="flex items-center gap-1">
@@ -270,7 +276,7 @@ export default function AudioSessionRoom() {
                 </div>
               </div>
               <p className="text-center text-[#929292] text-sm mt-4">
-                {partner.name}님이 말하고 있습니다...
+                음성 통화 진행 중...
               </p>
             </div>
           )}
@@ -281,8 +287,8 @@ export default function AudioSessionRoom() {
       <div className="bg-[#0F0F0F] p-6">
         <div className="max-w-4xl mx-auto">
           <VideoControls
-            isMuted={isMuted}
-            onToggleMute={() => setIsMuted(!isMuted)}
+            isMuted={!isAudioEnabled}
+            onToggleMute={toggleAudio}
             onEndCall={handleEndCall}
             onToggleLanguage={handleToggleLanguage}
             currentLanguage={currentLanguage}
@@ -296,6 +302,9 @@ export default function AudioSessionRoom() {
           />
         </div>
       </div>
+
+      {/* 숨겨진 오디오 요소 (로컬 스트림용) */}
+      <audio ref={localAudioRef} muted autoPlay style={{ display: 'none' }} />
     </div>
   );
 }

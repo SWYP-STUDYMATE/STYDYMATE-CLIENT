@@ -594,7 +594,7 @@
         "id": 48,
         "title": "WebRTC 프론트엔드 통합",
         "description": "화상/음성 통화 기능 연동",
-        "status": "done",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "39",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:48:16.360Z"
+      "updated": "2025-08-08T09:48:41.418Z"
     }
   }
 }

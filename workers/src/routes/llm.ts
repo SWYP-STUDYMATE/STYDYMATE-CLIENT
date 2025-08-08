@@ -211,16 +211,12 @@ Provide a response in JSON format:
 
     try {
       const result = JSON.parse(response.response);
-      return c.json({
-        success: true,
-        ...result
-      });
+      return successResponse(c, result);
     } catch (parseError) {
       return c.json({
-        success: false,
         error: 'Failed to parse grammar check response',
         rawResponse: response.response
-      });
+      }, 400);
     }
 
   } catch (error) {
@@ -287,16 +283,14 @@ Provide comprehensive feedback in JSON format:
 
     try {
       const feedback = JSON.parse(response.response);
-      return c.json({
-        success: true,
+      return successResponse(c, {
         feedback,
         conversationLength: conversation.length,
         topic,
         level
       });
     } catch (parseError) {
-      return c.json({
-        success: true,
+      return successResponse(c, {
         feedback: {
           textResponse: response.response
         },
@@ -314,7 +308,7 @@ Provide comprehensive feedback in JSON format:
 
 // 사용 가능한 모델 목록
 llmRoutes.get('/models', (c) => {
-  return c.json({
+  return successResponse(c, {
     available_models: [
       {
         id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
