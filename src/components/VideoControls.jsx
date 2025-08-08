@@ -65,6 +65,21 @@ const VideoControls = ({
     { code: 'es', name: 'Español', flag: '🇪🇸' }
   ];
 
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target)) {
+        setShowLanguageMenu(false);
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleMicToggle = () => {
     const newState = !isMicOn;
     setIsMicOn(newState);
@@ -94,6 +109,24 @@ const VideoControls = ({
 
   const handleSettingsClick = () => {
     onSettingsClick?.();
+  };
+
+  const handleParticipantsClick = () => {
+    onParticipantsClick?.();
+  };
+
+  const handleChatClick = () => {
+    onChatClick?.();
+  };
+
+  const handleRaiseHand = () => {
+    const newState = !handRaised;
+    setHandRaised(newState);
+    onRaiseHand?.(newState);
+  };
+
+  const handleMoreOptionsClick = () => {
+    setShowMoreMenu(!showMoreMenu);
   };
 
   return (
