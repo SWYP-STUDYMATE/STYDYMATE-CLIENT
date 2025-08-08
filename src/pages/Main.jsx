@@ -57,14 +57,7 @@ export default function Main() {
   }, [search, navigate, setProfileImage, setEnglishName]);
 
   const englishName = useProfileStore((state) => state.englishName);
-  const nickname = englishName || "회원";
-  const residence = useProfileStore((state) => state.residence);
-  const profileImage = useProfileStore((state) => state.profileImage);
-
-  const handleGoToChat = () => {
-    navigate("/chat");
-  };
-
+  
   return (
     <div className="bg-[#fafafa] min-h-screen flex flex-col">
       <MainHeader />

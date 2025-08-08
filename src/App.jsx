@@ -10,6 +10,7 @@ import ObPartnerRouter from "./pages/ObPartner/ObPartnerRouter";
 import ObScheduleRouter from "./pages/ObSchadule/ObSchaduleRouter";
 import { Routes, Route } from 'react-router-dom'
 import ChatPage from './pages/Chat/ChatPage';
+import Schedule from './pages/Schedule/Schedule';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
       <Route path='/onboarding-int/:step' element={<ObIntRouter />}/>
       <Route path='/onboarding-partner/:step' element={<ObPartnerRouter />}/>
       <Route path='/onboarding-schedule/:step' element={<ObScheduleRouter />}/>
+      <Route path='/schedule' element={<Schedule />}/>
     </Routes> 
     </div>
   )
