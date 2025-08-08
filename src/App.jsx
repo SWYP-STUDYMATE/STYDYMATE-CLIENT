@@ -16,6 +16,7 @@ import LevelTestRecording from './pages/LevelTest/LevelTestRecording';
 import LevelTestComplete from './pages/LevelTest/LevelTestComplete';
 import LevelTestResult from './pages/LevelTest/LevelTestResult';
 import Schedule from './pages/Schedule/Schedule';
+import AudioSessionCheck from './pages/Session/AudioSessionCheck';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
       <Route path='/level-test/complete' element={<LevelTestComplete />}/>
       <Route path='/level-test/result' element={<LevelTestResult />}/>
       <Route path='/schedule' element={<Schedule />}/>
+      <Route path='/session/audio-check' element={<AudioSessionCheck />}/>
     </Routes> 
     </div>
   )

@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Clock, AlertCircle } from 'lucide-react';
-import useLevelTestStore from '../stores/levelTestStore';
+import useLevelTestStore from '../store/levelTestStore';
 
 const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
   const intervalRef = useRef(null);
-  
+
   const {
     timerSeconds,
     isTimerRunning,
@@ -17,7 +17,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
   useEffect(() => {
     // Initialize timer with duration
     setTimerSeconds(duration);
-    
+
     if (autoStart) {
       startTimer();
     }
@@ -38,7 +38,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-      
+
       if (timerSeconds === 0 && isTimerRunning) {
         stopTimer();
         if (onTimeUp) {
@@ -101,7 +101,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
             strokeLinecap="round"
           />
         </svg>
-        
+
         {/* Timer Display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <Clock className={`w-8 h-8 mb-2 ${isWarning ? 'text-[#EA4335]' : 'text-[#929292]'}`} />
@@ -133,7 +133,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
             타이머 정지
           </button>
         )}
-        
+
         <button
           onClick={() => setTimerSeconds(duration)}
           className="px-6 py-2 bg-white hover:bg-[#F8F9FA] text-[#111111] border border-[#E7E7E7] rounded-lg font-medium transition-colors duration-200"
