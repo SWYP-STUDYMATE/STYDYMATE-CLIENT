@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import { Mic, Wifi, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import useLevelTestStore from '../../store/levelTestStore';
+import useLevelTestStore from '../../stores/levelTestStore';
 
 export default function LevelTestCheck() {
   const navigate = useNavigate();

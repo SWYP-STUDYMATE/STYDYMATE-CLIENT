@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
-import useLevelTestStore from '../../store/levelTestStore';
+import useLevelTestStore from '../../stores/levelTestStore';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function LevelTestRecording() {
