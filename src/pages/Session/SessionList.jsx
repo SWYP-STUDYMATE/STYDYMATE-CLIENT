@@ -280,8 +280,8 @@ export default function SessionList() {
                     <button
                         onClick={() => setActiveTab('upcoming')}
                         className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'upcoming'
-                                ? 'text-[#00C471] border-[#00C471]'
-                                : 'text-[#929292] border-transparent'
+                            ? 'text-[#00C471] border-[#00C471]'
+                            : 'text-[#929292] border-transparent'
                             }`}
                     >
                         예정된 세션
@@ -289,8 +289,8 @@ export default function SessionList() {
                     <button
                         onClick={() => setActiveTab('past')}
                         className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'past'
-                                ? 'text-[#00C471] border-[#00C471]'
-                                : 'text-[#929292] border-transparent'
+                            ? 'text-[#00C471] border-[#00C471]'
+                            : 'text-[#929292] border-transparent'
                             }`}
                     >
                         지난 세션

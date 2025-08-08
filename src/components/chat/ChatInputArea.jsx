@@ -105,7 +105,7 @@ export default function ChatInputArea({
           <Mic className="w-5 h-5" />
         </button>
       </div>
-      
+
       {/* Voice Recorder Modal */}
       {showVoiceRecorder && (
         <VoiceRecorder

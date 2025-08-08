@@ -26,7 +26,7 @@ import LanguageLevelProgress from '../../components/profile/LanguageLevelProgres
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile'); // profile, stats, settings
-  
+
   const { englishName, profileImage, residence, intro } = useProfileStore();
   const { sessionStats } = useSessionStore();
 
@@ -77,7 +77,7 @@ export default function ProfilePage() {
       <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
@@ -125,31 +125,28 @@ export default function ProfilePage() {
         <div className="flex">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
-              activeTab === 'profile' 
-                ? 'text-[#00C471] border-[#00C471]' 
+            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'profile'
+                ? 'text-[#00C471] border-[#00C471]'
                 : 'text-[#929292] border-transparent'
-            }`}
+              }`}
           >
             프로필
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
-              activeTab === 'stats' 
-                ? 'text-[#00C471] border-[#00C471]' 
+            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'stats'
+                ? 'text-[#00C471] border-[#00C471]'
                 : 'text-[#929292] border-transparent'
-            }`}
+              }`}
           >
             학습 통계
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
-              activeTab === 'settings' 
-                ? 'text-[#00C471] border-[#00C471]' 
+            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'settings'
+                ? 'text-[#00C471] border-[#00C471]'
                 : 'text-[#929292] border-transparent'
-            }`}
+              }`}
           >
             설정
           </button>
@@ -198,10 +195,10 @@ export default function ProfilePage() {
           <div className="space-y-6">
             {/* Weekly Activity Chart */}
             <WeeklyActivityChart />
-            
+
             {/* Language Level Progress */}
             <LanguageLevelProgress />
-            
+
             {/* Monthly Goal Progress */}
             <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
               <div className="flex items-center justify-between mb-4">
@@ -211,7 +208,7 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="w-full bg-[#F1F3F5] rounded-full h-3">
-                <div 
+                <div
                   className="bg-[#00C471] h-3 rounded-full transition-all duration-300"
                   style={{ width: `${(learningStats.monthlyProgress / learningStats.monthlyGoal) * 100}%` }}
                 />
@@ -258,7 +255,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                   <div className="w-full bg-[#F1F3F5] rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-[#00C471] h-2 rounded-full"
                       style={{ width: `${learningStats.languageProgress.english}%` }}
                     />
@@ -272,7 +269,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                   <div className="w-full bg-[#F1F3F5] rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-[#FFA500] h-2 rounded-full"
                       style={{ width: `${learningStats.languageProgress.spanish}%` }}
                     />
@@ -296,13 +293,11 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handleNotificationToggle('sessionReminder')}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      notificationSettings.sessionReminder ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
-                    } relative`}
+                    className={`w-12 h-6 rounded-full transition-colors ${notificationSettings.sessionReminder ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
+                      } relative`}
                   >
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                      notificationSettings.sessionReminder ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${notificationSettings.sessionReminder ? 'translate-x-6' : 'translate-x-0.5'
+                      }`} />
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
@@ -312,13 +307,11 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handleNotificationToggle('newMessage')}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      notificationSettings.newMessage ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
-                    } relative`}
+                    className={`w-12 h-6 rounded-full transition-colors ${notificationSettings.newMessage ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
+                      } relative`}
                   >
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                      notificationSettings.newMessage ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${notificationSettings.newMessage ? 'translate-x-6' : 'translate-x-0.5'
+                      }`} />
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
@@ -328,13 +321,11 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handleNotificationToggle('weeklyReport')}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      notificationSettings.weeklyReport ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
-                    } relative`}
+                    className={`w-12 h-6 rounded-full transition-colors ${notificationSettings.weeklyReport ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
+                      } relative`}
                   >
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                      notificationSettings.weeklyReport ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${notificationSettings.weeklyReport ? 'translate-x-6' : 'translate-x-0.5'
+                      }`} />
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
@@ -344,13 +335,11 @@ export default function ProfilePage() {
                   </div>
                   <button
                     onClick={() => handleNotificationToggle('matchingAlert')}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      notificationSettings.matchingAlert ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
-                    } relative`}
+                    className={`w-12 h-6 rounded-full transition-colors ${notificationSettings.matchingAlert ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
+                      } relative`}
                   >
-                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                      notificationSettings.matchingAlert ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${notificationSettings.matchingAlert ? 'translate-x-6' : 'translate-x-0.5'
+                      }`} />
                   </button>
                 </div>
               </div>

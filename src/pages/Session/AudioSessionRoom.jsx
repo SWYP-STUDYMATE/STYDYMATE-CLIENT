@@ -1,33 +1,70 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import VideoControls from '../../components/VideoControls';
 import { Phone, PhoneIncoming, PhoneOutgoing, Clock, Signal, SignalLow } from 'lucide-react';
+import useWebRTC from '../../hooks/useWebRTC';
+import CommonButton from '../../components/CommonButton';
 
 export default function AudioSessionRoom() {
   const navigate = useNavigate();
-  const [callStatus, setCallStatus] = useState('connecting'); // connecting, connected, ended
+  const { roomId } = useParams();
   const [callDuration, setCallDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState('ko');
-  const [connectionQuality, setConnectionQuality] = useState('good'); // good, fair, poor
+  const [partners, setPartners] = useState([]);
   
   const intervalRef = useRef(null);
   const startTimeRef = useRef(null);
+  const localAudioRef = useRef(null);
+  const remoteAudiosRef = useRef(new Map());
 
-  // 더미 파트너 데이터
-  const partner = {
-    name: 'Emma Johnson',
-    profileImage: '/assets/basicProfilePic.png',
-    level: 'Intermediate',
-    country: '🇺🇸 USA',
-    languages: ['English (Native)', 'Korean (Learning)'],
-    interests: ['Travel', 'K-pop', 'Cooking']
-  };
+  // WebRTC 훅 사용
+  const userId = localStorage.getItem('userId') || 'user-' + Date.now();
+  const {
+    connectionState,
+    localStream,
+    remoteStreams,
+    isAudioEnabled,
+    stats,
+    error,
+    toggleAudio,
+    disconnect
+  } = useWebRTC(roomId || 'default-room', userId);
 
+  // 로컬 스트림 연결
   useEffect(() => {
-    // 3초 후 연결 시뮬레이션
-    const connectTimer = setTimeout(() => {
-      setCallStatus('connected');
+    if (localStream && localAudioRef.current) {
+      localAudioRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  // 원격 스트림 연결
+  useEffect(() => {
+    remoteStreams.forEach((stream, peerId) => {
+      let audioElement = remoteAudiosRef.current.get(peerId);
+      
+      if (!audioElement) {
+        audioElement = document.createElement('audio');
+        audioElement.autoplay = true;
+        remoteAudiosRef.current.set(peerId, audioElement);
+      }
+      
+      if (audioElement.srcObject !== stream) {
+        audioElement.srcObject = stream;
+      }
+    });
+
+    // 연결이 끊긴 피어의 오디오 요소 제거
+    remoteAudiosRef.current.forEach((audio, peerId) => {
+      if (!remoteStreams.has(peerId)) {
+        audio.srcObject = null;
+        remoteAudiosRef.current.delete(peerId);
+      }
+    });
+  }, [remoteStreams]);
+
+  // 연결 상태에 따른 타이머 시작
+  useEffect(() => {
+    if (connectionState === 'connected' && !startTimeRef.current) {
       startTimeRef.current = Date.now();
       
       // 통화 시간 업데이트
@@ -35,23 +72,14 @@ export default function AudioSessionRoom() {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
         setCallDuration(elapsed);
       }, 1000);
-    }, 3000);
-
-    // 연결 품질 랜덤 변경 시뮬레이션
-    const qualityInterval = setInterval(() => {
-      const qualities = ['good', 'fair', 'poor'];
-      const randomQuality = qualities[Math.floor(Math.random() * qualities.length)];
-      setConnectionQuality(randomQuality);
-    }, 10000);
+    }
 
     return () => {
-      clearTimeout(connectTimer);
-      clearInterval(qualityInterval);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
+  }, [connectionState]);
 
   const formatDuration = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -65,14 +93,14 @@ export default function AudioSessionRoom() {
   };
 
   const handleEndCall = () => {
-    setCallStatus('ended');
+    disconnect();
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    // 3초 후 이전 페이지로 이동
+    // 1초 후 이전 페이지로 이동
     setTimeout(() => {
       navigate(-1);
-    }, 3000);
+    }, 1000);
   };
 
   const handleToggleLanguage = () => {
@@ -83,7 +111,7 @@ export default function AudioSessionRoom() {
   };
 
   const getConnectionIcon = () => {
-    switch (connectionQuality) {
+    switch (stats.quality) {
       case 'good':
         return <Signal className="w-4 h-4 text-[#00C471]" />;
       case 'fair':
@@ -96,7 +124,7 @@ export default function AudioSessionRoom() {
   };
 
   const getConnectionText = () => {
-    switch (connectionQuality) {
+    switch (stats.quality) {
       case 'good':
         return '연결 상태 양호';
       case 'fair':
@@ -126,7 +154,7 @@ export default function AudioSessionRoom() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-white text-[18px] font-medium">1:1 음성 세션</h1>
-            {callStatus === 'connected' && (
+            {connectionState === 'connected' && (
               <div className="flex items-center gap-4 text-[#929292] text-sm">
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -135,6 +163,9 @@ export default function AudioSessionRoom() {
                 <div className="flex items-center gap-1">
                   {getConnectionIcon()}
                   <span>{getConnectionText()}</span>
+                </div>
+                <div className="text-sm text-[#E7E7E7]">
+                  참가자: {remoteStreams.size + 1}명
                 </div>
               </div>
             )}
@@ -164,10 +195,10 @@ export default function AudioSessionRoom() {
               />
               
               {/* 통화 상태 애니메이션 */}
-              {callStatus === 'connecting' && (
+              {connectionState === 'connecting' && (
                 <div className="absolute inset-0 rounded-full border-4 border-[#4285F4] animate-pulse" />
               )}
-              {callStatus === 'connected' && (
+              {connectionState === 'connected' && (
                 <div className="absolute inset-0 rounded-full">
                   <div className="absolute inset-0 rounded-full border-4 border-[#00C471] animate-ping" />
                   <div className="absolute inset-0 rounded-full border-4 border-[#00C471]" />

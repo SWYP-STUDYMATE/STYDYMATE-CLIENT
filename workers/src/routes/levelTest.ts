@@ -1,9 +1,52 @@
 import { Hono } from 'hono';
 import { Env } from '../index';
+import { Variables, LevelTestSubmission, LevelTestResult } from '../types';
 import { processAudio, analyzeText, calculateLevel, evaluateLanguageLevel } from '../services/ai';
 import { saveToR2, getFromR2 } from '../services/storage';
+import { successResponse, createdResponse, setCacheHeaders } from '../utils/response';
+import { validationError, notFoundError } from '../middleware/error-handler';
+import { auth } from '../middleware/auth';
 
-export const levelTestRoutes = new Hono<{ Bindings: Env }>();
+export const levelTestRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+// 테스트 질문 목록
+const TEST_QUESTIONS = [
+  {
+    id: 1,
+    text: "Introduce yourself. Tell me about your name, where you're from, and what you do.",
+    korean: "자기소개를 해주세요. 이름, 출신지, 하는 일에 대해 말씀해주세요.",
+    duration: 60,
+    difficulty: 'A1-A2'
+  },
+  {
+    id: 2,
+    text: "Describe your typical day. What do you usually do from morning to evening?",
+    korean: "일상적인 하루를 설명해주세요. 아침부터 저녁까지 보통 무엇을 하나요?",
+    duration: 90,
+    difficulty: 'A2-B1'
+  },
+  {
+    id: 3,
+    text: "Talk about a memorable experience you had recently. What happened and how did you feel?",
+    korean: "최근에 있었던 기억에 남는 경험에 대해 이야기해주세요. 무슨 일이 있었고 어떻게 느꼈나요?",
+    duration: 120,
+    difficulty: 'B1-B2'
+  },
+  {
+    id: 4,
+    text: "What are your thoughts on technology's impact on education? Discuss both positive and negative aspects.",
+    korean: "기술이 교육에 미치는 영향에 대한 당신의 생각은 무엇인가요? 긍정적인 면과 부정적인 면을 모두 논의해주세요.",
+    duration: 180,
+    difficulty: 'B2-C1'
+  }
+];
+
+// 질문 목록 조회
+levelTestRoutes.get('/questions', async (c) => {
+  return successResponse(c, {
+    questions: TEST_QUESTIONS
+  });
+});
 
 // 음성 파일 제출
 levelTestRoutes.post('/audio', async (c) => {
@@ -14,7 +57,11 @@ levelTestRoutes.post('/audio', async (c) => {
     const userId = formData.get('userId') as string;
 
     if (!audioFile || !questionId || !userId) {
-      return c.json({ error: 'Missing required fields' }, 400);
+      throw validationError('Missing required fields', {
+        audioFile: !audioFile ? 'Audio file is required' : null,
+        questionId: !questionId ? 'Question ID is required' : null,
+        userId: !userId ? 'User ID is required' : null
+      });
     }
 
     // R2에 오디오 파일 저장
@@ -36,11 +83,10 @@ levelTestRoutes.post('/audio', async (c) => {
       timestamp: new Date().toISOString()
     }), { expirationTtl: 86400 }); // 24시간 캐시
 
-    return c.json({
-      success: true,
+    return successResponse(c, {
       questionId,
       transcription,
-      audioUrl: `/api/level-test/audio/${userId}/${questionId}`
+      audioUrl: `/api/v1/level-test/audio/${userId}/${questionId}`
     });
   } catch (error) {
     console.error('Audio processing error:', error);
@@ -60,7 +106,7 @@ levelTestRoutes.post('/analyze', async (c) => {
     // 레벨테스트 질문들
     const questions = [
       "Introduce yourself and tell me about your background.",
-      "What are your hobbies and why do you enjoy them?", 
+      "What are your hobbies and why do you enjoy them?",
       "Describe your typical day from morning to evening.",
       "What are your future goals and how do you plan to achieve them?"
     ];
@@ -70,19 +116,19 @@ levelTestRoutes.post('/analyze', async (c) => {
       responses.map(async (r: any, index: number) => {
         const cacheKey = `transcript:${userId}:${r.questionId}`;
         const cached = await c.env.CACHE.get(cacheKey);
-        
+
         if (!cached) return null;
-        
+
         const { transcription } = JSON.parse(cached);
         const question = questions[index] || questions[0];
-        
+
         // 개별 응답 평가
         const evaluation = await evaluateLanguageLevel(
           c.env.AI,
           transcription.text || '',
           question
         );
-        
+
         return {
           questionId: r.questionId,
           question,
@@ -126,7 +172,7 @@ levelTestRoutes.post('/analyze', async (c) => {
     // 최종 레벨 결정
     const avgScore = Object.values(avgScores).reduce((a, b) => a + b, 0) / 5;
     let finalLevel: string;
-    
+
     if (avgScore >= 90) finalLevel = 'C2';
     else if (avgScore >= 80) finalLevel = 'C1';
     else if (avgScore >= 70) finalLevel = 'B2';
@@ -144,8 +190,8 @@ levelTestRoutes.post('/analyze', async (c) => {
       suggestions: validEvaluations.flatMap(e => e?.evaluation.suggestions || []),
       timestamp: new Date().toISOString()
     };
-    
-    await c.env.CACHE.put(resultKey, JSON.stringify(result), { 
+
+    await c.env.CACHE.put(resultKey, JSON.stringify(result), {
       expirationTtl: 2592000 // 30일 캐시
     });
 
@@ -164,7 +210,7 @@ levelTestRoutes.get('/result/:userId', async (c) => {
   try {
     const userId = c.req.param('userId');
     const resultKey = `level-test-result:${userId}`;
-    
+
     const cached = await c.env.CACHE.get(resultKey);
     if (!cached) {
       return c.json({ error: 'Result not found' }, 404);
@@ -186,7 +232,7 @@ levelTestRoutes.get('/audio/:userId/:questionId', async (c) => {
   try {
     const { userId, questionId } = c.req.param();
     const audioKey = `level-test/${userId}/${questionId}.webm`;
-    
+
     const audioData = await getFromR2(c.env.STORAGE, audioKey);
     if (!audioData) {
       return c.json({ error: 'Audio not found' }, 404);
@@ -201,5 +247,150 @@ levelTestRoutes.get('/audio/:userId/:questionId', async (c) => {
   } catch (error) {
     console.error('Audio retrieval error:', error);
     return c.json({ error: 'Failed to retrieve audio' }, 500);
+  }
+});
+
+// 전체 테스트 제출
+levelTestRoutes.post('/submit', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const userInfo = formData.get('userInfo');
+    const userId = userInfo ? JSON.parse(userInfo as string).userId : crypto.randomUUID();
+    
+    const audioFiles: { questionNumber: number; file: File }[] = [];
+    
+    // 모든 오디오 파일 수집
+    for (let i = 1; i <= 4; i++) {
+      const audioFile = formData.get(`audio_${i}`) as File;
+      if (audioFile) {
+        audioFiles.push({ questionNumber: i, file: audioFile });
+      }
+    }
+
+    if (audioFiles.length === 0) {
+      throw validationError('No audio files provided');
+    }
+
+    // 각 오디오 파일 처리 및 분석
+    const analyses = await Promise.all(
+      audioFiles.map(async ({ questionNumber, file }) => {
+        try {
+          // R2에 저장
+          const audioKey = `level-test/${userId}/question_${questionNumber}.webm`;
+          const audioBuffer = await file.arrayBuffer();
+          await saveToR2(c.env.STORAGE, audioKey, audioBuffer, file.type);
+
+          // Whisper로 음성 인식
+          const transcription = await processAudio(c.env.AI, audioBuffer, {
+            task: 'transcribe',
+            language: 'en',
+            vad_filter: true
+          });
+
+          // 해당 질문에 대한 평가
+          const question = TEST_QUESTIONS[questionNumber - 1];
+          const evaluation = await evaluateLanguageLevel(
+            c.env.AI,
+            transcription.text || '',
+            question.text
+          );
+
+          return {
+            questionNumber,
+            question: question.text,
+            transcription: transcription.text,
+            evaluation
+          };
+        } catch (error) {
+          console.error(`Error processing question ${questionNumber}:`, error);
+          return null;
+        }
+      })
+    );
+
+    // 유효한 분석만 필터링
+    const validAnalyses = analyses.filter(a => a !== null);
+    
+    if (validAnalyses.length === 0) {
+      throw new Error('Failed to analyze any audio files');
+    }
+
+    // 전체 점수 계산
+    const scoreCategories = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'coherence', 'interaction'];
+    const totalScores: Record<string, number> = {};
+    
+    scoreCategories.forEach(category => {
+      totalScores[category] = 0;
+    });
+
+    validAnalyses.forEach(analysis => {
+      if (analysis?.evaluation.scores) {
+        scoreCategories.forEach(category => {
+          totalScores[category] += analysis.evaluation.scores[category] || 0;
+        });
+      }
+    });
+
+    // 평균 점수 계산
+    const avgScores: Record<string, number> = {};
+    scoreCategories.forEach(category => {
+      avgScores[category] = Math.round(totalScores[category] / validAnalyses.length);
+    });
+
+    // 전체 평균
+    const overallScore = Math.round(
+      Object.values(avgScores).reduce((a, b) => a + b, 0) / scoreCategories.length
+    );
+
+    // CEFR 레벨 결정
+    let level: string;
+    if (overallScore >= 85) level = 'C2';
+    else if (overallScore >= 75) level = 'C1';
+    else if (overallScore >= 65) level = 'B2';
+    else if (overallScore >= 55) level = 'B1';
+    else if (overallScore >= 45) level = 'A2';
+    else level = 'A1';
+
+    // 강점과 개선점 도출
+    const strengths = [];
+    const improvements = [];
+    
+    Object.entries(avgScores).forEach(([category, score]) => {
+      if (score >= 70) {
+        strengths.push(`Strong ${category} skills`);
+      } else if (score < 50) {
+        improvements.push(`Focus on improving ${category}`);
+      }
+    });
+
+    // 피드백 생성
+    const feedback = `Your English level is assessed as ${level}. ${overallScore >= 65 ? 'You demonstrate good command of English with' : 'You show developing English skills with'} an overall score of ${overallScore}/100. ${strengths.length > 0 ? `Your strengths include: ${strengths.join(', ')}.` : ''} ${improvements.length > 0 ? `Areas for improvement: ${improvements.join(', ')}.` : ''}`;
+
+    // 결과 저장
+    const result = {
+      userId,
+      level,
+      overallScore,
+      scores: avgScores,
+      strengths,
+      improvements,
+      feedback,
+      analyses: validAnalyses,
+      timestamp: new Date().toISOString()
+    };
+
+    // 캐시에 저장
+    const resultKey = `level-test-result:${userId}`;
+    await c.env.CACHE.put(resultKey, JSON.stringify(result), {
+      expirationTtl: 2592000 // 30일
+    });
+
+    return successResponse(c, result);
+  } catch (error) {
+    console.error('Test submission error:', error);
+    return c.json({ 
+      error: 'Failed to submit test',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
   }
 });

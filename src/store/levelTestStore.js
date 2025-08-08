@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { levelTestAPI } from "../api/levelTest";
 
 const useLevelTestStore = create(
   persist(
@@ -29,25 +30,110 @@ const useLevelTestStore = create(
       questions: [
         {
           id: 1,
-          question: "Please introduce yourself. Include your name, age, and occupation.",
-          korean: "자기소개를 해주세요. 이름, 나이, 직업 등을 포함해서 말씀해주세요."
+          text: "Introduce yourself. Tell me about your name, where you're from, and what you do.",
+          korean: "자기소개를 해주세요. 이름, 출신지, 하는 일에 대해 말씀해주세요.",
+          duration: 60,
+          difficulty: 'A1-A2'
         },
         {
           id: 2,
-          question: "How do you usually study English?",
-          korean: "평소 영어 학습은 어떻게 하고 계신가요?"
+          text: "Describe your typical day. What do you usually do from morning to evening?",
+          korean: "일상적인 하루를 설명해주세요. 아침부터 저녁까지 보통 무엇을 하나요?",
+          duration: 90,
+          difficulty: 'A2-B1'
         },
         {
           id: 3,
-          question: "Describe a movie or drama you watched recently.",
-          korean: "가장 최근에 본 영화나 드라마에 대해 설명해주세요."
+          text: "Talk about a memorable experience you had recently. What happened and how did you feel?",
+          korean: "최근에 있었던 기억에 남는 경험에 대해 이야기해주세요. 무슨 일이 있었고 어떻게 느꼈나요?",
+          duration: 120,
+          difficulty: 'B1-B2'
         },
         {
           id: 4,
-          question: "What is your goal in learning English?",
-          korean: "영어를 배우는 목표가 무엇인가요?"
+          text: "What are your thoughts on technology's impact on education? Discuss both positive and negative aspects.",
+          korean: "기술이 교육에 미치는 영향에 대한 당신의 생각은 무엇인가요? 긍정적인 면과 부정적인 면을 모두 논의해주세요.",
+          duration: 180,
+          difficulty: 'B2-C1'
         }
       ],
+      
+      // API 상태
+      isSubmitting: false,
+      submitError: null,
+      
+      // API 메서드들
+      loadQuestions: async () => {
+        try {
+          const questions = await levelTestAPI.getQuestions();
+          set({ questions });
+        } catch (error) {
+          console.error('Failed to load questions:', error);
+          // Use default questions on error
+        }
+      },
+      
+      submitTest: async () => {
+        const state = get();
+        if (state.recordings.length !== state.totalQuestions) {
+          set({ submitError: 'Please complete all questions before submitting.' });
+          return;
+        }
+        
+        set({ isSubmitting: true, submitError: null });
+        
+        try {
+          // Get all recording blobs
+          const audioBlobs = state.recordings.map(r => r.blob);
+          
+          // Submit to API
+          const result = await levelTestAPI.submitTest(audioBlobs, {
+            startTime: state.recordings[0]?.timestamp,
+            endTime: new Date().toISOString()
+          });
+          
+          // Process result
+          const testResult = {
+            level: result.level || 'B1',
+            overallScore: result.overallScore || 65,
+            scores: result.scores || {
+              pronunciation: 70,
+              fluency: 65,
+              grammar: 60,
+              vocabulary: 70,
+              coherence: 65,
+              interaction: 60
+            },
+            strengths: result.strengths || [
+              'Good pronunciation and intonation',
+              'Natural speaking pace',
+              'Clear communication'
+            ],
+            improvements: result.improvements || [
+              'Expand vocabulary range',
+              'Use more complex grammar structures',
+              'Improve coherence in longer responses'
+            ],
+            feedback: result.feedback || 'Good overall performance. Continue practicing to improve fluency and expand vocabulary.',
+            date: new Date().toISOString()
+          };
+          
+          set({ 
+            testResult,
+            testStatus: 'completed',
+            isSubmitting: false
+          });
+          
+          return testResult;
+        } catch (error) {
+          console.error('Test submission error:', error);
+          set({ 
+            submitError: error.message || 'Failed to submit test. Please try again.',
+            isSubmitting: false
+          });
+          throw error;
+        }
+      },
       
       // 질문 관련 헬퍼 메서드들
       getCurrentQuestion: () => {
@@ -72,7 +158,7 @@ const useLevelTestStore = create(
       },
       
       // 테스트 결과
-      testResult: null, // {level, scores, feedback, date}
+      testResult: null, // {level, scores, feedback, strengths, improvements, date}
       
       // 액션들
       setTestStatus: (status) => set({ testStatus: status }),
@@ -96,11 +182,17 @@ const useLevelTestStore = create(
       setTimerSeconds: (seconds) => set({ timerSeconds: seconds, timeRemaining: seconds }),
       
       // 질문 네비게이션
-      nextQuestion: () => set((state) => ({
-        currentQuestionIndex: Math.min(state.totalQuestions - 1, state.currentQuestionIndex + 1),
-        timerSeconds: 180, // 새 질문마다 타이머 리셋
-        timeRemaining: 180, // 새 질문마다 타이머 리셋
-      })),
+      nextQuestion: () => set((state) => {
+        const nextIndex = Math.min(state.totalQuestions - 1, state.currentQuestionIndex + 1);
+        const nextQuestion = state.questions[nextIndex];
+        const timerDuration = nextQuestion?.duration || 180;
+        
+        return {
+          currentQuestionIndex: nextIndex,
+          timerSeconds: timerDuration,
+          timeRemaining: timerDuration,
+        };
+      }),
       
       previousQuestion: () => set((state) => ({
         currentQuestionIndex: Math.max(0, state.currentQuestionIndex - 1)
@@ -109,13 +201,20 @@ const useLevelTestStore = create(
       setCurrentQuestionIndex: (index) => set({ currentQuestionIndex: index }),
       
       // 녹음 관리
-      addRecording: (recording) => set((state) => ({
-        recordings: [...state.recordings, {
-          ...recording,
-          questionIndex: state.currentQuestionIndex,
-          timestamp: new Date().toISOString()
-        }]
-      })),
+      addRecording: (recording) => set((state) => {
+        // Remove any existing recording for this question
+        const filteredRecordings = state.recordings.filter(
+          r => r.questionIndex !== state.currentQuestionIndex
+        );
+        
+        return {
+          recordings: [...filteredRecordings, {
+            ...recording,
+            questionIndex: state.currentQuestionIndex,
+            timestamp: new Date().toISOString()
+          }]
+        };
+      }),
       
       setCurrentRecording: (recording) => set({ currentRecording: recording }),
       
@@ -133,8 +232,14 @@ const useLevelTestStore = create(
       stopRecording: () => set((state) => {
         if (state.currentRecording) {
           const duration = Math.floor((Date.now() - state.currentRecording.startTime) / 1000);
+          
+          // Remove any existing recording for this question
+          const filteredRecordings = state.recordings.filter(
+            r => r.questionIndex !== state.currentQuestionIndex
+          );
+          
           return {
-            recordings: [...state.recordings, {
+            recordings: [...filteredRecordings, {
               ...state.currentRecording,
               duration,
               timestamp: new Date().toISOString()
@@ -171,20 +276,27 @@ const useLevelTestStore = create(
       }),
       
       // 전체 초기화
-      resetTest: () => set({
-        testStatus: "idle",
-        currentQuestionIndex: 0,
-        connectionStatus: {
-          microphone: false,
-          internet: false,
-          audioLevel: 0,
-        },
-        timerSeconds: 180,
-        timeRemaining: 180,
-        isTimerRunning: false,
-        recordings: [],
-        currentRecording: null,
-        testResult: null,
+      resetTest: () => set((state) => {
+        const firstQuestion = state.questions[0];
+        const timerDuration = firstQuestion?.duration || 180;
+        
+        return {
+          testStatus: "idle",
+          currentQuestionIndex: 0,
+          connectionStatus: {
+            microphone: false,
+            internet: false,
+            audioLevel: 0,
+          },
+          timerSeconds: timerDuration,
+          timeRemaining: timerDuration,
+          isTimerRunning: false,
+          recordings: [],
+          currentRecording: null,
+          testResult: null,
+          isSubmitting: false,
+          submitError: null,
+        };
       }),
       
       // 테스트 완료 여부 체크

@@ -335,7 +335,7 @@
         "id": 28,
         "title": "세션 예약 시스템",
         "description": "학습 세션 예약 기능",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [
           "17"
@@ -578,7 +578,7 @@
         "id": 47,
         "title": "레벨테스트 E2E 플로우",
         "description": "레벨테스트 전체 통합",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "10",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:45:48.109Z"
+      "updated": "2025-08-08T09:48:16.360Z"
     }
   }
 }

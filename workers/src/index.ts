@@ -5,7 +5,7 @@ import { levelTestRoutes } from './routes/levelTest';
 import { webrtcRoutes } from './routes/webrtc';
 import { uploadRoutes } from './routes/upload';
 import whisperRoutes from './routes/whisper';
-import llmRoutes from './routes/llm';
+import { llmRoutes } from './routes/llm';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { Variables } from './types';
@@ -102,6 +102,7 @@ v1.route('/level-test', levelTestRoutes);
 v1.route('/room', webrtcRoutes);
 v1.route('/upload', uploadRoutes);
 v1.route('/whisper', whisperRoutes);
+v1.route('/llm', llmRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);
@@ -124,6 +125,11 @@ app.use('/api/upload/*', async (c, next) => {
 
 app.use('/api/whisper/*', async (c, next) => {
   c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/whisper instead`);
+  return v1.fetch(c.req.raw, c.env);
+});
+
+app.use('/api/llm/*', async (c, next) => {
+  c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/llm instead`);
   return v1.fetch(c.req.raw, c.env);
 });
 

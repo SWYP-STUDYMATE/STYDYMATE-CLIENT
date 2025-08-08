@@ -25,7 +25,11 @@ export default function LevelTestRecording() {
     isCurrentQuestionRecorded,
     isTestComplete,
     resetTimer,
-    stopTimer
+    stopTimer,
+    loadQuestions,
+    submitTest,
+    isSubmitting,
+    submitError
   } = useLevelTestStore();
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -35,12 +39,17 @@ export default function LevelTestRecording() {
   useEffect(() => {
     setTestStatus('recording');
     setIsTimerRunning(true);
+    
+    // Load questions if not already loaded
+    if (questions.length === 0) {
+      loadQuestions();
+    }
 
     return () => {
       stopTimer();
       clearCurrentRecording();
     };
-  }, [setTestStatus, stopTimer, clearCurrentRecording]);
+  }, [setTestStatus, stopTimer, clearCurrentRecording, loadQuestions, questions.length]);
 
   useEffect(() => {
     resetTimer();
@@ -64,14 +73,21 @@ export default function LevelTestRecording() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestionIndex < totalQuestions - 1) {
       nextQuestion();
     } else {
       // All questions completed
       if (isTestComplete()) {
-        setTestStatus('completed');
-        navigate('/level-test/complete');
+        try {
+          setTestStatus('processing');
+          await submitTest();
+          navigate('/level-test/result');
+        } catch (error) {
+          console.error('Test submission error:', error);
+          alert('테스트 제출에 실패했습니다. 다시 시도해주세요.');
+          setTestStatus('recording');
+        }
       } else {
         alert('모든 질문에 답변해주세요.');
       }
@@ -125,17 +141,17 @@ export default function LevelTestRecording() {
         {/* Question Card */}
         <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[#E7E7E7]">
           <p className="text-[20px] font-bold text-[#111111] mb-3">
-            {currentQuestion.question}
+            {currentQuestion?.text || currentQuestion?.question || ''}
           </p>
           <p className="text-[16px] text-[#606060]">
-            {currentQuestion.korean}
+            {currentQuestion?.korean || ''}
           </p>
         </div>
 
         {/* Timer */}
         <div className="mb-8">
           <CountdownTimer
-            duration={180}
+            duration={currentQuestion?.duration || 180}
             onTimeUp={handleTimeUp}
             autoStart={isTimerRunning}
           />
@@ -165,9 +181,19 @@ export default function LevelTestRecording() {
                 onClick={handleNext}
                 variant="primary"
                 className="w-full"
+                disabled={isSubmitting}
               >
-                {currentQuestionIndex < totalQuestions - 1 ? '다음 질문' : '테스트 완료'}
-                <ChevronRight className="w-5 h-5 ml-2" />
+                {isSubmitting ? (
+                  <>
+                    <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white inline-block mr-2"></span>
+                    제출 중...
+                  </>
+                ) : (
+                  <>
+                    {currentQuestionIndex < totalQuestions - 1 ? '다음 질문' : '테스트 완료'}
+                    <ChevronRight className="w-5 h-5 ml-2" />
+                  </>
+                )}
               </CommonButton>
             </>
           )}

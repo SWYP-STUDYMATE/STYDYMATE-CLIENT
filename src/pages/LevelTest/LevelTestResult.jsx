@@ -108,7 +108,7 @@ export default function LevelTestResult() {
   }
 
   const levelInfo = LEVEL_DESCRIPTIONS[result.level] || LEVEL_DESCRIPTIONS.B1;
-  const scores = result.analysis?.scores || {};
+  const scores = result.scores || result.analysis?.scores || {};
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
@@ -160,6 +160,8 @@ export default function LevelTestResult() {
                   {skill === 'vocabulary' && '어휘 (Vocabulary)'}
                   {skill === 'pronunciation' && '발음 (Pronunciation)'}
                   {skill === 'fluency' && '유창성 (Fluency)'}
+                  {skill === 'coherence' && '일관성 (Coherence)'}
+                  {skill === 'interaction' && '상호작용 (Interaction)'}
                   {skill === 'comprehension' && '이해력 (Comprehension)'}
                   {skill === 'confidence' && '자신감 (Confidence)'}
                 </span>
@@ -180,14 +182,51 @@ export default function LevelTestResult() {
         </div>
 
         {/* Feedback */}
-        {result.analysis?.feedback && (
+        {(result.feedback || result.analysis?.feedback) && (
           <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
             <h3 className="text-[18px] font-bold text-[#111111] mb-4">
               AI 피드백
             </h3>
             <p className="text-[14px] text-[#666666] leading-relaxed">
-              {result.analysis.feedback}
+              {result.feedback || result.analysis.feedback}
             </p>
+          </div>
+        )}
+        
+        {/* Strengths & Improvements */}
+        {(result.strengths || result.improvements) && (
+          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
+            {result.strengths && result.strengths.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-[16px] font-semibold text-[#111111] mb-2">
+                  🌟 강점
+                </h4>
+                <ul className="space-y-1">
+                  {result.strengths.map((strength, index) => (
+                    <li key={index} className="text-[14px] text-[#666666] flex items-start">
+                      <span className="text-[#00C471] mr-2">•</span>
+                      {strength}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {result.improvements && result.improvements.length > 0 && (
+              <div>
+                <h4 className="text-[16px] font-semibold text-[#111111] mb-2">
+                  💪 개선점
+                </h4>
+                <ul className="space-y-1">
+                  {result.improvements.map((improvement, index) => (
+                    <li key={index} className="text-[14px] text-[#666666] flex items-start">
+                      <span className="text-[#FF6B6B] mr-2">•</span>
+                      {improvement}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 

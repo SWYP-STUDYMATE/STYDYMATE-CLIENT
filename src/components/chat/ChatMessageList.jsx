@@ -39,9 +39,8 @@ export default function ChatMessageList({
           return (
             <div
               key={msg.messageId}
-              className={`flex items-end ${
-                isMine ? "justify-end" : "justify-start"
-              }`}
+              className={`flex items-end ${isMine ? "justify-end" : "justify-start"
+                }`}
             >
               {/* 다른 사람의 메시지 (왼쪽) */}
               {!isMine && (
@@ -67,8 +66,8 @@ export default function ChatMessageList({
                   <div className="flex items-end ml-10">
                     <div className="flex items-end">
                       {msg.messageType === "IMAGE" &&
-                      msg.imageUrls &&
-                      msg.imageUrls.length > 0 ? (
+                        msg.imageUrls &&
+                        msg.imageUrls.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {msg.imageUrls.map((url, imgIdx) => (
                             <img
@@ -108,8 +107,8 @@ export default function ChatMessageList({
                         {formatTimestamp(msg.sentAt)}
                       </span>
                       {msg.messageType === "IMAGE" &&
-                      msg.imageUrls &&
-                      msg.imageUrls.length > 0 ? (
+                        msg.imageUrls &&
+                        msg.imageUrls.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {msg.imageUrls.map((url, imgIdx) => (
                             <img
