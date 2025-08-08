@@ -132,8 +132,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'profile'
-                ? 'text-[#00C471] border-[#00C471]'
-                : 'text-[#929292] border-transparent'
+              ? 'text-[#00C471] border-[#00C471]'
+              : 'text-[#929292] border-transparent'
               }`}
           >
             프로필
@@ -141,8 +141,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('stats')}
             className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'stats'
-                ? 'text-[#00C471] border-[#00C471]'
-                : 'text-[#929292] border-transparent'
+              ? 'text-[#00C471] border-[#00C471]'
+              : 'text-[#929292] border-transparent'
               }`}
           >
             학습 통계
@@ -150,8 +150,8 @@ export default function ProfilePage() {
           <button
             onClick={() => setActiveTab('settings')}
             className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'settings'
-                ? 'text-[#00C471] border-[#00C471]'
-                : 'text-[#929292] border-transparent'
+              ? 'text-[#00C471] border-[#00C471]'
+              : 'text-[#929292] border-transparent'
               }`}
           >
             설정

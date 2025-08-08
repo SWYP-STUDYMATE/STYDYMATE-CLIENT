@@ -1,10 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { Env } from '../index';
-import { Variables } from '../types';
 import { successResponse } from '../utils/response';
 
-const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = new Hono();
 
 // CORS 설정
 app.use('/*', cors());
@@ -38,8 +37,7 @@ app.post('/generate', async (c) => {
     }
 
     // 스트리밍 응답
-    const env = c.env as Env;
-    const ai = env.AI as any;
+    const ai = (c as any).env.AI as any;
 
     if (body.stream) {
       const stream = await ai.run(model, {
@@ -131,8 +129,7 @@ Response in JSON format with this structure:
   }
 }`;
 
-    const env = c.env as Env;
-    const ai = env.AI as any;
+    const ai = (c as any).env.AI as any;
     const response = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         {
@@ -205,8 +202,7 @@ Provide a response in JSON format:
   "suggestions": ["general writing improvement suggestions"]
 }`;
 
-    const env = c.env as Env;
-    const ai = env.AI as any;
+    const ai = (c as any).env.AI as any;
     const response = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         {
@@ -279,8 +275,7 @@ Provide comprehensive feedback in JSON format:
   "nextSteps": ["recommendation 1", "recommendation 2"]
 }`;
 
-    const env = c.env as Env;
-    const ai = env.AI as any;
+    const ai = (c as any).env.AI as any;
     const response = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         {

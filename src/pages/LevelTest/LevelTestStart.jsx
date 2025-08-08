@@ -22,12 +22,12 @@ export default function LevelTestStart() {
       <div className="max-w-[768px] w-full mx-auto flex flex-col min-h-screen">
         {/* 헤더 */}
         <div className="px-6 py-4">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -64,7 +64,7 @@ export default function LevelTestStart() {
             <div className="flex items-center">
               <div className="w-8 h-8 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-3">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <span className="text-[14px] text-[#111111]">AI가 실시간으로 발음과 문법 분석</span>
@@ -72,7 +72,7 @@ export default function LevelTestStart() {
             <div className="flex items-center">
               <div className="w-8 h-8 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-3">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <span className="text-[14px] text-[#111111]">CEFR 기준에 따른 정확한 레벨 측정</span>
@@ -80,7 +80,7 @@ export default function LevelTestStart() {
             <div className="flex items-center">
               <div className="w-8 h-8 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-3">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <span className="text-[14px] text-[#111111]">맞춤형 학습 추천 제공</span>

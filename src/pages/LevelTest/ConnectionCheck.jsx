@@ -18,15 +18,15 @@ export default function ConnectionCheck() {
   useEffect(() => {
     if (micPermission === 'granted' && internetConnection === 'connected') {
       setIsReady(true);
-      setConnectionStatus({ 
-        microphone: true, 
-        internet: true 
+      setConnectionStatus({
+        microphone: true,
+        internet: true
       });
     } else {
       setIsReady(false);
-      setConnectionStatus({ 
-        microphone: micPermission === 'granted', 
-        internet: internetConnection === 'connected' 
+      setConnectionStatus({
+        microphone: micPermission === 'granted',
+        internet: internetConnection === 'connected'
       });
     }
   }, [micPermission, internetConnection, setConnectionStatus]);
@@ -82,15 +82,15 @@ export default function ConnectionCheck() {
     } else if (status === 'granted' || status === 'connected') {
       return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="#00C471"/>
-          <path d="M16 8.5L10 14.5L7 11.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="12" cy="12" r="10" fill="#00C471" />
+          <path d="M16 8.5L10 14.5L7 11.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     } else {
       return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="#EA4335"/>
-          <path d="M15 9L9 15M9 9L15 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="12" cy="12" r="10" fill="#EA4335" />
+          <path d="M15 9L9 15M9 9L15 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
     }
@@ -101,12 +101,12 @@ export default function ConnectionCheck() {
       <div className="max-w-[768px] w-full mx-auto flex flex-col min-h-screen">
         {/* 헤더 */}
         <div className="px-6 py-4">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -139,10 +139,10 @@ export default function ConnectionCheck() {
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1Z" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M19 10V12C19 15.866 15.866 19 12 19C8.134 19 5 15.866 5 12V10" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 19V23" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M8 23H16" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1Z" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M19 10V12C19 15.866 15.866 19 12 19C8.134 19 5 15.866 5 12V10" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 19V23" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M8 23H16" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                   <div>
@@ -171,8 +171,8 @@ export default function ConnectionCheck() {
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-4">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12.55C5.97 8.63 9.2 5.5 13.12 5.05C17.16 4.58 20.96 7.05 22.21 10.78C23.4 14.34 21.87 18.14 18.64 20.04C15.58 21.83 11.58 21.35 9.01 18.82C8.17 18.04 7.59 17.11 7.21 16.08" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M2 12H7L10 9V15L13 12H18" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M5 12.55C5.97 8.63 9.2 5.5 13.12 5.05C17.16 4.58 20.96 7.05 22.21 10.78C23.4 14.34 21.87 18.14 18.64 20.04C15.58 21.83 11.58 21.35 9.01 18.82C8.17 18.04 7.59 17.11 7.21 16.08" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2 12H7L10 9V15L13 12H18" stroke="#00C471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                   <div>
@@ -200,9 +200,9 @@ export default function ConnectionCheck() {
           <div className="bg-[#F8F9FA] rounded-[10px] p-4 mb-8">
             <div className="flex items-start">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="mt-0.5 mr-3 flex-shrink-0">
-                <circle cx="10" cy="10" r="9" stroke="#929292" strokeWidth="1.5"/>
-                <path d="M10 14V10" stroke="#929292" strokeWidth="1.5" strokeLinecap="round"/>
-                <circle cx="10" cy="7" r="0.5" fill="#929292" stroke="#929292"/>
+                <circle cx="10" cy="10" r="9" stroke="#929292" strokeWidth="1.5" />
+                <path d="M10 14V10" stroke="#929292" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="10" cy="7" r="0.5" fill="#929292" stroke="#929292" />
               </svg>
               <div>
                 <p className="text-[14px] text-[#606060] mb-1">

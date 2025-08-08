@@ -133,10 +133,7 @@ binding = "ANALYTICS"
 [compatibility]
 include_future_compat_date = false
 
-# Analytics Engine binding (optional)
-# [[analytics_engine_datasets]]
-# binding = "ANALYTICS"
-# dataset = "studymate_analytics"
+
 
 # Tail Workers (optional, for logging)
 # [[tail_consumers]]
