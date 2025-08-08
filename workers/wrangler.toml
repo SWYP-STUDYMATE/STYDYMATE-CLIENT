@@ -43,36 +43,7 @@ API_VERSION = "v1"
 # - CF_IMAGES_API_TOKEN
 # - CF_ACCOUNT_HASH
 
-# Staging 환경
-[env.staging]
-name = "studymate-api-staging"
-
-# Staging R2 Storage
-[[env.staging.r2_buckets]]
-binding = "STORAGE"
-bucket_name = "studymate-storage-staging"
-
-# Staging KV Namespace
-[[env.staging.kv_namespaces]]
-binding = "CACHE"
-id = "staging-cache-namespace-id"
-
-# Staging Environment Variables
-[env.staging.vars]
-ENVIRONMENT = "staging"
-CORS_ORIGIN = "https://preview.languagemate.kr,https://staging.languagemate.kr"
-LOG_LEVEL = "info"
-API_VERSION = "v1"
-
-# Staging Routes (Workers 전용 서브도메인 제안)
-[[env.staging.routes]]
-pattern = "workers-staging.languagemate.kr"
-zone_name = "languagemate.kr"
-
-# Staging Custom Domains (path 포함 매핑)
-[[env.staging.routes]]
-pattern = "workers-staging.languagemate.kr/*"
-zone_name = "languagemate.kr"
+## (Removed) Staging 환경: 본 프로젝트는 staging 환경을 사용하지 않습니다.
 
 # Production 환경
 [env.production]
