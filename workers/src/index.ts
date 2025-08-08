@@ -3,8 +3,7 @@ import { cors } from 'hono/cors';
 import { levelTestRoutes } from './routes/levelTest';
 import { webrtcRoutes } from './routes/webrtc';
 import { uploadRoutes } from './routes/upload';
-import whisperRoutes from './routes/whisper';
-import llmRoutes from './routes/llm';
+import { llmRoutes } from './routes/llm';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 
 // Export Durable Object
@@ -49,7 +48,7 @@ app.get('/health', (c) => {
 app.route('/api/level-test', levelTestRoutes);
 app.route('/api/room', webrtcRoutes);
 app.route('/api/upload', uploadRoutes);
-app.route('/api/whisper', whisperRoutes);
+app.route('/api/llm', llmRoutes);
 app.route('/api/llm', llmRoutes);
 
 // 404 handler

@@ -50,6 +50,8 @@ export default function App() {
         <Route path='/session/video-check' element={<VideoConnectionCheck />} />
         <Route path='/session/audio/:roomId' element={<AudioSessionRoom />} />
         <Route path='/session/video-controls-demo' element={<VideoControlsDemo />} />
+        <Route path='/sessions' element={<SessionList />} />
+        <Route path='/profile' element={<ProfilePage />} />
       </Routes>
     </div>
   )
