@@ -119,6 +119,7 @@ export default function LiveTranscription({
             confidence: data.confidence,
             language: data.language,
             translations: data.translations || {}
+          });
         } else if (data.type === 'error') {
           setError(data.message);
         }
@@ -146,7 +147,7 @@ export default function LiveTranscription({
     };
 
     socketRef.current = ws;
-  }, [language, onTranscript, isTranscribing, WEBSOCKET_URL]);
+  }, [language, onTranscript, isTranscribing, WEBSOCKET_URL, enableTranslation, targetLanguages]);
 
   // 전사 시작/중지
   const toggleTranscription = useCallback(async () => {

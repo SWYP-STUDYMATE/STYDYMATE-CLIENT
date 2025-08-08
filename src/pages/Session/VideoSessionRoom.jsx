@@ -23,6 +23,9 @@ export default function VideoSessionRoom() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcripts, setTranscripts] = useState([]);
   const [subtitlePosition, setSubtitlePosition] = useState('bottom');
+  const [subtitleLanguage, setSubtitleLanguage] = useState('en');
+  const [showOriginalSubtitle, setShowOriginalSubtitle] = useState(false);
+  const [enableTranslation, setEnableTranslation] = useState(true);
 
   // Partner info (mock data - replace with actual data from API)
   const [partnerInfo, setPartnerInfo] = useState({
@@ -449,6 +452,22 @@ export default function VideoSessionRoom() {
     }
   };
 
+  // 타겟 언어 목록 생성 (현재 언어와 자막 언어 포함)
+  const getTargetLanguages = useCallback(() => {
+    const languages = new Set([subtitleLanguage]);
+    
+    // 파트너 언어 추가
+    if (partnerInfo.nativeLanguage) {
+      const langCode = partnerInfo.nativeLanguage.toLowerCase().substring(0, 2);
+      languages.add(langCode);
+    }
+    
+    // 현재 대화 언어 추가
+    languages.add(currentLanguage);
+    
+    return Array.from(languages);
+  }, [subtitleLanguage, currentLanguage, partnerInfo.nativeLanguage]);
+
   const cleanup = () => {
     // Exit PiP if active
     if (document.pictureInPictureElement) {
@@ -648,6 +667,8 @@ export default function VideoSessionRoom() {
         isVisible={isSubtitleEnabled}
         position={subtitlePosition}
         maxLines={2}
+        userLanguage={subtitleLanguage}
+        showOriginal={showOriginalSubtitle}
       />
 
       {/* Controls */}
@@ -658,6 +679,10 @@ export default function VideoSessionRoom() {
           onToggle={toggleSubtitle}
           position={subtitlePosition}
           onPositionChange={setSubtitlePosition}
+          showOriginal={showOriginalSubtitle}
+          onShowOriginalChange={setShowOriginalSubtitle}
+          userLanguage={subtitleLanguage}
+          onLanguageChange={setSubtitleLanguage}
           className="mb-2"
         />
         
@@ -667,6 +692,8 @@ export default function VideoSessionRoom() {
             isActive={isTranscribing && connectionState === 'connected'}
             onTranscript={handleTranscript}
             language={currentLanguage}
+            targetLanguages={getTargetLanguages()}
+            enableTranslation={enableTranslation}
             className="mb-2"
           />
         )}
