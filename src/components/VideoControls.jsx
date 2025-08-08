@@ -1,11 +1,11 @@
 import React from 'react';
-import { 
-  Mic, 
-  MicOff, 
-  Video, 
-  VideoOff, 
-  PhoneOff, 
-  Monitor, 
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  Monitor,
   MonitorOff,
   Globe,
   Settings,
@@ -37,7 +37,7 @@ export default function VideoControls({
   variant = "dark" // dark or light
 }) {
   const baseButtonClass = `p-4 rounded-full transition-all duration-200 relative group`;
-  
+
   const buttonVariants = {
     dark: {
       normal: "bg-[#333333] hover:bg-[#414141] text-white",
@@ -50,21 +50,20 @@ export default function VideoControls({
       danger: "bg-[#EA4335] hover:bg-[#D33B2C] text-white"
     }
   };
-  
+
   const tooltipClass = `absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 
     bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 
     transition-opacity duration-200 pointer-events-none whitespace-nowrap`;
-  
+
   return (
     <div className={`flex items-center justify-center space-x-3 ${className}`}>
       {/* Microphone Toggle */}
       <button
         onClick={onToggleMute}
-        className={`${baseButtonClass} ${
-          isMuted 
-            ? buttonVariants[variant].danger 
+        className={`${baseButtonClass} ${isMuted
+            ? buttonVariants[variant].danger
             : buttonVariants[variant].normal
-        }`}
+          }`}
         aria-label={isMuted ? "마이크 켜기" : "마이크 끄기"}
       >
         {isMuted ? (
@@ -76,16 +75,15 @@ export default function VideoControls({
           {isMuted ? "마이크 켜기" : "마이크 끄기"}
         </span>
       </button>
-      
+
       {/* Video Toggle */}
       {showVideo && (
         <button
           onClick={onToggleVideo}
-          className={`${baseButtonClass} ${
-            !isVideoOn 
-              ? buttonVariants[variant].danger 
+          className={`${baseButtonClass} ${!isVideoOn
+              ? buttonVariants[variant].danger
               : buttonVariants[variant].normal
-          }`}
+            }`}
           aria-label={isVideoOn ? "비디오 끄기" : "비디오 켜기"}
         >
           {isVideoOn ? (
@@ -98,16 +96,15 @@ export default function VideoControls({
           </span>
         </button>
       )}
-      
+
       {/* Screen Share Toggle */}
       {showScreenShare && (
         <button
           onClick={onToggleScreenShare}
-          className={`${baseButtonClass} ${
-            isScreenSharing 
-              ? buttonVariants[variant].active 
+          className={`${baseButtonClass} ${isScreenSharing
+              ? buttonVariants[variant].active
               : buttonVariants[variant].normal
-          }`}
+            }`}
           aria-label={isScreenSharing ? "화면 공유 중지" : "화면 공유"}
         >
           {isScreenSharing ? (
@@ -120,7 +117,7 @@ export default function VideoControls({
           </span>
         </button>
       )}
-      
+
       {/* Language Toggle */}
       {showLanguageToggle && (
         <button
@@ -135,7 +132,7 @@ export default function VideoControls({
           </span>
         </button>
       )}
-      
+
       {/* Participants */}
       {showParticipants && (
         <button
@@ -157,7 +154,7 @@ export default function VideoControls({
           </span>
         </button>
       )}
-      
+
       {/* Fullscreen */}
       {showFullscreen && (
         <button
@@ -171,7 +168,7 @@ export default function VideoControls({
           </span>
         </button>
       )}
-      
+
       {/* Settings */}
       {showSettings && (
         <button
@@ -185,12 +182,11 @@ export default function VideoControls({
           </span>
         </button>
       )}
-      
+
       {/* Divider */}
-      <div className={`w-px h-10 ${
-        variant === 'dark' ? 'bg-[#333333]' : 'bg-[#E7E7E7]'
-      } mx-2`} />
-      
+      <div className={`w-px h-10 ${variant === 'dark' ? 'bg-[#333333]' : 'bg-[#E7E7E7]'
+        } mx-2`} />
+
       {/* End Call */}
       <button
         onClick={onEndCall}

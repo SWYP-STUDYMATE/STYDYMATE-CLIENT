@@ -18,6 +18,8 @@ import LevelTestResult from './pages/LevelTest/LevelTestResult';
 import Schedule from './pages/Schedule/Schedule';
 import AudioConnectionCheck from './pages/Session/AudioConnectionCheck';
 import VideoConnectionCheck from './pages/Session/VideoSessionCheck';
+import AudioSessionRoom from './pages/Session/AudioSessionRoom';
+import VideoControlsDemo from './pages/Session/VideoControlsDemo';
 
 export default function App() {
   return (
@@ -42,6 +44,7 @@ export default function App() {
       <Route path='/schedule' element={<Schedule />}/>
       <Route path='/session/audio-check' element={<AudioConnectionCheck />}/>
       <Route path='/session/video-check' element={<VideoConnectionCheck />}/>
+      <Route path='/session/audio/:roomId' element={<AudioSessionRoom />}/>
     </Routes> 
     </div>
   )
