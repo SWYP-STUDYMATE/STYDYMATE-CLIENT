@@ -409,6 +409,32 @@ export default function VideoSessionRoom() {
     }
   };
 
+  // 실시간 전사 핸들러
+  const handleTranscript = useCallback((transcript) => {
+    setTranscripts(prev => [...prev, {
+      ...transcript,
+      timestamp: Date.now()
+    }]);
+    
+    // 파트너에게 자막 전송
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'subtitle',
+        subtitle: transcript
+      }));
+    }
+  }, []);
+
+  // 자막 토글
+  const toggleSubtitle = () => {
+    setIsSubtitleEnabled(prev => !prev);
+    if (!isSubtitleEnabled) {
+      setIsTranscribing(true);
+    } else {
+      setIsTranscribing(false);
+    }
+  };
+
   const cleanup = () => {
     // Exit PiP if active
     if (document.pictureInPictureElement) {

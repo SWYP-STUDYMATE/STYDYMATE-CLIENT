@@ -70,6 +70,7 @@ app.get('/', (c) => {
       whisper: `/api/${API_VERSION}/whisper`,
       llm: `/api/${API_VERSION}/llm`,
       images: `/api/${API_VERSION}/images`,
+      cache: `/api/${API_VERSION}/cache`,
       transcribe: `/api/${API_VERSION}/transcribe`
     }
   });

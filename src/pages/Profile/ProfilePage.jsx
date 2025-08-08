@@ -101,10 +101,13 @@ export default function ProfilePage() {
       <div className="bg-white border-b border-[#E7E7E7] p-6">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <img
-              src={profileImage || '/assets/basicProfilePic.png'}
+            <OptimizedImage
+              src={profileImage || DEFAULT_PROFILE_IMAGE}
               alt="Profile"
               className="w-20 h-20 rounded-full object-cover"
+              width={80}
+              height={80}
+              loading="eager"
             />
             <button
               onClick={handleProfileImageChange}
