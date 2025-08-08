@@ -16,7 +16,7 @@
         "id": 2,
         "title": "GitHub Actions CI/CD 파이프라인 구축",
         "description": "자동 배포를 위한 GitHub Actions 워크플로우",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "1"
@@ -29,7 +29,7 @@
         "id": 3,
         "title": "레벨 테스트 시작 페이지 구현",
         "description": "AI 레벨 테스트 진입 화면 (12.33.06.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [],
         "details": "랭메 캐릭터 애니메이션, 테스트 안내 문구, 시작하기 버튼",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T07:15:57.645Z"
+      "updated": "2025-08-08T07:18:33.741Z"
     }
   }
 }
