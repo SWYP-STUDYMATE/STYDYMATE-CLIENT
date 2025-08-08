@@ -158,8 +158,8 @@ export function SubtitleController({
                 className={`
           flex items-center gap-2 px-3 py-2 rounded-lg transition-all
           ${isEnabled
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-[#2A2A2A] text-[#929292] hover:bg-[#3A3A3A]'
+                        ? 'bg-[var(--blue)] text-white'
+                        : 'bg-[var(--black-400)] text-[var(--black-200)] hover:bg-[var(--black-300)]'
                     }
         `}
             >
@@ -180,8 +180,8 @@ export function SubtitleController({
                                     className={`
                     px-2 py-1 text-xs rounded transition-all
                     ${position === pos.value
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-[#2A2A2A] text-[#929292] hover:bg-[#3A3A3A]'
+                                            ? 'bg-[var(--blue)] text-white'
+                                            : 'bg-[var(--black-400)] text-[var(--black-200)] hover:bg-[var(--black-300)]'
                                         }
                   `}
                                 >
@@ -194,11 +194,11 @@ export function SubtitleController({
                     {/* 언어 선택 */}
                     {onLanguageChange && (
                         <div className="flex items-center gap-2">
-                            <Languages className="w-4 h-4 text-[#929292]" />
+                            <Languages className="w-4 h-4 text-[var(--black-200)]" />
                             <select
                                 value={userLanguage}
                                 onChange={(e) => onLanguageChange(e.target.value)}
-                                className="bg-[#2A2A2A] text-white text-sm rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+                                className="bg-[var(--black-400)] text-white text-sm rounded px-2 py-1 outline-none focus:ring-2 focus:ring-[var(--blue)]"
                             >
                                 {languages.map(lang => (
                                     <option key={lang.value} value={lang.value}>
@@ -216,8 +216,8 @@ export function SubtitleController({
                             className={`
                 text-xs px-2 py-1 rounded transition-all
                 ${showOriginal
-                                    ? 'bg-[#3A3A3A] text-white'
-                                    : 'bg-[#2A2A2A] text-[#929292] hover:bg-[#3A3A3A]'
+                                    ? 'bg-[var(--black-300)] text-white'
+                                    : 'bg-[var(--black-400)] text-[var(--black-200)] hover:bg-[var(--black-300)]'
                                 }
               `}
                         >

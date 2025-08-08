@@ -42,7 +42,7 @@ const API_VERSION = 'v1';
 const app = new Hono();
 
 // 기본 미들웨어 설정
-setupMiddleware(app);
+setupMiddleware(app as unknown as Hono);
 
 // Server timing
 app.use('*', timing());
@@ -112,7 +112,7 @@ http_requests_total{method="GET",endpoint="/health"} 1
 });
 
 // API v1 라우트 그룹
-const v1 = new Hono();
+const v1: any = new Hono();
 
 // v1 API 라우트 등록
 v1.route('/level-test', levelTestRoutes);

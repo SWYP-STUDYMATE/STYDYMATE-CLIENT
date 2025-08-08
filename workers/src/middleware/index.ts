@@ -9,7 +9,6 @@ import { timeout } from 'hono/timeout';
 import { requestId } from 'hono/request-id';
 import { prettyJSON } from 'hono/pretty-json';
 import { Hono } from 'hono';
-import type { AppBindings } from '../index';
 import type { Variables } from '../types';
 
 import { errorHandler } from './error-handler';
@@ -19,7 +18,7 @@ import { securityHeaders, rateLimit } from './security';
 /**
  * 기본 미들웨어 설정
  */
-export function setupMiddleware(app: Hono<{ Bindings: AppBindings; Variables: Variables }>) {
+export function setupMiddleware(app: Hono) {
     // 요청 ID 생성
     app.use('*', requestId());
 

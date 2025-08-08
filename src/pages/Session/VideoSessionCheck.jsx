@@ -212,11 +212,11 @@ export default function VideoSessionCheck() {
       case 'idle':
         return null;
       case 'testing':
-        return <Loader2 className="w-5 h-5 animate-spin text-[#4285F4]" />;
+        return <Loader2 className="w-5 h-5 animate-spin text-[var(--blue)]" />;
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-[#00C471]" />;
+        return <CheckCircle className="w-5 h-5 text-[var(--green-500)]" />;
       case 'failed':
-        return <XCircle className="w-5 h-5 text-[#EA4335]" />;
+        return <XCircle className="w-5 h-5 text-[var(--red)]" />;
       default:
         return null;
     }
@@ -228,7 +228,7 @@ export default function VideoSessionCheck() {
                          connectionStatus === 'success';
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
+    <div className="min-h-screen page-bg flex flex-col">
       <div className="max-w-[1024px] w-full mx-auto flex flex-col min-h-screen">
         {/* 헤더 */}
         <div className="px-6 py-4 bg-white border-b border-[#E7E7E7]">
@@ -257,10 +257,10 @@ export default function VideoSessionCheck() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[14px] text-[#606060] mb-2">카메라 선택</label>
-                <select
+                 <select
                   value={selectedCamera}
                   onChange={(e) => setSelectedCamera(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#E7E7E7] rounded-lg focus:outline-none focus:border-[#4285F4]"
+                   className="w-full px-4 py-2 border border-[var(--black-50)] rounded-lg focus:outline-none focus:border-[var(--blue)]"
                 >
                   {cameras.map(camera => (
                     <option key={camera.deviceId} value={camera.deviceId}>
@@ -271,10 +271,10 @@ export default function VideoSessionCheck() {
               </div>
               <div>
                 <label className="block text-[14px] text-[#606060] mb-2">마이크 선택</label>
-                <select
+                 <select
                   value={selectedMic}
                   onChange={(e) => setSelectedMic(e.target.value)}
-                  className="w-full px-4 py-2 border border-[#E7E7E7] rounded-lg focus:outline-none focus:border-[#4285F4]"
+                   className="w-full px-4 py-2 border border-[var(--black-50)] rounded-lg focus:outline-none focus:border-[var(--blue)]"
                 >
                   {microphones.map(mic => (
                     <option key={mic.deviceId} value={mic.deviceId}>
@@ -302,7 +302,7 @@ export default function VideoSessionCheck() {
                   className="w-full h-full object-cover"
                 />
                 {cameraStatus === 'idle' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#111111]/80">
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(17,17,17,0.8)]">
                     <div className="text-center">
                       <CameraOff className="w-12 h-12 text-white mb-2 mx-auto" />
                       <p className="text-white">카메라를 시작하려면 테스트를 실행하세요</p>
@@ -310,7 +310,7 @@ export default function VideoSessionCheck() {
                   </div>
                 )}
                 {cameraStatus === 'failed' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#EA4335]/90">
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(234,67,53,0.9)]">
                     <div className="text-center">
                       <CameraOff className="w-12 h-12 text-white mb-2 mx-auto" />
                       <p className="text-white">카메라를 사용할 수 없습니다</p>
@@ -328,8 +328,8 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#FFE6E6] rounded-full flex items-center justify-center mr-3">
-                        <Camera className="w-5 h-5 text-[#EA4335]" />
+                       <div className="w-10 h-10 bg-[rgba(234,67,53,0.1)] rounded-full flex items-center justify-center mr-3">
+                         <Camera className="w-5 h-5 text-[var(--red)]" />
                       </div>
                       <div>
                         <h3 className="text-[14px] font-medium text-[#111111]">카메라</h3>
@@ -349,8 +349,8 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#E6F9F1] rounded-full flex items-center justify-center mr-3">
-                        <Mic className="w-5 h-5 text-[#00C471]" />
+                       <div className="w-10 h-10 bg-[rgba(0,196,113,0.12)] rounded-full flex items-center justify-center mr-3">
+                         <Mic className="w-5 h-5 text-[var(--green-500)]" />
                       </div>
                       <div>
                         <h3 className="text-[14px] font-medium text-[#111111]">마이크</h3>
@@ -368,9 +368,9 @@ export default function VideoSessionCheck() {
                   {/* 오디오 레벨 표시 */}
                   {micStatus === 'testing' && (
                     <div className="mt-3">
-                      <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
+                      <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-[#00C471] transition-all duration-100"
+                          className="h-full bg-[var(--green-500)] transition-all duration-100"
                           style={{ width: `${audioLevel * 100}%` }}
                         />
                       </div>
@@ -382,8 +382,8 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#E8F4FD] rounded-full flex items-center justify-center mr-3">
-                        <Volume2 className="w-5 h-5 text-[#4285F4]" />
+                       <div className="w-10 h-10 bg-[rgba(66,133,244,0.12)] rounded-full flex items-center justify-center mr-3">
+                         <Volume2 className="w-5 h-5 text-[var(--blue)]" />
                       </div>
                       <div>
                         <h3 className="text-[14px] font-medium text-[#111111]">스피커</h3>
@@ -403,10 +403,10 @@ export default function VideoSessionCheck() {
                 <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#FFF5E6] rounded-full flex items-center justify-center mr-3">
-                        {connectionStatus === 'failed' ? 
-                          <WifiOff className="w-5 h-5 text-[#FFA500]" /> : 
-                          <Wifi className="w-5 h-5 text-[#FFA500]" />
+                       <div className="w-10 h-10 bg-[rgba(255,165,0,0.12)] rounded-full flex items-center justify-center mr-3">
+                         {connectionStatus === 'failed' ? 
+                           <WifiOff className="w-5 h-5 text-[var(--warning-yellow)]" /> : 
+                           <Wifi className="w-5 h-5 text-[var(--warning-yellow)]" />
                         }
                       </div>
                       <div>
@@ -425,7 +425,7 @@ export default function VideoSessionCheck() {
               </div>
 
               {/* 안내 메시지 */}
-              <div className="mt-6 p-4 bg-[#F8F9FA] rounded-[10px]">
+               <div className="mt-6 p-4 bg-[var(--neutral-100)] rounded-[10px]">
                 <p className="text-[13px] text-[#606060]">
                   💡 화상 통화를 위해서는 최소 2Mbps 이상의 인터넷 속도가 필요합니다.
                   모든 테스트를 통과해야 원활한 화상 통화가 가능합니다.

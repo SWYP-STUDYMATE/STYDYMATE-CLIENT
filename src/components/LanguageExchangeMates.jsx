@@ -48,10 +48,10 @@ const LanguageExchangeMates = () => {
       
       {/* 메이트 정보 */}
       <div className="flex-1">
-        <div className="text-lg font-semibold text-[#111111] leading-[21px] mb-1">
+        <div className="text-lg font-semibold text-[var(--black-500)] leading-[21px] mb-1">
           {mate.name} ({mate.nationality})
         </div>
-        <div className="text-lg font-normal text-[#111111] leading-[21px]">
+        <div className="text-lg font-normal text-[var(--black-500)] leading-[21px]">
           {mate.languageExchange}
         </div>
       </div>
@@ -59,13 +59,13 @@ const LanguageExchangeMates = () => {
   );
 
   return (
-    <div className="bg-white border border-[#e6f9f1] rounded-lg p-6 w-[540px] h-full">
+    <div className="bg-white border border-[var(--green-50)] rounded-lg p-6 w-[540px] h-full">
       {/* 제목과 기간 */}
       <div className="text-center mb-6">
-        <h2 className="text-[34px] font-extrabold text-[#111111] leading-[42px] mb-2">
+        <h2 className="text-[34px] font-extrabold text-[var(--black-500)] leading-[42px] mb-2">
           🏆 언어교환 메이트
         </h2>
-        <div className="text-base font-normal text-[#343a40] leading-[24px]">
+        <div className="text-base font-normal text-[var(--black-300)] leading-[24px]">
           {getCurrentMonthRange()}
         </div>
       </div>

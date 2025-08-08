@@ -171,16 +171,16 @@ export default function GroupVideoSession() {
 
     const VideoTile = ({ participant, isLarge = false }) => (
         <div
-            className={`relative bg-[#1A1A1A] rounded-lg overflow-hidden group ${isLarge ? 'h-full' : ''
-                } ${participant.isSpeaking ? 'ring-2 ring-[#00C471]' : ''}`}
+            className={`relative bg-[var(--black-600)] rounded-lg overflow-hidden group ${isLarge ? 'h-full' : ''
+                } ${participant.isSpeaking ? 'ring-2 ring-[var(--green-500)]' : ''}`}
         >
             {/* Video Stream or Avatar */}
             {participant.isVideoOn ? (
-                <div className="w-full h-full bg-[#333]">
+                <div className="w-full h-full bg-[var(--black-400)]">
                     {/* 실제 비디오 스트림 */}
                 </div>
             ) : (
-                <div className="w-full h-full flex items-center justify-center bg-[#1A1A1A]">
+                <div className="w-full h-full flex items-center justify-center bg-[var(--black-600)]">
                     <img
                         src={participant.profileImage}
                         alt={participant.name}
@@ -199,7 +199,7 @@ export default function GroupVideoSession() {
                             {participant.isLocal && " (나)"}
                         </span>
                         {participant.isMuted && (
-                            <MicOff className="w-4 h-4 text-[#EA4335]" />
+                            <MicOff className="w-4 h-4 text-[var(--red)]" />
                         )}
                     </div>
                     {!participant.isLocal && (
@@ -207,7 +207,7 @@ export default function GroupVideoSession() {
                             onClick={() => handlePinParticipant(participant.id)}
                             className="p-1 hover:bg-white/20 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                            <Pin className={`w-4 h-4 ${pinnedUserId === participant.id ? 'text-[#00C471]' : 'text-white'
+                            <Pin className={`w-4 h-4 ${pinnedUserId === participant.id ? 'text-[var(--green-500)]' : 'text-white'
                                 }`} />
                         </button>
                     )}
@@ -221,7 +221,7 @@ export default function GroupVideoSession() {
                         {[...Array(3)].map((_, i) => (
                             <div
                                 key={i}
-                                className="w-1 h-3 bg-[#00C471] rounded-full animate-pulse"
+                                className="w-1 h-3 bg-[var(--green-500)] rounded-full animate-pulse"
                                 style={{ animationDelay: `${i * 0.1}s` }}
                             />
                         ))}
@@ -266,22 +266,22 @@ export default function GroupVideoSession() {
     };
 
     return (
-        <div ref={containerRef} className="min-h-screen bg-[#0A0A0A] text-white flex flex-col">
+        <div ref={containerRef} className="min-h-screen bg-[var(--black-700)] text-white flex flex-col">
             {/* Header */}
-            <div className="bg-[#1A1A1A] border-b border-[#333333] px-6 py-4 flex-shrink-0">
+            <div className="bg-[var(--black-600)] border-b border-[var(--black-400)] px-6 py-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <h1 className="text-[18px] font-bold">그룹 비디오 세션</h1>
                         <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4 text-[#929292]" />
-                            <span className="text-[14px] text-[#929292]">
+                            <Users className="w-4 h-4 text-[var(--black-200)]" />
+                            <span className="text-[14px] text-[var(--black-200)]">
                                 {participants.length}명 참가 중
                             </span>
                         </div>
                         {sessionStatus === 'connected' && (
                             <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-[#00C471] rounded-full animate-pulse" />
-                                <span className="text-[14px] text-[#00C471]">연결됨</span>
+                                <div className="w-2 h-2 bg-[var(--green-500)] rounded-full animate-pulse" />
+                                <span className="text-[14px] text-[var(--green-500)]">연결됨</span>
                             </div>
                         )}
                     </div>
@@ -289,12 +289,12 @@ export default function GroupVideoSession() {
                         <div className="text-[18px] font-mono">
                             {formatDuration(callDuration)}
                         </div>
-                        <div className="text-[14px] text-[#929292]">
+                        <div className="text-[14px] text-[var(--black-200)]">
                             {currentLanguage === 'en' ? 'English' : '한국어'}
                         </div>
                         <button
                             onClick={handleToggleLayout}
-                            className="p-2 hover:bg-[#333333] rounded-lg transition-colors"
+                            className="p-2 hover:bg-[var(--black-400)] rounded-lg transition-colors"
                             title={layoutMode === 'grid' ? '스피커 뷰로 전환' : '그리드 뷰로 전환'}
                         >
                             {layoutMode === 'grid' ? (
@@ -314,7 +314,7 @@ export default function GroupVideoSession() {
                 {/* Screen Share Indicator */}
                 {isScreenSharing && (
                     <div className="absolute top-4 left-1/2 transform -translate-x-1/2 
-          bg-[#00C471] text-white px-4 py-2 rounded-full flex items-center space-x-2">
+          bg-[var(--green-500)] text-white px-4 py-2 rounded-full flex items-center space-x-2">
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                         <span className="text-[14px] font-medium">화면 공유 중</span>
                     </div>
@@ -325,10 +325,10 @@ export default function GroupVideoSession() {
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                         <div className="text-center">
                             <div className="inline-flex items-center space-x-2 mb-4">
-                                <div className="w-3 h-3 bg-[#FFA500] rounded-full animate-pulse" />
-                                <p className="text-[18px] text-[#FFA500]">연결 중...</p>
+                                <div className="w-3 h-3 bg-[var(--warning-yellow)] rounded-full animate-pulse" />
+                                <p className="text-[18px] text-[var(--warning-yellow)]">연결 중...</p>
                             </div>
-                            <p className="text-[14px] text-[#929292]">
+                            <p className="text-[14px] text-[var(--black-200)]">
                                 그룹 화상 통화를 준비하고 있습니다
                             </p>
                         </div>
@@ -337,7 +337,7 @@ export default function GroupVideoSession() {
             </div>
 
             {/* Control Bar */}
-            <div className="bg-[#1A1A1A] border-t border-[#333333] p-6 flex-shrink-0">
+            <div className="bg-[var(--black-600)] border-t border-[var(--black-400)] p-6 flex-shrink-0">
                 <VideoControls
                     isMuted={isMuted}
                     isVideoOn={isVideoOn}

@@ -60,7 +60,7 @@ const AchievementBadges = () => {
         </div>
         
         {/* 배지 제목 */}
-        <div className="text-2xl font-bold text-[#111111] leading-[31px] text-center">
+        <div className="text-2xl font-bold text-[var(--black-500)] leading-[31px] text-center">
           {badge.title}
         </div>
       </div>
@@ -75,13 +75,13 @@ const AchievementBadges = () => {
   );
 
   return (
-    <div className="bg-[#00A398]/[0.03] rounded-lg p-6 w-full ">
+    <div className="rounded-lg p-6 w-full ">
       {/* 제목과 기간 */}
       <div className="text-center mb-6">
-        <h2 className="text-[34px] font-extrabold text-[#111111] leading-[42px] mb-2">
+        <h2 className="text-[34px] font-extrabold text-[var(--black-500)] leading-[42px] mb-2">
           🏆 성취 배지
         </h2>
-        <div className="text-base font-normal text-[#343a40] leading-[24px]">
+        <div className="text-base font-normal text-[var(--black-300)] leading-[24px]">
           {getCurrentMonthRange()}
         </div>
       </div>

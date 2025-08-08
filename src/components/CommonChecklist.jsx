@@ -12,19 +12,19 @@ export default function CommonChecklistItem({ label, checked, onChange, disabled
   return (
     <label
       className={`flex items-center w-full px-[16px] py-[14px] bg-white border rounded-[6px] cursor-pointer transition min-h-[56px]
-        ${checked ? "border-green-500 shadow-sm" : "border-[#e5e5e5]"}
+        ${checked ? "border-green-500 shadow-sm" : "border-[var(--black-50)]"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-green-300"}
       `}
     >
       <span className="flex items-center mr-4">
         <span
           className={`inline-flex items-center justify-center w-5 h-5 rounded-full border transition
-            ${checked ? "border-green-500" : "border-[#e9ecef]"}
+            ${checked ? "border-green-500" : "border-[var(--black-50)]"}
             bg-white
           `}
         >
           {/* 항상 원이 있고 색상만 바뀜 */}
-          <span className={`inline-block w-2.5 h-2.5 rounded-full transition ${checked ? "bg-green-400" : "bg-[#e9ecef]"}`} />
+          <span className={`inline-block w-2.5 h-2.5 rounded-full transition ${checked ? "bg-green-400" : "bg-[var(--black-50)]"}`} />
         </span>
       </span>
       <input
@@ -34,7 +34,7 @@ export default function CommonChecklistItem({ label, checked, onChange, disabled
         disabled={disabled}
         className="hidden"
       />
-      <span className="text-[16px] font-medium text-[#111111] leading-[24px] select-none">
+      <span className="text-[16px] font-medium text-[var(--black-500)] leading-[24px] select-none">
         {label}
       </span>
     </label>
