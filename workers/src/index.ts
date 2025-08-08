@@ -9,6 +9,7 @@ import llmRoutes from './routes/llm';
 import imagesRoutes from './routes/images';
 import transcribeRoutes from './routes/transcribe';
 import cacheRoutes from './routes/cache';
+import translateRoutes from './routes/translate';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { Variables } from './types';
@@ -71,7 +72,8 @@ app.get('/', (c) => {
       llm: `/api/${API_VERSION}/llm`,
       images: `/api/${API_VERSION}/images`,
       cache: `/api/${API_VERSION}/cache`,
-      transcribe: `/api/${API_VERSION}/transcribe`
+      transcribe: `/api/${API_VERSION}/transcribe`,
+      translate: `/api/${API_VERSION}/translate`
     }
   });
 });
@@ -112,6 +114,7 @@ v1.route('/llm', llmRoutes);
 v1.route('/images', imagesRoutes);
 v1.route('/cache', cacheRoutes);
 v1.route('/transcribe', transcribeRoutes);
+v1.route('/translate', translateRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);

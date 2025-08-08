@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { Env } from '../index';
-import { processAudio } from '../services/ai';
+import { processAudio, translateToMultipleLanguages } from '../services/ai';
 import { validateAuth } from '../utils/auth';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -32,7 +32,9 @@ async function handleWebSocket(ws: WebSocket, env: Env) {
   let config = {
     language: 'en',
     model: 'whisper-large-v3-turbo',
-    task: 'transcribe' as 'transcribe' | 'translate'
+    task: 'transcribe' as 'transcribe' | 'translate',
+    enableTranslation: false,
+    targetLanguages: [] as string[]
   };
 
   // 오디오 버퍼
@@ -92,11 +94,29 @@ async function handleWebSocket(ws: WebSocket, env: Env) {
 
             // 결과 전송
             if (transcription.text && transcription.text.trim()) {
+              const transcribedText = transcription.text.trim();
+              
+              // 번역이 활성화되어 있고 대상 언어가 있는 경우
+              let translations: Record<string, string> = {};
+              if (config.enableTranslation && config.targetLanguages.length > 0) {
+                try {
+                  translations = await translateToMultipleLanguages(
+                    env.AI,
+                    transcribedText,
+                    config.targetLanguages,
+                    transcription.language || 'auto'
+                  );
+                } catch (error) {
+                  console.error('Translation error:', error);
+                }
+              }
+              
               ws.send(JSON.stringify({
                 type: 'transcription',
-                text: transcription.text.trim(),
+                text: transcribedText,
                 language: transcription.language,
                 words: transcription.words,
+                translations,
                 is_final: true,
                 timestamp: Date.now(),
                 confidence: transcription.confidence || 0.95

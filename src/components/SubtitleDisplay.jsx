@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Subtitles, X } from 'lucide-react';
+import { Subtitles, X, Languages } from 'lucide-react';
 
 export default function SubtitleDisplay({ 
   transcripts = [],
   isVisible = true,
   position = 'bottom', // 'bottom' | 'top' | 'overlay'
   maxLines = 2,
+  userLanguage = 'en',
+  showOriginal = false,
   className = ''
 }) {
   const [visibleTranscripts, setVisibleTranscripts] = useState([]);
@@ -87,19 +89,34 @@ export default function SubtitleDisplay({
 
         {/* 자막 텍스트 */}
         <div className="space-y-1">
-          {visibleTranscripts.map((transcript, index) => (
-            <p 
-              key={`${transcript.timestamp}-${index}`}
-              className={`
-                text-center text-white leading-relaxed
-                transition-all duration-300
-                ${transcript.isFinal ? 'text-lg' : 'text-base opacity-70'}
-                ${index === visibleTranscripts.length - 1 ? 'animate-fade-in' : ''}
-              `}
-            >
-              {transcript.text}
-            </p>
-          ))}
+          {visibleTranscripts.map((transcript, index) => {
+            // 번역된 텍스트 가져오기
+            const translatedText = transcript.translations?.[userLanguage] || transcript.text;
+            const isTranslated = transcript.translations?.[userLanguage] && transcript.translations[userLanguage] !== transcript.text;
+            
+            return (
+              <div key={`${transcript.timestamp}-${index}`} className="text-center">
+                {/* 번역된 텍스트 */}
+                <p 
+                  className={`
+                    text-white leading-relaxed
+                    transition-all duration-300
+                    ${transcript.isFinal ? 'text-lg' : 'text-base opacity-70'}
+                    ${index === visibleTranscripts.length - 1 ? 'animate-fade-in' : ''}
+                  `}
+                >
+                  {translatedText}
+                </p>
+                
+                {/* 원본 텍스트 (옵션) */}
+                {showOriginal && isTranslated && (
+                  <p className="text-sm text-white/60 mt-1">
+                    ({transcript.text})
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -112,12 +129,25 @@ export function SubtitleController({
   onToggle,
   position,
   onPositionChange,
+  showOriginal,
+  onShowOriginalChange,
+  userLanguage,
+  onLanguageChange,
   className = ''
 }) {
   const positions = [
     { value: 'bottom', label: '하단' },
     { value: 'top', label: '상단' },
     { value: 'overlay', label: '오버레이' }
+  ];
+
+  const languages = [
+    { value: 'en', label: 'English' },
+    { value: 'ko', label: '한국어' },
+    { value: 'ja', label: '日本語' },
+    { value: 'zh', label: '中文' },
+    { value: 'es', label: 'Español' },
+    { value: 'fr', label: 'Français' }
   ];
 
   return (
@@ -139,26 +169,62 @@ export function SubtitleController({
 
       {/* 위치 선택 */}
       {isEnabled && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[#929292]">위치:</span>
-          <div className="flex gap-1">
-            {positions.map(pos => (
-              <button
-                key={pos.value}
-                onClick={() => onPositionChange(pos.value)}
-                className={`
-                  px-2 py-1 text-xs rounded transition-all
-                  ${position === pos.value
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-[#2A2A2A] text-[#929292] hover:bg-[#3A3A3A]'
-                  }
-                `}
-              >
-                {pos.label}
-              </button>
-            ))}
+        <>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[#929292]">위치:</span>
+            <div className="flex gap-1">
+              {positions.map(pos => (
+                <button
+                  key={pos.value}
+                  onClick={() => onPositionChange(pos.value)}
+                  className={`
+                    px-2 py-1 text-xs rounded transition-all
+                    ${position === pos.value
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-[#2A2A2A] text-[#929292] hover:bg-[#3A3A3A]'
+                    }
+                  `}
+                >
+                  {pos.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+
+          {/* 언어 선택 */}
+          {onLanguageChange && (
+            <div className="flex items-center gap-2">
+              <Languages className="w-4 h-4 text-[#929292]" />
+              <select
+                value={userLanguage}
+                onChange={(e) => onLanguageChange(e.target.value)}
+                className="bg-[#2A2A2A] text-white text-sm rounded px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {languages.map(lang => (
+                  <option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* 원본 표시 토글 */}
+          {onShowOriginalChange && (
+            <button
+              onClick={() => onShowOriginalChange(!showOriginal)}
+              className={`
+                text-xs px-2 py-1 rounded transition-all
+                ${showOriginal
+                  ? 'bg-[#3A3A3A] text-white'
+                  : 'bg-[#2A2A2A] text-[#929292] hover:bg-[#3A3A3A]'
+                }
+              `}
+            >
+              원본 표시
+            </button>
+          )}
+        </>
       )}
     </div>
   );

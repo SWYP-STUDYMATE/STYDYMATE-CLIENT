@@ -697,7 +697,72 @@
         ],
         "details": "주요 사용자 플로우 테스트, CI 통합",
         "testStrategy": "테스트 커버리지 80% 이상",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Playwright 환경 및 테스트 러너 설정",
+            "description": "Playwright와 관련 테스트 러너를 프로젝트에 설치하고, E2E 테스트를 위한 디렉터리 및 기본 설정 파일을 구성한다.",
+            "dependencies": [],
+            "details": "Playwright 설치, 테스트 디렉터리(e.g., /e2e) 생성, playwright.config 파일 작성 및 환경 변수 연동.",
+            "status": "pending",
+            "testStrategy": "설정 완료 후 기본 예제 테스트 실행 및 환경별 테스트 실행 확인"
+          },
+          {
+            "id": 2,
+            "title": "주요 사용자 플로우 정의 및 시나리오 설계",
+            "description": "서비스의 핵심 사용자 플로우를 식별하고, 각 플로우에 대한 E2E 테스트 시나리오를 문서화한다.",
+            "dependencies": [
+              "51.1"
+            ],
+            "details": "로그인, 회원가입, 주요 기능 이용 등 실제 사용자 행동 기반 시나리오 도출 및 정리.",
+            "status": "pending",
+            "testStrategy": "시나리오별 플로우 다이어그램 및 테스트 케이스 목록 검토"
+          },
+          {
+            "id": 3,
+            "title": "Playwright E2E 테스트 코드 작성",
+            "description": "정의된 사용자 플로우에 따라 Playwright로 E2E 테스트 스크립트를 구현한다.",
+            "dependencies": [
+              "51.2"
+            ],
+            "details": "각 시나리오별로 테스트 파일 작성, 요소 탐색 및 사용자 이벤트 시뮬레이션 구현.",
+            "status": "pending",
+            "testStrategy": "테스트 코드 실행 후 정상 동작 및 실패 케이스 검증"
+          },
+          {
+            "id": 4,
+            "title": "테스트 커버리지 측정 및 보완",
+            "description": "전체 기능 대비 테스트 커버리지를 측정하고, 미흡한 부분을 추가로 보완한다.",
+            "dependencies": [
+              "51.3"
+            ],
+            "details": "Playwright의 커버리지 리포트 도구 활용, 80% 이상 커버리지 달성 목표로 미커버리지 영역 테스트 추가.",
+            "status": "pending",
+            "testStrategy": "커버리지 리포트 확인 및 목표치 달성 여부 검증"
+          },
+          {
+            "id": 5,
+            "title": "CI 환경에서 E2E 테스트 통합",
+            "description": "GitHub Actions 등 CI 파이프라인에 Playwright E2E 테스트를 통합하여 자동화한다.",
+            "dependencies": [
+              "51.4"
+            ],
+            "details": "CI 워크플로우(yml) 수정, main/develop 브랜치 PR 및 머지 시 자동 테스트 실행 설정.",
+            "status": "pending",
+            "testStrategy": "CI에서 테스트 자동 실행 및 결과 리포트 확인"
+          },
+          {
+            "id": 6,
+            "title": "테스트 결과 모니터링 및 리포트 자동화",
+            "description": "테스트 실행 결과를 자동으로 수집, 시각화하고, 실패 시 알림을 받을 수 있도록 한다.",
+            "dependencies": [
+              "51.5"
+            ],
+            "details": "테스트 리포트 HTML/대시보드 생성, 슬랙/이메일 등 알림 연동, 실패 케이스 추적 체계 구축.",
+            "status": "pending",
+            "testStrategy": "테스트 실패 시 알림 및 리포트 자동 생성 여부 검증"
+          }
+        ]
       },
       {
         "id": 52,
@@ -730,7 +795,7 @@
         "id": 54,
         "title": "번역 기능 통합",
         "description": "실시간 번역 서비스",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "53"
@@ -763,7 +828,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T10:15:36.443Z"
+      "updated": "2025-08-08T10:22:22.765Z"
     }
   }
 }

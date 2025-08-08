@@ -5,6 +5,8 @@ export default function LiveTranscription({
   isActive = false, 
   onTranscript, 
   language = 'en',
+  targetLanguages = [],
+  enableTranslation = false,
   className = '' 
 }) {
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -99,7 +101,9 @@ export default function LiveTranscription({
       ws.send(JSON.stringify({
         type: 'config',
         language,
-        model: 'whisper-large-v3-turbo'
+        model: 'whisper-large-v3-turbo',
+        enableTranslation,
+        targetLanguages
       }));
     };
 
@@ -112,8 +116,9 @@ export default function LiveTranscription({
             text: data.text,
             isFinal: data.is_final,
             timestamp: data.timestamp,
-            confidence: data.confidence
-          });
+            confidence: data.confidence,
+            language: data.language,
+            translations: data.translations || {}
         } else if (data.type === 'error') {
           setError(data.message);
         }
