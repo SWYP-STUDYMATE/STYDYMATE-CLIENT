@@ -1,0 +1,715 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Cloudflare Pages 배포 환경 최종 설정",
+        "description": "프로덕션 배포를 위한 Cloudflare Pages 환경 구성 완료",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "details": "커스텀 도메인 설정, 환경 변수 구성, 빌드 설정 최적화",
+        "testStrategy": "배포 URL 접근 테스트, 환경별 설정 검증",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "GitHub Actions CI/CD 파이프라인 구축",
+        "description": "자동 배포를 위한 GitHub Actions 워크플로우",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "details": ".github/workflows/deploy.yml 생성, main/develop 브랜치별 배포 전략",
+        "testStrategy": "자동 배포 트리거 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "레벨 테스트 시작 페이지 구현",
+        "description": "AI 레벨 테스트 진입 화면 (12.33.06.png)",
+        "status": "in-progress",
+        "priority": "high",
+        "dependencies": [],
+        "details": "랭메 캐릭터 애니메이션, 테스트 안내 문구, 시작하기 버튼",
+        "testStrategy": "페이지 라우팅 및 렌더링 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "ConnectionChecker 컴포넌트 구현",
+        "description": "마이크/인터넷 연결 상태 확인 (12.33.11.png)",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "3"
+        ],
+        "details": "getUserMedia API로 마이크 권한 요청, 오디오 레벨 시각화, 네트워크 상태 체크",
+        "testStrategy": "디바이스 권한 및 연결 상태 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "AudioRecorder 컴포넌트 개발",
+        "description": "음성 녹음 기능 구현 (12.33.17.png)",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "4"
+        ],
+        "details": "MediaRecorder API, 녹음 시작/중지, 오디오 파형 시각화, Blob 생성",
+        "testStrategy": "녹음 및 재생 기능 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "CountdownTimer 컴포넌트",
+        "description": "3분 카운트다운 타이머 구현",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "5"
+        ],
+        "details": "3:00 카운트다운, 시간 초과 시 자동 제출, 경고 알림",
+        "testStrategy": "타이머 정확도 및 자동 제출 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "레벨 테스트 질문 페이지 구현",
+        "description": "4개 음성 질문 답변 페이지",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "5",
+          "6"
+        ],
+        "details": "질문 표시, 진행률 표시(01/04), 녹음 인터페이스, 제출하고 계속하기",
+        "testStrategy": "질문 네비게이션 및 녹음 플로우 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "레벨 테스트 완료 페이지",
+        "description": "테스트 완료 화면 구현 (12.33.20.png)",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "7"
+        ],
+        "details": "완료 메시지, 진행바 애니메이션, 분석 중 표시",
+        "testStrategy": "완료 상태 전환 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "RadarChart 컴포넌트 개발",
+        "description": "6각형 레이더 차트 구현 (12.35.08.png)",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "8"
+        ],
+        "details": "6개 영역 점수 시각화, 애니메이션 효과, 반응형 디자인",
+        "testStrategy": "차트 렌더링 및 데이터 바인딩 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "레벨 테스트 결과 페이지",
+        "description": "AI 분석 결과 표시 페이지",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "9"
+        ],
+        "details": "RadarChart 통합, 레벨 배지, 상세 피드백, 점수 표시",
+        "testStrategy": "결과 데이터 렌더링 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "levelTestStore 구현",
+        "description": "레벨 테스트 상태 관리 스토어",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "현재 질문 번호, 녹음 데이터, 연결 상태, 타이머, 테스트 결과 관리",
+        "testStrategy": "상태 변경 및 지속성 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "매칭 프로필 페이지 구현",
+        "description": "사용자 상세 프로필 화면 (12.35.19.png)",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "프로필 정보, Active Now 상태, 관심사 태그, Start a Chat 버튼",
+        "testStrategy": "프로필 데이터 렌더링 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "MatchingProfileCard 컴포넌트",
+        "description": "매칭 프로필 카드 컴포넌트",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "12"
+        ],
+        "details": "사용자 정보, 언어 레벨, 관심사 표시, 온라인 상태",
+        "testStrategy": "카드 렌더링 및 인터랙션 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "UserStatusIndicator 컴포넌트",
+        "description": "Active Now 상태 표시",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "13"
+        ],
+        "details": "온라인/오프라인 상태, 색상 인디케이터, 실시간 업데이트",
+        "testStrategy": "상태 표시 정확도 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "HashtagList 컴포넌트",
+        "description": "관심사 해시태그 표시",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "13"
+        ],
+        "details": "태그 스타일링, 클릭 이벤트, 동적 표시",
+        "testStrategy": "태그 렌더링 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "세션 목록 페이지 구현",
+        "description": "학습 세션 목록 화면 (1.49.26.png)",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "세션 카드 리스트, 예정된 세션, 완료된 세션 구분",
+        "testStrategy": "세션 목록 렌더링 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "세션 캘린더 뷰 구현",
+        "description": "캘린더 형태 세션 관리 (1.49.37.png)",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "16"
+        ],
+        "details": "월별/주별 뷰, 세션 표시, 일정 추가/수정",
+        "testStrategy": "캘린더 기능 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "오디오 세션 연결 체크 페이지",
+        "description": "음성 통화 전 연결 확인 (1.51.12.png)",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "마이크 테스트, 스피커 테스트, 연결 품질 체크",
+        "testStrategy": "오디오 디바이스 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "비디오 세션 연결 체크 페이지",
+        "description": "화상 통화 전 연결 확인 (1.52.48.png)",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "카메라 테스트, 마이크 테스트, 미리보기",
+        "testStrategy": "비디오 디바이스 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "1:1 오디오 세션 룸 구현",
+        "description": "1대1 음성 통화 화면 (1.51.30.png)",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "18"
+        ],
+        "details": "프로필 표시, 통화 시간, 마이크 컨트롤, 언어 전환 토글",
+        "testStrategy": "1:1 음성 통화 연결 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "그룹 오디오 세션 룸 구현",
+        "description": "최대 4명 음성 통화 화면 (1.52.03.png)",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "20"
+        ],
+        "details": "4명 프로필 그리드, 발언자 표시, 개별 뮤트 상태",
+        "testStrategy": "그룹 음성 통화 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "1:1 비디오 세션 룸 구현",
+        "description": "1대1 화상 통화 화면",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "19"
+        ],
+        "details": "비디오 스트림 표시, PIP 모드, 화면 공유",
+        "testStrategy": "1:1 화상 통화 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "4인 비디오 세션 룸 구현",
+        "description": "최대 4명 화상 통화 화면 (1.52.53.png, 1.53.04.png)",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "22"
+        ],
+        "details": "4분할 화면, 발언자 하이라이트, 갤러리/스피커 뷰 전환",
+        "testStrategy": "그룹 화상 통화 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "VideoControls 컴포넌트",
+        "description": "화상/음성 통화 컨트롤 UI",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [],
+        "details": "마이크/카메라 토글, 종료 버튼, 화면 공유, 언어 전환",
+        "testStrategy": "컨트롤 동작 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "DashboardLayout 구현",
+        "description": "사이드바 포함 대시보드 레이아웃",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "80px 사이드바, 메인 컨텐츠 영역, 반응형 디자인",
+        "testStrategy": "레이아웃 렌더링 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "채팅 음성 메시지 기능",
+        "description": "채팅방 내 음성 메시지 (1.48.43.png)",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [],
+        "details": "음성 녹음, 재생 UI, 파형 표시",
+        "testStrategy": "음성 메시지 송수신 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "프로필 페이지 개선",
+        "description": "사용자 프로필 화면 업데이트 (1.49.56.png, 1.50.24.png)",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [],
+        "details": "프로필 통계, 배지 시스템, 알림 설정",
+        "testStrategy": "프로필 기능 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "세션 예약 시스템",
+        "description": "학습 세션 예약 기능",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "17"
+        ],
+        "details": "시간대 선택, 반복 설정, 리마인더",
+        "testStrategy": "예약 생성/수정/취소 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 29,
+        "title": "matchingStore 구현",
+        "description": "매칭 상태 관리 스토어",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "매칭 상태, 추천 사용자, 필터 설정 관리",
+        "testStrategy": "상태 관리 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "sessionStore 구현",
+        "description": "세션 상태 관리 스토어",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [],
+        "details": "현재 세션, 예약된 세션, 통화 상태 관리",
+        "testStrategy": "세션 상태 업데이트 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "Node.js Workers 프로젝트 초기화",
+        "description": "Cloudflare Workers 프로젝트 생성",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [],
+        "details": "studymate-workers 폴더 생성, wrangler init, TypeScript 설정",
+        "testStrategy": "wrangler dev로 로컬 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 32,
+        "title": "Workers AI 바인딩 설정",
+        "description": "Cloudflare Workers AI 연결",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "31"
+        ],
+        "details": "wrangler.toml에 AI 바인딩 추가, 환경 변수 설정",
+        "testStrategy": "AI 바인딩 접근 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "Whisper 음성인식 API 구현",
+        "description": "Cloudflare Workers AI Whisper 통합",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "32"
+        ],
+        "details": "whisper-large-v3-turbo 모델 사용, 오디오 처리, 텍스트 변환",
+        "testStrategy": "음성 인식 정확도 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "오디오 청킹 시스템",
+        "description": "대용량 오디오 파일 분할 처리",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "33"
+        ],
+        "details": "37분 이상 파일 처리, 청크 분할, 병렬 처리",
+        "testStrategy": "대용량 파일 처리 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 35,
+        "title": "LLM 텍스트 생성 API",
+        "description": "Workers AI LLM 통합",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "32"
+        ],
+        "details": "llama-3-8b-instruct 모델, 프롬프트 처리, 레벨 평가",
+        "testStrategy": "텍스트 생성 품질 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 36,
+        "title": "레벨 평가 알고리즘",
+        "description": "CEFR 기준 언어 레벨 산정",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "33",
+          "35"
+        ],
+        "details": "음성 텍스트 분석, 6개 영역 평가, A1-C2 레벨 계산",
+        "testStrategy": "레벨 평가 정확도 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 37,
+        "title": "Cloudflare Calls 통합",
+        "description": "WebRTC 화상/음성 통화 설정",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "31"
+        ],
+        "details": "Cloudflare Calls API 설정, TURN/STUN 서버, SFU 구성",
+        "testStrategy": "Calls API 연결 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 38,
+        "title": "Durable Objects Room 관리",
+        "description": "WebRTC 룸 상태 관리",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "37"
+        ],
+        "details": "Room 생성/삭제, 참가자 관리(최대 4명), 상태 동기화",
+        "testStrategy": "룸 생성 및 참가 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 39,
+        "title": "WebRTC 시그널링 구현",
+        "description": "P2P 연결 협상 로직",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "38"
+        ],
+        "details": "ICE candidate 교환, SDP offer/answer, Trickle ICE",
+        "testStrategy": "P2P 연결 성공률 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 40,
+        "title": "미디어 트랙 관리 시스템",
+        "description": "오디오/비디오 트랙 제어",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "39"
+        ],
+        "details": "트랙 추가/제거, 뮤트/언뮤트, 품질 조정, 화면 공유",
+        "testStrategy": "미디어 제어 기능 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 41,
+        "title": "R2 Storage 설정",
+        "description": "Cloudflare R2 파일 저장소",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "31"
+        ],
+        "details": "버킷 생성, 접근 권한, CORS 설정",
+        "testStrategy": "파일 업로드/다운로드 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 42,
+        "title": "Cloudflare Images 통합",
+        "description": "이미지 처리 서비스",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "41"
+        ],
+        "details": "프로필 이미지 업로드, 자동 리사이징, 변형, CDN 배포",
+        "testStrategy": "이미지 처리 파이프라인 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 43,
+        "title": "Workers KV 캐싱 시스템",
+        "description": "세션 데이터 캐싱",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "31"
+        ],
+        "details": "네임스페이스 생성, 세션 캐싱, TTL 관리",
+        "testStrategy": "캐시 히트율 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 44,
+        "title": "Hono 라우팅 시스템",
+        "description": "Workers API 라우팅",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "31"
+        ],
+        "details": "Hono 프레임워크 설정, REST API 라우트, 미들웨어",
+        "testStrategy": "API 엔드포인트 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 45,
+        "title": "CORS 및 보안 설정",
+        "description": "API 보안 구성",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "44"
+        ],
+        "details": "CORS 정책, Rate limiting, 보안 헤더",
+        "testStrategy": "보안 정책 검증 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 46,
+        "title": "프론트엔드-Workers API 연동",
+        "description": "프론트엔드와 Workers 통합",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "44",
+          "45"
+        ],
+        "details": "API 클라이언트 설정, 엔드포인트 연결, 에러 핸들링",
+        "testStrategy": "API 통합 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 47,
+        "title": "레벨테스트 E2E 플로우",
+        "description": "레벨테스트 전체 통합",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "10",
+          "33",
+          "36",
+          "46"
+        ],
+        "details": "녹음 → 업로드 → 음성인식 → 평가 → 결과 표시",
+        "testStrategy": "전체 레벨테스트 플로우 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 48,
+        "title": "WebRTC 프론트엔드 통합",
+        "description": "화상/음성 통화 기능 연동",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "39",
+          "40",
+          "46"
+        ],
+        "details": "getUserMedia, RTCPeerConnection, 시그널링 연동",
+        "testStrategy": "통화 연결 성공률 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 49,
+        "title": "Workers 배포 파이프라인",
+        "description": "자동 배포 설정",
+        "status": "pending",
+        "priority": "medium",
+        "dependencies": [
+          "46"
+        ],
+        "details": "GitHub Actions 설정, wrangler deploy, 환경별 배포",
+        "testStrategy": "배포 자동화 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 50,
+        "title": "성능 최적화",
+        "description": "프론트엔드 성능 개선",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "47",
+          "48"
+        ],
+        "details": "코드 스플리팅, 레이지 로딩, 이미지 최적화, 번들 사이즈 축소",
+        "testStrategy": "Lighthouse 성능 점수 90+",
+        "subtasks": []
+      },
+      {
+        "id": 51,
+        "title": "E2E 테스트 작성",
+        "description": "Playwright 통합 테스트",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "50"
+        ],
+        "details": "주요 사용자 플로우 테스트, CI 통합",
+        "testStrategy": "테스트 커버리지 80% 이상",
+        "subtasks": []
+      },
+      {
+        "id": 52,
+        "title": "Cloudflare Analytics 설정",
+        "description": "모니터링 대시보드 구축",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "49"
+        ],
+        "details": "성능 메트릭, 에러 추적, 사용량 모니터링, 실시간 대시보드",
+        "testStrategy": "모니터링 데이터 수집 확인",
+        "subtasks": []
+      },
+      {
+        "id": 53,
+        "title": "실시간 자막 생성 시스템",
+        "description": "통화 중 실시간 STT 자막",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "33",
+          "48"
+        ],
+        "details": "실시간 음성 스트림 처리, Whisper API 연동, 자막 동기화",
+        "testStrategy": "자막 지연시간 및 정확도 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 54,
+        "title": "번역 기능 통합",
+        "description": "실시간 번역 서비스",
+        "status": "pending",
+        "priority": "low",
+        "dependencies": [
+          "53"
+        ],
+        "details": "Workers AI 번역 모델 통합, 언어 자동 감지",
+        "testStrategy": "번역 품질 테스트",
+        "subtasks": []
+      },
+      {
+        "id": 55,
+        "title": "최종 통합 QA",
+        "description": "전체 시스템 품질 검증",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "51",
+          "52"
+        ],
+        "details": "모든 기능 통합 테스트, 버그 수정, 사용성 테스트",
+        "testStrategy": "전체 플로우 QA 체크리스트",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "createdAt": "2025-01-08T00:00:00Z",
+      "updatedAt": "2025-01-08T00:00:00Z",
+      "projectName": "STUDYMATE-CLIENT",
+      "totalTasks": 55,
+      "completedTasks": 0,
+      "currentTag": "master",
+      "created": "2025-08-08T07:07:16.742Z",
+      "description": "Tasks for master context",
+      "updated": "2025-08-08T07:18:33.741Z"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+name: Deploy Workers to Cloudflare
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'workers/**'
+      - '.github/workflows/deploy-workers.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'workers/**'
+
+jobs:
+  deploy-workers:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./workers
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: workers/package-lock.json
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm test
+        if: false # 테스트 추가 후 활성화
+        
+      - name: Deploy to Cloudflare Workers (Production)
+        if: github.ref == 'refs/heads/main'
+        run: npx wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          
+      - name: Deploy to Cloudflare Workers (Staging)
+        if: github.ref == 'refs/heads/develop'
+        run: npx wrangler deploy --env staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          
+      - name: Deploy to Cloudflare Workers (Preview)
+        if: github.event_name == 'pull_request'
+        run: |
+          BRANCH_NAME=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9-]/-/g')
+          npx wrangler deploy --env preview --name studymate-workers-${BRANCH_NAME}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

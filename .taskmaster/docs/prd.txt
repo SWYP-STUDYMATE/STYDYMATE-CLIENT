@@ -1,0 +1,252 @@
+# STUDYMATE 언어 교환 학습 플랫폼 - Product Requirements Document
+
+## 1. 프로젝트 개요
+
+STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 세계 사용자들이 언어를 교환하며 학습할 수 있는 플랫폼입니다.
+
+### 기술 스택
+- Frontend: React 19.1.0 + Vite 7.0.4 + Cloudflare Pages
+- Backend API: Spring Boot (STUDYMATE-SERVER) - 기존 API 활용
+- Node.js Backend: WebRTC, AI 레벨테스트 처리 (Cloudflare Workers)
+
+## 2. 프론트엔드 개발 태스크
+
+### 2.1 기본 인프라 및 설정
+- Cloudflare Pages 배포 환경 구성
+- 환경 변수 설정 (production, staging, development)
+- Wrangler CLI 설정 및 자동 배포 구성
+- GitHub Actions CI/CD 파이프라인 구축
+
+### 2.2 인증 및 온보딩 시스템
+- 네이버 OAuth2 소셜 로그인 구현
+- JWT 토큰 관리 및 자동 갱신 로직
+- 4단계 온보딩 프로세스 UI 구현
+  - Step 1: 영어 이름 및 거주지 입력
+  - Step 2: 프로필 이미지 업로드
+  - Step 3: 자기소개 작성
+  - Step 4: 학습 목표 설정
+- 약관 동의 페이지
+- 회원가입 완료 페이지
+
+### 2.3 레벨 테스트 시스템 UI
+- 레벨 테스트 시작 페이지
+- 연결 확인 페이지 (마이크/네트워크 체크)
+- 음성 질문 페이지 (4개 질문)
+- AudioRecorder 컴포넌트 (MediaRecorder API)
+- CountdownTimer 컴포넌트 (3분 타이머)
+- 레벨 테스트 완료 페이지
+- 결과 페이지 (RadarChart 시각화)
+- LevelBadge 컴포넌트
+
+### 2.4 매칭 시스템 UI
+- 매칭 목록 페이지
+- 파트너 프로필 상세 페이지
+- MatchingProfileCard 컴포넌트
+- UserStatusIndicator 컴포넌트 (온라인 상태)
+- HashtagList 컴포넌트 (관심사 태그)
+- FilterPanel 컴포넌트
+- CompatibilityScore 표시
+
+### 2.5 채팅 시스템
+- 채팅 목록 페이지
+- 채팅방 UI
+- MessageBubble 컴포넌트
+- MessageInput 컴포넌트
+- EmojiPicker 통합
+- WebSocket 연결 관리 (SockJS + StompJS)
+- 실시간 메시지 전송/수신
+- 읽음 확인 기능
+- 타이핑 인디케이터
+
+### 2.6 세션(화상/음성 통화) UI
+- 세션 목록 페이지
+- 세션 캘린더 뷰
+- 1:1 오디오 세션 페이지
+- 4인 비디오 세션 페이지
+- VideoGrid 컴포넌트 (참가자 비디오)
+- AudioControls 컴포넌트
+- VideoControls 컴포넌트
+- ScreenShare 컴포넌트
+- SessionTimer 컴포넌트
+- LanguageToggle 컴포넌트
+- 세션 대기실 페이지
+
+### 2.7 프로필 관리
+- 프로필 뷰 페이지
+- 프로필 편집 페이지
+- ProfileStats 컴포넌트 (학습 통계)
+- AchievementBadges 컴포넌트
+- MatesList 컴포넌트 (학습 메이트 목록)
+- LanguageSkills 표시
+- LearningHistory 타임라인
+
+### 2.8 공통 컴포넌트
+- CommonButton (통일된 버튼 스타일)
+- CommonInput (입력 필드)
+- CommonSelect (드롭다운)
+- Modal 컴포넌트
+- Toast 알림
+- Loading 스피너
+- Error Boundary
+- MainHeader
+- Sidebar
+- BottomNav
+
+### 2.9 상태 관리 (Zustand)
+- authStore (인증 상태)
+- profileStore (프로필 데이터)
+- chatStore (채팅 메시지)
+- sessionStore (세션 상태)
+- levelTestStore (테스트 진행 상태)
+- matchingStore (매칭 정보)
+- notificationStore (알림)
+
+### 2.10 API 통신 레이어
+- Axios 인터셉터 설정
+- JWT 토큰 자동 갱신
+- 에러 핸들링 통합
+- API 엔드포인트 관리
+- 로딩 상태 관리
+
+### 2.11 디자인 시스템 적용
+- Tailwind 커스텀 테마 설정
+- 색상 팔레트 (Green/Black) 적용
+- Pretendard 폰트 설정
+- 반응형 레이아웃
+- 일관된 간격 시스템
+- 버튼/입력 컴포넌트 스타일링
+
+## 3. Node.js 백엔드 개발 태스크
+
+### 3.1 Cloudflare Workers 기본 설정
+- Wrangler 프로젝트 초기화
+- Workers 라우팅 설정
+- 환경 변수 관리
+- CORS 설정
+- Rate Limiting 구현
+
+### 3.2 WebRTC 시그널링 서버
+- Socket.io 대체 (Cloudflare Durable Objects)
+- Room 관리 시스템
+- ICE candidate 교환 로직
+- Offer/Answer 교환 프로토콜
+- 연결 상태 모니터링
+- 참가자 관리 (최대 4명)
+- 연결 품질 체크
+
+### 3.3 TURN 서버 구성
+- Cloudflare TURN 서비스 설정
+- STUN/TURN 크레덴셜 관리
+- 미디어 스트림 릴레이
+- NAT traversal 처리
+
+### 3.4 AI 레벨테스트 API
+- OpenAI API 통합
+- Whisper API 음성 인식
+- GPT-4 텍스트 분석
+- 발음 평가 알고리즘
+- 문법 체크 로직
+- CEFR 레벨 산정 (A1-C2)
+- 레벨테스트 결과 생성
+- 6개 영역 점수 계산
+
+### 3.5 실시간 처리 기능
+- 음성-텍스트 변환 (STT)
+- 실시간 번역 API 통합
+- 자막 생성 시스템
+- 세션 녹화 기능
+- 오디오 스트림 처리
+
+### 3.6 파일 처리 시스템
+- Cloudflare R2 Storage 설정
+- 이미지 업로드/리사이징 (Cloudflare Images)
+- 오디오 파일 처리
+- 비디오 파일 처리
+- CDN 배포 설정
+
+### 3.7 Durable Objects 구현
+- WebRTC Room 상태 관리
+- 세션 상태 저장
+- 실시간 참가자 동기화
+- 메시지 큐 관리
+
+### 3.8 Workers KV 활용
+- 세션 메타데이터 저장
+- 임시 데이터 캐싱
+- 레벨테스트 결과 임시 저장
+
+### 3.9 API Gateway 구성
+- STUDYMATE-SERVER 프록시
+- 요청 라우팅
+- 응답 캐싱
+- API 버전 관리
+
+### 3.10 모니터링 및 로깅
+- Cloudflare Analytics 설정
+- 에러 트래킹
+- 성능 메트릭 수집
+- 사용량 모니터링
+
+## 4. 통합 및 연동 태스크
+
+### 4.1 STUDYMATE-SERVER API 연동
+- 사용자 인증 API 연동
+- 프로필 관리 API 연동
+- 채팅 API 연동
+- 매칭 API 연동
+- 기존 WebSocket 연결 활용
+
+### 4.2 프론트엔드-Node.js 백엔드 연동
+- WebRTC 연결 설정
+- 레벨테스트 API 호출
+- 파일 업로드 처리
+- 실시간 기능 연동
+
+### 4.3 데이터 흐름 최적화
+- API 응답 캐싱
+- 이미지 최적화
+- 번들 사이즈 최적화
+- 코드 스플리팅
+
+## 5. 개발 우선순위
+
+### Phase 1 - 기본 기능 (Week 1)
+1. Cloudflare 인프라 설정
+2. 인증 시스템 구현
+3. 온보딩 프로세스
+4. 기본 프로필 관리
+5. STUDYMATE-SERVER API 연동
+
+### Phase 2 - 레벨테스트 (Week 2)
+1. 레벨테스트 UI 구현
+2. AudioRecorder 컴포넌트
+3. Node.js AI API 구현
+4. OpenAI 통합
+5. 결과 시각화
+
+### Phase 3 - 매칭 시스템 (Week 3)
+1. 매칭 목록 UI
+2. 프로필 상세 페이지
+3. 필터링 기능
+4. 채팅 연동
+
+### Phase 4 - 세션 기능 (Week 4-5)
+1. WebRTC 시그널링 서버
+2. Durable Objects 구현
+3. 1:1 오디오 통화
+4. 4인 비디오 통화
+5. 세션 예약 시스템
+
+### Phase 5 - 마무리 (Week 6)
+1. 프로필 페이지 개선
+2. 통계 및 배지 시스템
+3. 전체 통합 테스트
+4. 배포 및 최적화
+
+## 6. 기술적 제약사항
+
+- 모든 프론트엔드 인프라는 Cloudflare 서비스 활용
+- STUDYMATE-SERVER의 기존 API 최대한 활용
+- Redis와 데이터베이스는 STUDYMATE-SERVER 통해 관리
+- 2025년 최신 Cloudflare 기능 활용
+- 기존 디자인 시스템 준수

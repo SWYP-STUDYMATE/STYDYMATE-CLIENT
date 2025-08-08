@@ -1,0 +1,6 @@
+# SPA 라우팅 설정
+/*    /index.html   200
+
+# API 프록시 (필요시)
+# /api/*  https://api.languagemate.kr/api/:splat  200
+# /ws/*   https://api.languagemate.kr/ws/:splat   200

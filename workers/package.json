@@ -1,0 +1,28 @@
+{
+  "name": "studymate-workers",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers backend for STUDYMATE",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "tail": "wrangler tail",
+    "format": "prettier --write .",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "hono": "^3.12.0",
+    "@cloudflare/ai": "^1.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "wrangler": "^3.0.0",
+    "typescript": "^5.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
