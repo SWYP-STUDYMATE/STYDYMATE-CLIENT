@@ -252,7 +252,7 @@
         "id": 21,
         "title": "그룹 오디오 세션 룸 구현",
         "description": "최대 4명 음성 통화 화면 (1.52.03.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "20"
@@ -278,7 +278,7 @@
         "id": 23,
         "title": "4인 비디오 세션 룸 구현",
         "description": "최대 4명 화상 통화 화면 (1.52.53.png, 1.53.04.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "22"
@@ -578,7 +578,7 @@
         "id": 47,
         "title": "레벨테스트 E2E 플로우",
         "description": "레벨테스트 전체 통합",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "10",
@@ -594,7 +594,7 @@
         "id": 48,
         "title": "WebRTC 프론트엔드 통합",
         "description": "화상/음성 통화 기능 연동",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [
           "39",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:41:48.515Z"
+      "updated": "2025-08-08T09:43:18.647Z"
     }
   }
 }
