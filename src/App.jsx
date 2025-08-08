@@ -23,7 +23,7 @@ import AudioSessionRoom from './pages/Session/AudioSessionRoom';
 import ProfilePage from './pages/Profile/ProfilePage';
 import VideoControlsDemo from './pages/Session/VideoControlsDemo';
 import SessionList from './pages/Session/SessionList';
-import ProfilePage from './pages/Profile/ProfilePage';
+import SessionCalendar from './pages/Session/SessionCalendar';
 
 export default function App() {
   return (
@@ -50,9 +50,10 @@ export default function App() {
         <Route path='/session/video/:roomId' element={<VideoSessionRoom />} />
         <Route path='/session/video-check' element={<VideoConnectionCheck />} />
         <Route path='/session/audio/:roomId' element={<AudioSessionRoom />} />
+        <Route path='/session/video-controls-demo' element={<VideoControlsDemo />} />
         <Route path='/profile' element={<ProfilePage />} />
         <Route path='/sessions' element={<SessionList />} />
-        <Route path='/profile' element={<ProfilePage />} />
+        <Route path='/sessions/calendar' element={<SessionCalendar />} />
       </Routes>
     </div>
   )

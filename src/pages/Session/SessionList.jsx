@@ -8,7 +8,8 @@ import {
     Plus,
     Users,
     Filter,
-    ChevronRight
+    ChevronRight,
+    List
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useSessionStore from '../../store/sessionStore';
@@ -232,12 +233,20 @@ export default function SessionList() {
             <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-[20px] font-bold text-[#111111]">세션</h1>
-                    <button
-                        onClick={() => navigate('/session/schedule')}
-                        className="p-2 bg-[#00C471] hover:bg-[#00B267] text-white rounded-lg"
-                    >
-                        <Plus className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={() => navigate('/sessions/calendar')}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <Calendar className="w-5 h-5 text-[#606060]" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/session/schedule')}
+                            className="p-2 bg-[#00C471] hover:bg-[#00B267] text-white rounded-lg"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
