@@ -4,129 +4,93 @@ import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
 import useLevelTestStore from '../../stores/levelTestStore';
-import { ChevronRight, ChevronLeft, RotateCw, Send } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function LevelTestRecording() {
   const navigate = useNavigate();
-  const [hasRecorded, setHasRecorded] = useState(false);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
   
   const {
     currentQuestionIndex,
     totalQuestions,
     questions,
     recordings,
-    getCurrentQuestion,
     nextQuestion,
     previousQuestion,
-    isFirstQuestion,
-    isLastQuestion,
-    getProgress,
-    hasCompletedAllQuestions,
-    stopRecording
+    setTestStatus,
+    addRecording,
+    setCurrentRecording,
+    clearCurrentRecording,
+    getRecordingForQuestion,
+    isCurrentQuestionRecorded,
+    isTestComplete,
+    resetTimer,
+    stopTimer
   } = useLevelTestStore();
 
-  const currentQuestion = getCurrentQuestion();
+  const currentQuestion = questions[currentQuestionIndex];
+  const hasRecording = isCurrentQuestionRecorded();
+  const recordingForCurrentQuestion = getRecordingForQuestion(currentQuestionIndex);
 
   useEffect(() => {
+    setTestStatus('recording');
+    setIsTimerRunning(true);
+    
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      stopRecording();
+      stopTimer();
+      clearCurrentRecording();
     };
-  }, []);
+  }, [setTestStatus, stopTimer, clearCurrentRecording]);
 
   useEffect(() => {
-    if (isRecording) {
-      timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            handleStopRecording();
-            return 180;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    }
+    resetTimer();
+    setIsTimerRunning(false);
+    setTimeout(() => setIsTimerRunning(true), 100);
+  }, [currentQuestionIndex, resetTimer]);
 
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isRecording]);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        const newRecording = {
-          questionId: questions[currentQuestion].id,
-          blob: audioBlob,
-          duration: recordingTime
-        };
-        setRecordings(prev => [...prev, newRecording]);
-        audioChunksRef.current = [];
-      };
-
-      mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('마이크 권한을 허용해주세요.');
-    }
+  const handleRecordingComplete = (blob) => {
+    addRecording({
+      blob,
+      duration: 0 // Duration will be set by the store
+    });
+    setIsTimerRunning(false);
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
+  const handleTimeUp = () => {
+    // Timer expired - auto move to next question if not recording
+    if (!hasRecording) {
+      alert('시간이 초과되었습니다. 다음 질문으로 이동합니다.');
+      handleNext();
     }
-  };
-
-  const handleStopRecording = () => {
-    stopRecording();
-  };
-
-  const handleRetry = () => {
-    setRecordings(prev => prev.filter(r => r.questionId !== questions[currentQuestion].id));
-    setTimeLeft(180);
-    setRecordingTime(0);
   };
 
   const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(prev => prev + 1);
-      setTimeLeft(180);
-      setRecordingTime(0);
+    if (currentQuestionIndex < totalQuestions - 1) {
+      nextQuestion();
     } else {
-      // Save recordings and navigate to complete page
-      navigate('/level-test/complete');
+      // All questions completed
+      if (isTestComplete()) {
+        setTestStatus('completed');
+        navigate('/level-test/complete');
+      } else {
+        alert('모든 질문에 답변해주세요.');
+      }
     }
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      previousQuestion();
+    }
   };
 
-  const hasRecording = recordings.some(r => r.questionId === questions[currentQuestion].id);
+  const handleRetry = () => {
+    // Remove current recording from store
+    const updatedRecordings = recordings.filter(r => r.questionIndex !== currentQuestionIndex);
+    // This would need a new store method to update recordings
+    resetTimer();
+    setIsTimerRunning(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
@@ -134,15 +98,13 @@ export default function LevelTestRecording() {
       <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/level-test/check')}
             className="p-2 -ml-2"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <ChevronLeft className="w-6 h-6 text-[#111111]" />
           </button>
           <h1 className="text-[18px] font-bold text-[#111111]">
-            질문 {currentQuestion + 1} / {questions.length}
+            질문 {currentQuestionIndex + 1} / {totalQuestions}
           </h1>
           <div className="w-10" />
         </div>
@@ -153,103 +115,85 @@ export default function LevelTestRecording() {
         <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
           <div 
             className="h-full bg-[#00C471] transition-all duration-300"
-            style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+            style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
           />
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col px-6 py-8">
-        {/* Question */}
-        <div className="bg-white rounded-[20px] p-6 mb-6 border border-[#E7E7E7]">
-          <p className="text-[18px] font-bold text-[#111111] mb-3">
-            {questions[currentQuestion].question}
+      <div className="flex-1 flex flex-col items-center px-6 py-8">
+        {/* Question Card */}
+        <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[#E7E7E7]">
+          <p className="text-[20px] font-bold text-[#111111] mb-3">
+            {currentQuestion}
           </p>
-          <p className="text-[14px] text-[#929292]">
-            {questions[currentQuestion].korean}
+          <p className="text-[16px] text-[#606060]">
+            아래 질문에 대해 영어로 답변해주세요.
           </p>
         </div>
 
         {/* Timer */}
-        <div className="text-center mb-8">
-          <p className="text-[14px] text-[#929292] mb-2">남은 시간</p>
-          <p className={`text-[32px] font-bold ${timeLeft < 30 ? 'text-[#EA4335]' : 'text-[#111111]'}`}>
-            {formatTime(timeLeft)}
-          </p>
+        <div className="mb-8">
+          <CountdownTimer 
+            duration={180} 
+            onTimeUp={handleTimeUp}
+            autoStart={isTimerRunning}
+          />
         </div>
 
-        {/* Recording Visualization */}
-        <div className="flex-1 flex items-center justify-center mb-8">
-          <div className={`relative ${isRecording ? 'animate-pulse' : ''}`}>
-            <div className={`w-32 h-32 rounded-full flex items-center justify-center ${
-              isRecording ? 'bg-[#EA4335]' : hasRecording ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
-            }`}>
-              {isRecording ? (
-                <MicOff className="w-12 h-12 text-white" />
-              ) : (
-                <Mic className="w-12 h-12 text-white" />
-              )}
-            </div>
-            {isRecording && (
-              <div className="absolute inset-0 rounded-full border-4 border-[#EA4335] animate-ping" />
-            )}
-          </div>
+        {/* Audio Recorder */}
+        <div className="mb-8 w-full max-w-md">
+          <AudioRecorder 
+            onRecordingComplete={handleRecordingComplete}
+            disabled={hasRecording}
+          />
         </div>
 
-        {/* Recording Time */}
-        {(isRecording || hasRecording) && (
-          <div className="text-center mb-6">
-            <p className="text-[14px] text-[#929292]">
-              {isRecording ? '녹음 중' : '녹음 완료'}: {formatTime(recordingTime)}
-            </p>
-          </div>
-        )}
-
-        {/* Control Buttons */}
-        <div className="space-y-3">
-          {!isRecording && !hasRecording && (
-            <CommonButton
-              onClick={startRecording}
-              variant="primary"
-              className="w-full"
-            >
-              <Mic className="w-5 h-5 mr-2" />
-              녹음 시작
-            </CommonButton>
-          )}
-
-          {isRecording && (
-            <CommonButton
-              onClick={handleStopRecording}
-              variant="primary"
-              className="w-full bg-[#EA4335] hover:bg-[#D33125]"
-            >
-              <MicOff className="w-5 h-5 mr-2" />
-              녹음 중지
-            </CommonButton>
-          )}
-
-          {hasRecording && !isRecording && (
+        {/* Navigation Buttons */}
+        <div className="w-full max-w-md space-y-3">
+          {hasRecording && (
             <>
               <CommonButton
                 onClick={handleRetry}
                 variant="secondary"
                 className="w-full"
               >
-                <RotateCw className="w-5 h-5 mr-2" />
-                다시 녹음
+                다시 녹음하기
               </CommonButton>
+              
               <CommonButton
                 onClick={handleNext}
                 variant="primary"
                 className="w-full"
               >
-                {currentQuestion < questions.length - 1 ? '다음 질문' : '완료'}
+                {currentQuestionIndex < totalQuestions - 1 ? '다음 질문' : '테스트 완료'}
                 <ChevronRight className="w-5 h-5 ml-2" />
               </CommonButton>
             </>
           )}
+
+          {/* Previous Button - only show if not first question */}
+          {currentQuestionIndex > 0 && (
+            <CommonButton
+              onClick={handlePrevious}
+              variant="secondary"
+              className="w-full"
+            >
+              <ChevronLeft className="w-5 h-5 mr-2" />
+              이전 질문
+            </CommonButton>
+          )}
         </div>
+
+        {/* Skip Button - for testing */}
+        {!hasRecording && (
+          <button
+            onClick={handleNext}
+            className="mt-4 text-[#929292] text-sm underline"
+          >
+            이 질문 건너뛰기 (테스트용)
+          </button>
+        )}
       </div>
     </div>
   );

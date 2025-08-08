@@ -79,7 +79,7 @@
         "id": 7,
         "title": "레벨 테스트 질문 페이지 구현",
         "description": "4개 음성 질문 답변 페이지",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "5",
@@ -93,7 +93,7 @@
         "id": 8,
         "title": "레벨 테스트 완료 페이지",
         "description": "테스트 완료 화면 구현 (12.33.20.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "7"
@@ -217,7 +217,7 @@
         "id": 18,
         "title": "오디오 세션 연결 체크 페이지",
         "description": "음성 통화 전 연결 확인 (1.51.12.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [],
         "details": "마이크 테스트, 스피커 테스트, 연결 품질 체크",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:12:58.549Z"
+      "updated": "2025-08-08T09:15:11.684Z"
     }
   }
 }
