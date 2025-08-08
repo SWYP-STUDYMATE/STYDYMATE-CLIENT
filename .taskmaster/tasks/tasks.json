@@ -154,7 +154,7 @@
         "id": 13,
         "title": "MatchingProfileCard 컴포넌트",
         "description": "매칭 프로필 카드 컴포넌트",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "12"
@@ -313,7 +313,7 @@
         "id": 26,
         "title": "채팅 음성 메시지 기능",
         "description": "채팅방 내 음성 메시지 (1.48.43.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [],
         "details": "음성 녹음, 재생 UI, 파형 표시",
@@ -420,7 +420,7 @@
         "id": 35,
         "title": "LLM 텍스트 생성 API",
         "description": "Workers AI LLM 통합",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "32"
@@ -433,7 +433,7 @@
         "id": 36,
         "title": "레벨 평가 알고리즘",
         "description": "CEFR 기준 언어 레벨 산정",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "33",
@@ -447,7 +447,7 @@
         "id": 37,
         "title": "Cloudflare Calls 통합",
         "description": "WebRTC 화상/음성 통화 설정",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "31"
@@ -538,7 +538,7 @@
         "id": 44,
         "title": "Hono 라우팅 시스템",
         "description": "Workers API 라우팅",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "31"
@@ -551,7 +551,7 @@
         "id": 45,
         "title": "CORS 및 보안 설정",
         "description": "API 보안 구성",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "44"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:32:58.643Z"
+      "updated": "2025-08-08T09:34:02.328Z"
     }
   }
 }

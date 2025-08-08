@@ -21,7 +21,6 @@ import VideoSessionRoom from './pages/Session/VideoSessionRoom';
 import VideoConnectionCheck from './pages/Session/VideoSessionCheck';
 import AudioSessionRoom from './pages/Session/AudioSessionRoom';
 import VideoControlsDemo from './pages/Session/VideoControlsDemo';
-import SessionList from './pages/Session/SessionList';
 
 export default function App() {
   return (
@@ -49,7 +48,6 @@ export default function App() {
         <Route path='/session/video-check' element={<VideoConnectionCheck />} />
         <Route path='/session/audio/:roomId' element={<AudioSessionRoom />} />
         <Route path='/session/video-controls-demo' element={<VideoControlsDemo />} />
-        <Route path='/sessions' element={<SessionList />} />
       </Routes>
     </div>
   )
