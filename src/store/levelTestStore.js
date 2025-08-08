@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { levelTestAPI } from "../api/levelTest";
+import { submitLevelTest, getLevelTestResult, completeLevelTest } from "../api/levelTest";
 
 const useLevelTestStore = create(
   persist(
@@ -65,8 +65,10 @@ const useLevelTestStore = create(
       // API 메서드들
       loadQuestions: async () => {
         try {
-          const questions = await levelTestAPI.getQuestions();
-          set({ questions });
+          // TODO: Implement getQuestions API
+          // const questions = await getQuestions();
+          // set({ questions });
+          console.log('Using default questions');
         } catch (error) {
           console.error('Failed to load questions:', error);
           // Use default questions on error
@@ -87,10 +89,18 @@ const useLevelTestStore = create(
           const audioBlobs = state.recordings.map(r => r.blob);
           
           // Submit to API
-          const result = await levelTestAPI.submitTest(audioBlobs, {
-            startTime: state.recordings[0]?.timestamp,
-            endTime: new Date().toISOString()
-          });
+          // TODO: Implement proper batch submission
+          let result = { level: 'B1', overallScore: 65, scores: {} };
+          
+          // Submit each recording individually for now
+          for (let i = 0; i < audioBlobs.length; i++) {
+            await submitLevelTest(audioBlobs[i], i + 1);
+          }
+          
+          // Get final result
+          const userId = localStorage.getItem('userId') || 'guest';
+          await completeLevelTest(userId);
+          result = await getLevelTestResult(userId);
           
           // Process result
           const testResult = {

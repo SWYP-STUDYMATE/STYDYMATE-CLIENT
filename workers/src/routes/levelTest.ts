@@ -6,6 +6,7 @@ import { saveToR2, getFromR2 } from '../services/storage';
 import { successResponse, createdResponse, setCacheHeaders } from '../utils/response';
 import { validationError, notFoundError } from '../middleware/error-handler';
 import { auth } from '../middleware/auth';
+import { UserCache, APICache } from '../services/cache';
 
 export const levelTestRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 

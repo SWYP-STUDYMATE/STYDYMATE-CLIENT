@@ -19,44 +19,127 @@ class_name = "WebRTCRoom"
 tag = "v1"
 new_classes = ["WebRTCRoom"]
 
-# R2 Storage 바인딩 (파일 저장)
+# R2 Storage 바인딩 (파일 저장) - Development
 [[r2_buckets]]
 binding = "STORAGE"
-bucket_name = "studymate-storage"
+bucket_name = "studymate-storage-dev"
 
-# KV Namespace 바인딩 (캐싱)
+# KV Namespace 바인딩 (캐싱) - Development
 [[kv_namespaces]]
 binding = "CACHE"
-id = "42a956e075ea4bda84dade92a95a0756"
+id = "dev-cache-namespace-id"
+preview_id = "dev-cache-preview-id"
 
-# Environment Variables
+# Development Environment Variables
 [vars]
 ENVIRONMENT = "development"
 CORS_ORIGIN = "http://localhost:3000"
-# Cloudflare Images 설정은 실제로는 wrangler secret으로 설정해야 합니다:
-# wrangler secret put CF_ACCOUNT_ID
-# wrangler secret put CF_IMAGES_API_TOKEN
-# wrangler secret put CF_ACCOUNT_HASH
+LOG_LEVEL = "debug"
+API_VERSION = "v1"
 
-# Production 환경
-[env.production]
-name = "studymate-api-production"
-[env.production.vars]
-ENVIRONMENT = "production"
-CORS_ORIGIN = "https://languagemate.kr"
+# Secrets (set via wrangler secret put):
+# - JWT_SECRET
+# - INTERNAL_SECRET
+# - CF_IMAGES_API_TOKEN
+# - CF_ACCOUNT_HASH
 
 # Staging 환경
 [env.staging]
 name = "studymate-api-staging"
+
+# Staging R2 Storage
+[[env.staging.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "studymate-storage-staging"
+
+# Staging KV Namespace
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = "staging-cache-namespace-id"
+
+# Staging Environment Variables
 [env.staging.vars]
 ENVIRONMENT = "staging"
-CORS_ORIGIN = "https://preview.languagemate.kr"
+CORS_ORIGIN = "https://preview.languagemate.kr,https://staging.languagemate.kr"
+LOG_LEVEL = "info"
+API_VERSION = "v1"
 
-# Routes
-[env.production.routes]
+# Staging Routes
+[[env.staging.routes]]
+pattern = "api-staging.languagemate.kr"
+zone_name = "languagemate.kr"
+
+# Staging Custom Domains (optional)
+[[env.staging.routes]]
+pattern = "staging-api.languagemate.kr/*"
+zone_name = "languagemate.kr"
+
+# Production 환경
+[env.production]
+name = "studymate-api-production"
+
+# Production R2 Storage
+[[env.production.r2_buckets]]
+binding = "STORAGE"
+bucket_name = "studymate-storage-production"
+
+# Production KV Namespace
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "42a956e075ea4bda84dade92a95a0756"
+
+# Production Environment Variables
+[env.production.vars]
+ENVIRONMENT = "production"
+CORS_ORIGIN = "https://languagemate.kr,https://www.languagemate.kr"
+LOG_LEVEL = "error"
+API_VERSION = "v1"
+
+# Production Routes
+[[env.production.routes]]
 pattern = "api.languagemate.kr"
 zone_name = "languagemate.kr"
 
-[env.staging.routes]
-pattern = "api-staging.languagemate.kr"
+# Production Custom Domains
+[[env.production.routes]]
+pattern = "api.languagemate.kr/*"
 zone_name = "languagemate.kr"
+
+# Observability (all environments)
+[observability]
+enabled = true
+
+# Build configuration
+[build]
+command = "npm run build"
+watch_paths = ["src/**/*.ts"]
+
+# Development server configuration
+[dev]
+port = 8787
+local_protocol = "http"
+upstream_protocol = "https"
+
+# Limits
+[limits]
+cpu_ms = 50  # 50ms CPU time per request
+startup_cpu_ms = 100  # 100ms CPU time for startup
+
+# Compatibility settings
+[compatibility]
+include_future_compat_date = false
+
+# Analytics Engine binding (optional)
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "studymate_analytics"
+
+# Tail Workers (optional, for logging)
+# [[tail_consumers]]
+# service = "studymate-logger"
+
+# Service bindings to other Workers (if needed)
+# [[services]]
+# binding = "AUTH_SERVICE"
+# service = "studymate-auth"
+# environment = "production"

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
-import useLevelTestStore from '../../stores/levelTestStore';
+import useLevelTestStore from '../../store/levelTestStore';
 
 export default function LevelTestStart() {
   const navigate = useNavigate();

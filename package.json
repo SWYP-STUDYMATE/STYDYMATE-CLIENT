@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "deploy:production": "npm run build && wrangler pages deploy dist --project-name=studymate-client --branch=main",
     "deploy:staging": "npm run build && wrangler pages deploy dist --project-name=studymate-client --branch=preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "analyze": "vite build && vite-bundle-visualizer",
+    "lighthouse": "npm run build && npm run preview & lhci autorun",
+    "perf": "npm run build && npm run analyze"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
@@ -24,6 +27,7 @@
     "react-router-dom": "^7.6.3",
     "react-select": "^5.10.2",
     "recharts": "^3.1.2",
+    "socket.io-client": "^4.8.1",
     "sockjs-client": "^1.6.1",
     "stompjs": "^2.3.3",
     "tailwindcss": "^4.1.11",

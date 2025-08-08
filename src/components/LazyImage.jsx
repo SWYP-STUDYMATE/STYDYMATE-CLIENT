@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import useIntersectionObserver from '../hooks/useIntersectionObserver';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 export default function LazyImage({ 
   src, 
@@ -12,7 +12,7 @@ export default function LazyImage({
   const [imageSrc, setImageSrc] = useState(placeholder);
   const [imageLoading, setImageLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const { targetRef, isIntersecting } = useIntersectionObserver();
+  const [targetRef, isIntersecting] = useIntersectionObserver();
 
   useEffect(() => {
     if (!isIntersecting || !src) return;

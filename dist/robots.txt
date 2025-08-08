@@ -1,0 +1,14 @@
+# STUDYMATE Robots.txt
+# https://www.studymate.kr
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+
+# 크롤링 속도 제한
+Crawl-delay: 1
+
+# 사이트맵
+Sitemap: https://www.studymate.kr/sitemap.xml

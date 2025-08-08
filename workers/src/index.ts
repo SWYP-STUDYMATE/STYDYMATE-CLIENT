@@ -7,6 +7,8 @@ import { uploadRoutes } from './routes/upload';
 import whisperRoutes from './routes/whisper';
 import llmRoutes from './routes/llm';
 import imagesRoutes from './routes/images';
+import transcribeRoutes from './routes/transcribe';
+import cacheRoutes from './routes/cache';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { Variables } from './types';
@@ -67,7 +69,8 @@ app.get('/', (c) => {
       upload: `/api/${API_VERSION}/upload`,
       whisper: `/api/${API_VERSION}/whisper`,
       llm: `/api/${API_VERSION}/llm`,
-      images: `/api/${API_VERSION}/images`
+      images: `/api/${API_VERSION}/images`,
+      transcribe: `/api/${API_VERSION}/transcribe`
     }
   });
 });
@@ -106,6 +109,7 @@ v1.route('/upload', uploadRoutes);
 v1.route('/whisper', whisperRoutes);
 v1.route('/llm', llmRoutes);
 v1.route('/images', imagesRoutes);
+v1.route('/transcribe', transcribeRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);
@@ -138,6 +142,11 @@ app.use('/api/llm/*', async (c, next) => {
 
 app.use('/api/images/*', async (c, next) => {
   c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/images instead`);
+  return v1.fetch(c.req.raw, c.env);
+});
+
+app.use('/api/transcribe/*', async (c, next) => {
+  c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/transcribe instead`);
   return v1.fetch(c.req.raw, c.env);
 });
 

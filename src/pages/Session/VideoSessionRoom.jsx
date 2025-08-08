@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import VideoControls from '../../components/VideoControls';
+import LiveTranscription from '../../components/LiveTranscription';
+import SubtitleDisplay, { SubtitleController } from '../../components/SubtitleDisplay';
 import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor } from 'lucide-react';
 
 export default function VideoSessionRoom() {
@@ -15,6 +17,12 @@ export default function VideoSessionRoom() {
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isPipMode, setIsPipMode] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
+  
+  // 실시간 자막 상태
+  const [isSubtitleEnabled, setIsSubtitleEnabled] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcripts, setTranscripts] = useState([]);
+  const [subtitlePosition, setSubtitlePosition] = useState('bottom');
 
   // Partner info (mock data - replace with actual data from API)
   const [partnerInfo, setPartnerInfo] = useState({
