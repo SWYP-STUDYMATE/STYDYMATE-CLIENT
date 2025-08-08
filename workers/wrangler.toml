@@ -1,10 +1,10 @@
 name = "studymate-api"
 main = "src/index.ts"
 compatibility_date = "2025-01-08"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
-# Account ID는 실제 값으로 교체 필요
-# account_id = "your-account-id"
+# Account ID
+account_id = "69abd904cab5ffd103e569e7e050a884"
 
 # Workers AI 바인딩
 [ai]
@@ -27,7 +27,7 @@ bucket_name = "studymate-storage"
 # KV Namespace 바인딩 (캐싱)
 [[kv_namespaces]]
 binding = "CACHE"
-id = "studymate-cache"
+id = "42a956e075ea4bda84dade92a95a0756"
 
 # Environment Variables
 [vars]

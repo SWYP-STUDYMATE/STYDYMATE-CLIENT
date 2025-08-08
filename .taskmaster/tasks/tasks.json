@@ -239,7 +239,7 @@
         "id": 20,
         "title": "1:1 오디오 세션 룸 구현",
         "description": "1대1 음성 통화 화면 (1.51.30.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "18"
@@ -291,7 +291,7 @@
         "id": 24,
         "title": "VideoControls 컴포넌트",
         "description": "화상/음성 통화 컨트롤 UI",
-        "status": "done",
+        "status": "in-progress",
         "priority": "high",
         "dependencies": [],
         "details": "마이크/카메라 토글, 종료 버튼, 화면 공유, 언어 전환",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:22:17.447Z"
+      "updated": "2025-08-08T09:24:00.503Z"
     }
   }
 }
