@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
-import useLevelTestStore from '../../stores/levelTestStore';
+import useLevelTestStore from '../../store/levelTestStore';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function LevelTestRecording() {
@@ -125,10 +125,10 @@ export default function LevelTestRecording() {
         {/* Question Card */}
         <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[#E7E7E7]">
           <p className="text-[20px] font-bold text-[#111111] mb-3">
-            {currentQuestion}
+            {currentQuestion.question}
           </p>
           <p className="text-[16px] text-[#606060]">
-            아래 질문에 대해 영어로 답변해주세요.
+            {currentQuestion.korean}
           </p>
         </div>
 

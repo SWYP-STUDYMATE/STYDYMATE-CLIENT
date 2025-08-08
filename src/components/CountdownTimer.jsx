@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Clock, AlertCircle } from 'lucide-react';
-import useLevelTestStore from '../store/levelTestStore';
+import useLevelTestStore from '../stores/levelTestStore';
 
 const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
   const intervalRef = useRef(null);
