@@ -204,7 +204,7 @@
         "id": 17,
         "title": "세션 캘린더 뷰 구현",
         "description": "캘린더 형태 세션 관리 (1.49.37.png)",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "16"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:43:18.647Z"
+      "updated": "2025-08-08T09:44:48.196Z"
     }
   }
 }
