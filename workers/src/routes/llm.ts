@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { Env } from '../index';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -60,13 +59,13 @@ app.post('/generate', async (c) => {
       max_tokens: body.max_tokens || 1000
     });
 
-    return c.json( {
+    return successResponse(c, {
       response: response.response,
       usage: response.usage,
       model: model
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('LLM generation error:', error);
     return c.json({ error: error.message || 'Text generation failed' }, 500);
   }
@@ -81,7 +80,7 @@ app.post('/evaluate-english', async (c) => {
     }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required' }, 400);
+      return c.json({ error: 'Text is required');
     }
 
     const prompt = `You are an expert English language assessor. Evaluate the following English text for language proficiency.
@@ -140,13 +139,13 @@ Response in JSON format with this structure:
 
     try {
       const evaluation = JSON.parse(response.response);
-      return c.json( {
+      return successResponse(c, {
         evaluation,
         evaluatedText: text
       });
     } catch (parseError) {
       // JSON 파싱 실패 시 텍스트 응답 반환
-      return c.json( {
+      return successResponse(c, {
         evaluation: {
           textResponse: response.response,
           scores: {
@@ -164,7 +163,7 @@ Response in JSON format with this structure:
       });
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('English evaluation error:', error);
     return c.json({ error: error.message || 'Evaluation failed' }, 500);
   }
@@ -176,7 +175,7 @@ app.post('/check-grammar', async (c) => {
     const { text } = await c.req.json<{ text: string }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required' }, 400);
+      return c.json({ error: 'Text is required');
     }
 
     const prompt = `Check the grammar of the following text and provide corrections:
@@ -212,7 +211,7 @@ Provide a response in JSON format:
 
     try {
       const result = JSON.parse(response.response);
-      return c.json( result);
+      return successResponse(c, result);
     } catch (parseError) {
       return c.json({
         error: 'Failed to parse grammar check response',
@@ -220,7 +219,7 @@ Provide a response in JSON format:
       }, 400);
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Grammar check error:', error);
     return c.json({ error: error.message || 'Grammar check failed' }, 500);
   }
@@ -236,7 +235,7 @@ app.post('/conversation-feedback', async (c) => {
     }>();
 
     if (!conversation || conversation.length === 0) {
-      return c.json({ error: 'Conversation is required' }, 400);
+      return c.json({ error: 'Conversation is required');
     }
 
     const conversationText = conversation
@@ -284,14 +283,14 @@ Provide comprehensive feedback in JSON format:
 
     try {
       const feedback = JSON.parse(response.response);
-      return c.json( {
+      return successResponse(c, {
         feedback,
         conversationLength: conversation.length,
         topic,
         level
       });
     } catch (parseError) {
-      return c.json( {
+      return successResponse(c, {
         feedback: {
           textResponse: response.response
         },
@@ -301,7 +300,7 @@ Provide comprehensive feedback in JSON format:
       });
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Conversation feedback error:', error);
     return c.json({ error: error.message || 'Feedback generation failed' }, 500);
   }
@@ -309,7 +308,7 @@ Provide comprehensive feedback in JSON format:
 
 // 사용 가능한 모델 목록
 app.get('/models', (c) => {
-  return c.json( {
+  return successResponse(c, {
     available_models: [
       {
         id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',

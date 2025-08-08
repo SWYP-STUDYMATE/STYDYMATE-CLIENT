@@ -5,11 +5,19 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "tsc --noEmit",
     "deploy": "wrangler deploy",
-    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:staging": "wrangler deploy --env staging --config wrangler.staging.toml",
+    "deploy:production": "wrangler deploy",
     "tail": "wrangler tail",
+    "tail:staging": "wrangler tail --env staging",
     "format": "prettier --write .",
-    "lint": "eslint src --ext .ts,.tsx"
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "logs": "wrangler tail",
+    "logs:staging": "wrangler tail --env staging"
   },
   "dependencies": {
     "hono": "^3.12.0",
@@ -20,7 +28,9 @@
     "wrangler": "^3.0.0",
     "typescript": "^5.0.0",
     "prettier": "^3.0.0",
-    "eslint": "^8.0.0"
+    "eslint": "^8.0.0",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

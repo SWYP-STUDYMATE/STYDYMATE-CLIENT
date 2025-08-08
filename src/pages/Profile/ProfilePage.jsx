@@ -27,6 +27,7 @@ import ProfileImageUpload from '../../components/ProfileImageUpload';
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile'); // profile, stats, settings
+  const [showImageUpload, setShowImageUpload] = useState(false);
 
   const { englishName, profileImage, residence, intro } = useProfileStore();
   const { sessionStats } = useSessionStore();
@@ -56,8 +57,7 @@ export default function ProfilePage() {
   });
 
   const handleProfileImageChange = () => {
-    // TODO: 프로필 이미지 변경 로직
-    console.log('Change profile image');
+    setShowImageUpload(true);
   };
 
   const handleEditProfile = () => {
@@ -390,6 +390,12 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* 프로필 이미지 업로드 모달 */}
+      <ProfileImageUpload
+        isOpen={showImageUpload}
+        onClose={() => setShowImageUpload(false)}
+      />
     </div>
   );
 }

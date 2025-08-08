@@ -98,6 +98,93 @@ Content-Type: application/json
 }
 ```
 
+### 이미지 API (Cloudflare Images)
+
+#### 이미지 업로드
+```http
+POST /api/images/upload
+Content-Type: multipart/form-data
+
+Form Data:
+- image: File (이미지 파일)
+- metadata: JSON string (optional)
+- requireSignedURLs: boolean (optional)
+```
+
+또는 Base64 형식:
+```http
+POST /api/images/upload
+Content-Type: application/json
+
+{
+  "image": "base64_string",
+  "filename": "image.png",
+  "metadata": {},
+  "requireSignedURLs": false
+}
+```
+
+#### 직접 업로드 URL 생성
+```http
+POST /api/images/direct-upload
+Content-Type: application/json
+
+{
+  "expiry": "2024-12-31T23:59:59Z" (optional),
+  "metadata": {} (optional),
+  "requireSignedURLs": false (optional)
+}
+```
+
+#### 이미지 목록 조회
+```http
+GET /api/images/list?page=1&per_page=20
+```
+
+#### 이미지 상세 정보
+```http
+GET /api/images/:imageId
+```
+
+#### Signed URL 생성
+```http
+POST /api/images/:imageId/signed-url
+Content-Type: application/json
+
+{
+  "variant": "public" (optional),
+  "expiry": 3600 (optional, seconds)
+}
+```
+
+#### 이미지 삭제
+```http
+DELETE /api/images/:imageId
+```
+
+#### 프로필 이미지 업로드
+```http
+POST /api/images/profile/upload
+Content-Type: multipart/form-data
+X-User-Id: user123
+
+Form Data:
+- image: File (이미지 파일)
+```
+
+#### 외부 이미지 변환 프록시
+```http
+GET /api/images/transform?url=https://example.com/image.jpg&w=800&h=600&q=85&f=webp
+
+Parameters:
+- url: 원본 이미지 URL (required)
+- w: 너비 (optional)
+- h: 높이 (optional)
+- fit: scale-down|contain|cover|crop|pad (optional)
+- q: 품질 0-100 (optional)
+- f: 포맷 auto|avif|webp (optional)
+```
+
 ### WebRTC API
 
 #### 룸 생성
@@ -149,6 +236,16 @@ npm install
 ```
 
 ### 환경 변수 설정
+
+#### Secret 설정 (Cloudflare Images)
+```bash
+# Cloudflare Images API 사용을 위한 시크릿 설정
+wrangler secret put CF_ACCOUNT_ID
+wrangler secret put CF_IMAGES_API_TOKEN  
+wrangler secret put CF_ACCOUNT_HASH
+```
+
+#### wrangler.toml 설정
 `wrangler.toml` 파일에서 다음 설정을 확인하세요:
 
 ```toml

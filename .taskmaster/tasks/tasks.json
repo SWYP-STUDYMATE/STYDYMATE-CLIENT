@@ -512,7 +512,7 @@
         "id": 42,
         "title": "Cloudflare Images 통합",
         "description": "이미지 처리 서비스",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "41"
@@ -622,7 +622,7 @@
         "id": 50,
         "title": "성능 최적화",
         "description": "프론트엔드 성능 개선",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [
           "47",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:53:15.390Z"
+      "updated": "2025-08-08T09:56:37.933Z"
     }
   }
 }
