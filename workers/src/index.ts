@@ -10,8 +10,10 @@ import imagesRoutes from './routes/images';
 import transcribeRoutes from './routes/transcribe';
 import cacheRoutes from './routes/cache';
 import translateRoutes from './routes/translate';
+import analyticsRoutes from './routes/analytics';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
+import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';
 import { Variables } from './types';
 import { successResponse } from './utils/response';
 
@@ -24,11 +26,13 @@ export interface Env {
   ROOM: DurableObjectNamespace;
   STORAGE: R2Bucket;
   CACHE: KVNamespace;
+  ANALYTICS?: AnalyticsEngineDataset;
   ENVIRONMENT: string;
   CORS_ORIGIN: string;
   JWT_SECRET?: string;
   API_KEYS?: string;
   INTERNAL_SECRET?: string;
+  API_VERSION?: string;
 }
 
 // API 버전
@@ -42,6 +46,10 @@ setupMiddleware(app);
 
 // Server timing
 app.use('*', timing());
+
+// Analytics 및 에러 추적 미들웨어
+app.use('*', errorTrackingMiddleware);
+app.use('*', analyticsMiddleware);
 
 // CORS middleware
 app.use('*', async (c, next) => {
@@ -73,6 +81,7 @@ app.get('/', (c) => {
       images: `/api/${API_VERSION}/images`,
       cache: `/api/${API_VERSION}/cache`,
       transcribe: `/api/${API_VERSION}/transcribe`,
+      analytics: `/api/${API_VERSION}/analytics`,
       translate: `/api/${API_VERSION}/translate`
     }
   });
@@ -115,6 +124,7 @@ v1.route('/images', imagesRoutes);
 v1.route('/cache', cacheRoutes);
 v1.route('/transcribe', transcribeRoutes);
 v1.route('/translate', translateRoutes);
+v1.route('/analytics', analyticsRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);

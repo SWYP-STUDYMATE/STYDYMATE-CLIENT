@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { Env } from '../index';
+import { successResponse } from '../utils/response';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -80,7 +82,7 @@ app.post('/evaluate-english', async (c) => {
     }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required');
+      return c.json({ error: 'Text is required' }, 400);
     }
 
     const prompt = `You are an expert English language assessor. Evaluate the following English text for language proficiency.
@@ -175,7 +177,7 @@ app.post('/check-grammar', async (c) => {
     const { text } = await c.req.json<{ text: string }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required');
+      return c.json({ error: 'Text is required' }, 400);
     }
 
     const prompt = `Check the grammar of the following text and provide corrections:
@@ -235,7 +237,7 @@ app.post('/conversation-feedback', async (c) => {
     }>();
 
     if (!conversation || conversation.length === 0) {
-      return c.json({ error: 'Conversation is required');
+      return c.json({ error: 'Conversation is required' }, 400);
     }
 
     const conversationText = conversation
