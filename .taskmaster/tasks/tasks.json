@@ -335,7 +335,7 @@
         "id": 28,
         "title": "세션 예약 시스템",
         "description": "학습 세션 예약 기능",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "17"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:49:13.628Z"
+      "updated": "2025-08-08T09:51:56.117Z"
     }
   }
 }

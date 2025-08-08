@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
-import { Env } from '../index';
-import { Variables } from '../types';
-import { successResponse } from '../utils/response';
-import { validationError } from '../middleware/error-handler';
+import { cors } from 'hono/cors';
 
-export const llmRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = new Hono<{ Bindings: Env }>();
+
+// CORS 설정
+app.use('/*', cors());
 
 // 텍스트 생성 엔드포인트
-llmRoutes.post('/generate', async (c) => {
+app.post('/generate', async (c) => {
   try {
     const body = await c.req.json<{
       prompt?: string;
@@ -31,7 +31,7 @@ llmRoutes.post('/generate', async (c) => {
         { role: 'user', content: body.prompt }
       ];
     } else {
-      return validationError(c, 'Either prompt or messages required');
+      return c.json({ error: 'Either prompt or messages required' }, 400);
     }
 
     // 스트리밍 응답
@@ -67,12 +67,12 @@ llmRoutes.post('/generate', async (c) => {
 
   } catch (error) {
     console.error('LLM generation error:', error);
-    return validationError(c, error.message || 'Text generation failed' }, 500);
+    return c.json({ error: error.message || 'Text generation failed' }, 500);
   }
 });
 
 // 영어 레벨 평가 엔드포인트
-llmRoutes.post('/evaluate-english', async (c) => {
+app.post('/evaluate-english', async (c) => {
   try {
     const { text, context } = await c.req.json<{
       text: string;
@@ -80,7 +80,7 @@ llmRoutes.post('/evaluate-english', async (c) => {
     }>();
 
     if (!text) {
-      return validationError(c, 'Text is required');
+      return c.json({ error: 'Text is required');
     }
 
     const prompt = `You are an expert English language assessor. Evaluate the following English text for language proficiency.
@@ -90,9 +90,9 @@ Text to evaluate: "${text}"
 
 Provide a detailed assessment with scores (0-100) for each of these 6 areas:
 1. Grammar accuracy
-2. Vocabulary range and llmRoutesropriateness
+2. Vocabulary range and appropriateness
 3. Fluency and coherence
-4. Pronunciation clarity (based on transcription quality if llmRouteslicable)
+4. Pronunciation clarity (based on transcription quality if applicable)
 5. Task achievement / Content relevance
 6. Interaction skills / Communication effectiveness
 
@@ -164,18 +164,18 @@ Response in JSON format with this structure:
     }
 
   } catch (error) {
-    console.error('LLM error:', error);
-    return validationError(c, error.message || 'Operation failed' }, 500);
+    console.error('English evaluation error:', error);
+    return c.json({ error: error.message || 'Evaluation failed' }, 500);
   }
 });
 
 // 문법 체크 엔드포인트
-llmRoutes.post('/check-grammar', async (c) => {
+app.post('/check-grammar', async (c) => {
   try {
     const { text } = await c.req.json<{ text: string }>();
 
     if (!text) {
-      return validationError(c, 'Text is required');
+      return c.json({ error: 'Text is required');
     }
 
     const prompt = `Check the grammar of the following text and provide corrections:
@@ -216,17 +216,17 @@ Provide a response in JSON format:
       return c.json({
         error: 'Failed to parse grammar check response',
         rawResponse: response.response
-     );
+      }, 400);
     }
 
   } catch (error) {
-    console.error('LLM error:', error);
-    return validationError(c, error.message || 'Operation failed' }, 500);
+    console.error('Grammar check error:', error);
+    return c.json({ error: error.message || 'Grammar check failed' }, 500);
   }
 });
 
 // 대화 연습 피드백 엔드포인트
-llmRoutes.post('/conversation-feedback', async (c) => {
+app.post('/conversation-feedback', async (c) => {
   try {
     const { conversation, topic, level } = await c.req.json<{
       conversation: Array<{ speaker: string; text: string }>;
@@ -235,7 +235,7 @@ llmRoutes.post('/conversation-feedback', async (c) => {
     }>();
 
     if (!conversation || conversation.length === 0) {
-      return validationError(c, 'Conversation is required');
+      return c.json({ error: 'Conversation is required');
     }
 
     const conversationText = conversation
@@ -301,13 +301,13 @@ Provide comprehensive feedback in JSON format:
     }
 
   } catch (error) {
-    console.error('LLM error:', error);
-    return validationError(c, error.message || 'Operation failed' }, 500);
+    console.error('Conversation feedback error:', error);
+    return c.json({ error: error.message || 'Feedback generation failed' }, 500);
   }
 });
 
 // 사용 가능한 모델 목록
-llmRoutes.get('/models', (c) => {
+app.get('/models', (c) => {
   return successResponse(c, {
     available_models: [
       {
@@ -346,3 +346,4 @@ llmRoutes.get('/models', (c) => {
   });
 });
 
+export default app;

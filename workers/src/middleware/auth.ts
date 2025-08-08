@@ -47,7 +47,7 @@ export function auth(options: AuthOptions = {}) {
         }
 
         const token = match[1];
-        const secret = c.env.JWT_SECRET || 'default-secret';
+        const secret = c.env.JWT_SECRET || 'development-secret-change-in-production';
         const user = await extractUser(token, secret);
 
         if (!user) {

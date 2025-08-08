@@ -24,6 +24,7 @@ import ProfilePage from './pages/Profile/ProfilePage';
 import VideoControlsDemo from './pages/Session/VideoControlsDemo';
 import SessionList from './pages/Session/SessionList';
 import SessionCalendar from './pages/Session/SessionCalendar';
+import SessionScheduleNew from './pages/Session/SessionScheduleNew';
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
         <Route path='/profile' element={<ProfilePage />} />
         <Route path='/sessions' element={<SessionList />} />
         <Route path='/sessions/calendar' element={<SessionCalendar />} />
+        <Route path='/session/schedule/new' element={<SessionScheduleNew />} />
       </Routes>
     </div>
   )

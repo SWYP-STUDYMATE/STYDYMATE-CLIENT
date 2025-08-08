@@ -4,6 +4,7 @@ import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
 import useLevelTestStore from '../../store/levelTestStore';
+import { submitLevelTest, completeLevelTest } from '../../api/levelTest';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function LevelTestRecording() {
@@ -74,22 +75,41 @@ export default function LevelTestRecording() {
   };
 
   const handleNext = async () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
-      nextQuestion();
-    } else {
-      // All questions completed
-      if (isTestComplete()) {
-        try {
+    if (hasRecording && !isSubmitting) {
+      try {
+        setIsSubmitting(true);
+        
+        // Submit current recording to API
+        const userId = localStorage.getItem('userId') || 'guest';
+        await submitLevelTest(currentRecording.blob, currentQuestionIndex + 1);
+        
+        if (currentQuestionIndex < totalQuestions - 1) {
+          nextQuestion();
+        } else {
+          // All questions completed
           setTestStatus('processing');
-          await submitTest();
+          
+          // Complete test and get evaluation
+          const result = await completeLevelTest(userId);
+          
+          // Store result in store
+          setTestResult(result);
+          
+          // Navigate to result page
           navigate('/level-test/result');
-        } catch (error) {
-          console.error('Test submission error:', error);
-          alert('테스트 제출에 실패했습니다. 다시 시도해주세요.');
-          setTestStatus('recording');
         }
+      } catch (error) {
+        console.error('Test submission error:', error);
+        alert('테스트 제출에 실패했습니다. 다시 시도해주세요.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (!hasRecording) {
+      // Skip question (for testing)
+      if (currentQuestionIndex < totalQuestions - 1) {
+        nextQuestion();
       } else {
-        alert('모든 질문에 답변해주세요.');
+        navigate('/level-test/result');
       }
     }
   };
