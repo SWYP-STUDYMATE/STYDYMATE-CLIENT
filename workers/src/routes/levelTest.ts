@@ -284,7 +284,7 @@ levelTestRoutes.post('/submit', async (c) => {
     const progressKey = `level-test-progress:${userId}`;
     const progress = await c.env.CACHE.get(progressKey);
     const progressData = progress ? JSON.parse(progress) : { answers: [] };
-    
+
     progressData.answers[qNum - 1] = {
       questionNumber: qNum,
       audioKey,
@@ -311,7 +311,7 @@ levelTestRoutes.post('/submit', async (c) => {
 levelTestRoutes.post('/complete', async (c) => {
   try {
     const { userId } = await c.req.json();
-    
+
     if (!userId) {
       throw validationError('User ID is required');
     }
@@ -319,7 +319,7 @@ levelTestRoutes.post('/complete', async (c) => {
     // 진행 상황 가져오기
     const progressKey = `level-test-progress:${userId}`;
     const progress = await c.env.CACHE.get(progressKey);
-    
+
     if (!progress) {
       throw validationError('No test data found');
     }
@@ -359,7 +359,7 @@ levelTestRoutes.post('/complete', async (c) => {
     // 점수 계산
     const scoreCategories = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'coherence', 'interaction'];
     const totalScores: Record<string, number> = {};
-    
+
     scoreCategories.forEach(category => {
       totalScores[category] = 0;
     });
@@ -409,7 +409,7 @@ levelTestRoutes.post('/complete', async (c) => {
     // 강점과 개선점
     const strengths = [];
     const improvements = [];
-    
+
     Object.entries(avgScores).forEach(([category, score]) => {
       if (score >= 70) {
         strengths.push(`Strong ${category} skills`);
@@ -443,7 +443,7 @@ levelTestRoutes.post('/complete', async (c) => {
     return successResponse(c, result);
   } catch (error) {
     console.error('Complete error:', error);
-    return c.json({ 
+    return c.json({
       error: 'Failed to complete test',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
@@ -455,7 +455,7 @@ levelTestRoutes.get('/progress/:userId', async (c) => {
   try {
     const userId = c.req.param('userId');
     const progressKey = `level-test-progress:${userId}`;
-    
+
     const progress = await c.env.CACHE.get(progressKey);
     if (!progress) {
       return successResponse(c, {
@@ -487,9 +487,9 @@ levelTestRoutes.post('/submit-all', async (c) => {
     const formData = await c.req.formData();
     const userInfo = formData.get('userInfo');
     const userId = userInfo ? JSON.parse(userInfo as string).userId : crypto.randomUUID();
-    
+
     const audioFiles: { questionNumber: number; file: File }[] = [];
-    
+
     // 모든 오디오 파일 수집
     for (let i = 1; i <= 4; i++) {
       const audioFile = formData.get(`audio_${i}`) as File;
@@ -541,7 +541,7 @@ levelTestRoutes.post('/submit-all', async (c) => {
 
     // 유효한 분석만 필터링
     const validAnalyses = analyses.filter(a => a !== null);
-    
+
     if (validAnalyses.length === 0) {
       throw new Error('Failed to analyze any audio files');
     }
@@ -549,7 +549,7 @@ levelTestRoutes.post('/submit-all', async (c) => {
     // 전체 점수 계산
     const scoreCategories = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'coherence', 'interaction'];
     const totalScores: Record<string, number> = {};
-    
+
     scoreCategories.forEach(category => {
       totalScores[category] = 0;
     });
@@ -585,7 +585,7 @@ levelTestRoutes.post('/submit-all', async (c) => {
     // 강점과 개선점 도출
     const strengths = [];
     const improvements = [];
-    
+
     Object.entries(avgScores).forEach(([category, score]) => {
       if (score >= 70) {
         strengths.push(`Strong ${category} skills`);
@@ -619,7 +619,7 @@ levelTestRoutes.post('/submit-all', async (c) => {
     return successResponse(c, result);
   } catch (error) {
     console.error('Test submission error:', error);
-    return c.json({ 
+    return c.json({
       error: 'Failed to submit test',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, 500);

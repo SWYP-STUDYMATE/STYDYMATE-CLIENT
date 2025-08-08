@@ -9,14 +9,14 @@ https://your-worker.workers.dev/api/llm
 
 ## Available Models
 
-| Model ID | Name | Context Window | Function Calling | Cost (per M tokens) |
-|----------|------|----------------|------------------|---------------------|
-| `llama-3.3-70b-instruct-fp8-fast` | Llama 3.3 70B (Fast) | 24,000 | ✅ | $0.29 in / $2.25 out |
-| `llama-3.2-3b-instruct` | Llama 3.2 3B | 128,000 | ❌ | $0.051 in / $0.34 out |
-| `llama-4-scout-17b-16e-instruct` | Llama 4 Scout 17B | 131,000 | ✅ | $0.27 in / $0.85 out |
-| `llama-3.1-8b-instruct` | Llama 3.1 8B | 7,968 | ❌ | $0.28 in / $0.83 out |
-| `llama-3-8b-instruct` | Llama 3 8B | 8,192 | ❌ | $0.28 in / $0.83 out |
-| `llama-2-7b-chat-fp16` | Llama 2 7B | 4,096 | ❌ | $0.56 in / $6.67 out |
+| Model ID                          | Name                 | Context Window | Function Calling | Cost (per M tokens)   |
+| --------------------------------- | -------------------- | -------------- | ---------------- | --------------------- |
+| `llama-3.3-70b-instruct-fp8-fast` | Llama 3.3 70B (Fast) | 24,000         | ✅                | $0.29 in / $2.25 out  |
+| `llama-3.2-3b-instruct`           | Llama 3.2 3B         | 128,000        | ❌                | $0.051 in / $0.34 out |
+| `llama-4-scout-17b-16e-instruct`  | Llama 4 Scout 17B    | 131,000        | ✅                | $0.27 in / $0.85 out  |
+| `llama-3.1-8b-instruct`           | Llama 3.1 8B         | 7,968          | ❌                | $0.28 in / $0.83 out  |
+| `llama-3-8b-instruct`             | Llama 3 8B           | 8,192          | ❌                | $0.28 in / $0.83 out  |
+| `llama-2-7b-chat-fp16`            | Llama 2 7B           | 4,096          | ❌                | $0.56 in / $6.67 out  |
 
 ## Endpoints
 

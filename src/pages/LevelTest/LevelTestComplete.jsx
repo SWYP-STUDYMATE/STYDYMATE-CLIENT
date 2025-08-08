@@ -8,7 +8,7 @@ export default function LevelTestComplete() {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const testStatus = useLevelTestStore(state => state.testStatus);
   const setTestStatus = useLevelTestStore(state => state.setTestStatus);
 
@@ -41,15 +41,15 @@ export default function LevelTestComplete() {
                 </div>
               </div>
             </div>
-            
+
             <h1 className="text-[24px] font-bold text-[#111111] mb-4">
               테스트 분석 중...
             </h1>
-            
+
             <p className="text-[16px] text-[#666666] mb-2">
               AI가 당신의 영어 실력을 평가하고 있습니다.
             </p>
-            
+
             <p className="text-[14px] text-[#929292]">
               잠시만 기다려주세요.
             </p>
@@ -67,15 +67,15 @@ export default function LevelTestComplete() {
                 <span className="text-3xl">⚠️</span>
               </div>
             </div>
-            
+
             <h1 className="text-[24px] font-bold text-[#111111] mb-4">
               오류가 발생했습니다
             </h1>
-            
+
             <p className="text-[16px] text-[#666666] mb-6">
               {error}
             </p>
-            
+
             <CommonButton
               onClick={() => navigate('/level-test')}
               variant="primary"
@@ -89,11 +89,11 @@ export default function LevelTestComplete() {
             <div className="mb-8">
               <CheckCircle className="w-20 h-20 text-[#00C471] mx-auto" />
             </div>
-            
+
             <h1 className="text-[24px] font-bold text-[#111111] mb-4">
               분석 완료!
             </h1>
-            
+
             <p className="text-[16px] text-[#666666]">
               결과를 확인하고 있습니다...
             </p>

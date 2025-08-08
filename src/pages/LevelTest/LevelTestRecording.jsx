@@ -40,7 +40,7 @@ export default function LevelTestRecording() {
   useEffect(() => {
     setTestStatus('recording');
     setIsTimerRunning(true);
-    
+
     // Load questions if not already loaded
     if (questions.length === 0) {
       loadQuestions();
@@ -78,23 +78,23 @@ export default function LevelTestRecording() {
     if (hasRecording && !isSubmitting) {
       try {
         setIsSubmitting(true);
-        
+
         // Submit current recording to API
         const userId = localStorage.getItem('userId') || 'guest';
         await submitLevelTest(currentRecording.blob, currentQuestionIndex + 1);
-        
+
         if (currentQuestionIndex < totalQuestions - 1) {
           nextQuestion();
         } else {
           // All questions completed
           setTestStatus('processing');
-          
+
           // Complete test and get evaluation
           const result = await completeLevelTest(userId);
-          
+
           // Store result in store
           setTestResult(result);
-          
+
           // Navigate to result page
           navigate('/level-test/result');
         }

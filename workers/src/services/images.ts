@@ -12,7 +12,7 @@ export async function uploadImage(
 ): Promise<ImageUploadResponse> {
     try {
         const formData = new FormData();
-        
+
         // 이미지 데이터 처리
         if (typeof imageData === 'string') {
             // Base64 문자열인 경우
@@ -91,15 +91,15 @@ export async function createDirectUploadURL(
 ): Promise<DirectUploadResponse> {
     try {
         const body: any = {};
-        
+
         if (options.expiry) {
             body.expiry = options.expiry.toISOString();
         }
-        
+
         if (options.metadata) {
             body.metadata = options.metadata;
         }
-        
+
         if (options.requireSignedURLs !== undefined) {
             body.requireSignedURLs = options.requireSignedURLs;
         }
@@ -162,7 +162,7 @@ export async function generateSignedURL(
 ): Promise<string> {
     try {
         const expiryDate = new Date(Date.now() + expiry * 1000);
-        
+
         const response = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${imageId}/signed_url`,
             {
@@ -251,7 +251,7 @@ export async function listImages(
 ): Promise<ListImagesResponse> {
     try {
         const params = new URLSearchParams();
-        
+
         if (options.page) params.append('page', options.page.toString());
         if (options.perPage) params.append('per_page', options.perPage.toString());
 
@@ -403,7 +403,7 @@ export function getTransformURL(
     sourceUrl: string
 ): string {
     const options = [];
-    
+
     if (transformOptions.width) options.push(`w=${transformOptions.width}`);
     if (transformOptions.height) options.push(`h=${transformOptions.height}`);
     if (transformOptions.fit) options.push(`fit=${transformOptions.fit}`);
@@ -413,7 +413,7 @@ export function getTransformURL(
     if (transformOptions.blur) options.push(`blur=${transformOptions.blur}`);
     if (transformOptions.sharpen) options.push(`sharpen=${transformOptions.sharpen}`);
     if (transformOptions.background) options.push(`background=${transformOptions.background}`);
-    
+
     const optionsString = options.join(',');
     return `https://imagedelivery.net/${accountHash}/${optionsString}/${encodeURIComponent(sourceUrl)}`;
 }
@@ -429,7 +429,7 @@ export function getProfileImageURL(
         medium: 'avatar-md',   // 128x128
         large: 'avatar-lg'     // 256x256
     };
-    
+
     return getImageURL(accountHash, imageId, sizeMap[size]);
 }
 

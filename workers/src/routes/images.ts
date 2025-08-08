@@ -18,7 +18,7 @@ export const imagesRoutes = new Hono<{ Bindings: Env }>();
 imagesRoutes.post('/upload', async (c) => {
     try {
         const contentType = c.req.header('content-type') || '';
-        
+
         let imageData: ArrayBuffer | string;
         let metadata: Record<string, any> = {};
         let filename = 'image.png';
@@ -28,14 +28,14 @@ imagesRoutes.post('/upload', async (c) => {
             // 폼 데이터로 업로드
             const formData = await c.req.formData();
             const file = formData.get('image') as File;
-            
+
             if (!file) {
                 return c.json({ error: 'No image file provided' }, 400);
             }
 
             imageData = await file.arrayBuffer();
             filename = file.name;
-            
+
             // 메타데이터 파싱
             const metadataStr = formData.get('metadata') as string;
             if (metadataStr) {
@@ -51,7 +51,7 @@ imagesRoutes.post('/upload', async (c) => {
         } else {
             // JSON으로 업로드 (Base64)
             const body = await c.req.json();
-            
+
             if (!body.image) {
                 return c.json({ error: 'No image data provided' }, 400);
             }
@@ -94,9 +94,9 @@ imagesRoutes.post('/upload', async (c) => {
         });
     } catch (error) {
         console.error('Image upload error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to upload image',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -105,7 +105,7 @@ imagesRoutes.post('/upload', async (c) => {
 imagesRoutes.post('/direct-upload', async (c) => {
     try {
         const body = await c.req.json();
-        
+
         const result = await createDirectUploadURL(
             c.env.CF_ACCOUNT_ID,
             c.env.CF_IMAGES_API_TOKEN,
@@ -123,9 +123,9 @@ imagesRoutes.post('/direct-upload', async (c) => {
         });
     } catch (error) {
         console.error('Direct upload URL error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to create direct upload URL',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -163,9 +163,9 @@ imagesRoutes.get('/list', async (c) => {
         });
     } catch (error) {
         console.error('Image list error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to list images',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -174,7 +174,7 @@ imagesRoutes.get('/list', async (c) => {
 imagesRoutes.get('/:imageId', async (c) => {
     try {
         const imageId = c.req.param('imageId');
-        
+
         const result = await getImageDetails(
             c.env.CF_ACCOUNT_ID,
             c.env.CF_IMAGES_API_TOKEN,
@@ -194,9 +194,9 @@ imagesRoutes.get('/:imageId', async (c) => {
         });
     } catch (error) {
         console.error('Image details error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to get image details',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -206,7 +206,7 @@ imagesRoutes.post('/:imageId/signed-url', async (c) => {
     try {
         const imageId = c.req.param('imageId');
         const body = await c.req.json();
-        
+
         const signedURL = await generateSignedURL(
             c.env.CF_ACCOUNT_ID,
             c.env.CF_IMAGES_API_TOKEN,
@@ -222,9 +222,9 @@ imagesRoutes.post('/:imageId/signed-url', async (c) => {
         });
     } catch (error) {
         console.error('Signed URL error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to generate signed URL',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -233,7 +233,7 @@ imagesRoutes.post('/:imageId/signed-url', async (c) => {
 imagesRoutes.delete('/:imageId', async (c) => {
     try {
         const imageId = c.req.param('imageId');
-        
+
         await deleteImage(
             c.env.CF_ACCOUNT_ID,
             c.env.CF_IMAGES_API_TOKEN,
@@ -246,9 +246,9 @@ imagesRoutes.delete('/:imageId', async (c) => {
         });
     } catch (error) {
         console.error('Image deletion error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to delete image',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -259,7 +259,7 @@ imagesRoutes.post('/profile/upload', async (c) => {
         const formData = await c.req.formData();
         const file = formData.get('image') as File;
         const userId = c.req.header('x-user-id');
-        
+
         if (!file) {
             return c.json({ error: 'No image file provided' }, 400);
         }
@@ -269,7 +269,7 @@ imagesRoutes.post('/profile/upload', async (c) => {
         }
 
         const imageData = await file.arrayBuffer();
-        
+
         // 프로필 이미지용 메타데이터
         const metadata = {
             userId,
@@ -304,9 +304,9 @@ imagesRoutes.post('/profile/upload', async (c) => {
         });
     } catch (error) {
         console.error('Profile image upload error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to upload profile image',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -315,10 +315,10 @@ imagesRoutes.post('/profile/upload', async (c) => {
 imagesRoutes.post('/variants', async (c) => {
     try {
         const body = await c.req.json();
-        
+
         if (!body.id || !body.options) {
-            return c.json({ 
-                error: 'Variant ID and options are required' 
+            return c.json({
+                error: 'Variant ID and options are required'
             }, 400);
         }
 
@@ -337,9 +337,9 @@ imagesRoutes.post('/variants', async (c) => {
         });
     } catch (error) {
         console.error('Variant creation error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to create variant',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -348,7 +348,7 @@ imagesRoutes.post('/variants', async (c) => {
 imagesRoutes.post('/variants/init', async (c) => {
     try {
         const results = [];
-        
+
         for (const variant of DEFAULT_VARIANTS) {
             try {
                 await createVariant(
@@ -356,15 +356,15 @@ imagesRoutes.post('/variants/init', async (c) => {
                     c.env.CF_IMAGES_API_TOKEN,
                     variant
                 );
-                results.push({ 
-                    id: variant.id, 
-                    success: true 
+                results.push({
+                    id: variant.id,
+                    success: true
                 });
             } catch (error) {
-                results.push({ 
-                    id: variant.id, 
-                    success: false, 
-                    error: error.message 
+                results.push({
+                    id: variant.id,
+                    success: false,
+                    error: error.message
                 });
             }
         }
@@ -375,9 +375,9 @@ imagesRoutes.post('/variants/init', async (c) => {
         });
     } catch (error) {
         console.error('Variant initialization error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to initialize variants',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });
@@ -406,13 +406,13 @@ imagesRoutes.get('/transform', async (c) => {
 
         // Cloudflare Images 변환 URL로 리다이렉트
         const transformUrl = `https://imagedelivery.net/${c.env.CF_ACCOUNT_HASH}/${Object.entries(options).map(([k, v]) => `${k}=${v}`).join(',')}/${encodeURIComponent(url)}`;
-        
+
         return c.redirect(transformUrl);
     } catch (error) {
         console.error('Transform proxy error:', error);
-        return c.json({ 
+        return c.json({
             error: 'Failed to transform image',
-            message: error.message 
+            message: error.message
         }, 500);
     }
 });

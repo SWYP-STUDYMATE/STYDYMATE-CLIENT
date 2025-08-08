@@ -1,30 +1,35 @@
-import Login from './pages/Login/Login'
-import Navercallback from './pages/Login/Navercallback'
-import Agreement from './pages/Login/Agreement'
-import SignupComplete from './pages/Login/SignupComplete'
-import Main from './pages/Main'
-import OnboardingInfoRouter from "./pages/ObInfo/ObInfoRouter";
-import ObLangRouter from "./pages/ObLang/ObLangRouter";
-import ObIntRouter from "./pages/ObInt/ObIntRouter";
-import ObPartnerRouter from "./pages/ObPartner/ObPartnerRouter";
-import ObScheduleRouter from "./pages/ObSchadule/ObSchaduleRouter";
-import { Routes, Route } from 'react-router-dom'
-import ChatPage from './pages/Chat/ChatPage';
-import LevelTestStart from './pages/LevelTest/LevelTestStart';
-import LevelTestCheck from './pages/LevelTest/LevelTestCheck';
-import LevelTestRecording from './pages/LevelTest/LevelTestRecording';
-import LevelTestComplete from './pages/LevelTest/LevelTestComplete';
-import LevelTestResult from './pages/LevelTest/LevelTestResult';
-import Schedule from './pages/Schedule/Schedule';
-import AudioConnectionCheck from './pages/Session/AudioConnectionCheck';
-import VideoSessionRoom from './pages/Session/VideoSessionRoom';
-import VideoConnectionCheck from './pages/Session/VideoSessionCheck';
-import AudioSessionRoom from './pages/Session/AudioSessionRoom';
-import ProfilePage from './pages/Profile/ProfilePage';
-import VideoControlsDemo from './pages/Session/VideoControlsDemo';
-import SessionList from './pages/Session/SessionList';
-import SessionCalendar from './pages/Session/SessionCalendar';
-import SessionScheduleNew from './pages/Session/SessionScheduleNew';
+import { Routes, Route } from 'react-router-dom';
+import { lazyLoad } from './utils/lazyLoad';
+
+// 즉시 로드가 필요한 컴포넌트들 (로그인, 메인)
+import Login from './pages/Login/Login';
+import Main from './pages/Main';
+
+// 레이지 로드 컴포넌트들
+const Navercallback = lazyLoad(() => import('./pages/Login/Navercallback'));
+const Agreement = lazyLoad(() => import('./pages/Login/Agreement'));
+const SignupComplete = lazyLoad(() => import('./pages/Login/SignupComplete'));
+const OnboardingInfoRouter = lazyLoad(() => import('./pages/ObInfo/ObInfoRouter'));
+const ObLangRouter = lazyLoad(() => import('./pages/ObLang/ObLangRouter'));
+const ObIntRouter = lazyLoad(() => import('./pages/ObInt/ObIntRouter'));
+const ObPartnerRouter = lazyLoad(() => import('./pages/ObPartner/ObPartnerRouter'));
+const ObScheduleRouter = lazyLoad(() => import('./pages/ObSchadule/ObSchaduleRouter'));
+const ChatPage = lazyLoad(() => import('./pages/Chat/ChatPage'));
+const LevelTestStart = lazyLoad(() => import('./pages/LevelTest/LevelTestStart'));
+const LevelTestCheck = lazyLoad(() => import('./pages/LevelTest/LevelTestCheck'));
+const LevelTestRecording = lazyLoad(() => import('./pages/LevelTest/LevelTestRecording'));
+const LevelTestComplete = lazyLoad(() => import('./pages/LevelTest/LevelTestComplete'));
+const LevelTestResult = lazyLoad(() => import('./pages/LevelTest/LevelTestResult'));
+const Schedule = lazyLoad(() => import('./pages/Schedule/Schedule'));
+const AudioConnectionCheck = lazyLoad(() => import('./pages/Session/AudioConnectionCheck'));
+const VideoSessionRoom = lazyLoad(() => import('./pages/Session/VideoSessionRoom'));
+const VideoConnectionCheck = lazyLoad(() => import('./pages/Session/VideoSessionCheck'));
+const AudioSessionRoom = lazyLoad(() => import('./pages/Session/AudioSessionRoom'));
+const ProfilePage = lazyLoad(() => import('./pages/Profile/ProfilePage'));
+const VideoControlsDemo = lazyLoad(() => import('./pages/Session/VideoControlsDemo'));
+const SessionList = lazyLoad(() => import('./pages/Session/SessionList'));
+const SessionCalendar = lazyLoad(() => import('./pages/Session/SessionCalendar'));
+const SessionScheduleNew = lazyLoad(() => import('./pages/Session/SessionScheduleNew'));
 
 export default function App() {
   return (
