@@ -99,7 +99,7 @@ const v1 = new Hono<{ Bindings: Env; Variables: Variables }>();
 v1.route('/level-test', levelTestRoutes);
 v1.route('/room', webrtcRoutes);
 v1.route('/upload', uploadRoutes);
-v1.route('/llm', llmRoutes);
+v1.route('/whisper', whisperRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);
@@ -120,8 +120,8 @@ app.use('/api/upload/*', async (c, next) => {
   return v1.fetch(c.req.raw, c.env);
 });
 
-app.use('/api/llm/*', async (c, next) => {
-  c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/llm instead`);
+app.use('/api/whisper/*', async (c, next) => {
+  c.header('X-Deprecation-Warning', `Please use /api/${API_VERSION}/whisper instead`);
   return v1.fetch(c.req.raw, c.env);
 });
 

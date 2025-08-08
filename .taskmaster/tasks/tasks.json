@@ -204,7 +204,7 @@
         "id": 17,
         "title": "세션 캘린더 뷰 구현",
         "description": "캘린더 형태 세션 관리 (1.49.37.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "low",
         "dependencies": [
           "16"
@@ -252,7 +252,7 @@
         "id": 21,
         "title": "그룹 오디오 세션 룸 구현",
         "description": "최대 4명 음성 통화 화면 (1.52.03.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "20"
@@ -278,7 +278,7 @@
         "id": 23,
         "title": "4인 비디오 세션 룸 구현",
         "description": "최대 4명 화상 통화 화면 (1.52.53.png, 1.53.04.png)",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "22"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:39:39.879Z"
+      "updated": "2025-08-08T09:41:48.515Z"
     }
   }
 }

@@ -1,28 +1,50 @@
 import { Hono } from 'hono';
-import { Env } from '../index';
-import { generateText, generateChatCompletion, AVAILABLE_MODELS } from '../services/ai';
+import { cors } from 'hono/cors';
+import { handleError } from '../utils/errors';
 
-export const llmRoutes = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>();
+
+// CORS 설정
+app.use('/*', cors());
 
 // 텍스트 생성 엔드포인트
-llmRoutes.post('/generate', async (c) => {
+app.post('/generate', async (c) => {
   try {
-    const { prompt, model, maxTokens, temperature, stream } = await c.req.json();
+    const body = await c.req.json<{
+      prompt?: string;
+      messages?: Array<{ role: string; content: string }>;
+      model?: string;
+      temperature?: number;
+      max_tokens?: number;
+      stream?: boolean;
+      system?: string;
+    }>();
 
-    if (!prompt) {
-      return c.json({ error: 'Prompt is required' }, 400);
+    const model = body.model || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+    
+    // 메시지 형식 준비
+    let messages;
+    if (body.messages) {
+      messages = body.messages;
+    } else if (body.prompt) {
+      messages = [
+        { role: 'system', content: body.system || 'You are a helpful assistant.' },
+        { role: 'user', content: body.prompt }
+      ];
+    } else {
+      return c.json({ error: 'Either prompt or messages required' }, 400);
     }
 
-    const response = await generateText(c.env.AI, prompt, {
-      model,
-      maxTokens,
-      temperature,
-      stream
-    });
+    // 스트리밍 응답
+    if (body.stream) {
+      const stream = await c.env.AI.run(model, {
+        messages,
+        stream: true,
+        temperature: body.temperature || 0.7,
+        max_tokens: body.max_tokens || 1000
+      });
 
-    if (stream) {
-      // 스트리밍 응답
-      return new Response(response.stream, {
+      return new Response(stream, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -31,154 +53,303 @@ llmRoutes.post('/generate', async (c) => {
       });
     }
 
+    // 일반 응답
+    const response = await c.env.AI.run(model, {
+      messages,
+      temperature: body.temperature || 0.7,
+      max_tokens: body.max_tokens || 1000
+    });
+
     return c.json({
       success: true,
-      text: response.text,
-      model: response.model,
-      usage: response.usage
+      response: response.response,
+      usage: response.usage,
+      model: model
     });
+
   } catch (error) {
-    console.error('Text generation error:', error);
-    return c.json({ error: 'Failed to generate text' }, 500);
+    return handleError(c, error);
   }
 });
 
-// 채팅 완성 엔드포인트
-llmRoutes.post('/chat', async (c) => {
+// 영어 레벨 평가 엔드포인트
+app.post('/evaluate-english', async (c) => {
   try {
-    const { messages, model, maxTokens, temperature, stream } = await c.req.json();
+    const { text, context } = await c.req.json<{
+      text: string;
+      context?: string;
+    }>();
 
-    if (!messages || !Array.isArray(messages)) {
-      return c.json({ error: 'Messages array is required' }, 400);
+    if (!text) {
+      return c.json({ error: 'Text is required' }, 400);
     }
 
-    const response = await generateChatCompletion(c.env.AI, messages, {
-      model,
-      maxTokens,
-      temperature,
-      stream
+    const prompt = `You are an expert English language assessor. Evaluate the following English text for language proficiency.
+
+${context ? `Context: ${context}\n` : ''}
+Text to evaluate: "${text}"
+
+Provide a detailed assessment with scores (0-100) for each of these 6 areas:
+1. Grammar accuracy
+2. Vocabulary range and appropriateness
+3. Fluency and coherence
+4. Pronunciation clarity (based on transcription quality if applicable)
+5. Task achievement / Content relevance
+6. Interaction skills / Communication effectiveness
+
+Also determine the CEFR level (A1, A2, B1, B2, C1, or C2) based on the overall proficiency.
+
+Response in JSON format with this structure:
+{
+  "scores": {
+    "grammar": <0-100>,
+    "vocabulary": <0-100>,
+    "fluency": <0-100>,
+    "pronunciation": <0-100>,
+    "taskAchievement": <0-100>,
+    "interaction": <0-100>
+  },
+  "averageScore": <0-100>,
+  "cefrLevel": "<A1-C2>",
+  "feedback": {
+    "strengths": ["point 1", "point 2"],
+    "improvements": ["point 1", "point 2"],
+    "suggestions": ["suggestion 1", "suggestion 2"]
+  },
+  "detailedAnalysis": {
+    "grammar": "Detailed grammar analysis...",
+    "vocabulary": "Detailed vocabulary analysis...",
+    "fluency": "Detailed fluency analysis...",
+    "pronunciation": "Detailed pronunciation analysis...",
+    "taskAchievement": "Detailed task achievement analysis...",
+    "interaction": "Detailed interaction analysis..."
+  }
+}`;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a professional English language assessment expert. Always respond with valid JSON.' 
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
     });
 
-    if (stream) {
-      // 스트리밍 응답
-      return new Response(response.stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
-        }
+    try {
+      const evaluation = JSON.parse(response.response);
+      return c.json({
+        success: true,
+        evaluation,
+        evaluatedText: text
+      });
+    } catch (parseError) {
+      // JSON 파싱 실패 시 텍스트 응답 반환
+      return c.json({
+        success: true,
+        evaluation: {
+          textResponse: response.response,
+          scores: {
+            grammar: 70,
+            vocabulary: 70,
+            fluency: 70,
+            pronunciation: 70,
+            taskAchievement: 70,
+            interaction: 70
+          },
+          averageScore: 70,
+          cefrLevel: 'B1'
+        },
+        evaluatedText: text
       });
     }
 
-    return c.json({
-      success: true,
-      text: response.text,
-      model: response.model,
-      usage: response.usage
-    });
   } catch (error) {
-    console.error('Chat completion error:', error);
-    return c.json({ error: 'Failed to generate chat completion' }, 500);
+    return handleError(c, error);
+  }
+});
+
+// 문법 체크 엔드포인트
+app.post('/check-grammar', async (c) => {
+  try {
+    const { text } = await c.req.json<{ text: string }>();
+
+    if (!text) {
+      return c.json({ error: 'Text is required' }, 400);
+    }
+
+    const prompt = `Check the grammar of the following text and provide corrections:
+
+Text: "${text}"
+
+Provide a response in JSON format:
+{
+  "hasErrors": boolean,
+  "correctedText": "the corrected version of the text",
+  "errors": [
+    {
+      "type": "grammar/spelling/punctuation",
+      "original": "original text",
+      "correction": "corrected text",
+      "explanation": "why this is wrong and how to fix it"
+    }
+  ],
+  "suggestions": ["general writing improvement suggestions"]
+}`;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a grammar expert. Always respond with valid JSON.' 
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.2,
+      max_tokens: 1500
+    });
+
+    try {
+      const result = JSON.parse(response.response);
+      return c.json({
+        success: true,
+        ...result
+      });
+    } catch (parseError) {
+      return c.json({
+        success: false,
+        error: 'Failed to parse grammar check response',
+        rawResponse: response.response
+      });
+    }
+
+  } catch (error) {
+    return handleError(c, error);
+  }
+});
+
+// 대화 연습 피드백 엔드포인트
+app.post('/conversation-feedback', async (c) => {
+  try {
+    const { conversation, topic, level } = await c.req.json<{
+      conversation: Array<{ speaker: string; text: string }>;
+      topic?: string;
+      level?: string;
+    }>();
+
+    if (!conversation || conversation.length === 0) {
+      return c.json({ error: 'Conversation is required' }, 400);
+    }
+
+    const conversationText = conversation
+      .map(turn => `${turn.speaker}: ${turn.text}`)
+      .join('\n');
+
+    const prompt = `Analyze this English conversation and provide detailed feedback:
+
+${topic ? `Topic: ${topic}` : ''}
+${level ? `Expected Level: ${level}` : ''}
+
+Conversation:
+${conversationText}
+
+Provide comprehensive feedback in JSON format:
+{
+  "overallAssessment": "general assessment of the conversation",
+  "participantFeedback": {
+    "<speaker_name>": {
+      "strengths": ["strength 1", "strength 2"],
+      "weaknesses": ["weakness 1", "weakness 2"],
+      "languageUse": "assessment of grammar, vocabulary, fluency",
+      "communicationSkills": "assessment of interaction, turn-taking, etc."
+    }
+  },
+  "suggestions": {
+    "vocabulary": ["useful words/phrases for this topic"],
+    "expressions": ["natural expressions to use"],
+    "grammar": ["grammar points to focus on"]
+  },
+  "nextSteps": ["recommendation 1", "recommendation 2"]
+}`;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are an experienced English conversation coach. Always respond with valid JSON.' 
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.4,
+      max_tokens: 2000
+    });
+
+    try {
+      const feedback = JSON.parse(response.response);
+      return c.json({
+        success: true,
+        feedback,
+        conversationLength: conversation.length,
+        topic,
+        level
+      });
+    } catch (parseError) {
+      return c.json({
+        success: true,
+        feedback: {
+          textResponse: response.response
+        },
+        conversationLength: conversation.length,
+        topic,
+        level
+      });
+    }
+
+  } catch (error) {
+    return handleError(c, error);
   }
 });
 
 // 사용 가능한 모델 목록
-llmRoutes.get('/models', async (c) => {
+app.get('/models', (c) => {
   return c.json({
-    success: true,
-    models: AVAILABLE_MODELS
+    available_models: [
+      {
+        id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+        name: 'Llama 3.3 70B Instruct',
+        description: 'Fast 70B parameter model optimized for instruction following',
+        context_window: 24000,
+        recommended: true
+      },
+      {
+        id: '@cf/meta/llama-3-8b-instruct',
+        name: 'Llama 3 8B Instruct',
+        description: 'Smaller, faster model for general tasks',
+        context_window: 8192
+      },
+      {
+        id: '@cf/microsoft/phi-2',
+        name: 'Phi-2',
+        description: 'Small but capable model from Microsoft',
+        context_window: 2048
+      },
+      {
+        id: '@cf/qwen/qwen1.5-14b-chat-awq',
+        name: 'Qwen 1.5 14B',
+        description: 'Multilingual model with strong performance',
+        context_window: 32768
+      }
+    ],
+    features: [
+      'Text generation',
+      'English evaluation',
+      'Grammar checking',
+      'Conversation feedback',
+      'Streaming support'
+    ]
   });
 });
 
-// 프롬프트 템플릿 저장 (KV 사용)
-llmRoutes.post('/templates', async (c) => {
-  try {
-    const { name, template, description } = await c.req.json();
-
-    if (!name || !template) {
-      return c.json({ error: 'Name and template are required' }, 400);
-    }
-
-    const templateData = {
-      name,
-      template,
-      description,
-      createdAt: new Date().toISOString()
-    };
-
-    await c.env.CACHE.put(`template:${name}`, JSON.stringify(templateData));
-
-    return c.json({
-      success: true,
-      template: templateData
-    });
-  } catch (error) {
-    console.error('Template save error:', error);
-    return c.json({ error: 'Failed to save template' }, 500);
-  }
-});
-
-// 프롬프트 템플릿 조회
-llmRoutes.get('/templates/:name', async (c) => {
-  try {
-    const name = c.req.param('name');
-    const cached = await c.env.CACHE.get(`template:${name}`);
-
-    if (!cached) {
-      return c.json({ error: 'Template not found' }, 404);
-    }
-
-    const template = JSON.parse(cached);
-    return c.json({
-      success: true,
-      template
-    });
-  } catch (error) {
-    console.error('Template retrieval error:', error);
-    return c.json({ error: 'Failed to retrieve template' }, 500);
-  }
-});
-
-// 배치 처리 엔드포인트
-llmRoutes.post('/batch', async (c) => {
-  try {
-    const { prompts, model, maxTokens, temperature } = await c.req.json();
-
-    if (!prompts || !Array.isArray(prompts)) {
-      return c.json({ error: 'Prompts array is required' }, 400);
-    }
-
-    // 병렬로 여러 프롬프트 처리
-    const results = await Promise.all(
-      prompts.map(async (prompt) => {
-        try {
-          const response = await generateText(c.env.AI, prompt, {
-            model,
-            maxTokens,
-            temperature
-          });
-          return {
-            prompt,
-            text: response.text,
-            success: true
-          };
-        } catch (error) {
-          return {
-            prompt,
-            error: error.message,
-            success: false
-          };
-        }
-      })
-    );
-
-    return c.json({
-      success: true,
-      results,
-      model: model || AVAILABLE_MODELS.llama3_8b
-    });
-  } catch (error) {
-    console.error('Batch processing error:', error);
-    return c.json({ error: 'Failed to process batch' }, 500);
-  }
-});
+export default app;

@@ -20,6 +20,8 @@ import useProfileStore from '../../store/profileStore';
 import useSessionStore from '../../store/sessionStore';
 import LanguageProfile from '../../components/LanguageProfile';
 import AchievementBadges from '../../components/AchievementBadges';
+import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
+import LanguageLevelProgress from '../../components/profile/LanguageLevelProgress';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -194,6 +196,12 @@ export default function ProfilePage() {
 
         {activeTab === 'stats' && (
           <div className="space-y-6">
+            {/* Weekly Activity Chart */}
+            <WeeklyActivityChart />
+            
+            {/* Language Level Progress */}
+            <LanguageLevelProgress />
+            
             {/* Monthly Goal Progress */}
             <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
               <div className="flex items-center justify-between mb-4">
