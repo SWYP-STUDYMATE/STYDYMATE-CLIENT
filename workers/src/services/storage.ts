@@ -4,7 +4,8 @@ export async function saveToR2(
   bucket: R2Bucket,
   key: string,
   data: ArrayBuffer | ReadableStream,
-  contentType?: string
+  contentType?: string,
+  customMetadata?: Record<string, string>
 ): Promise<R2Object> {
   try {
     const httpMetadata: R2HTTPMetadata = {};
@@ -25,7 +26,8 @@ export async function saveToR2(
     const object = await bucket.put(key, data, {
       httpMetadata,
       customMetadata: {
-        uploadedAt: new Date().toISOString()
+        uploadedAt: new Date().toISOString(),
+        ...customMetadata
       }
     });
 

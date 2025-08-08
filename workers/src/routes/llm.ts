@@ -31,7 +31,7 @@ llmRoutes.post('/generate', async (c) => {
         { role: 'user', content: body.prompt }
       ];
     } else {
-      return c.json({ error: 'Either prompt or messages required' }, 400);
+      return validationError(c, 'Either prompt or messages required');
     }
 
     // 스트리밍 응답
@@ -67,7 +67,7 @@ llmRoutes.post('/generate', async (c) => {
 
   } catch (error) {
     console.error('LLM generation error:', error);
-    return c.json({ error: error.message || 'Text generation failed' }, 500);
+    return validationError(c, error.message || 'Text generation failed' }, 500);
   }
 });
 
@@ -80,7 +80,7 @@ llmRoutes.post('/evaluate-english', async (c) => {
     }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required' }, 400);
+      return validationError(c, 'Text is required');
     }
 
     const prompt = `You are an expert English language assessor. Evaluate the following English text for language proficiency.
@@ -165,7 +165,7 @@ Response in JSON format with this structure:
 
   } catch (error) {
     console.error('LLM error:', error);
-    return c.json({ error: error.message || 'Operation failed' }, 500);
+    return validationError(c, error.message || 'Operation failed' }, 500);
   }
 });
 
@@ -175,7 +175,7 @@ llmRoutes.post('/check-grammar', async (c) => {
     const { text } = await c.req.json<{ text: string }>();
 
     if (!text) {
-      return c.json({ error: 'Text is required' }, 400);
+      return validationError(c, 'Text is required');
     }
 
     const prompt = `Check the grammar of the following text and provide corrections:
@@ -216,12 +216,12 @@ Provide a response in JSON format:
       return c.json({
         error: 'Failed to parse grammar check response',
         rawResponse: response.response
-      }, 400);
+     );
     }
 
   } catch (error) {
     console.error('LLM error:', error);
-    return c.json({ error: error.message || 'Operation failed' }, 500);
+    return validationError(c, error.message || 'Operation failed' }, 500);
   }
 });
 
@@ -235,7 +235,7 @@ llmRoutes.post('/conversation-feedback', async (c) => {
     }>();
 
     if (!conversation || conversation.length === 0) {
-      return c.json({ error: 'Conversation is required' }, 400);
+      return validationError(c, 'Conversation is required');
     }
 
     const conversationText = conversation
@@ -302,7 +302,7 @@ Provide comprehensive feedback in JSON format:
 
   } catch (error) {
     console.error('LLM error:', error);
-    return c.json({ error: error.message || 'Operation failed' }, 500);
+    return validationError(c, error.message || 'Operation failed' }, 500);
   }
 });
 

@@ -407,7 +407,7 @@
         "id": 34,
         "title": "오디오 청킹 시스템",
         "description": "대용량 오디오 파일 분할 처리",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "33"
@@ -499,7 +499,7 @@
         "id": 41,
         "title": "R2 Storage 설정",
         "description": "Cloudflare R2 파일 저장소",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "31"
@@ -512,7 +512,7 @@
         "id": 42,
         "title": "Cloudflare Images 통합",
         "description": "이미지 처리 서비스",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "41"
@@ -594,7 +594,7 @@
         "id": 48,
         "title": "WebRTC 프론트엔드 통합",
         "description": "화상/음성 통화 기능 연동",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "39",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:48:41.418Z"
+      "updated": "2025-08-08T09:49:13.628Z"
     }
   }
 }
