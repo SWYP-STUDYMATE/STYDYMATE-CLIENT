@@ -291,7 +291,7 @@
         "id": 24,
         "title": "VideoControls 컴포넌트",
         "description": "화상/음성 통화 컨트롤 UI",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "마이크/카메라 토글, 종료 버튼, 화면 공유, 언어 전환",
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:24:00.503Z"
+      "updated": "2025-08-08T09:24:48.427Z"
     }
   }
 }
