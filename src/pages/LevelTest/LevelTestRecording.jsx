@@ -9,7 +9,7 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 export default function LevelTestRecording() {
   const navigate = useNavigate();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  
+
   const {
     currentQuestionIndex,
     totalQuestions,
@@ -35,7 +35,7 @@ export default function LevelTestRecording() {
   useEffect(() => {
     setTestStatus('recording');
     setIsTimerRunning(true);
-    
+
     return () => {
       stopTimer();
       clearCurrentRecording();
@@ -113,7 +113,7 @@ export default function LevelTestRecording() {
       {/* Progress Bar */}
       <div className="bg-white px-6 py-3">
         <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-[#00C471] transition-all duration-300"
             style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
           />
@@ -134,8 +134,8 @@ export default function LevelTestRecording() {
 
         {/* Timer */}
         <div className="mb-8">
-          <CountdownTimer 
-            duration={180} 
+          <CountdownTimer
+            duration={180}
             onTimeUp={handleTimeUp}
             autoStart={isTimerRunning}
           />
@@ -143,7 +143,7 @@ export default function LevelTestRecording() {
 
         {/* Audio Recorder */}
         <div className="mb-8 w-full max-w-md">
-          <AudioRecorder 
+          <AudioRecorder
             onRecordingComplete={handleRecordingComplete}
             disabled={hasRecording}
           />
@@ -160,7 +160,7 @@ export default function LevelTestRecording() {
               >
                 다시 녹음하기
               </CommonButton>
-              
+
               <CommonButton
                 onClick={handleNext}
                 variant="primary"

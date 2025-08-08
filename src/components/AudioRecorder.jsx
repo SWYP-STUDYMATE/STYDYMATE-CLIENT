@@ -15,7 +15,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
   const timerRef = useRef(null);
   const streamRef = useRef(null);
 
-  const { 
+  const {
     startRecording: storeStartRecording,
     stopRecording: storeStopRecording,
     updateRecordingDuration
@@ -41,7 +41,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
-    
+
     // Calculate average volume
     const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
     setAudioLevel(Math.min(average / 128, 1)); // Normalize to 0-1
@@ -51,14 +51,14 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           sampleRate: 44100,
-        } 
+        }
       });
-      
+
       streamRef.current = stream;
 
       // Setup audio visualization
@@ -72,7 +72,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       const options = {
         mimeType: 'audio/webm;codecs=opus'
       };
-      
+
       if (!MediaRecorder.isTypeSupported(options.mimeType)) {
         options.mimeType = 'audio/webm';
       }
@@ -89,11 +89,11 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         storeStartRecording(blob);
-        
+
         if (onRecordingComplete) {
           onRecordingComplete(blob);
         }
-        
+
         // Cleanup
         stream.getTracks().forEach(track => track.stop());
         if (audioContextRef.current) {
@@ -104,7 +104,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setRecordingTime(0);
-      
+
       // Start timer
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
@@ -116,7 +116,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
 
       // Start visualization
       visualizeAudio();
-      
+
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('마이크 접근 권한이 필요합니다.');
@@ -128,15 +128,15 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      
+
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      
+
       setAudioLevel(0);
       storeStopRecording();
     }
@@ -220,7 +220,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
             >
               {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
             </button>
-            
+
             <button
               onClick={stopRecording}
               className="w-16 h-16 bg-[#111111] hover:bg-[#414141] text-white rounded-full flex items-center justify-center transition-colors duration-200"
@@ -234,7 +234,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       {/* Instructions */}
       <div className="text-center">
         <p className="text-sm text-[#929292]">
-          {isRecording 
+          {isRecording
             ? '녹음 중입니다. 정지 버튼을 눌러 녹음을 완료하세요.'
             : '마이크 버튼을 눌러 녹음을 시작하세요.'}
         </p>

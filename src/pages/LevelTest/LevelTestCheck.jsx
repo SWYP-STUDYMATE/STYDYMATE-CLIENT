@@ -11,7 +11,7 @@ export default function LevelTestCheck() {
   const [isChecking, setIsChecking] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
   const [mediaStream, setMediaStream] = useState(null);
-  
+
   const { setConnectionStatus, setTestStatus, setAudioLevel: setStoreAudioLevel } = useLevelTestStore();
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function LevelTestCheck() {
       setMediaStream(stream);
       setMicPermission('granted');
       setConnectionStatus({ microphone: true });
-      
+
       // Start audio level monitoring
       startAudioLevelMonitoring(stream);
     } catch (error) {
@@ -79,7 +79,7 @@ export default function LevelTestCheck() {
       const arraySum = array.reduce((a, value) => a + value, 0);
       const average = arraySum / array.length;
       const normalizedLevel = Math.min(100, Math.round(average));
-      
+
       setAudioLevel(normalizedLevel);
       setStoreAudioLevel(normalizedLevel);
     };
@@ -149,7 +149,7 @@ export default function LevelTestCheck() {
             className="p-2 -ml-2"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
           <h1 className="text-[18px] font-bold text-[#111111] flex-1 text-center mr-6">
@@ -188,7 +188,7 @@ export default function LevelTestCheck() {
                     {micPermission === 'granted' && (
                       <div className="mt-2">
                         <div className="w-full bg-[#F1F3F5] rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-[#00C471] h-2 rounded-full transition-all duration-200"
                             style={{ width: `${audioLevel}%` }}
                           />
