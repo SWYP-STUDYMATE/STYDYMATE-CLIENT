@@ -690,7 +690,7 @@
         "id": 52,
         "title": "Cloudflare Analytics 설정",
         "description": "모니터링 대시보드 구축",
-        "status": "in-progress",
+        "status": "done",
         "priority": "low",
         "dependencies": [
           "49"
@@ -749,7 +749,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T10:40:44.569Z"
+      "updated": "2025-08-08T10:53:23.813Z"
     }
   }
 }

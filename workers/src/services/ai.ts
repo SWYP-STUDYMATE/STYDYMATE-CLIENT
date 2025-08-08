@@ -432,98 +432,98 @@ Return ONLY a JSON array of 5 topic strings, no other text.`;
 
 // 실시간 번역
 export async function translateText(
-  ai: Ai,
-  text: string,
-  targetLanguage: string,
-  sourceLanguage: string = 'auto'
+    ai: Ai,
+    text: string,
+    targetLanguage: string,
+    sourceLanguage: string = 'auto'
 ): Promise<string> {
-  try {
-    const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
+    try {
+        const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
 Only provide the translated text without any explanation or additional formatting.
 If the text is already in the target language, return it as is.
 
 Text to translate: "${text}"`;
 
-    const response = await generateChatCompletion(ai, [
-      { 
-        role: 'system', 
-        content: 'You are a professional translator. Provide accurate, natural-sounding translations while preserving the original meaning and tone.' 
-      },
-      { role: 'user', content: prompt }
-    ], {
-      temperature: 0.3,
-      max_tokens: 500
-    });
+        const response = await generateChatCompletion(ai, [
+            {
+                role: 'system',
+                content: 'You are a professional translator. Provide accurate, natural-sounding translations while preserving the original meaning and tone.'
+            },
+            { role: 'user', content: prompt }
+        ], {
+            temperature: 0.3,
+            max_tokens: 500
+        });
 
-    return response.text.trim();
-  } catch (error) {
-    console.error('Translation error:', error);
-    throw new Error('Failed to translate text');
-  }
+        return response.text.trim();
+    } catch (error) {
+        console.error('Translation error:', error);
+        throw new Error('Failed to translate text');
+    }
 }
 
 // 다중 언어 동시 번역
 export async function translateToMultipleLanguages(
-  ai: Ai,
-  text: string,
-  targetLanguages: string[],
-  sourceLanguage: string = 'auto'
+    ai: Ai,
+    text: string,
+    targetLanguages: string[],
+    sourceLanguage: string = 'auto'
 ): Promise<Record<string, string>> {
-  try {
-    const languageMap: Record<string, string> = {
-      'en': 'English',
-      'ko': 'Korean',
-      'ja': 'Japanese',
-      'zh': 'Chinese',
-      'es': 'Spanish',
-      'fr': 'French',
-      'de': 'German',
-      'pt': 'Portuguese',
-      'ru': 'Russian',
-      'ar': 'Arabic'
-    };
+    try {
+        const languageMap: Record<string, string> = {
+            'en': 'English',
+            'ko': 'Korean',
+            'ja': 'Japanese',
+            'zh': 'Chinese',
+            'es': 'Spanish',
+            'fr': 'French',
+            'de': 'German',
+            'pt': 'Portuguese',
+            'ru': 'Russian',
+            'ar': 'Arabic'
+        };
 
-    const languageList = targetLanguages
-      .map(code => `${languageMap[code] || code}: [translation]`)
-      .join('\n');
+        const languageList = targetLanguages
+            .map(code => `${languageMap[code] || code}: [translation]`)
+            .join('\n');
 
-    const prompt = `Translate the following text to multiple languages. Provide ONLY the translations in the exact format shown, with no additional text:
+        const prompt = `Translate the following text to multiple languages. Provide ONLY the translations in the exact format shown, with no additional text:
 
 ${languageList}
 
 Text to translate: "${text}"`;
 
-    const response = await generateChatCompletion(ai, [
-      { 
-        role: 'system', 
-        content: 'You are a professional translator. Provide accurate translations in the requested format.' 
-      },
-      { role: 'user', content: prompt }
-    ], {
-      temperature: 0.3,
-      max_tokens: 1000
-    });
+        const response = await generateChatCompletion(ai, [
+            {
+                role: 'system',
+                content: 'You are a professional translator. Provide accurate translations in the requested format.'
+            },
+            { role: 'user', content: prompt }
+        ], {
+            temperature: 0.3,
+            max_tokens: 1000
+        });
 
-    const translations: Record<string, string> = {};
-    const lines = response.text.trim().split('\n');
-    
-    for (const line of lines) {
-      const match = line.match(/^(English|Korean|Japanese|Chinese|Spanish|French|German|Portuguese|Russian|Arabic):\s*(.+)$/);
-      if (match) {
-        const langName = match[1];
-        const translation = match[2].trim();
-        const langCode = Object.entries(languageMap).find(([code, name]) => name === langName)?.[0];
-        if (langCode) {
-          translations[langCode] = translation;
+        const translations: Record<string, string> = {};
+        const lines = response.text.trim().split('\n');
+
+        for (const line of lines) {
+            const match = line.match(/^(English|Korean|Japanese|Chinese|Spanish|French|German|Portuguese|Russian|Arabic):\s*(.+)$/);
+            if (match) {
+                const langName = match[1];
+                const translation = match[2].trim();
+                const langCode = Object.entries(languageMap).find(([code, name]) => name === langName)?.[0];
+                if (langCode) {
+                    translations[langCode] = translation;
+                }
+            }
         }
-      }
-    }
 
-    return translations;
-  } catch (error) {
-    console.error('Multi-translation error:', error);
-    throw new Error('Failed to translate to multiple languages');
-  }
+        return translations;
+    } catch (error) {
+        console.error('Multi-translation error:', error);
+        throw new Error('Failed to translate to multiple languages');
+    }
 }
 
 // 세션 요약 생성

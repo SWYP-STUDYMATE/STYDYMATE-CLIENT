@@ -17,7 +17,7 @@ export default function VideoSessionRoom() {
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isPipMode, setIsPipMode] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
-  
+
   // 실시간 자막 상태
   const [isSubtitleEnabled, setIsSubtitleEnabled] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -432,7 +432,7 @@ export default function VideoSessionRoom() {
       ...transcript,
       timestamp: Date.now()
     }]);
-    
+
     // 파트너에게 자막 전송
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -455,16 +455,16 @@ export default function VideoSessionRoom() {
   // 타겟 언어 목록 생성 (현재 언어와 자막 언어 포함)
   const getTargetLanguages = useCallback(() => {
     const languages = new Set([subtitleLanguage]);
-    
+
     // 파트너 언어 추가
     if (partnerInfo.nativeLanguage) {
       const langCode = partnerInfo.nativeLanguage.toLowerCase().substring(0, 2);
       languages.add(langCode);
     }
-    
+
     // 현재 대화 언어 추가
     languages.add(currentLanguage);
-    
+
     return Array.from(languages);
   }, [subtitleLanguage, currentLanguage, partnerInfo.nativeLanguage]);
 
@@ -513,8 +513,8 @@ export default function VideoSessionRoom() {
   const getSignalIcon = () => {
     if (signalStrength === 0) return <SignalZero className="w-5 h-5 text-red-500" />;
     return <Signal className={`w-5 h-5 ${signalStrength === 3 ? 'text-green-500' :
-        signalStrength === 2 ? 'text-yellow-500' :
-          'text-orange-500'
+      signalStrength === 2 ? 'text-yellow-500' :
+        'text-orange-500'
       }`} />;
   };
 
@@ -662,7 +662,7 @@ export default function VideoSessionRoom() {
       </div>
 
       {/* Subtitle Display */}
-      <SubtitleDisplay 
+      <SubtitleDisplay
         transcripts={transcripts}
         isVisible={isSubtitleEnabled}
         position={subtitlePosition}
@@ -685,7 +685,7 @@ export default function VideoSessionRoom() {
           onLanguageChange={setSubtitleLanguage}
           className="mb-2"
         />
-        
+
         {/* Live Transcription Component */}
         {isSubtitleEnabled && (
           <LiveTranscription
@@ -697,7 +697,7 @@ export default function VideoSessionRoom() {
             className="mb-2"
           />
         )}
-        
+
         <VideoControls
           isMuted={isMuted}
           isVideoOn={isCameraOn}

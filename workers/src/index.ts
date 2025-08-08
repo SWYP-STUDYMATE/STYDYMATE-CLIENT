@@ -10,7 +10,7 @@ import imagesRoutes from './routes/images';
 import transcribeRoutes from './routes/transcribe';
 import cacheRoutes from './routes/cache';
 import translateRoutes from './routes/translate';
-import analyticsRoutes from './routes/analytics';
+import { analyticsRoutes } from './routes/analytics';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';

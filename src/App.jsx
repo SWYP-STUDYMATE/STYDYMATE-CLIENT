@@ -22,6 +22,7 @@ const LevelTestComplete = lazyLoad(() => import('./pages/LevelTest/LevelTestComp
 const LevelTestResult = lazyLoad(() => import('./pages/LevelTest/LevelTestResult'));
 const Schedule = lazyLoad(() => import('./pages/Schedule/Schedule'));
 const AudioConnectionCheck = lazyLoad(() => import('./pages/Session/AudioConnectionCheck'));
+const AnalyticsDashboard = lazyLoad(() => import('./components/AnalyticsDashboard'));
 const VideoSessionRoom = lazyLoad(() => import('./pages/Session/VideoSessionRoom'));
 const VideoConnectionCheck = lazyLoad(() => import('./pages/Session/VideoSessionCheck'));
 const AudioSessionRoom = lazyLoad(() => import('./pages/Session/AudioSessionRoom'));
@@ -61,6 +62,7 @@ export default function App() {
         <Route path='/sessions' element={<SessionList />} />
         <Route path='/sessions/calendar' element={<SessionCalendar />} />
         <Route path='/session/schedule/new' element={<SessionScheduleNew />} />
+        <Route path='/analytics' element={<AnalyticsDashboard />} />
       </Routes>
     </div>
   )
