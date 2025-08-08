@@ -49,6 +49,13 @@ const VideoControls = ({
   const [isCameraOn, setIsCameraOn] = useState(initialCameraState);
   const [isScreenSharing, setIsScreenSharing] = useState(initialScreenShareState);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showTooltip, setShowTooltip] = useState("");
+  const [handRaised, setHandRaised] = useState(isHandRaised);
+  
+  const controlsRef = useRef(null);
+  const moreMenuRef = useRef(null);
+  const langMenuRef = useRef(null);
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },

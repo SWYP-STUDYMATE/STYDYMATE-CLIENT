@@ -119,7 +119,7 @@
         "id": 10,
         "title": "레벨 테스트 결과 페이지",
         "description": "AI 분석 결과 표시 페이지",
-        "status": "in-progress",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "9"
@@ -709,7 +709,7 @@
       "currentTag": "master",
       "created": "2025-08-08T07:07:16.742Z",
       "description": "Tasks for master context",
-      "updated": "2025-08-08T09:20:01.301Z"
+      "updated": "2025-08-08T09:20:07.609Z"
     }
   }
 }

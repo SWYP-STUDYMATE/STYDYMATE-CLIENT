@@ -40,7 +40,6 @@ export default function App() {
       <Route path='/level-test/result' element={<LevelTestResult />}/>
       <Route path='/schedule' element={<Schedule />}/>
       <Route path='/session/audio-check' element={<AudioConnectionCheck />}/>
-      <Route path='/session/video-check' element={<VideoSessionCheck />}/>
     </Routes> 
     </div>
   )
