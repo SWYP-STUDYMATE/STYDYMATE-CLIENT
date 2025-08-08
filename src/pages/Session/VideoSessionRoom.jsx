@@ -519,13 +519,13 @@ export default function VideoSessionRoom() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1A1A1A] flex flex-col">
+    <div className="min-h-screen bg-[var(--black-600)] flex flex-col">
       {/* Header */}
-      <div className="bg-[#2A2A2A] border-b border-[#3A3A3A] px-6 py-4">
+      <div className="bg-[var(--black-400)] border-b border-[var(--black-400)] px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-[20px] font-bold text-white">화상 통화</h1>
-            <div className="flex items-center gap-2 text-[#929292]">
+            <div className="flex items-center gap-2 text-[var(--black-200)]">
               <Users className="w-4 h-4" />
               <span className="text-sm">1:1 세션</span>
             </div>
@@ -535,7 +535,7 @@ export default function VideoSessionRoom() {
             {/* Connection Status */}
             <div className="flex items-center gap-2">
               {getSignalIcon()}
-              <span className="text-sm text-[#929292]">
+              <span className="text-sm text-[var(--black-200)]">
                 {connectionState === 'connected' ? '연결됨' :
                   connectionState === 'connecting' ? '연결 중...' :
                     '연결 끊김'}
@@ -544,9 +544,9 @@ export default function VideoSessionRoom() {
 
             {/* Screen Share Indicator */}
             {isScreenSharing && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-full">
-                <Monitor className="w-4 h-4 text-blue-500" />
-                <span className="text-sm text-blue-500">화면 공유 중</span>
+              <div className="flex items-center gap-2 px-3 py-1 bg-[rgba(66,133,244,0.2)] rounded-full">
+                <Monitor className="w-4 h-4 text-[var(--blue)]" />
+                <span className="text-sm text-[var(--blue)]">화면 공유 중</span>
               </div>
             )}
 
@@ -561,7 +561,7 @@ export default function VideoSessionRoom() {
             {pipSupported && connectionState === 'connected' && (
               <button
                 onClick={handlePictureInPicture}
-                className="p-2 rounded-lg hover:bg-[#3A3A3A] transition-colors"
+                className="p-2 rounded-lg hover:bg-[var(--black-400)] transition-colors"
                 title={isPipMode ? "PiP 모드 종료" : "PiP 모드"}
               >
                 {isPipMode ? (
@@ -579,9 +579,9 @@ export default function VideoSessionRoom() {
       <div className="flex-1 flex items-center justify-center p-8">
         {connectionState === 'connecting' ? (
           <div className="text-center">
-            <Loader2 className="w-16 h-16 text-[#00C471] animate-spin mx-auto mb-4" />
+            <Loader2 className="w-16 h-16 text-[var(--green-500)] animate-spin mx-auto mb-4" />
             <p className="text-white text-lg mb-2">연결 중...</p>
-            <p className="text-[#929292] text-sm">잠시만 기다려주세요</p>
+            <p className="text-[var(--black-200)] text-sm">잠시만 기다려주세요</p>
           </div>
         ) : connectionState === 'failed' ? (
           <div className="text-center">
@@ -598,7 +598,7 @@ export default function VideoSessionRoom() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-6xl">
             {/* Remote Video (Partner) */}
-            <div className="relative bg-[#2A2A2A] rounded-[20px] overflow-hidden aspect-video">
+            <div className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video">
               <video
                 ref={remoteVideoRef}
                 autoPlay
@@ -616,7 +616,7 @@ export default function VideoSessionRoom() {
                   />
                   <div>
                     <p className="text-white font-medium">{partnerInfo.name}</p>
-                    <p className="text-[#929292] text-sm">Level {partnerInfo.level}</p>
+                    <p className="text-[var(--black-200)] text-sm">Level {partnerInfo.level}</p>
                   </div>
                 </div>
               </div>
@@ -628,7 +628,7 @@ export default function VideoSessionRoom() {
             </div>
 
             {/* Local Video (Self) */}
-            <div className="relative bg-[#2A2A2A] rounded-[20px] overflow-hidden aspect-video">
+            <div className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -640,10 +640,10 @@ export default function VideoSessionRoom() {
               {!isCameraOn && (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-24 h-24 bg-[#3A3A3A] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-[#929292] text-3xl">👤</span>
+                    <div className="w-24 h-24 bg-[var(--black-400)] rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-[var(--black-200)] text-3xl">👤</span>
                     </div>
-                    <p className="text-[#929292]">카메라가 꺼져있습니다</p>
+                    <p className="text-[var(--black-200)]">카메라가 꺼져있습니다</p>
                   </div>
                 </div>
               )}
@@ -651,7 +651,7 @@ export default function VideoSessionRoom() {
               {/* Local user indicators */}
               <div className="absolute bottom-4 right-4 flex items-center gap-2">
                 {isMuted && (
-                  <div className="bg-red-500/80 px-3 py-1 rounded-full">
+                  <div className="bg-[rgba(234,67,53,0.8)] px-3 py-1 rounded-full">
                     <span className="text-white text-sm">음소거</span>
                   </div>
                 )}

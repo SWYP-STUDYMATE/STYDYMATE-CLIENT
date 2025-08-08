@@ -61,8 +61,8 @@ export default function VideoControls({
       <button
         onClick={onToggleMute}
         className={`${baseButtonClass} ${isMuted
-            ? buttonVariants[variant].danger
-            : buttonVariants[variant].normal
+          ? buttonVariants[variant].danger
+          : buttonVariants[variant].normal
           }`}
         aria-label={isMuted ? "마이크 켜기" : "마이크 끄기"}
       >
@@ -81,8 +81,8 @@ export default function VideoControls({
         <button
           onClick={onToggleVideo}
           className={`${baseButtonClass} ${!isVideoOn
-              ? buttonVariants[variant].danger
-              : buttonVariants[variant].normal
+            ? buttonVariants[variant].danger
+            : buttonVariants[variant].normal
             }`}
           aria-label={isVideoOn ? "비디오 끄기" : "비디오 켜기"}
         >
@@ -102,8 +102,8 @@ export default function VideoControls({
         <button
           onClick={onToggleScreenShare}
           className={`${baseButtonClass} ${isScreenSharing
-              ? buttonVariants[variant].active
-              : buttonVariants[variant].normal
+            ? buttonVariants[variant].active
+            : buttonVariants[variant].normal
             }`}
           aria-label={isScreenSharing ? "화면 공유 중지" : "화면 공유"}
         >

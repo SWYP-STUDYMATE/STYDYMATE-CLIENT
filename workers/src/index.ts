@@ -15,12 +15,13 @@ import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';
 import { successResponse } from './utils/response';
+import type { Variables } from './types';
 
 // Export Durable Object
 export { WebRTCRoom };
 
 // Type definitions for bindings
-export interface Env {
+export interface AppBindings {
   AI: Ai;
   ROOM: DurableObjectNamespace;
   STORAGE: R2Bucket;
@@ -38,7 +39,7 @@ export interface Env {
 const API_VERSION = 'v1';
 
 // Create Hono app with typed context
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono();
 
 // 기본 미들웨어 설정
 setupMiddleware(app);
@@ -53,7 +54,7 @@ app.use(analyticsMiddleware as MiddlewareHandler);
 // CORS middleware
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
-    origin: (c.env as Env).CORS_ORIGIN || 'http://localhost:3000',
+    origin: ((c as any).env?.CORS_ORIGIN as string) || 'http://localhost:3000',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key'],
     exposeHeaders: ['Content-Length', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
@@ -90,7 +91,7 @@ app.get('/', (c) => {
 app.get('/health', (c) => {
   return successResponse(c, {
     status: 'healthy',
-    environment: c.env.ENVIRONMENT,
+    environment: (c as any).env?.ENVIRONMENT,
     version: API_VERSION,
     services: {
       ai: 'operational',
@@ -111,7 +112,7 @@ http_requests_total{method="GET",endpoint="/health"} 1
 });
 
 // API v1 라우트 그룹
-const v1 = new Hono<{ Bindings: Env }>();
+const v1 = new Hono();
 
 // v1 API 라우트 등록
 v1.route('/level-test', levelTestRoutes);

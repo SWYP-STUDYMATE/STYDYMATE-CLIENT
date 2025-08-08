@@ -9,7 +9,8 @@
   --green-200: #8AE4BE;
   --green-300: #54D7A0;
   --green-400: #33D08D;
-  --green-500: #00C471; /* PRIMARY */
+  --green-500: #00C471;
+  /* PRIMARY */
   --green-600: #00B267;
   --green-700: #008B50;
   --green-800: #006C3E;
@@ -21,7 +22,8 @@
   --black-200: #929292;
   --black-300: #606060;
   --black-400: #414141;
-  --black-500: #111111; /* PRIMARY */
+  --black-500: #111111;
+  /* PRIMARY */
   --black-600: #0F0F0F;
   --black-700: #0C0C0C;
   --black-800: #090909;
@@ -123,13 +125,39 @@ body,
 }
 
 /* Utilities mapped to design system */
-.page-bg { background: var(--bg-main); }
-.card-bg { background: var(--white); }
-.secondary-text { color: var(--black-200); }
-.border-default { border-color: var(--black-50); }
+.page-bg {
+  background: var(--bg-main);
+}
+
+.card-bg {
+  background: var(--white);
+}
+
+.secondary-text {
+  color: var(--black-200);
+}
+
+.border-default {
+  border-color: var(--black-50);
+}
 
 /* Metric pill variants (remove inline color usage) */
-.metric-pill-success { background: rgba(0, 196, 113, 0.12); color: var(--green-500); }
-.metric-pill-info { background: rgba(66, 133, 244, 0.12); color: var(--blue); }
-.metric-pill-danger { background: rgba(234, 67, 53, 0.12); color: var(--red); }
-.metric-pill-warning { background: rgba(255, 165, 0, 0.12); color: var(--warning-yellow); }
+.metric-pill-success {
+  background: rgba(0, 196, 113, 0.12);
+  color: var(--green-500);
+}
+
+.metric-pill-info {
+  background: rgba(66, 133, 244, 0.12);
+  color: var(--blue);
+}
+
+.metric-pill-danger {
+  background: rgba(234, 67, 53, 0.12);
+  color: var(--red);
+}
+
+.metric-pill-warning {
+  background: rgba(255, 165, 0, 0.12);
+  color: var(--warning-yellow);
+}

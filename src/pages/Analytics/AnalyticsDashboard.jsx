@@ -45,7 +45,7 @@ export default function AnalyticsDashboard() {
 
   const connectToMetricsStream = () => {
     const ws = new WebSocket(`wss://${window.location.host}/api/v1/analytics/stream`);
-    
+
     ws.onopen = () => {
       console.log('Connected to metrics stream');
     };
@@ -84,8 +84,8 @@ export default function AnalyticsDashboard() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-[28px] font-bold text-[#111111]">Analytics Dashboard</h1>
-          <select 
-            value={timeRange} 
+          <select
+            value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             className="px-4 py-2 border border-[#E7E7E7] rounded-lg bg-white text-[#111111]"
           >
@@ -138,17 +138,17 @@ export default function AnalyticsDashboard() {
                 <XAxis dataKey="time" stroke="#666666" />
                 <YAxis stroke="#666666" />
                 <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="avg" 
-                  stroke="#00C471" 
+                <Line
+                  type="monotone"
+                  dataKey="avg"
+                  stroke="#00C471"
                   strokeWidth={2}
                   dot={false}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="p95" 
-                  stroke="#FF6B6B" 
+                <Line
+                  type="monotone"
+                  dataKey="p95"
+                  stroke="#FF6B6B"
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
@@ -208,7 +208,7 @@ export default function AnalyticsDashboard() {
                   <span className="text-[14px] text-[#666666]">{country.country}</span>
                   <div className="flex items-center">
                     <div className="w-24 h-2 bg-[#E7E7E7] rounded-full mr-2">
-                      <div 
+                      <div
                         className="h-full bg-[#00C471] rounded-full"
                         style={{ width: `${(country.percentage)}%` }}
                       />
@@ -265,7 +265,7 @@ export default function AnalyticsDashboard() {
 function MetricCard({ icon: Icon, title, value, change, color }) {
   const isPositive = change.startsWith('+');
   const isGoodChange = (title.includes('Error') || title.includes('Response')) ? !isPositive : isPositive;
-  
+
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
       <div className="flex items-center justify-between mb-4">
@@ -287,7 +287,7 @@ function generateTimeSeriesData() {
   const hours = 24;
   const data = [];
   const now = new Date();
-  
+
   for (let i = hours - 1; i >= 0; i--) {
     const time = new Date(now - i * 60 * 60 * 1000);
     data.push({
@@ -296,7 +296,7 @@ function generateTimeSeriesData() {
       p95: Math.floor(Math.random() * 100) + 150,
     });
   }
-  
+
   return data;
 }
 

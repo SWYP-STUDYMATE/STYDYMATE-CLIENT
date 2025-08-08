@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 import { successResponse } from '../utils/response';
 
 const app = new Hono();

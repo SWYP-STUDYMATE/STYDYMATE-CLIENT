@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 import { validateAuth } from '../utils/auth';
 import { getAggregatedMetrics } from '../middleware/analytics';
 import { successResponse, errorResponse } from '../utils/response';
@@ -251,45 +251,45 @@ function getFieldIndex(field: string): number {
 
 // 이벤트 수집 엔드포인트
 app.post('/events', async (c) => {
-  try {
-    const { events } = await c.req.json();
-    
-    if (!Array.isArray(events)) {
-      return errorResponse(c, 'Events must be an array', 400);
+    try {
+        const { events } = await c.req.json();
+
+        if (!Array.isArray(events)) {
+            return errorResponse(c, 'Events must be an array', 400);
+        }
+
+        // Analytics Engine에 이벤트 전송
+        for (const event of events) {
+            await c.env.ANALYTICS?.writeDataPoint({
+                blobs: [
+                    'client_event',
+                    event.event,
+                    event.userId,
+                    event.sessionId,
+                    event.properties?.page || ''
+                ],
+                doubles: [
+                    event.timestamp,
+                    event.properties?.pageLoadTime || 0,
+                    event.properties?.duration || 0,
+                    0
+                ],
+                indexes: [
+                    event.properties?.sessionType || '',
+                    event.properties?.feature || '',
+                    event.properties?.variant || ''
+                ]
+            });
+        }
+
+        return successResponse(c, {
+            message: 'Events recorded',
+            count: events.length
+        });
+    } catch (error) {
+        console.error('Events recording error:', error);
+        return errorResponse(c, 'Failed to record events');
     }
-    
-    // Analytics Engine에 이벤트 전송
-    for (const event of events) {
-      await c.env.ANALYTICS?.writeDataPoint({
-        blobs: [
-          'client_event',
-          event.event,
-          event.userId,
-          event.sessionId,
-          event.properties?.page || ''
-        ],
-        doubles: [
-          event.timestamp,
-          event.properties?.pageLoadTime || 0,
-          event.properties?.duration || 0,
-          0
-        ],
-        indexes: [
-          event.properties?.sessionType || '',
-          event.properties?.feature || '',
-          event.properties?.variant || ''
-        ]
-      });
-    }
-    
-    return successResponse(c, {
-      message: 'Events recorded',
-      count: events.length
-    });
-  } catch (error) {
-    console.error('Events recording error:', error);
-    return errorResponse(c, 'Failed to record events');
-  }
 });
 
 export { app as analyticsRoutes };
