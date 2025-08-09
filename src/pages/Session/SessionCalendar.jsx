@@ -103,7 +103,7 @@ export default function SessionCalendar() {
 
   const SessionCard = ({ session }) => (
     <div
-      className="bg-white rounded-lg p-3 mb-2 border border-[#E7E7E7] 
+      className="bg-white rounded-lg p-3 mb-2 border border-[var(--black-50)] 
       hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => navigate(`/session/${session.type}/${session.id}`)}
     >
@@ -115,36 +115,36 @@ export default function SessionCalendar() {
             className="w-8 h-8 rounded-full object-cover"
           />
           <div>
-            <p className="text-[12px] font-semibold text-[#111111]">
+            <p className="text-[12px] font-semibold text-[var(--black-500)]">
               {session.partnerName}
             </p>
-            <p className="text-[10px] text-[#606060]">
+            <p className="text-[10px] text-[var(--black-300)]">
               {formatTime(session.date)} • {session.duration}분
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-1">
           {session.type === 'video' ? (
-            <Video className="w-4 h-4 text-[#606060]" />
+            <Video className="w-4 h-4 text-[var(--black-300)]" />
           ) : (
-            <Mic className="w-4 h-4 text-[#606060]" />
+            <Mic className="w-4 h-4 text-[var(--black-300)]" />
           )}
           {session.participants && (
             <div className="flex items-center space-x-1">
-              <Users className="w-3 h-3 text-[#606060]" />
-              <span className="text-[10px] text-[#606060]">{session.participants}</span>
+              <Users className="w-3 h-3 text-[var(--black-300)]" />
+              <span className="text-[10px] text-[var(--black-300)]">{session.participants}</span>
             </div>
           )}
         </div>
       </div>
       <div className="flex items-center justify-between">
         <span className={`text-[10px] px-2 py-0.5 rounded-full ${session.status === 'completed'
-          ? 'bg-[#E8F5E9] text-[#4CAF50]'
-          : 'bg-[#E3F2FD] text-[#2196F3]'
+          ? 'bg-[rgba(0,196,113,0.12)] text-[var(--green-700)]'
+          : 'bg-[rgba(66,133,244,0.12)] text-[var(--blue)]'
           }`}>
           {session.status === 'completed' ? '완료' : '예정'}
         </span>
-        <span className="text-[10px] text-[#929292]">
+        <span className="text-[10px] text-[var(--black-200)]">
           {session.language === 'en' ? 'English' : '한국어'}
         </span>
       </div>
@@ -155,7 +155,7 @@ export default function SessionCalendar() {
   const selectedDateSessions = getSessionsForDate(selectedDate);
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen page-bg">
       {/* Header */}
       <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
         <div className="flex items-center justify-between">
@@ -175,10 +175,10 @@ export default function SessionCalendar() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+            <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
               {/* Calendar Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-[18px] font-bold text-[#111111]">
+                <h2 className="text-[18px] font-bold text-[var(--black-500)]">
                   {currentDate.toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: 'long'
@@ -187,20 +187,20 @@ export default function SessionCalendar() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => navigateMonth(-1)}
-                    className="p-2 hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                    className="p-2 hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5 text-[#606060]" />
                   </button>
                   <button
                     onClick={() => setCurrentDate(new Date())}
-                    className="px-3 py-1 text-[14px] text-[#606060] hover:bg-[#F1F3F5] 
+                    className="px-3 py-1 text-[14px] text-[var(--black-300)] hover:bg-[var(--neutral-100)] 
                     rounded-lg transition-colors"
                   >
                     오늘
                   </button>
                   <button
                     onClick={() => navigateMonth(1)}
-                    className="p-2 hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                    className="p-2 hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
                   >
                     <ChevronRight className="w-5 h-5 text-[#606060]" />
                   </button>
@@ -211,7 +211,7 @@ export default function SessionCalendar() {
               <div className="grid grid-cols-7 mb-2">
                 {['일', '월', '화', '수', '목', '금', '토'].map(day => (
                   <div key={day} className="text-center py-2">
-                    <span className="text-[12px] font-medium text-[#929292]">{day}</span>
+                    <span className="text-[12px] font-medium text-[var(--black-200)]">{day}</span>
                   </div>
                 ))}
               </div>
@@ -228,14 +228,14 @@ export default function SessionCalendar() {
                       key={index}
                       onClick={() => day.isCurrentMonth && handleDateClick(day.date)}
                       className={`
-                        min-h-[80px] p-2 border border-[#E7E7E7] rounded-lg cursor-pointer
+                        min-h-[80px] p-2 border border-[var(--black-50)] rounded-lg cursor-pointer
                         transition-all duration-200
-                        ${!day.isCurrentMonth ? 'bg-[#FAFAFA] text-[#929292]' : 'bg-white'}
-                        ${isSelected ? 'ring-2 ring-[#00C471]' : ''}
-                        ${day.isCurrentMonth ? 'hover:bg-[#F8F9FA]' : ''}
+                        ${!day.isCurrentMonth ? 'page-bg text-[var(--black-200)]' : 'bg-white'}
+                        ${isSelected ? 'ring-2 ring-[var(--green-500)]' : ''}
+                        ${day.isCurrentMonth ? 'hover:bg-[var(--neutral-100)]' : ''}
                       `}
                     >
-                      <div className={`text-[14px] font-medium mb-1 ${isToday ? 'text-[#00C471]' : day.isCurrentMonth ? 'text-[#111111]' : ''
+                      <div className={`text-[14px] font-medium mb-1 ${isToday ? 'text-[var(--green-500)]' : day.isCurrentMonth ? 'text-[var(--black-500)]' : ''
                         }`}>
                         {day.date.getDate()}
                       </div>
@@ -247,13 +247,13 @@ export default function SessionCalendar() {
                             <div
                               key={idx}
                               className={`h-1.5 rounded-full ${session.status === 'completed'
-                                ? 'bg-[#4CAF50]'
-                                : 'bg-[#2196F3]'
+                                ? 'bg-[var(--green-500)]'
+                                : 'bg-[var(--blue)]'
                                 }`}
                             />
                           ))}
                           {sessions.length > 2 && (
-                            <span className="text-[10px] text-[#929292]">
+                            <span className="text-[10px] text-[var(--black-200)]">
                               +{sessions.length - 2}
                             </span>
                           )}
@@ -268,8 +268,8 @@ export default function SessionCalendar() {
 
           {/* Selected Date Sessions */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <h3 className="text-[16px] font-bold text-[#111111] mb-4">
+            <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+              <h3 className="text-[16px] font-bold text-[var(--black-500)] mb-4">
                 {selectedDate.toLocaleDateString('ko-KR', {
                   month: 'long',
                   day: 'numeric',
@@ -285,8 +285,8 @@ export default function SessionCalendar() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <CalendarIcon className="w-12 h-12 text-[#E7E7E7] mx-auto mb-3" />
-                  <p className="text-[14px] text-[#929292] mb-4">
+                  <CalendarIcon className="w-12 h-12 text-[var(--black-50)] mx-auto mb-3" />
+                  <p className="text-[14px] text-[var(--black-200)] mb-4">
                     예정된 세션이 없습니다
                   </p>
                   <CommonButton
@@ -301,26 +301,26 @@ export default function SessionCalendar() {
             </div>
 
             {/* Session Stats */}
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mt-4">
-              <h3 className="text-[16px] font-bold text-[#111111] mb-4">
+            <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)] mt-4">
+              <h3 className="text-[16px] font-bold text-[var(--black-500)] mb-4">
                 이번 달 통계
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[14px] text-[#606060]">예정된 세션</span>
-                  <span className="text-[16px] font-semibold text-[#111111]">
+                  <span className="text-[14px] text-[var(--black-300)]">예정된 세션</span>
+                  <span className="text-[16px] font-semibold text-[var(--black-500)]">
                     {sessions.filter(s => s.status === 'scheduled').length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[14px] text-[#606060]">완료된 세션</span>
-                  <span className="text-[16px] font-semibold text-[#111111]">
+                  <span className="text-[14px] text-[var(--black-300)]">완료된 세션</span>
+                  <span className="text-[16px] font-semibold text-[var(--black-500)]">
                     {sessions.filter(s => s.status === 'completed').length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[14px] text-[#606060]">총 학습시간</span>
-                  <span className="text-[16px] font-semibold text-[#111111]">
+                  <span className="text-[14px] text-[var(--black-300)]">총 학습시간</span>
+                  <span className="text-[16px] font-semibold text-[var(--black-500)]">
                     {sessions.reduce((acc, s) => acc + s.duration, 0)}분
                   </span>
                 </div>

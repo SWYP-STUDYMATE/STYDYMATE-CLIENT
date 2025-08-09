@@ -102,16 +102,16 @@ export default function AudioSession() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col">
+        <div className="min-h-screen bg-[var(--black-700)] text-white flex flex-col">
             {/* Header */}
-            <div className="bg-[#1A1A1A] border-b border-[#333333] px-6 py-4">
+            <div className="bg-[var(--black-600)] border-b border-[var(--black-400)] px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <h1 className="text-[18px] font-bold">1:1 음성 세션</h1>
                         {sessionStatus === 'connected' && (
                             <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-[#00C471] rounded-full animate-pulse" />
-                                <span className="text-[14px] text-[#00C471]">연결됨</span>
+                                <div className="w-2 h-2 bg-[var(--green-500)] rounded-full animate-pulse" />
+                                <span className="text-[14px] text-[var(--green-500)]">연결됨</span>
                             </div>
                         )}
                     </div>
@@ -131,16 +131,16 @@ export default function AudioSession() {
                             <img
                                 src={userProfileImage || "/assets/basicProfilePic.png"}
                                 alt={userName}
-                                className="w-32 h-32 rounded-full object-cover border-4 border-[#333333]"
+                                className="w-32 h-32 rounded-full object-cover border-4 border-[var(--black-400)]"
                             />
                             {!isMuted && (
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#00C471] rounded-full flex items-center justify-center">
+                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--green-500)] rounded-full flex items-center justify-center">
                                     <Mic className="w-4 h-4 text-white" />
                                 </div>
                             )}
                         </div>
                         <h3 className="text-[16px] font-semibold mb-1">{userName || "나"}</h3>
-                        <p className="text-[14px] text-[#929292]">
+                        <p className="text-[14px] text-[var(--black-200)]">
                             {currentLanguage === 'en' ? 'Speaking English' : 'Speaking Korean'}
                         </p>
                     </div>
@@ -151,7 +151,7 @@ export default function AudioSession() {
                             {[1, 2, 3, 4, 5].map((i) => (
                                 <div
                                     key={i}
-                                    className={`w-2 h-12 bg-[#00C471] rounded-full transition-all duration-300`}
+                                    className={`w-2 h-12 bg-[var(--green-500)] rounded-full transition-all duration-300`}
                                     style={{
                                         height: `${Math.random() * 48 + 12}px`,
                                         opacity: sessionStatus === 'connected' ? 1 : 0.3
@@ -167,31 +167,31 @@ export default function AudioSession() {
                             <img
                                 src={partner.profileImage}
                                 alt={partner.name}
-                                className="w-32 h-32 rounded-full object-cover border-4 border-[#333333]"
+                                className="w-32 h-32 rounded-full object-cover border-4 border-[var(--black-400)]"
                             />
                             {!speakerMuted && sessionStatus === 'connected' && (
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#4285F4] rounded-full flex items-center justify-center">
+                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--blue)] rounded-full flex items-center justify-center">
                                     <Volume2 className="w-4 h-4 text-white" />
                                 </div>
                             )}
                         </div>
                         <h3 className="text-[16px] font-semibold mb-1">{partner.name}</h3>
-                        <p className="text-[14px] text-[#929292]">{partner.level}</p>
+                        <p className="text-[14px] text-[var(--black-200)]">{partner.level}</p>
                     </div>
                 </div>
 
                 {/* Language Info */}
-                <div className="bg-[#1A1A1A] rounded-[20px] p-6 mb-8 max-w-md w-full">
+                <div className="bg-[var(--black-600)] rounded-[20px] p-6 mb-8 max-w-md w-full">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-[14px] text-[#929292] mb-1">현재 언어</p>
+                            <p className="text-[14px] text-[var(--black-200)] mb-1">현재 언어</p>
                             <p className="text-[18px] font-semibold">
                                 {currentLanguage === 'en' ? 'English' : '한국어'}
                             </p>
                         </div>
                         <button
                             onClick={handleToggleLanguage}
-                            className="p-3 bg-[#333333] hover:bg-[#414141] rounded-full transition-colors duration-200"
+                            className="p-3 bg-[var(--black-400)] hover:bg-[var(--black-300)] rounded-full transition-colors duration-200"
                         >
                             <Globe className="w-6 h-6" />
                         </button>
@@ -202,22 +202,22 @@ export default function AudioSession() {
                 {sessionStatus === 'connecting' && (
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-[#FFA500] rounded-full animate-pulse" />
-                            <p className="text-[14px] text-[#FFA500]">연결 중...</p>
+                            <div className="w-2 h-2 bg-[var(--warning-yellow)] rounded-full animate-pulse" />
+                            <p className="text-[14px] text-[var(--warning-yellow)]">연결 중...</p>
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Control Bar */}
-            <div className="bg-[#1A1A1A] border-t border-[#333333] p-6">
+            <div className="bg-[var(--black-600)] border-t border-[var(--black-400)] p-6">
                 <div className="flex items-center justify-center space-x-4">
                     {/* Mute Button */}
                     <button
                         onClick={handleToggleMute}
                         className={`p-4 rounded-full transition-colors duration-200 ${isMuted
-                                ? 'bg-[#EA4335] hover:bg-[#D33B2C]'
-                                : 'bg-[#333333] hover:bg-[#414141]'
+                            ? 'bg-[var(--red)] hover:bg-[#D33B2C]'
+                            : 'bg-[var(--black-400)] hover:bg-[var(--black-300)]'
                             }`}
                     >
                         {isMuted ? (
@@ -231,8 +231,8 @@ export default function AudioSession() {
                     <button
                         onClick={handleToggleSpeaker}
                         className={`p-4 rounded-full transition-colors duration-200 ${speakerMuted
-                                ? 'bg-[#EA4335] hover:bg-[#D33B2C]'
-                                : 'bg-[#333333] hover:bg-[#414141]'
+                            ? 'bg-[var(--red)] hover:bg-[#D33B2C]'
+                            : 'bg-[var(--black-400)] hover:bg-[var(--black-300)]'
                             }`}
                     >
                         {speakerMuted ? (
@@ -245,7 +245,7 @@ export default function AudioSession() {
                     {/* End Call Button */}
                     <button
                         onClick={handleEndCall}
-                        className="p-4 bg-[#EA4335] hover:bg-[#D33B2C] rounded-full transition-colors duration-200"
+                        className="p-4 bg-[var(--red)] hover:bg-[#D33B2C] rounded-full transition-colors duration-200"
                     >
                         <PhoneOff className="w-6 h-6" />
                     </button>

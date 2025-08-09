@@ -231,7 +231,7 @@ export default function VideoSessionCheck() {
     <div className="min-h-screen page-bg flex flex-col">
       <div className="max-w-[1024px] w-full mx-auto flex flex-col min-h-screen">
         {/* 헤더 */}
-        <div className="px-6 py-4 bg-white border-b border-[#E7E7E7]">
+        <div className="px-6 py-4 bg-white border-b border-[var(--black-50)]">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate(-1)}
@@ -241,22 +241,22 @@ export default function VideoSessionCheck() {
                 <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <h1 className="text-[18px] font-bold text-[#111111]">화상 세션 연결 확인</h1>
+            <h1 className="text-[18px] font-bold text-[var(--black-500)]">화상 세션 연결 확인</h1>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <Settings className="w-5 h-5 text-[#606060]" />
+              <Settings className="w-5 h-5 text-[var(--black-300)]" />
             </button>
           </div>
         </div>
 
         {/* 디바이스 설정 드롭다운 */}
         {showSettings && (
-          <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
+          <div className="bg-white border-b border-[var(--black-50)] px-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[14px] text-[#606060] mb-2">카메라 선택</label>
+                <label className="block text-[14px] text-[var(--black-300)] mb-2">카메라 선택</label>
                 <select
                   value={selectedCamera}
                   onChange={(e) => setSelectedCamera(e.target.value)}
@@ -270,7 +270,7 @@ export default function VideoSessionCheck() {
                 </select>
               </div>
               <div>
-                <label className="block text-[14px] text-[#606060] mb-2">마이크 선택</label>
+                <label className="block text-[14px] text-[var(--black-300)] mb-2">마이크 선택</label>
                 <select
                   value={selectedMic}
                   onChange={(e) => setSelectedMic(e.target.value)}
@@ -292,7 +292,7 @@ export default function VideoSessionCheck() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* 왼쪽: 비디오 미리보기 */}
             <div>
-              <h2 className="text-[20px] font-bold text-[#111111] mb-4">카메라 미리보기</h2>
+              <h2 className="text-[20px] font-bold text-[var(--black-500)] mb-4">카메라 미리보기</h2>
               <div className="relative aspect-video bg-black rounded-[10px] overflow-hidden">
                 <video
                   ref={videoRef}
@@ -322,18 +322,18 @@ export default function VideoSessionCheck() {
 
             {/* 오른쪽: 테스트 항목들 */}
             <div>
-              <h2 className="text-[20px] font-bold text-[#111111] mb-4">연결 테스트</h2>
+              <h2 className="text-[20px] font-bold text-[var(--black-500)] mb-4">연결 테스트</h2>
               <div className="space-y-4">
                 {/* 카메라 테스트 */}
-                <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
+                <div className="bg-white rounded-[10px] p-4 border border-[var(--black-50)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-[rgba(234,67,53,0.1)] rounded-full flex items-center justify-center mr-3">
                         <Camera className="w-5 h-5 text-[var(--red)]" />
                       </div>
                       <div>
-                        <h3 className="text-[14px] font-medium text-[#111111]">카메라</h3>
-                        <p className="text-[12px] text-[#929292]">
+                        <h3 className="text-[14px] font-medium text-[var(--black-500)]">카메라</h3>
+                        <p className="text-[12px] text-[var(--black-200)]">
                           {cameraStatus === 'idle' && '대기 중'}
                           {cameraStatus === 'testing' && '테스트 중...'}
                           {cameraStatus === 'success' && '정상 작동'}
@@ -346,15 +346,15 @@ export default function VideoSessionCheck() {
                 </div>
 
                 {/* 마이크 테스트 */}
-                <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
+                <div className="bg-white rounded-[10px] p-4 border border-[var(--black-50)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-[rgba(0,196,113,0.12)] rounded-full flex items-center justify-center mr-3">
                         <Mic className="w-5 h-5 text-[var(--green-500)]" />
                       </div>
                       <div>
-                        <h3 className="text-[14px] font-medium text-[#111111]">마이크</h3>
-                        <p className="text-[12px] text-[#929292]">
+                        <h3 className="text-[14px] font-medium text-[var(--black-500)]">마이크</h3>
+                        <p className="text-[12px] text-[var(--black-200)]">
                           {micStatus === 'idle' && '대기 중'}
                           {micStatus === 'testing' && '3초간 말씀해주세요...'}
                           {micStatus === 'success' && '정상 작동'}
@@ -379,15 +379,15 @@ export default function VideoSessionCheck() {
                 </div>
 
                 {/* 스피커 테스트 */}
-                <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
+                <div className="bg-white rounded-[10px] p-4 border border-[var(--black-50)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-[rgba(66,133,244,0.12)] rounded-full flex items-center justify-center mr-3">
                         <Volume2 className="w-5 h-5 text-[var(--blue)]" />
                       </div>
                       <div>
-                        <h3 className="text-[14px] font-medium text-[#111111]">스피커</h3>
-                        <p className="text-[12px] text-[#929292]">
+                        <h3 className="text-[14px] font-medium text-[var(--black-500)]">스피커</h3>
+                        <p className="text-[12px] text-[var(--black-200)]">
                           {speakerStatus === 'idle' && '대기 중'}
                           {speakerStatus === 'testing' && '테스트 음 재생 중...'}
                           {speakerStatus === 'success' && '정상 작동'}
@@ -400,7 +400,7 @@ export default function VideoSessionCheck() {
                 </div>
 
                 {/* 연결 테스트 */}
-                <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
+                <div className="bg-white rounded-[10px] p-4 border border-[var(--black-50)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-[rgba(255,165,0,0.12)] rounded-full flex items-center justify-center mr-3">
@@ -410,8 +410,8 @@ export default function VideoSessionCheck() {
                         }
                       </div>
                       <div>
-                        <h3 className="text-[14px] font-medium text-[#111111]">인터넷</h3>
-                        <p className="text-[12px] text-[#929292]">
+                        <h3 className="text-[14px] font-medium text-[var(--black-500)]">인터넷</h3>
+                        <p className="text-[12px] text-[var(--black-200)]">
                           {connectionStatus === 'idle' && '대기 중'}
                           {connectionStatus === 'testing' && '속도 측정 중...'}
                           {connectionStatus === 'success' && `${connectionSpeed?.toFixed(1)} Mbps`}
@@ -425,8 +425,8 @@ export default function VideoSessionCheck() {
               </div>
 
               {/* 안내 메시지 */}
-              <div className="mt-6 p-4 bg-[var(--neutral-100)] rounded-[10px]">
-                <p className="text-[13px] text-[#606060]">
+              <div className="mt-6 p-4 bg_[var(--neutral-100)] rounded_[10px]">
+                <p className="text-[13px] text_[var(--black-300)]">
                   💡 화상 통화를 위해서는 최소 2Mbps 이상의 인터넷 속도가 필요합니다.
                   모든 테스트를 통과해야 원활한 화상 통화가 가능합니다.
                 </p>

@@ -221,7 +221,7 @@ export default function AudioSessionCheck() {
     <div className="min-h-screen page-bg flex flex-col">
       <div className="max-w-[768px] w-full mx-auto flex flex-col min-h-screen">
         {/* 헤더 */}
-        <div className="px-6 py-4 bg-white border-b border-[#E7E7E7]">
+        <div className="px-6 py-4 bg-white border-b border-[var(--black-50)]">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate(-1)}
@@ -231,7 +231,7 @@ export default function AudioSessionCheck() {
                 <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <h1 className="text-[18px] font-bold text-[#111111]">음성 세션 연결 확인</h1>
+            <h1 className="text-[18px] font-bold text-[var(--black-500)]">음성 세션 연결 확인</h1>
             <div className="w-10" />
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function AudioSessionCheck() {
         {/* 메인 콘텐츠 */}
         <div className="flex-1 px-6 py-8">
           <div className="text-center mb-8">
-            <h2 className="text-[24px] font-bold text-[#111111] mb-2">
+            <h2 className="text-[24px] font-bold text-[var(--black-500)] mb-2">
               세션 시작 전 확인사항
             </h2>
             <p className="text-[16px] text-[var(--black-300)]">
@@ -330,7 +330,7 @@ export default function AudioSessionCheck() {
 
           {/* 안내 메시지 */}
           <div className="bg-[var(--neutral-100)] rounded-[10px] p-4 mb-8">
-            <p className="text-[14px] text-[#606060]">
+            <p className="text-[14px] text-[var(--black-300)]">
               💡 모든 테스트를 통과해야 원활한 음성 통화가 가능합니다.
               문제가 있다면 디바이스 설정을 확인해주세요.
             </p>
@@ -365,7 +365,7 @@ export default function AudioSessionCheck() {
                 다시 테스트
               </CommonButton>
               {(micStatus === 'testing' || speakerStatus === 'testing' || connectionStatus === 'testing') && (
-                <p className="text-center text-[14px] text-[#929292]">
+                <p className="text-center text-[14px] text-[var(--black-200)]">
                   테스트 진행 중...
                 </p>
               )}

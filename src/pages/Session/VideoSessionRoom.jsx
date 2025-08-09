@@ -587,7 +587,7 @@ export default function VideoSessionRoom() {
           <div className="text-center">
             <SignalZero className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <p className="text-white text-lg mb-2">연결 실패</p>
-            <p className="text-[#929292] text-sm mb-4">네트워크 연결을 확인해주세요</p>
+            <p className="text-[var(--black-200)] text-sm mb-4">네트워크 연결을 확인해주세요</p>
             <button
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-[var(--green-500)] text-white rounded-lg hover:bg-[var(--green-600)]"

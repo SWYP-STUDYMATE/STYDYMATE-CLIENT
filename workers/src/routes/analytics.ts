@@ -97,7 +97,7 @@ app.get('/stream', async (c) => {
         return c.json({ error: 'Expected WebSocket' }, 426);
     }
 
-    const webSocketPair = new WebSocketPair();
+    const webSocketPair = new (globalThis as any).WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
     server.accept();

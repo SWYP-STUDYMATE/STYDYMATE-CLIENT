@@ -145,16 +145,16 @@ export default function VideoSession() {
     };
 
     return (
-        <div ref={containerRef} className="min-h-screen bg-[#0A0A0A] text-white flex flex-col">
+        <div ref={containerRef} className="min-h-screen bg-[var(--black-700)] text-white flex flex-col">
             {/* Header */}
-            <div className="bg-[#1A1A1A] border-b border-[#333333] px-6 py-4 flex-shrink-0">
+            <div className="bg-[var(--black-600)] border-b border-[var(--black-400)] px-6 py-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <h1 className="text-[18px] font-bold">1:1 비디오 세션</h1>
                         {sessionStatus === 'connected' && (
                             <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-[#00C471] rounded-full animate-pulse" />
-                                <span className="text-[14px] text-[#00C471]">연결됨</span>
+                                <div className="w-2 h-2 bg-[var(--green-500)] rounded-full animate-pulse" />
+                                <span className="text-[14px] text-[var(--green-500)]">연결됨</span>
                             </div>
                         )}
                     </div>
@@ -197,7 +197,7 @@ export default function VideoSession() {
 
                 {/* Local Video (PiP) */}
                 <div className={`absolute ${isPiPMode ? 'bottom-4 right-4' : 'top-4 right-4'
-                    } w-64 h-48 bg-[#1A1A1A] rounded-lg overflow-hidden shadow-2xl 
+                    } w-64 h-48 bg-[var(--black-600)] rounded-lg overflow-hidden shadow-2xl 
         transition-all duration-300 ${isVideoOn ? '' : 'opacity-50'}`}>
                     <video
                         ref={localVideoRef}
@@ -207,7 +207,7 @@ export default function VideoSession() {
                         muted
                     />
                     {!isVideoOn && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1A]">
+                        <div className="absolute inset-0 flex items-center justify-center bg-[var(--black-600)]">
                             <img
                                 src={userProfileImage || "/assets/basicProfilePic.png"}
                                 alt={userName}
@@ -236,7 +236,7 @@ export default function VideoSession() {
                 {/* Screen Share Indicator */}
                 {isScreenSharing && (
                     <div className="absolute top-4 left-1/2 transform -translate-x-1/2 
-          bg-[#00C471] text-white px-4 py-2 rounded-full flex items-center space-x-2">
+          bg-[var(--green-500)] text-white px-4 py-2 rounded-full flex items-center space-x-2">
                         <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                         <span className="text-[14px] font-medium">화면 공유 중</span>
                     </div>
@@ -247,10 +247,10 @@ export default function VideoSession() {
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                         <div className="text-center">
                             <div className="inline-flex items-center space-x-2 mb-4">
-                                <div className="w-3 h-3 bg-[#FFA500] rounded-full animate-pulse" />
-                                <p className="text-[18px] text-[#FFA500]">연결 중...</p>
+                                <div className="w-3 h-3 bg-[var(--warning-yellow)] rounded-full animate-pulse" />
+                                <p className="text-[18px] text-[var(--warning-yellow)]">연결 중...</p>
                             </div>
-                            <p className="text-[14px] text-[#929292]">
+                            <p className="text-[14px] text-[var(--black-200)]">
                                 화상 통화를 준비하고 있습니다
                             </p>
                         </div>
@@ -259,7 +259,7 @@ export default function VideoSession() {
             </div>
 
             {/* Control Bar */}
-            <div className="bg-[#1A1A1A] border-t border-[#333333] p-6 flex-shrink-0">
+            <div className="bg-[var(--black-600)] border-t border-[var(--black-400)] p-6 flex-shrink-0">
                 <VideoControls
                     isMuted={isMuted}
                     isVideoOn={isVideoOn}

@@ -33,9 +33,15 @@
   --white: #FFFFFF;
   --bg-main: #FAFAFA;
   --red: #EA4335;
+  --red-600: #D33B2C;
   --blue: #4285F4;
+  --blue-600: #3374E0;
   --warning-yellow: #FFA500;
   --neutral-100: #F1F3F5;
+  --neutral-200: #F8F9FA;
+  --indigo: #4338CA;
+  --indigo-700: #3730A3;
+  --indigo-800: #312E81;
 }
 
 html,

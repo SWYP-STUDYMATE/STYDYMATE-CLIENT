@@ -64,39 +64,37 @@ export default function VideoControlsDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen page-bg">
       <div className="max-w-7xl mx-auto p-8">
         <div className="mb-8">
-          <h1 className="text-[32px] font-bold text-[#111111] mb-2">VideoControls Component Demo</h1>
-          <p className="text-[16px] text-[#666666]">Test and interact with all VideoControls features</p>
+          <h1 className="text-[32px] font-bold text-[var(--black-500)] mb-2">VideoControls Component Demo</h1>
+          <p className="text-[16px] text-[var(--black-300)]">Test and interact with all VideoControls features</p>
         </div>
 
         {/* Configuration Panel */}
         <div className="bg-white rounded-[20px] shadow-sm p-6 mb-8">
-          <h2 className="text-[20px] font-bold text-[#111111] mb-4">Configuration</h2>
-          
+          <h2 className="text-[20px] font-bold text-[var(--black-500)] mb-4">Configuration</h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Theme Variant */}
             <div>
-              <label className="text-[14px] text-[#666666] block mb-2">Theme Variant</label>
+              <label className="text-[14px] text-[var(--black-300)] block mb-2">Theme Variant</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setVariant('dark')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    variant === 'dark' 
-                      ? 'bg-[#111111] text-white' 
-                      : 'bg-[#F1F3F5] text-[#111111] hover:bg-[#E7E7E7]'
-                  }`}
+                  className={`px-4 py-2 rounded-lg transition-colors ${variant === 'dark'
+                      ? 'bg-[var(--black-500)] text-white'
+                      : 'bg-[var(--neutral-100)] text-[var(--black-500)] hover:bg-[var(--black-50)]'
+                    }`}
                 >
                   Dark
                 </button>
                 <button
                   onClick={() => setVariant('light')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    variant === 'light' 
-                      ? 'bg-[#111111] text-white' 
-                      : 'bg-[#F1F3F5] text-[#111111] hover:bg-[#E7E7E7]'
-                  }`}
+                  className={`px-4 py-2 rounded-lg transition-colors ${variant === 'light'
+                      ? 'bg-[var(--black-500)] text-white'
+                      : 'bg-[var(--neutral-100)] text-[var(--black-500)] hover:bg-[var(--black-50)]'
+                    }`}
                 >
                   Light
                 </button>
@@ -105,18 +103,18 @@ export default function VideoControlsDemo() {
 
             {/* Participant Count */}
             <div>
-              <label className="text-[14px] text-[#666666] block mb-2">Participant Count</label>
+              <label className="text-[14px] text-[var(--black-300)] block mb-2">Participant Count</label>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setParticipantCount(Math.max(0, participantCount - 1))}
-                  className="w-8 h-8 bg-[#F1F3F5] rounded-lg flex items-center justify-center hover:bg-[#E7E7E7]"
+                  className="w-8 h-8 bg-[var(--neutral-100)] rounded-lg flex items-center justify-center hover:bg-[var(--black-50)]"
                 >
                   -
                 </button>
                 <span className="w-12 text-center font-medium">{participantCount}</span>
                 <button
                   onClick={() => setParticipantCount(participantCount + 1)}
-                  className="w-8 h-8 bg-[#F1F3F5] rounded-lg flex items-center justify-center hover:bg-[#E7E7E7]"
+                  className="w-8 h-8 bg-[var(--neutral-100)] rounded-lg flex items-center justify-center hover:bg-[var(--black-50)]"
                 >
                   +
                 </button>
@@ -125,8 +123,8 @@ export default function VideoControlsDemo() {
 
             {/* Current Language */}
             <div>
-              <label className="text-[14px] text-[#666666] block mb-2">Current Language</label>
-              <div className="bg-[#F1F3F5] rounded-lg px-4 py-2 text-center font-medium">
+              <label className="text-[14px] text-[var(--black-300)] block mb-2">Current Language</label>
+              <div className="bg-[var(--neutral-100)] rounded-lg px-4 py-2 text-center font-medium">
                 {currentLanguage === 'en' ? 'English' : '한국어'}
               </div>
             </div>
@@ -135,33 +133,33 @@ export default function VideoControlsDemo() {
 
         {/* State Display */}
         <div className="bg-white rounded-[20px] shadow-sm p-6 mb-8">
-          <h2 className="text-[20px] font-bold text-[#111111] mb-4">Current State</h2>
-          
+          <h2 className="text-[20px] font-bold text-[var(--black-500)] mb-4">Current State</h2>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-[#F8F9FA] rounded-lg">
-              <div className="text-[14px] text-[#666666] mb-1">Microphone</div>
-              <div className={`text-[16px] font-medium ${isMuted ? 'text-red-500' : 'text-green-500'}`}>
+            <div className="text-center p-4 bg-[var(--neutral-100)] rounded-lg">
+              <div className="text-[14px] text-[var(--black-300)] mb-1">Microphone</div>
+              <div className={`text-[16px] font-medium ${isMuted ? 'text-[var(--red)]' : 'text-[var(--green-500)]'}`}>
                 {isMuted ? 'Muted' : 'Active'}
               </div>
             </div>
-            
-            <div className="text-center p-4 bg-[#F8F9FA] rounded-lg">
-              <div className="text-[14px] text-[#666666] mb-1">Camera</div>
-              <div className={`text-[16px] font-medium ${isVideoOn ? 'text-green-500' : 'text-red-500'}`}>
+
+            <div className="text-center p-4 bg-[var(--neutral-100)] rounded-lg">
+              <div className="text-[14px] text-[var(--black-300)] mb-1">Camera</div>
+              <div className={`text-[16px] font-medium ${isVideoOn ? 'text-[var(--green-500)]' : 'text-[var(--red)]'}`}>
                 {isVideoOn ? 'On' : 'Off'}
               </div>
             </div>
-            
-            <div className="text-center p-4 bg-[#F8F9FA] rounded-lg">
-              <div className="text-[14px] text-[#666666] mb-1">Screen Share</div>
-              <div className={`text-[16px] font-medium ${isScreenSharing ? 'text-blue-500' : 'text-gray-400'}`}>
+
+            <div className="text-center p-4 bg-[var(--neutral-100)] rounded-lg">
+              <div className="text-[14px] text-[var(--black-300)] mb-1">Screen Share</div>
+              <div className={`text-[16px] font-medium ${isScreenSharing ? 'text-[var(--blue)]' : 'text-[var(--black-200)]'}`}>
                 {isScreenSharing ? 'Sharing' : 'Not Sharing'}
               </div>
             </div>
-            
-            <div className="text-center p-4 bg-[#F8F9FA] rounded-lg">
-              <div className="text-[14px] text-[#666666] mb-1">Language</div>
-              <div className="text-[16px] font-medium text-[#111111]">
+
+            <div className="text-center p-4 bg-[var(--neutral-100)] rounded-lg">
+              <div className="text-[14px] text-[var(--black-300)] mb-1">Language</div>
+              <div className="text-[16px] font-medium text-[var(--black-500)]">
                 {currentLanguage.toUpperCase()}
               </div>
             </div>
@@ -170,12 +168,11 @@ export default function VideoControlsDemo() {
 
         {/* Demo Area */}
         <div className="bg-white rounded-[20px] shadow-sm p-8 mb-8">
-          <h2 className="text-[20px] font-bold text-[#111111] mb-6 text-center">VideoControls Component</h2>
-          
+          <h2 className="text-[20px] font-bold text-[var(--black-500)] mb-6 text-center">VideoControls Component</h2>
+
           {/* Controls Container */}
-          <div className={`flex justify-center items-center py-12 rounded-[20px] ${
-            variant === 'dark' ? 'bg-[#1A1A1A]' : 'bg-[#F8F9FA]'
-          }`}>
+          <div className={`flex justify-center items-center py-12 rounded-[20px] ${variant === 'dark' ? 'bg-[var(--black-600)]' : 'bg-[var(--neutral-100)]'
+            }`}>
             <VideoControls
               isMuted={isMuted}
               isVideoOn={isVideoOn}
@@ -199,15 +196,14 @@ export default function VideoControlsDemo() {
               variant={variant}
             />
           </div>
-          
+
           {/* Minimal Version */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-[16px] font-medium text-[#111111] mb-4 text-center">
+          <div className="mt-8 pt-8 border-t border-[var(--black-50)]">
+            <h3 className="text-[16px] font-medium text-[var(--black-500)] mb-4 text-center">
               Minimal Version (Audio-only)
             </h3>
-            <div className={`flex justify-center items-center py-8 rounded-[20px] ${
-              variant === 'dark' ? 'bg-[#1A1A1A]' : 'bg-[#F8F9FA]'
-            }`}>
+            <div className={`flex justify-center items-center py-8 rounded-[20px] ${variant === 'dark' ? 'bg-[var(--black-600)]' : 'bg-[var(--neutral-100)]'
+              }`}>
               <VideoControls
                 isMuted={isMuted}
                 currentLanguage={currentLanguage}
@@ -227,17 +223,17 @@ export default function VideoControlsDemo() {
 
         {/* Event Log */}
         <div className="bg-white rounded-[20px] shadow-sm p-6">
-          <h2 className="text-[20px] font-bold text-[#111111] mb-4">Event Log</h2>
-          
-          <div className="bg-[#F8F9FA] rounded-lg p-4 h-48 overflow-y-auto">
+          <h2 className="text-[20px] font-bold text-[var(--black-500)] mb-4">Event Log</h2>
+
+          <div className="bg-[var(--neutral-100)] rounded-lg p-4 h-48 overflow-y-auto">
             {events.length === 0 ? (
-              <p className="text-[#929292] text-center">No events yet. Try interacting with the controls above.</p>
+              <p className="text-[var(--black-200)] text-center">No events yet. Try interacting with the controls above.</p>
             ) : (
               <div className="space-y-2">
                 {events.map((event, index) => (
                   <div key={index} className="flex items-center gap-3 text-[14px]">
-                    <span className="text-[#666666] font-mono">{event.time}</span>
-                    <span className="text-[#111111]">{event.event}</span>
+                    <span className="text-[var(--black-300)] font-mono">{event.time}</span>
+                    <span className="text-[var(--black-500)]">{event.event}</span>
                   </div>
                 ))}
               </div>
@@ -249,7 +245,7 @@ export default function VideoControlsDemo() {
         <div className="mt-8 text-center">
           <button
             onClick={() => navigate('/main')}
-            className="px-6 py-3 bg-[#111111] text-white rounded-lg hover:bg-[#222222] transition-colors"
+            className="px-6 py-3 bg-[var(--black-500)] text-white rounded-lg hover:bg-[var(--black-400)] transition-colors"
           >
             Back to Main
           </button>

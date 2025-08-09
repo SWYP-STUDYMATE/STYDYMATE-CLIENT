@@ -42,12 +42,12 @@ export default function VideoControls({
     dark: {
       normal: "bg-[var(--black-400)] hover:bg-[var(--black-300)] text-white",
       active: "bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white",
-      danger: "bg-[var(--red)] hover:bg-[#D33B2C] text-white"
+      danger: "bg-[var(--red)] hover:bg-[var(--red-600)] text-white"
     },
     light: {
       normal: "bg-[var(--neutral-100)] hover:bg-[var(--black-50)] text-[var(--black-500)]",
       active: "bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white",
-      danger: "bg-[var(--red)] hover:bg-[#D33B2C] text-white"
+      danger: "bg-[var(--red)] hover:bg-[var(--red-600)] text-white"
     }
   };
 

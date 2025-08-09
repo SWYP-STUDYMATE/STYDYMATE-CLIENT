@@ -239,32 +239,20 @@ export async function getAggregatedMetrics(
     groupBy?: 'path' | 'status' | 'country'
 ): Promise<any> {
     if (!env.ANALYTICS) return null;
-
     try {
-        // Analytics Engine 쿼리
-        const result = await env.ANALYTICS.query({
+        const result = await (env.ANALYTICS as any)?.query?.({
             timeRange: [timeRange.start, timeRange.end],
-            filter: {
-                blob1: 'api_request'
-            },
+            filter: { blob1: 'api_request' },
             aggregations: {
                 count: { count: {} },
                 avgDuration: { avg: { field: 'double1' } },
                 avgCpuTime: { avg: { field: 'double2' } },
                 p95Duration: { quantile: { field: 'double1', quantile: 0.95 } },
-                p95CpuTime: { quantile: { field: 'double2', quantile: 0.95 } },
-                errorRate: {
-                    avg: {
-                        field: {
-                            expression: 'if(index1 >= "400", 1, 0)'
-                        }
-                    }
-                }
+                p95CpuTime: { quantile: { field: 'double2', quantile: 0.95 } }
             },
             groupBy: groupBy ? [`blob${getFieldIndex(groupBy)}`] : undefined
         });
-
-        return result;
+        return result ?? null;
     } catch (error) {
         console.error('Failed to query Analytics Engine:', error);
         return null;

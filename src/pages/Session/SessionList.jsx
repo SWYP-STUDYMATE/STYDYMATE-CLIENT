@@ -138,7 +138,7 @@ export default function SessionList() {
     };
 
     const SessionCard = ({ session, isPast = false }) => (
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-4">
+        <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)] mb-4">
             <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4">
                     <img
@@ -148,7 +148,7 @@ export default function SessionList() {
                     />
                     <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="text-[16px] font-semibold text-[#111111]">
+                            <h3 className="text-[16px] font-semibold text-[var(--black-500)]">
                                 {session.partnerName}
                             </h3>
                             {session.participants && (
@@ -158,7 +158,7 @@ export default function SessionList() {
                                 </span>
                             )}
                         </div>
-                        <div className="flex items-center space-x-4 text-[14px] text-[#606060]">
+                        <div className="flex items-center space-x-4 text-[14px] text-[var(--black-300)]">
                             <span className="flex items-center space-x-1">
                                 <Calendar className="w-4 h-4" />
                                 <span>{formatSessionTime(session.scheduledAt)}</span>
@@ -182,7 +182,7 @@ export default function SessionList() {
                 {!isPast ? (
                     <button
                         onClick={() => handleStartSession(session)}
-                        className="p-2 text-[#00C471] hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                        className="p-2 text-[var(--green-500)] hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
                     >
                         <ChevronRight className="w-5 h-5" />
                     </button>
@@ -192,7 +192,7 @@ export default function SessionList() {
                             {[...Array(5)].map((_, i) => (
                                 <span
                                     key={i}
-                                    className={`text-[14px] ${i < session.rating ? 'text-[#FFA500]' : 'text-[#E7E7E7]'
+                                    className={`text-[14px] ${i < session.rating ? 'text-[var(--warning-yellow)]' : 'text-[var(--black-50)]'
                                         }`}
                                 >
                                     ★
@@ -204,20 +204,20 @@ export default function SessionList() {
             </div>
 
             {!isPast && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#F1F3F5]">
-                    <span className="px-3 py-1 bg-[#F1F3F5] text-[#606060] text-[12px] rounded-full">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--neutral-100)]">
+                    <span className="px-3 py-1 bg-[var(--neutral-100)] text-[var(--black-300)] text-[12px] rounded-full">
                         {session.language === 'en' ? 'English' : '한국어'}
                     </span>
                     <div className="flex space-x-2">
                         <button
                             onClick={() => handleCancelSession(session.id)}
-                            className="text-[14px] text-[#929292] hover:text-[#EA4335]"
+                            className="text-[14px] text-[var(--black-200)] hover:text-[var(--red)]"
                         >
                             취소
                         </button>
                         <button
                             onClick={() => handleStartSession(session)}
-                            className="text-[14px] text-[#00C471] hover:text-[#00B267] font-medium"
+                            className="text-[14px] text-[var(--green-500)] hover:text-[var(--green-600)] font-medium"
                         >
                             참가하기
                         </button>
@@ -228,21 +228,21 @@ export default function SessionList() {
     );
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA]">
+        <div className="min-h-screen page-bg">
             {/* Header */}
-            <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
+            <div className="bg-white border-b border-[var(--black-50)] px-6 py-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-[20px] font-bold text-[#111111]">세션</h1>
+                    <h1 className="text-[20px] font-bold text-[var(--black-500)]">세션</h1>
                     <div className="flex items-center space-x-2">
                         <button
                             onClick={() => navigate('/sessions/calendar')}
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         >
-                            <Calendar className="w-5 h-5 text-[#606060]" />
+                            <Calendar className="w-5 h-5 text-[var(--black-300)]" />
                         </button>
                         <button
                             onClick={() => navigate('/session/schedule')}
-                            className="p-2 bg-[#00C471] hover:bg-[#00B267] text-white rounded-lg"
+                            className="p-2 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-lg"
                         >
                             <Plus className="w-5 h-5" />
                         </button>
@@ -251,37 +251,37 @@ export default function SessionList() {
             </div>
 
             {/* Stats */}
-            <div className="bg-white p-6 border-b border-[#E7E7E7]">
+            <div className="bg-white p-6 border-b border-[var(--black-50)]">
                 <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                        <p className="text-[24px] font-bold text-[#111111]">
+                        <p className="text-[24px] font-bold text-[var(--black-500)]">
                             {sessionStats.totalSessions || 0}
                         </p>
-                        <p className="text-[12px] text-[#929292]">완료 세션</p>
+                        <p className="text-[12px] text-[var(--black-200)]">완료 세션</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[24px] font-bold text-[#111111]">
+                        <p className="text-[24px] font-bold text-[var(--black-500)]">
                             {sessionStats.totalDuration || 0}분
                         </p>
-                        <p className="text-[12px] text-[#929292]">총 학습시간</p>
+                        <p className="text-[12px] text-[var(--black-200)]">총 학습시간</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[24px] font-bold text-[#111111]">
+                        <p className="text-[24px] font-bold text_[var(--black-500)]">
                             {sessionStats.completionRate || 0}%
                         </p>
-                        <p className="text-[12px] text-[#929292]">완료율</p>
+                        <p className="text-[12px] text-[var(--black-200)]">완료율</p>
                     </div>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="bg-white border-b border-[#E7E7E7]">
+            <div className="bg-white border-b border_[var(--black-50)]">
                 <div className="flex">
                     <button
                         onClick={() => setActiveTab('upcoming')}
                         className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'upcoming'
-                            ? 'text-[#00C471] border-[#00C471]'
-                            : 'text-[#929292] border-transparent'
+                            ? 'text-[var(--green-500)] border-[var(--green-500)]'
+                            : 'text-[var(--black-200)] border-transparent'
                             }`}
                     >
                         예정된 세션
@@ -289,8 +289,8 @@ export default function SessionList() {
                     <button
                         onClick={() => setActiveTab('past')}
                         className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'past'
-                            ? 'text-[#00C471] border-[#00C471]'
-                            : 'text-[#929292] border-transparent'
+                            ? 'text-[var(--green-500)] border-[var(--green-500)]'
+                            : 'text-[var(--black-200)] border-transparent'
                             }`}
                     >
                         지난 세션
@@ -303,7 +303,7 @@ export default function SessionList() {
                 <button
                     onClick={() => setFilterOpen(!filterOpen)}
                     className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg 
-          border border-[#E7E7E7] text-[14px] text-[#606060] hover:bg-[#F1F3F5]"
+          border border-[var(--black-50)] text-[14px] text-[var(--black-300)] hover:bg-[var(--neutral-100)]"
                 >
                     <Filter className="w-4 h-4" />
                     <span>필터</span>
@@ -320,7 +320,7 @@ export default function SessionList() {
                             ))
                         ) : (
                             <div className="text-center py-12">
-                                <p className="text-[16px] text-[#929292] mb-4">
+                                <p className="text-[16px] text-[var(--black-200)] mb-4">
                                     예정된 세션이 없습니다
                                 </p>
                                 <CommonButton
@@ -340,7 +340,7 @@ export default function SessionList() {
                             ))
                         ) : (
                             <div className="text-center py-12">
-                                <p className="text-[16px] text-[#929292]">
+                                <p className="text-[16px] text-[var(--black-200)]">
                                     완료된 세션이 없습니다
                                 </p>
                             </div>
