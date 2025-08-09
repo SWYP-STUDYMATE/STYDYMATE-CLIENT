@@ -29,7 +29,7 @@ export default function LevelTestComplete() {
   }, [testStatus, navigate, setTestStatus]);
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
+    <div className="min-h-screen page-bg flex items-center justify-center px-6">
       <div className="text-center max-w-md">
         {isProcessing && !error ? (
           <>
@@ -37,7 +37,7 @@ export default function LevelTestComplete() {
               <div className="relative">
                 <Loader2 className="w-20 h-20 text-[#00C471] animate-spin mx-auto" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-[#00C471] opacity-20 rounded-full animate-ping" />
+                  <div className="w-16 h-16 bg-[var(--green-500)] opacity-20 rounded-full animate-ping" />
                 </div>
               </div>
             </div>
@@ -55,9 +55,9 @@ export default function LevelTestComplete() {
             </p>
 
             <div className="mt-8 flex justify-center space-x-2">
-              <div className="w-2 h-2 bg-[#00C471] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-[#00C471] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-[#00C471] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="w-2 h-2 bg-[var(--green-500)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-[var(--green-500)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-[var(--green-500)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </>
         ) : error ? (

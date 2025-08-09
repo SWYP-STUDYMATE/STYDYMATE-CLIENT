@@ -590,7 +590,7 @@ export default function VideoSessionRoom() {
             <p className="text-[#929292] text-sm mb-4">네트워크 연결을 확인해주세요</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-[#00C471] text-white rounded-lg hover:bg-[#00B267]"
+              className="px-6 py-2 bg-[var(--green-500)] text-white rounded-lg hover:bg-[var(--green-600)]"
             >
               다시 시도
             </button>

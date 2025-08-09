@@ -16,7 +16,7 @@ const metricsQuerySchema = z.object({
 });
 
 // 메트릭 조회
-app.get('/metrics', validateAuth, async (c) => {
+app.get('/metrics', (validateAuth as any), async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -47,7 +47,7 @@ app.get('/metrics', validateAuth, async (c) => {
 });
 
 // 대시보드 데이터
-app.get('/dashboard', validateAuth, async (c) => {
+app.get('/dashboard', (validateAuth as any), async (c) => {
     try {
         const now = new Date();
         const ranges = {
@@ -121,7 +121,7 @@ app.get('/stream', async (c) => {
 });
 
 // 에러 통계
-app.get('/errors', validateAuth, async (c) => {
+app.get('/errors', (validateAuth as any), async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -129,7 +129,7 @@ app.get('/errors', validateAuth, async (c) => {
         const start = query.start ? new Date(query.start) : new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
         // Analytics Engine에서 에러만 필터링
-        const result = await c.env.ANALYTICS?.query({
+        const result = await (c.env.ANALYTICS as any)?.query({
             timeRange: [start, end],
             filter: {
                 blob1: 'error'
@@ -162,7 +162,7 @@ app.get('/errors', validateAuth, async (c) => {
 });
 
 // AI 사용량 통계
-app.get('/ai-usage', validateAuth, async (c) => {
+app.get('/ai-usage', (validateAuth as any), async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -170,7 +170,7 @@ app.get('/ai-usage', validateAuth, async (c) => {
         const start = query.start ? new Date(query.start) : new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
         // AI 메트릭 조회
-        const result = await c.env.ANALYTICS?.query({
+        const result = await (c.env.ANALYTICS as any)?.query({
             timeRange: [start, end],
             filter: {
                 blob5: { $ne: '' } // AI model이 있는 요청만
@@ -200,7 +200,7 @@ app.get('/ai-usage', validateAuth, async (c) => {
 });
 
 // 성능 보고서
-app.get('/performance', validateAuth, async (c) => {
+app.get('/performance', (validateAuth as any), async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -208,7 +208,7 @@ app.get('/performance', validateAuth, async (c) => {
         const start = query.start ? new Date(query.start) : new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
         // 성능 메트릭 조회
-        const result = await c.env.ANALYTICS?.query({
+        const result = await (c.env.ANALYTICS as any)?.query({
             timeRange: [start, end],
             filter: {
                 blob1: 'api_request'

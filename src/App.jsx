@@ -50,6 +50,9 @@ export default function App() {
         <Route path='/level-test' element={<LevelTestStart />} />
         <Route path='/level-test/check' element={<LevelTestCheck />} />
         <Route path='/level-test/recording' element={<LevelTestRecording />} />
+        {/* Alias routes for documentation compatibility */}
+        <Route path='/level-test/connection' element={<LevelTestCheck />} />
+        <Route path='/level-test/question/:id' element={<LevelTestRecording />} />
         <Route path='/level-test/complete' element={<LevelTestComplete />} />
         <Route path='/level-test/result' element={<LevelTestResult />} />
         <Route path='/schedule' element={<Schedule />} />

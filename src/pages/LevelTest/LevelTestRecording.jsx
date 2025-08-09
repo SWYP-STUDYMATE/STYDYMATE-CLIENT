@@ -129,7 +129,7 @@ export default function LevelTestRecording() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
+    <div className="min-h-screen page-bg flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
         <div className="flex items-center justify-between">
@@ -137,7 +137,7 @@ export default function LevelTestRecording() {
             onClick={() => navigate('/level-test/check')}
             className="p-2 -ml-2"
           >
-            <ChevronLeft className="w-6 h-6 text-[#111111]" />
+            <ChevronLeft className="w-6 h-6 text-[var(--black-500)]" />
           </button>
           <h1 className="text-[18px] font-bold text-[#111111]">
             질문 {currentQuestionIndex + 1} / {totalQuestions}
@@ -148,9 +148,9 @@ export default function LevelTestRecording() {
 
       {/* Progress Bar */}
       <div className="bg-white px-6 py-3">
-        <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#00C471] transition-all duration-300"
+            className="h-full bg-[var(--green-500)] transition-all duration-300"
             style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
           />
         </div>
@@ -159,11 +159,11 @@ export default function LevelTestRecording() {
       {/* Content */}
       <div className="flex-1 flex flex-col items-center px-6 py-8">
         {/* Question Card */}
-        <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[#E7E7E7]">
-          <p className="text-[20px] font-bold text-[#111111] mb-3">
+        <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[var(--black-50)]">
+          <p className="text-[20px] font-bold text-[var(--black-500)] mb-3">
             {currentQuestion?.text || currentQuestion?.question || ''}
           </p>
-          <p className="text-[16px] text-[#606060]">
+          <p className="text-[16px] text-[var(--black-300)]">
             {currentQuestion?.korean || ''}
           </p>
         </div>

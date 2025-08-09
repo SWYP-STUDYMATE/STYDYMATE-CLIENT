@@ -1,5 +1,5 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 
 // 메트릭 타입 정의
 interface RequestMetrics {
@@ -57,7 +57,7 @@ const PERFORMANCE_THRESHOLDS = {
 // 분석 미들웨어
 export const analyticsMiddleware: MiddlewareHandler = async (c, next) => {
     const startTime = Date.now();
-    const startCpu = c.executionCtx.cpuTime || 0;
+    const startCpu = (c.executionCtx as any).cpuTime || 0;
 
     // 요청 정보 수집
     const request = c.req.raw;
@@ -70,7 +70,7 @@ export const analyticsMiddleware: MiddlewareHandler = async (c, next) => {
 
         // 응답 후 메트릭 수집
         const duration = Date.now() - startTime;
-        const cpuTime = (c.executionCtx.cpuTime || 0) - startCpu;
+        const cpuTime = ((c.executionCtx as any).cpuTime || 0) - startCpu;
         const status = c.res.status;
 
         // 기본 메트릭
@@ -140,7 +140,7 @@ async function sendToAnalyticsEngine(env: Env, event: AnalyticsEvent) {
 
     try {
         // Analytics Engine 쓰기
-        env.ANALYTICS.writeDataPoint({
+        (env.ANALYTICS as any).writeDataPoint({
             blobs: [
                 event.type,
                 event.metrics.method,
