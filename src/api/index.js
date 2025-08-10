@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api",
+  // 프로덕션: 프런트 도메인(languagemate.kr)에서 /api 리버스프록시 → api.languagemate.kr
+  // 개발: vite.proxy('/api' → localhost:8080)
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
 });
 
 // 요청 인터셉터: accessToken 자동 첨부
@@ -34,12 +36,10 @@ api.interceptors.response.use(
           if (!refreshToken) throw new Error("No refresh token");
           
           console.log("403 오류 발생! refreshToken으로 재발급 시도");
-          const res = await axios.post(
-            "/api/auth/refresh",
+          const res = await api.post(
+            "/auth/refresh",
             null,
-            {
-              headers: { Authorization: `Bearer ${refreshToken}` }
-            }
+            { headers: { Authorization: `Bearer ${refreshToken}` } }
           );
           
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
@@ -92,12 +92,10 @@ api.interceptors.response.use(
         if (!refreshToken) throw new Error("No refresh token");
         console.log("accessToken 만료! refreshToken으로 재발급 시도");
         // 명세서에 따라 헤더로 refreshToken 전송
-        const res = await axios.post(
-          "/api/auth/refresh",
+        const res = await api.post(
+          "/auth/refresh",
           null,
-          {
-            headers: { Authorization: `Bearer ${refreshToken}` }
-          }
+          { headers: { Authorization: `Bearer ${refreshToken}` } }
         );
         console.log("재발급 응답:", res.data);
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;

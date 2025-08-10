@@ -2,7 +2,8 @@ import axios from "axios";
 import SockJS from "sockjs-client";
 import { over } from "stompjs";
 
-axios.defaults.baseURL = "http://localhost:8080";
+axios.defaults.baseURL = "/api";
+const WS_BASE = import.meta.env.VITE_WS_BASE_URL || "https://api.languagemate.kr";
 
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
@@ -99,7 +100,7 @@ export async function uploadChatAudio(roomId, file) {
 export function initStompClient(roomId, onMessage) {
   const token = localStorage.getItem("accessToken");
   // 1) 토큰을 쿼리 파라미터로도 보내면 SockJS 핸드셰이크에 포함됩니다.
-  const socketUrl = `http://localhost:8080/ws/chat?token=${token}`;
+  const socketUrl = `${WS_BASE}/ws/chat?token=${token}`;
   const socket = new SockJS(socketUrl);
   const client = over(socket);
 
@@ -120,7 +121,7 @@ export function initStompClient(roomId, onMessage) {
 
 export function initGlobalStompClient(onRoomCreated) {
   const token = localStorage.getItem("accessToken");
-  const socketUrl = `http://localhost:8080/ws/chat?token=${token}`;
+  const socketUrl = `${WS_BASE}/ws/chat?token=${token}`;
   const socket = new SockJS(socketUrl);
   const client = over(socket);
 
