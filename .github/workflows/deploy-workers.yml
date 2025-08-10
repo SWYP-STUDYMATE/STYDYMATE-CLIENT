@@ -4,16 +4,9 @@ on:
   push:
     branches:
       - main
-      - develop
     paths:
       - 'workers/**'
       - '.github/workflows/deploy-workers.yml'
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - 'workers/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -22,7 +15,6 @@ on:
         default: 'staging'
         type: choice
         options:
-          - staging
           - production
       skip_tests:
         description: 'Skip tests (use with caution)'
@@ -116,122 +108,8 @@ jobs:
           find dist -name "*.js" -exec wc -c {} + | sort -n
 
   deploy-staging:
-    name: Deploy to Staging
-    needs: [lint-and-test]
+    if: false  # disabled; staging deployments removed per policy
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'pull_request') ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
-    defaults:
-      run:
-        working-directory: ./workers
-    environment:
-      name: staging
-      url: https://api-staging.languagemate.kr
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: workers/package-lock.json
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Create deployment
-        id: create_deployment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-              task: 'deploy:staging',
-              auto_merge: false,
-              required_contexts: [],
-              environment: 'staging',
-              description: 'Deploying to Cloudflare Workers staging'
-            });
-            core.setOutput('deployment_id', deployment.data.id);
-      
-      - name: Deploy to Staging
-        id: deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: 'workers'
-          environment: 'staging'
-          command: deploy --env staging
-          secrets: |
-            JWT_SECRET
-            INTERNAL_SECRET
-            CF_IMAGES_API_TOKEN
-            CF_ACCOUNT_HASH
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET_STAGING }}
-          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
-          CF_IMAGES_API_TOKEN: ${{ secrets.CF_IMAGES_API_TOKEN }}
-          CF_ACCOUNT_HASH: ${{ secrets.CF_ACCOUNT_HASH }}
-      
-      - name: Run deployment tests
-        id: deployment_tests
-        run: |
-          echo "Running deployment smoke tests..."
-          sleep 15  # Wait for deployment to propagate
-          
-          # Health check
-          echo "::group::Health Check"
-          curl -f -s https://api-staging.languagemate.kr/health | jq
-          echo "::endgroup::"
-          
-          # API status check
-          echo "::group::API Status"
-          curl -f -s https://api-staging.languagemate.kr/api/status | jq
-          echo "::endgroup::"
-          
-          # Test critical endpoints
-          echo "::group::Critical Endpoints Test"
-          endpoints=(
-            "/api/v1/models"
-            "/api/v1/room/test/info"
-          )
-          
-          for endpoint in "${endpoints[@]}"; do
-            echo "Testing $endpoint..."
-            response=$(curl -s -o /dev/null -w "%{http_code}" "https://api-staging.languagemate.kr$endpoint")
-            if [[ $response -ge 200 && $response -lt 500 ]]; then
-              echo "✅ $endpoint - Status: $response"
-            else
-              echo "❌ $endpoint - Status: $response"
-              exit 1
-            fi
-          done
-          echo "::endgroup::"
-      
-      - name: Update deployment status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deployment_id = '${{ steps.create_deployment.outputs.deployment_id }}';
-            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
-            
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: parseInt(deployment_id),
-              state: state,
-              target_url: 'https://api-staging.languagemate.kr',
-              description: state === 'success' ? 'Deployment successful' : 'Deployment failed'
-            });
 
   deploy-production:
     name: Deploy to Production

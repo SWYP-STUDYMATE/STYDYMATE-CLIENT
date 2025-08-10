@@ -31,3 +31,6 @@ dev-debug.log
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Build output
+dist/
