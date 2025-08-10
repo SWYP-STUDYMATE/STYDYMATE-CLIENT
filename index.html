@@ -12,8 +12,7 @@
   <link rel="icon" type="image/png" href="/assets/image286.png" />
   <link rel="apple-touch-icon" href="/assets/icon-192.png" />
 
-  <!-- PWA 매니페스트 -->
-  <link rel="manifest" href="/manifest.json" />
+  <!-- PWA 매니페스트 (vite-plugin-pwa가 /manifest.webmanifest를 주입) -->
   <meta name="theme-color" content="#3B82F6" />
 
   <!-- 리소스 힌트 -->
@@ -33,7 +32,7 @@
   <link rel="preload" href="/src/styles/index.css" as="style" />
 
   <!-- 모바일 앱 설정 -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 </head>
 
@@ -49,16 +48,7 @@
   <!-- 메인 앱 스크립트 -->
   <script type="module" src="/src/main.jsx"></script>
 
-  <!-- 서비스 워커 등록 -->
-  <script>
-    if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost')) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => console.log('SW registered:', registration))
-          .catch(error => console.log('SW registration failed:', error));
-      });
-    }
-  </script>
+  <!-- 서비스 워커는 vite-plugin-pwa가 자동 등록 (registerSW.js) -->
 </body>
 
 </html>

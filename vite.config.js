@@ -22,7 +22,8 @@ export default defineConfig(({ mode }) => {
       // PWA 플러그인
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'assets/*.png'],
+        // 중복 프리캐시 방지: 정적 에셋은 workbox.globPatterns로 처리하므로 favicon만 별도 포함
+        includeAssets: ['favicon.ico'],
         manifest: {
           name: 'STUDYMATE',
           short_name: 'STUDYMATE',
@@ -32,18 +33,14 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           icons: [
             {
-              src: '/assets/icon-192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: '/assets/icon-512.png',
-              sizes: '512x512',
+              src: '/assets/image286.png',
+              sizes: 'any',
               type: 'image/png'
             }
           ]
         },
         workbox: {
+          // png/svg 등 정적 파일은 여기서 자동 포함됨
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
           runtimeCaching: [
             {
@@ -92,9 +89,7 @@ export default defineConfig(({ mode }) => {
       },
       historyApiFallback: true,
     },
-    define: {
-      global: 'window'
-    },
+    // global 치환은 일부 UMD/CJS 번들(react scheduler 등)과 충돌 가능성이 있어 제거
     optimizeDeps: {
       include: ['sockjs-client', 'stompjs']
     },

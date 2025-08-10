@@ -14,7 +14,8 @@ export interface AuthUser {
 // Verify JWT token from STUDYMATE-SERVER with signature verification
 export async function verifyToken(token: string, secret: string): Promise<AuthUser | null> {
   try {
-    const payload: any = await verify(token, secret);
+    // 서버는 HS512로 서명하므로 동일 알고리즘으로 검증
+    const payload: any = await verify(token, secret, 'HS512');
     // Verify expiration (verify already checks exp, but keep explicit guard)
     if (payload.exp && payload.exp < Date.now() / 1000) {
       return null;
@@ -37,7 +38,7 @@ export async function authMiddleware(
   next: () => Promise<void>
 ) {
   const authHeader = c.req.header('Authorization');
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -52,7 +53,7 @@ export async function authMiddleware(
 
   // Store user in context
   c.set('user', user);
-  
+
   await next();
 }
 
@@ -62,7 +63,7 @@ export async function optionalAuthMiddleware(
   next: () => Promise<void>
 ) {
   const authHeader = c.req.header('Authorization');
-  
+
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
     const secret = c.env.JWT_SECRET || 'development-secret-change-in-production';
@@ -71,7 +72,7 @@ export async function optionalAuthMiddleware(
       c.set('user', user);
     }
   }
-  
+
   await next();
 }
 
@@ -127,17 +128,17 @@ export async function validateApiKey(
   next: () => Promise<void>
 ) {
   const apiKey = c.req.header('X-API-Key');
-  
+
   if (!apiKey) {
     return c.json({ error: 'API key required' }, 401);
   }
 
   // Check against environment variable
   const validKey = c.env.INTERNAL_API_KEY || 'default-key';
-  
+
   if (apiKey !== validKey) {
     return c.json({ error: 'Invalid API key' }, 401);
   }
-  
+
   await next();
 }

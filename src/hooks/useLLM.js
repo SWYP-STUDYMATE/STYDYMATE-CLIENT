@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+// Workers 경로: 프로덕션은 프록시('/workers' → workers.languagemate.kr), 개발은 vite proxy 사용
+const WORKERS_BASE_URL = (typeof window !== 'undefined')
+  ? (import.meta.env.VITE_WORKERS_BASE_URL || '/workers')
+  : '/workers';
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
@@ -12,11 +15,11 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/generate`, {
+      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           prompt,
@@ -44,11 +47,11 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/chat/completions`, {
+      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           messages,
@@ -76,11 +79,11 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/level-feedback`, {
+      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/level-feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           analysis,
@@ -108,11 +111,11 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/conversation-topics`, {
+      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/conversation-topics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           level,
@@ -141,11 +144,11 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/session-summary`, {
+      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/session-summary`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           transcript,
@@ -174,11 +177,11 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/generate`, {
+      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           prompt,
