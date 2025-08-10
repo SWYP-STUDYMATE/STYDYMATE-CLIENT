@@ -31,13 +31,8 @@ export default defineConfig(({ mode }) => {
           theme_color: '#3B82F6',
           background_color: '#ffffff',
           display: 'standalone',
-          icons: [
-            {
-              src: '/assets/image286.png',
-              sizes: 'any',
-              type: 'image/png'
-            }
-          ]
+           // 아이콘은 실제 해상도 파일 준비 이후 추가합니다 (ex. 192x192, 512x512)
+           icons: []
         },
         workbox: {
           // png/svg 등 정적 파일은 여기서 자동 포함됨
@@ -103,13 +98,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: mode !== 'production',
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: mode === 'production',
-          drop_debugger: mode === 'production'
-        }
-      },
       rollupOptions: {
         output: {
           manualChunks: (id) => {
