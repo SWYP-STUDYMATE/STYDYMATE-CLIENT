@@ -98,6 +98,9 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: mode !== 'production',
+      // scheduler 관련 번들 안전성 확인을 위해 우선 비압축 빌드로 검증
+      minify: false,
+      target: 'es2019',
       rollupOptions: {
         output: {
           // 기본 청킹 전략을 사용하여 UMD/ESM 호환성 이슈를 회피
