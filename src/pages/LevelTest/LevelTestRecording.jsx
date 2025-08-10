@@ -30,7 +30,10 @@ export default function LevelTestRecording() {
     loadQuestions,
     submitTest,
     isSubmitting,
-    submitError
+    submitError,
+    setIsSubmitting,
+    setTestResult,
+    currentRecording
   } = useLevelTestStore();
 
   const currentQuestion = questions[currentQuestionIndex];

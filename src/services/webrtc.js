@@ -502,7 +502,7 @@ class WebRTCConnectionManager {
    * @param {Function} callback - Callback function
    */
   on(name, callback) {
-    if (this.callbacks.hasOwnProperty(name)) {
+    if (Object.prototype.hasOwnProperty.call(this.callbacks, name)) {
       this.callbacks[name] = callback;
     }
   }
@@ -512,7 +512,7 @@ class WebRTCConnectionManager {
    * @param {string} name - Callback name
    */
   off(name) {
-    if (this.callbacks.hasOwnProperty(name)) {
+    if (Object.prototype.hasOwnProperty.call(this.callbacks, name)) {
       this.callbacks[name] = null;
     }
   }

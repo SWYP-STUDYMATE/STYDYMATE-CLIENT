@@ -15,7 +15,8 @@ export default function ChatWindow({
   currentUserId,
   onLeaveRoom,
 }) {
-  if (!room) return null;
+  // Guard early return without affecting hooks order
+  const isRoomMissing = !room;
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -26,6 +27,7 @@ export default function ChatWindow({
   const fileInputRef = useRef(null);
 
   useEffect(() => {
+    if (isRoomMissing) return undefined;
     fetchChatHistory(room.roomId).then(setMessages);
     clientRef.current = initStompClient(room.roomId, (msg) => {
       setMessages((prev) => [...prev, msg]);
@@ -35,8 +37,8 @@ export default function ChatWindow({
         sentAt: msg.sentAt,
       });
     });
-    return () => clientRef.current.disconnect();
-  }, [room.roomId]);
+    return () => clientRef.current?.disconnect?.();
+  }, [isRoomMissing, room?.roomId, onNewMessage]);
 
   const handleLeaveRoom = async () => {
     try {
@@ -72,10 +74,10 @@ export default function ChatWindow({
         messageType: audioData
           ? "AUDIO"
           : finalImageUrls.length
-          ? "IMAGE"
-          : text.trim()
-          ? "TEXT"
-          : "TEXT",
+            ? "IMAGE"
+            : text.trim()
+              ? "TEXT"
+              : "TEXT",
       })
     );
 
@@ -103,6 +105,7 @@ export default function ChatWindow({
     setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  if (isRoomMissing) return null;
   return (
     <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-full w-full">
       <ChatHeader

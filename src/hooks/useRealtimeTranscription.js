@@ -134,6 +134,7 @@ export function useRealtimeTranscription({
 
       return recorder;
     } catch (err) {
+      // Surface the error to the caller without redundant catch/throw
       throw err;
     }
   }, [processAudioChunk, onError]);

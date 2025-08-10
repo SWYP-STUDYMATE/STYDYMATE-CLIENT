@@ -61,6 +61,7 @@ const useLevelTestStore = create(
       // API 상태
       isSubmitting: false,
       submitError: null,
+      setIsSubmitting: (value) => set({ isSubmitting: value }),
       
       // API 메서드들
       loadQuestions: async () => {

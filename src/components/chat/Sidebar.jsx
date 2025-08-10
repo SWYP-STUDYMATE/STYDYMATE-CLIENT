@@ -29,26 +29,22 @@ export default function Sidebar({ active = "chat" }) {
         />
       </div>
       <Users
-        className={`w-6 h-6 cursor-pointer ${
-          active === "users" ? "text-white" : "text-green-200"
-        }`}
+        className={`w-6 h-6 cursor-pointer ${active === "users" ? "text-white" : "text-green-200"
+          }`}
       />
       <Home
-        className={`w-6 h-6 cursor-pointer ${
-          active === "home" ? "text-white" : "text-green-200"
-        }`}
+        className={`w-6 h-6 cursor-pointer ${active === "home" ? "text-white" : "text-green-200"
+          }`}
         onClick={handleHomeClick}
       />
       <MessageCircle
-        className={`w-6 h-6 cursor-pointer ${
-          active === "chat" ? "text-white" : "text-green-200"
-        }`}
+        className={`w-6 h-6 cursor-pointer ${active === "chat" ? "text-white" : "text-green-200"
+          }`}
         onClick={handleChatClick}
       />
       <Calendar
-        className={`w-6 h-6 cursor-pointer ${
-          active === "schedule" ? "text-white" : "text-green-200"
-        }`}
+        className={`w-6 h-6 cursor-pointer ${active === "schedule" ? "text-white" : "text-green-200"
+          }`}
         onClick={handleScheduleClick}
       />
     </aside>

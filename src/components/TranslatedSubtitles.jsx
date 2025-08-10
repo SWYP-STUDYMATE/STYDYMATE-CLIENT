@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Languages, Loader2, ChevronDown } from 'lucide-react';
 import { useRealtimeTranscription } from '../hooks/useRealtimeTranscription';
-import { useRealtimeTranslation } from '../hooks/useTranslation';
+import { useRealtimeTranslation, useTranslation as useTextTranslation } from '../hooks/useTranslation';
 import { DualSubtitleOverlay } from './SubtitleOverlay';
 
 const SUPPORTED_LANGUAGES = [
@@ -19,7 +19,7 @@ const SUPPORTED_LANGUAGES = [
   { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' }
 ];
 
-export default function TranslatedSubtitles({ 
+export default function TranslatedSubtitles({
   localStream,
   remoteStream,
   sourceLanguage = 'auto',
@@ -162,9 +162,8 @@ export default function TranslatedSubtitles({
                   onClick={() => {
                     setShowLanguageMenu(false);
                   }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                    !showTranslation ? 'bg-primary-50 dark:bg-primary-900/20' : ''
-                  }`}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${!showTranslation ? 'bg-primary-50 dark:bg-primary-900/20' : ''
+                    }`}
                 >
                   원본 언어로 보기
                 </button>
@@ -176,9 +175,8 @@ export default function TranslatedSubtitles({
                       setTargetLanguage(lang.code);
                       setShowLanguageMenu(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${
-                      targetLanguage === lang.code && showTranslation ? 'bg-primary-50 dark:bg-primary-900/20' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between ${targetLanguage === lang.code && showTranslation ? 'bg-primary-50 dark:bg-primary-900/20' : ''
+                      }`}
                   >
                     <span>{lang.name}</span>
                     <span>{lang.flag}</span>
@@ -231,14 +229,14 @@ export default function TranslatedSubtitles({
 }
 
 // 간단한 번역 자막 컴포넌트
-export function SimpleTranslatedSubtitle({ 
+export function SimpleTranslatedSubtitle({
   subtitle,
   targetLanguage = 'ko',
   className = ''
 }) {
   const [translated, setTranslated] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { translateText } = useTranslation({ targetLanguage });
+  const { translateText } = useTextTranslation({ targetLanguage });
 
   useEffect(() => {
     if (subtitle?.text) {

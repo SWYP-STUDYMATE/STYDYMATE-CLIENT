@@ -121,7 +121,7 @@ export default function DashboardLayout() {
                         <div className="mt-2">
                             <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
                                 <div
-                                className="h-full bg-[var(--green-500)] rounded-full transition-all duration-300"
+                                    className="h-full bg-[var(--green-500)] rounded-full transition-all duration-300"
                                     style={{ width: '75%' }}
                                 />
                             </div>

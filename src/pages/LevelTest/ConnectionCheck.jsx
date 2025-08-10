@@ -1,4 +1,4 @@
-export { default } from './LevelTestCheck';
+// Removed re-export to avoid duplicate default export
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
