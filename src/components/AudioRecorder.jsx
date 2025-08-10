@@ -176,13 +176,13 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
   return (
     <div className="flex flex-col items-center space-y-6">
       {/* Audio Visualizer */}
-      <div className="w-full max-w-md h-24 bg-[#F8F9FA] rounded-lg p-4 flex items-center justify-center">
+      <div className="w-full max-w-md h-24 bg-[var(--neutral-200)] rounded-lg p-4 flex items-center justify-center">
         {isRecording && !isPaused ? (
           <div className="flex items-center space-x-1 h-full">
             {[...Array(20)].map((_, i) => (
               <div
                 key={i}
-                className="w-3 bg-[#00C471] rounded-full transition-all duration-100"
+                className="w-3 bg-[var(--green-500)] rounded-full transition-all duration-100"
                 style={{
                   height: `${Math.random() * audioLevel * 100}%`,
                   opacity: 0.8
@@ -191,14 +191,14 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
             ))}
           </div>
         ) : (
-          <p className="text-[#929292] text-sm">
+          <p className="text-[var(--black-200)] text-sm">
             {isRecording ? '일시정지' : '녹음 대기 중'}
           </p>
         )}
       </div>
 
       {/* Recording Time */}
-      <div className="text-2xl font-bold text-[#111111]">
+      <div className="text-2xl font-bold text-[var(--black-500)]">
         {formatTime(recordingTime)}
       </div>
 
@@ -208,7 +208,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
           <button
             onClick={startRecording}
             disabled={disabled}
-            className="w-16 h-16 bg-[#EA4335] hover:bg-[#D33B2C] text-white rounded-full flex items-center justify-center transition-colors duration-200 disabled:bg-[#F1F3F5] disabled:cursor-not-allowed"
+            className="w-16 h-16 bg-[var(--red)] hover:bg-[var(--red-600)] text-white rounded-full flex items-center justify-center transition-colors duration-200 disabled:bg-[var(--neutral-100)] disabled:cursor-not-allowed"
           >
             <Mic className="w-8 h-8" />
           </button>
@@ -216,14 +216,14 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
           <>
             <button
               onClick={pauseRecording}
-              className="w-14 h-14 bg-[#4285F4] hover:bg-[#3374E0] text-white rounded-full flex items-center justify-center transition-colors duration-200"
+              className="w-14 h-14 bg-[var(--blue)] hover:bg-[var(--blue-600)] text-white rounded-full flex items-center justify-center transition-colors duration-200"
             >
               {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
             </button>
 
             <button
               onClick={stopRecording}
-              className="w-16 h-16 bg-[#111111] hover:bg-[#414141] text-white rounded-full flex items-center justify-center transition-colors duration-200"
+              className="w-16 h-16 bg-[var(--black-500)] hover:bg-[var(--black-400)] text-white rounded-full flex items-center justify-center transition-colors duration-200"
             >
               <Square className="w-8 h-8" />
             </button>
@@ -233,7 +233,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
 
       {/* Instructions */}
       <div className="text-center">
-        <p className="text-sm text-[#929292]">
+        <p className="text-sm text-[var(--black-200)]">
           {isRecording
             ? '녹음 중입니다. 정지 버튼을 눌러 녹음을 완료하세요.'
             : '마이크 버튼을 눌러 녹음을 시작하세요.'}

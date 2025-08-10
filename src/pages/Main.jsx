@@ -57,9 +57,9 @@ export default function Main() {
   }, [search, navigate, setProfileImage, setEnglishName]);
 
   const englishName = useProfileStore((state) => state.englishName);
-  
+
   return (
-    <div className="bg-[#fafafa] min-h-screen flex flex-col">
+    <div className="page-bg min-h-screen flex flex-col">
       <MainHeader />
       <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
         <Sidebar active="home" />

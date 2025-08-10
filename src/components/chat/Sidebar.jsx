@@ -20,7 +20,7 @@ export default function Sidebar({ active = "chat" }) {
   };
 
   return (
-    <aside className="min-w-20 bg-[#00C471] flex flex-col items-center py-6 space-y-8 rounded-xl">
+    <aside className="min-w-20 bg-[var(--green-500)] flex flex-col items-center py-6 space-y-8 rounded-xl">
       <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden">
         <img
           src={profileImage || "/default-profile.png"}

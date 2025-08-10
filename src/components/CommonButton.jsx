@@ -4,17 +4,17 @@ export default function CommonButton({ text, variant = "primary", className = ""
   let variantClass = "";
   switch (variant) {
     case "success":
-      variantClass = "bg-[#e6f9f1] text-[#00c471] hover:bg-[#009D5E] hover:text-white";
+      variantClass = "bg-[var(--green-50)] text-[var(--green-500)] hover:bg-[var(--green-600)] hover:text-white";
       break;
     case "secondary":
-      variantClass = "bg-[#f1f3f5] text-[#929292] hover:bg-[#444444] hover:text-white";
+      variantClass = "bg-[var(--neutral-100)] text-[var(--black-300)] hover:bg-[var(--black-400)] hover:text-white";
       break;
     case "complete":
-      variantClass = "bg-[#00C471] text-[#FFFFFF] hover:bg-[#009D5E]";
+      variantClass = "bg-[var(--green-500)] text-white hover:bg-[var(--green-600)]";
       break;
     case "primary":
     default:
-      variantClass = "bg-[#111111] text-white hover:bg-[#444444] disabled:bg-[#F1F3F5] disabled:text-[#929292]";
+      variantClass = "bg-[var(--black-500)] text-white hover:bg-[var(--black-400)] disabled:bg-[var(--neutral-100)] disabled:text-[var(--black-200)]";
       break;
   }
 

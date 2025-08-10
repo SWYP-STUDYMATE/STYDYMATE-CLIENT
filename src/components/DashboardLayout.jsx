@@ -42,26 +42,26 @@ export default function DashboardLayout() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA] flex">
+        <div className="min-h-screen page-bg flex">
             {/* Desktop Sidebar */}
-            <div className="hidden lg:block w-64 bg-white border-r border-[#E7E7E7]">
+            <div className="hidden lg:block w-64 bg-white border-r border-[var(--black-50)]">
                 <div className="p-6">
                     {/* Logo */}
                     <div className="flex items-center space-x-2 mb-8">
-                        <Globe className="w-8 h-8 text-[#00C471]" />
-                        <span className="text-[20px] font-bold text-[#111111]">STUDYMATE</span>
+                        <Globe className="w-8 h-8 text-[var(--green-500)]" />
+                        <span className="text-[20px] font-bold text-[var(--black-500)]">STUDYMATE</span>
                     </div>
 
                     {/* User Info */}
-                    <div className="flex items-center space-x-3 mb-8 p-3 bg-[#F8F9FA] rounded-lg">
+                    <div className="flex items-center space-x-3 mb-8 p-3 bg-[var(--neutral-200)] rounded-lg">
                         <img
                             src={profileImage || "/assets/basicProfilePic.png"}
                             alt={name}
                             className="w-10 h-10 rounded-full object-cover"
                         />
                         <div className="flex-1">
-                            <p className="text-[14px] font-semibold text-[#111111]">{name || "사용자"}</p>
-                            <p className="text-[12px] text-[#606060]">Level: Intermediate</p>
+                            <p className="text-[14px] font-semibold text-[var(--black-500)]">{name || "사용자"}</p>
+                            <p className="text-[12px] text-[var(--black-300)]">Level: Intermediate</p>
                         </div>
                     </div>
 
@@ -77,8 +77,8 @@ export default function DashboardLayout() {
                                     onClick={() => navigate(item.path)}
                                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg 
                   transition-colors duration-200 ${active
-                                            ? 'bg-[#00C471] text-white'
-                                            : 'text-[#606060] hover:bg-[#F1F3F5]'
+                                            ? 'bg-[var(--green-500)] text-white'
+                                            : 'text-[var(--black-300)] hover:bg-[var(--neutral-100)]'
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />
@@ -89,14 +89,14 @@ export default function DashboardLayout() {
                     </nav>
 
                     {/* Divider */}
-                    <div className="my-6 border-t border-[#E7E7E7]" />
+                    <div className="my-6 border-t border-[var(--black-50)]" />
 
                     {/* Secondary Menu */}
                     <nav className="space-y-2">
                         <button
                             onClick={() => navigate('/settings')}
                             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg 
-              text-[#606060] hover:bg-[#F1F3F5] transition-colors duration-200"
+              text-[var(--black-300)] hover:bg-[var(--neutral-100)] transition-colors duration-200"
                         >
                             <Settings className="w-5 h-5" />
                             <span className="text-[14px] font-medium">설정</span>
@@ -104,7 +104,7 @@ export default function DashboardLayout() {
                         <button
                             onClick={handleLogout}
                             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg 
-              text-[#606060] hover:bg-[#F1F3F5] transition-colors duration-200"
+              text-[var(--black-300)] hover:bg-[var(--neutral-100)] transition-colors duration-200"
                         >
                             <LogOut className="w-5 h-5" />
                             <span className="text-[14px] font-medium">로그아웃</span>
@@ -112,20 +112,20 @@ export default function DashboardLayout() {
                     </nav>
 
                     {/* Study Stats */}
-                    <div className="mt-8 p-4 bg-[#F8F9FA] rounded-lg">
-                        <p className="text-[12px] text-[#929292] mb-2">이번 주 학습</p>
+                    <div className="mt-8 p-4 bg-[var(--neutral-200)] rounded-lg">
+                        <p className="text-[12px] text-[var(--black-200)] mb-2">이번 주 학습</p>
                         <div className="flex items-baseline space-x-1">
-                            <span className="text-[24px] font-bold text-[#00C471]">12</span>
-                            <span className="text-[14px] text-[#606060]">시간</span>
+                            <span className="text-[24px] font-bold text-[var(--green-500)]">12</span>
+                            <span className="text-[14px] text-[var(--black-300)]">시간</span>
                         </div>
                         <div className="mt-2">
-                            <div className="h-2 bg-[#E7E7E7] rounded-full overflow-hidden">
+                            <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-[#00C471] rounded-full transition-all duration-300"
+                                className="h-full bg-[var(--green-500)] rounded-full transition-all duration-300"
                                     style={{ width: '75%' }}
                                 />
                             </div>
-                            <p className="text-[12px] text-[#929292] mt-1">목표의 75% 달성</p>
+                            <p className="text-[12px] text-[var(--black-200)] mt-1">목표의 75% 달성</p>
                         </div>
                     </div>
                 </div>
@@ -194,7 +194,7 @@ export default function DashboardLayout() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col">
                 {/* Mobile Header */}
-                <div className="lg:hidden bg-white border-b border-[#E7E7E7] px-4 py-3">
+                <div className="lg:hidden bg-white border-b border-[var(--black-50)] px-4 py-3">
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -202,7 +202,7 @@ export default function DashboardLayout() {
                         >
                             <Menu className="w-6 h-6" />
                         </button>
-                        <span className="text-[18px] font-bold text-[#111111]">STUDYMATE</span>
+                        <span className="text-[18px] font-bold text-[var(--black-500)]">STUDYMATE</span>
                         <div className="w-10" />
                     </div>
                 </div>

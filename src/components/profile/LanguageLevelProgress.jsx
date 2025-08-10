@@ -32,12 +32,12 @@ export default function LanguageLevelProgress({
     }, [progress, skills]);
 
     const levelColors = {
-        'A1': '#FFE4EC',
-        'A2': '#FFB3C1',
-        'B1': '#B3E5D1',
-        'B2': '#00C471',
-        'C1': '#00A85F',
-        'C2': '#008F50'
+        'A1': 'var(--green-50)',
+        'A2': 'var(--green-100)',
+        'B1': 'var(--green-100)',
+        'B2': 'var(--green-500)',
+        'C1': 'var(--green-600)',
+        'C2': 'var(--green-700)'
     };
 
     const getSkillName = (skill) => {
@@ -61,7 +61,7 @@ export default function LanguageLevelProgress({
     };
 
     return (
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+        <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>

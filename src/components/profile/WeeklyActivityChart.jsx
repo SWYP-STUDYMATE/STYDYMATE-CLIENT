@@ -31,17 +31,17 @@ export default function WeeklyActivityChart({ data = [] }) {
     };
 
     const getBarColor = (minutes) => {
-        if (minutes === 0) return 'bg-[#E7E7E7]';
-        if (minutes < 30) return 'bg-[#FFE4EC]';
-        if (minutes < 60) return 'bg-[#B3E5D1]';
-        return 'bg-[#00C471]';
+        if (minutes === 0) return 'bg-[var(--black-50)]';
+        if (minutes < 30) return 'bg-[var(--green-50)]';
+        if (minutes < 60) return 'bg-[var(--green-100)]';
+        return 'bg-[var(--green-500)]';
     };
 
     return (
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+        <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[18px] font-bold text-[#111111]">주간 활동</h3>
-                <span className="text-[12px] text-[#929292]">이번 주</span>
+                <h3 className="text-[18px] font-bold text-[var(--black-500)]">주간 활동</h3>
+                <span className="text-[12px] text-[var(--black-200)]">이번 주</span>
             </div>
 
             <div className="h-40 flex items-end justify-between gap-2">
@@ -53,22 +53,22 @@ export default function WeeklyActivityChart({ data = [] }) {
                                 style={{ height: getBarHeight(item.minutes, index) }}
                             />
                         </div>
-                        <span className="text-[12px] text-[#606060] font-medium">{item.day}</span>
+                        <span className="text-[12px] text-[var(--black-300)] font-medium">{item.day}</span>
                     </div>
                 ))}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-[#E7E7E7]">
+            <div className="mt-4 pt-4 border-t border-[var(--black-50)]">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-[14px] text-[#606060]">이번 주 총 학습시간</p>
-                        <p className="text-[20px] font-bold text-[#111111]">
+                        <p className="text-[14px] text-[var(--black-300)]">이번 주 총 학습시간</p>
+                        <p className="text-[20px] font-bold text-[var(--black-500)]">
                             {Math.floor(weeklyData.reduce((sum, d) => sum + d.minutes, 0) / 60)}시간 {weeklyData.reduce((sum, d) => sum + d.minutes, 0) % 60}분
                         </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-[14px] text-[#606060]">평균 세션</p>
-                        <p className="text-[20px] font-bold text-[#00C471]">
+                        <p className="text-[14px] text-[var(--black-300)]">평균 세션</p>
+                        <p className="text-[20px] font-bold text-[var(--green-500)]">
                             {Math.round(weeklyData.filter(d => d.sessions > 0).reduce((sum, d) => sum + d.minutes, 0) / weeklyData.filter(d => d.sessions > 0).length || 0)}분
                         </p>
                     </div>
