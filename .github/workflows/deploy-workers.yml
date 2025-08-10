@@ -44,16 +44,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: workers/package-lock.json
+
+      - name: Install root dev dependencies (for shared ESLint config)
+        run: npm ci
+        working-directory: ./
       
-      - name: Install dependencies
+      - name: Install workers dependencies
         run: npm ci
       
-      - name: Run linting
+      - name: Run linting (root ESLint v9)
         id: lint
         run: |
           echo "::group::ESLint Output"
           npm run lint
           echo "::endgroup::"
+        working-directory: ./
       
       - name: Run type checking
         id: typecheck

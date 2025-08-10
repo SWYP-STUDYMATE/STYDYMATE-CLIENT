@@ -1,9 +1,22 @@
 import { useState, useCallback } from 'react';
 
-// Workers 경로: 프로덕션은 프록시('/workers' → workers.languagemate.kr), 개발은 vite proxy 사용
-const WORKERS_BASE_URL = (typeof window !== 'undefined')
-  ? (import.meta.env.VITE_WORKERS_BASE_URL || '/workers')
-  : '/workers';
+// Workers 경로: 우선순위 VITE_WORKERS_API_URL → VITE_WORKERS_BASE_URL → '/workers'
+function resolveWorkersBaseUrl() {
+  if (typeof window === 'undefined') return '/workers';
+  const primary = import.meta.env.VITE_WORKERS_API_URL;
+  const secondary = import.meta.env.VITE_WORKERS_BASE_URL;
+  const base = primary || secondary || '/workers';
+  // remove trailing slash
+  return base.replace(/\/$/, '');
+}
+
+function joinUrl(base, path) {
+  const left = base.replace(/\/$/, '');
+  const right = path.startsWith('/') ? path : `/${path}`;
+  return `${left}${right}`;
+}
+
+const WORKERS_BASE_URL = resolveWorkersBaseUrl();
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
@@ -15,7 +28,7 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/generate`, {
+      const response = await fetch(joinUrl(WORKERS_BASE_URL, '/api/v1/llm/generate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +60,7 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/chat/completions`, {
+      const response = await fetch(joinUrl(WORKERS_BASE_URL, '/api/v1/llm/chat/completions'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +92,7 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/level-feedback`, {
+      const response = await fetch(joinUrl(WORKERS_BASE_URL, '/api/v1/llm/level-feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +124,7 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/conversation-topics`, {
+      const response = await fetch(joinUrl(WORKERS_BASE_URL, '/api/v1/llm/conversation-topics'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +157,7 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/session-summary`, {
+      const response = await fetch(joinUrl(WORKERS_BASE_URL, '/api/v1/llm/session-summary'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +190,7 @@ export function useLLM() {
     setError(null);
 
     try {
-      const response = await fetch(`${WORKERS_BASE_URL}/api/v1/llm/generate`, {
+      const response = await fetch(joinUrl(WORKERS_BASE_URL, '/api/v1/llm/generate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
