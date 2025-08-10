@@ -1,6 +1,7 @@
 // Authentication middleware and utilities
 
 import { Context } from 'hono';
+import { verify } from 'hono/jwt';
 import { Env } from '../index';
 
 export interface AuthUser {
@@ -10,21 +11,14 @@ export interface AuthUser {
   exp: number;
 }
 
-// Verify JWT token from STUDYMATE-SERVER
-export async function verifyToken(token: string): Promise<AuthUser | null> {
+// Verify JWT token from STUDYMATE-SERVER with signature verification
+export async function verifyToken(token: string, secret: string): Promise<AuthUser | null> {
   try {
-    // Parse JWT without verification (since we trust STUDYMATE-SERVER)
-    // In production, you might want to verify with a shared secret
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
-    const payload = JSON.parse(atob(parts[1]));
-    
-    // Check expiration
+    const payload: any = await verify(token, secret);
+    // Verify expiration (verify already checks exp, but keep explicit guard)
     if (payload.exp && payload.exp < Date.now() / 1000) {
       return null;
     }
-
     return {
       userId: payload.userId || payload.sub,
       email: payload.email,
@@ -49,7 +43,8 @@ export async function authMiddleware(
   }
 
   const token = authHeader.slice(7);
-  const user = await verifyToken(token);
+  const secret = c.env.JWT_SECRET || 'development-secret-change-in-production';
+  const user = await verifyToken(token, secret);
 
   if (!user) {
     return c.json({ error: 'Invalid or expired token' }, 401);
@@ -70,7 +65,8 @@ export async function optionalAuthMiddleware(
   
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
-    const user = await verifyToken(token);
+    const secret = c.env.JWT_SECRET || 'development-secret-change-in-production';
+    const user = await verifyToken(token, secret);
     if (user) {
       c.set('user', user);
     }

@@ -13,7 +13,7 @@
     "tail:staging": "wrangler tail --env staging",
     "tail:production": "wrangler tail --env production",
     "format": "prettier --write .",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

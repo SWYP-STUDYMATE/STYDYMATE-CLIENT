@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppBindings as Env } from '../index';
-import { validateAuth } from '../utils/auth';
+import { authMiddleware } from '../utils/auth';
 import { getAggregatedMetrics } from '../middleware/analytics';
 import { successResponse, errorResponse } from '../utils/response';
 
@@ -16,7 +16,7 @@ const metricsQuerySchema = z.object({
 });
 
 // 메트릭 조회
-app.get('/metrics', (validateAuth as any), async (c) => {
+app.get('/metrics', authMiddleware as any, async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -47,7 +47,7 @@ app.get('/metrics', (validateAuth as any), async (c) => {
 });
 
 // 대시보드 데이터
-app.get('/dashboard', (validateAuth as any), async (c) => {
+app.get('/dashboard', authMiddleware as any, async (c) => {
     try {
         const now = new Date();
         const ranges = {
@@ -121,7 +121,7 @@ app.get('/stream', async (c) => {
 });
 
 // 에러 통계
-app.get('/errors', (validateAuth as any), async (c) => {
+app.get('/errors', authMiddleware as any, async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -162,7 +162,7 @@ app.get('/errors', (validateAuth as any), async (c) => {
 });
 
 // AI 사용량 통계
-app.get('/ai-usage', (validateAuth as any), async (c) => {
+app.get('/ai-usage', authMiddleware as any, async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
@@ -200,7 +200,7 @@ app.get('/ai-usage', (validateAuth as any), async (c) => {
 });
 
 // 성능 보고서
-app.get('/performance', (validateAuth as any), async (c) => {
+app.get('/performance', authMiddleware as any, async (c) => {
     try {
         const query = metricsQuerySchema.parse(c.req.query());
 
