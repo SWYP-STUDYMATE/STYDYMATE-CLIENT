@@ -66,9 +66,9 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
 
   const getTimerColor = () => {
     const percentage = (timerSeconds / duration) * 100;
-    if (percentage > 50) return '#00C471'; // Green
-    if (percentage > 20) return '#FFA500'; // Orange
-    return '#EA4335'; // Red
+    if (percentage > 50) return 'var(--green-500)';
+    if (percentage > 20) return 'var(--warning-yellow)';
+    return 'var(--red)';
   };
 
   const isWarning = timerSeconds <= 30;
@@ -83,7 +83,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
             cx="96"
             cy="96"
             r="88"
-            stroke="#E7E7E7"
+            stroke="var(--black-50)"
             strokeWidth="8"
             fill="none"
           />
@@ -104,12 +104,12 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
 
         {/* Timer Display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Clock className={`w-8 h-8 mb-2 ${isWarning ? 'text-[#EA4335]' : 'text-[#929292]'}`} />
-          <div className={`text-3xl font-bold ${isWarning ? 'text-[#EA4335]' : 'text-[#111111]'}`}>
+          <Clock className={`w-8 h-8 mb-2 ${isWarning ? 'text-[var(--red)]' : 'text-[var(--black-200)]'}`} />
+          <div className={`text-3xl font-bold ${isWarning ? 'text-[var(--red)]' : 'text-[var(--black-500)]'}`}>
             {formatTime(timerSeconds)}
           </div>
           {isWarning && (
-            <div className="text-sm text-[#EA4335] mt-1 animate-pulse">
+            <div className="text-sm text-[var(--red)] mt-1 animate-pulse">
               시간 초과 임박
             </div>
           )}
@@ -121,14 +121,14 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
         {!isTimerRunning ? (
           <button
             onClick={startTimer}
-            className="px-6 py-2 bg-[#00C471] hover:bg-[#00B267] text-white rounded-lg font-medium transition-colors duration-200"
+            className="px-6 py-2 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-lg font-medium transition-colors duration-200"
           >
             타이머 시작
           </button>
         ) : (
           <button
             onClick={stopTimer}
-            className="px-6 py-2 bg-[#929292] hover:bg-[#606060] text-white rounded-lg font-medium transition-colors duration-200"
+            className="px-6 py-2 bg-[var(--black-200)] hover:bg-[var(--black-300)] text-white rounded-lg font-medium transition-colors duration-200"
           >
             타이머 정지
           </button>
@@ -136,7 +136,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
 
         <button
           onClick={() => setTimerSeconds(duration)}
-          className="px-6 py-2 bg-white hover:bg-[#F8F9FA] text-[#111111] border border-[#E7E7E7] rounded-lg font-medium transition-colors duration-200"
+          className="px-6 py-2 bg-white hover:bg-[var(--neutral-100)] text-[var(--black-500)] border border-[var(--black-50)] rounded-lg font-medium transition-colors duration-200"
         >
           리셋
         </button>
@@ -144,9 +144,9 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
 
       {/* Warning Message */}
       {isWarning && (
-        <div className="flex items-center space-x-2 p-3 bg-[#FFF4E6] rounded-lg">
-          <AlertCircle className="w-5 h-5 text-[#FFA500]" />
-          <p className="text-sm text-[#606060]">
+        <div className="flex items-center space-x-2 p-3 bg-[var(--warning-50)] rounded-lg">
+          <AlertCircle className="w-5 h-5 text-[var(--warning-yellow)]" />
+          <p className="text-sm text-[var(--black-300)]">
             남은 시간이 30초 이하입니다. 답변을 마무리해주세요.
           </p>
         </div>
@@ -154,7 +154,7 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
 
       {/* Instructions */}
       <div className="text-center max-w-md">
-        <p className="text-sm text-[#929292]">
+        <p className="text-sm text-[var(--black-200)]">
           각 질문당 {Math.floor(duration / 60)}분의 시간이 주어집니다.
           시간 내에 답변을 완료해주세요.
         </p>

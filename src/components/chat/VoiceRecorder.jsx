@@ -178,30 +178,30 @@ export default function VoiceRecorder({ onSend, onCancel }) {
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--black-50)] p-4 z-50">
             <div className="max-w-2xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">음성 메시지</h3>
+                    <h3 className="text-lg font-medium text-[var(--black-500)]">음성 메시지</h3>
                     <button
                         onClick={handleCancel}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
                     >
-                        <X className="w-5 h-5 text-gray-500" />
+                        <X className="w-5 h-5 text-[var(--black-200)]" />
                     </button>
                 </div>
 
                 {/* Waveform Visualizer */}
-                <div className="bg-gray-100 rounded-lg p-6 mb-4">
+                <div className="bg-[var(--neutral-100)] rounded-lg p-6 mb-4">
                     <div className="flex items-center justify-center gap-1 h-16">
                         {waveformLevels.map((level, index) => (
                             <div
                                 key={index}
                                 className={`w-1 bg-gradient-to-t rounded-full transition-all duration-150 ${isRecording
-                                        ? 'from-red-500 to-red-400'
-                                        : audioBlob
-                                            ? 'from-[#00C471] to-[#00A85F]'
-                                            : 'from-gray-400 to-gray-300'
+                                    ? 'from-[var(--red-500)] to-[var(--red-400)]'
+                                    : audioBlob
+                                        ? 'from-[var(--green-500)] to-[var(--green-700)]'
+                                        : 'from-[var(--black-300)] to-[var(--black-200)]'
                                     }`}
                                 style={{
                                     height: `${level * 100}%`,
@@ -213,7 +213,7 @@ export default function VoiceRecorder({ onSend, onCancel }) {
 
                     {/* Time Display */}
                     <div className="text-center mt-2">
-                        <span className={`text-2xl font-mono ${isRecording ? 'text-red-500' : 'text-gray-700'
+                        <span className={`text-2xl font-mono ${isRecording ? 'text-[var(--red-500)]' : 'text-[var(--black-500)]'
                             }`}>
                             {formatTime(recordingTime)}
                         </span>
@@ -225,7 +225,7 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                     {!isRecording && !audioBlob && (
                         <button
                             onClick={startRecording}
-                            className="flex items-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+                            className="flex items-center gap-2 px-6 py-3 bg-[var(--red-500)] hover:bg-[var(--red-600)] text-white rounded-full transition-colors"
                         >
                             <Mic className="w-5 h-5" />
                             <span>녹음 시작</span>
@@ -235,7 +235,7 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                     {isRecording && (
                         <button
                             onClick={stopRecording}
-                            className="flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-full transition-colors"
+                            className="flex items-center gap-2 px-6 py-3 bg-[var(--black-800)] hover:bg-[var(--black-900)] text-white rounded-full transition-colors"
                         >
                             <Square className="w-5 h-5" />
                             <span>녹음 중지</span>
@@ -246,22 +246,22 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                         <>
                             <button
                                 onClick={startRecording}
-                                className="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors"
+                                className="p-3 bg-[var(--neutral-100)] hover:bg-[var(--black-100)] rounded-full transition-colors"
                                 title="다시 녹음"
                             >
-                                <Mic className="w-5 h-5 text-gray-700" />
+                                <Mic className="w-5 h-5 text-[var(--black-300)]" />
                             </button>
 
                             <button
                                 onClick={playRecording}
-                                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors"
+                                className="px-6 py-3 bg-[var(--neutral-100)] hover:bg-[var(--black-100)] text-[var(--black-300)] rounded-full transition-colors"
                             >
                                 {isPlaying ? '재생 중...' : '미리 듣기'}
                             </button>
 
                             <button
                                 onClick={handleSend}
-                                className="flex items-center gap-2 px-6 py-3 bg-[#00C471] hover:bg-[#00B267] text-white rounded-full transition-colors"
+                                className="flex items-center gap-2 px-6 py-3 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-full transition-colors"
                             >
                                 <Send className="w-5 h-5" />
                                 <span>전송</span>

@@ -10,7 +10,7 @@ export default function AudioSessionRoom() {
   const { roomId } = useParams();
   const [callDuration, setCallDuration] = useState(0);
   const [currentLanguage, setCurrentLanguage] = useState('ko');
-  
+
   const intervalRef = useRef(null);
   const startTimeRef = useRef(null);
   const localAudioRef = useRef(null);
@@ -40,7 +40,7 @@ export default function AudioSessionRoom() {
   useEffect(() => {
     remoteStreams.forEach((stream, peerId) => {
       let audioElement = remoteAudiosRef.current.get(peerId);
-      
+
       if (!audioElement) {
         audioElement = document.createElement('audio');
         audioElement.autoplay = true;
@@ -48,7 +48,7 @@ export default function AudioSessionRoom() {
         document.body.appendChild(audioElement);
         remoteAudiosRef.current.set(peerId, audioElement);
       }
-      
+
       if (audioElement.srcObject !== stream) {
         audioElement.srcObject = stream;
       }
@@ -68,7 +68,7 @@ export default function AudioSessionRoom() {
   useEffect(() => {
     if (connectionState === 'connected' && !startTimeRef.current) {
       startTimeRef.current = Date.now();
-      
+
       // 통화 시간 업데이트
       intervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -99,7 +99,7 @@ export default function AudioSessionRoom() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -127,13 +127,13 @@ export default function AudioSessionRoom() {
   const getConnectionIcon = () => {
     switch (stats.quality) {
       case 'good':
-        return <Signal className="w-4 h-4 text-[#00C471]" />;
+        return <Signal className="w-4 h-4 text-[var(--green-500)]" />;
       case 'fair':
-        return <Signal className="w-4 h-4 text-[#FFA500]" />;
+        return <Signal className="w-4 h-4 text-[var(--warning-yellow)]" />;
       case 'poor':
-        return <SignalLow className="w-4 h-4 text-[#EA4335]" />;
+        return <SignalLow className="w-4 h-4 text-[var(--red)]" />;
       default:
-        return <Signal className="w-4 h-4 text-[#929292]" />;
+        return <Signal className="w-4 h-4 text-[var(--black-200)]" />;
     }
   };
 
@@ -156,14 +156,14 @@ export default function AudioSessionRoom() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F] flex flex-col">
+    <div className="min-h-screen bg-[var(--black-600)] flex flex-col">
       {/* 헤더 */}
-      <div className="bg-[#1A1A1A] px-6 py-4">
+      <div className="bg-[var(--black-700)] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-white text-[18px] font-medium">음성 세션</h1>
             {connectionState === 'connected' && (
-              <div className="flex items-center gap-4 text-[#929292] text-sm">
+              <div className="flex items-center gap-4 text-[var(--black-200)] text-sm">
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
                   <span>{formatDuration(callDuration)}</span>
@@ -172,16 +172,16 @@ export default function AudioSessionRoom() {
                   {getConnectionIcon()}
                   <span>{getConnectionText()}</span>
                 </div>
-                <div className="text-sm text-[#E7E7E7]">
+                <div className="text-sm text-[var(--black-50)]">
                   참가자: {remoteStreams.size + 1}명
                 </div>
               </div>
             )}
           </div>
-          
+
           {/* 언어 표시 */}
           <div className="flex items-center gap-2">
-            <span className="text-[#929292] text-sm">현재 언어:</span>
+            <span className="text-[var(--black-200)] text-sm">현재 언어:</span>
             <span className="text-white text-sm font-medium">
               {getLanguageName(currentLanguage)}
             </span>
@@ -202,7 +202,7 @@ export default function AudioSessionRoom() {
             )}
 
             {connectionState === 'connecting' && (
-              <div className="text-[#4285F4]">
+              <div className="text-[var(--blue)]">
                 <PhoneOutgoing className="w-16 h-16 animate-pulse mx-auto mb-4" />
                 <p className="text-xl font-medium">상대방과 연결 중입니다...</p>
               </div>
@@ -211,22 +211,22 @@ export default function AudioSessionRoom() {
             {connectionState === 'connected' && (
               <div>
                 <div className="relative inline-block mb-6">
-                  <div className="w-48 h-48 rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                    <Phone className="w-24 h-24 text-[#00C471]" />
+                  <div className="w-48 h-48 rounded-full bg-[var(--black-700)] flex items-center justify-center">
+                    <Phone className="w-24 h-24 text-[var(--green-500)]" />
                   </div>
                   <div className="absolute inset-0 rounded-full">
-                    <div className="absolute inset-0 rounded-full border-4 border-[#00C471] animate-ping" />
-                    <div className="absolute inset-0 rounded-full border-4 border-[#00C471]" />
+                    <div className="absolute inset-0 rounded-full border-4 border-[var(--green-500)] animate-ping" />
+                    <div className="absolute inset-0 rounded-full border-4 border-[var(--green-500)]" />
                   </div>
                 </div>
-                
+
                 <h2 className="text-white text-[28px] font-bold mb-4">통화 연결됨</h2>
-                <p className="text-[#00C471] text-lg mb-2">
+                <p className="text-[var(--green-500)] text-lg mb-2">
                   {remoteStreams.size}명의 참가자와 통화 중
                 </p>
-                
+
                 {/* 통화 품질 정보 */}
-                <div className="flex items-center justify-center gap-6 mt-6 text-sm text-[#929292]">
+                <div className="flex items-center justify-center gap-6 mt-6 text-sm text-[var(--black-200)]">
                   <div>비트레이트: {stats.bitrate}kbps</div>
                   <div>패킷 손실: {stats.packetLoss}%</div>
                   <div>지연시간: {stats.latency}ms</div>
@@ -235,14 +235,14 @@ export default function AudioSessionRoom() {
             )}
 
             {connectionState === 'disconnected' && (
-              <div className="text-[#EA4335]">
+              <div className="text-[var(--red)]">
                 <Phone className="w-16 h-16 mx-auto mb-4" />
                 <p className="text-xl font-medium">통화가 종료되었습니다</p>
               </div>
             )}
 
             {connectionState === 'failed' && (
-              <div className="text-[#EA4335]">
+              <div className="text-[var(--red)]">
                 <Phone className="w-16 h-16 mx-auto mb-4" />
                 <p className="text-xl font-medium">연결 실패</p>
                 <p className="text-sm mt-2">네트워크 상태를 확인해주세요</p>
@@ -252,20 +252,20 @@ export default function AudioSessionRoom() {
 
           {/* 에러 메시지 */}
           {error && (
-            <div className="bg-[#EA4335]/10 border border-[#EA4335] rounded-lg p-4 mb-8 text-center">
-              <p className="text-[#EA4335]">{error}</p>
+            <div className="bg-[rgba(var(--red-rgb),0.1)] border border-[var(--red)] rounded-lg p-4 mb-8 text-center">
+              <p className="text-[var(--red)]">{error}</p>
             </div>
           )}
 
           {/* 음성 웨이브 시각화 (연결됨 상태에서만) */}
           {connectionState === 'connected' && (
-            <div className="bg-[#1A1A1A] rounded-lg p-6 mb-8">
+            <div className="bg-[var(--black-700)] rounded-lg p-6 mb-8">
               <div className="flex items-center justify-center h-24">
                 <div className="flex items-center gap-1">
                   {[...Array(20)].map((_, i) => (
                     <div
                       key={i}
-                      className="w-2 bg-[#00C471] rounded-full animate-pulse"
+                      className="w-2 bg-[var(--green-500)] rounded-full animate-pulse"
                       style={{
                         height: `${Math.random() * 60 + 20}px`,
                         animationDelay: `${i * 0.1}s`,
@@ -275,7 +275,7 @@ export default function AudioSessionRoom() {
                   ))}
                 </div>
               </div>
-              <p className="text-center text-[#929292] text-sm mt-4">
+              <p className="text-center text-[var(--black-200)] text-sm mt-4">
                 음성 통화 진행 중...
               </p>
             </div>
@@ -284,7 +284,7 @@ export default function AudioSessionRoom() {
       </div>
 
       {/* 컨트롤 바 */}
-      <div className="bg-[#0F0F0F] p-6">
+      <div className="bg-[var(--black-600)] p-6">
         <div className="max-w-4xl mx-auto">
           <VideoControls
             isMuted={!isAudioEnabled}

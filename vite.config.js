@@ -69,6 +69,13 @@ export default defineConfig(({ mode }) => {
         }
       })
     ],
+    // PostCSS 단계에서 발생하는 환경별 충돌을 회피하기 위해 명시적으로 비활성화합니다.
+    // Tailwind v4 + Vite7 조합에서는 Lightning CSS가 기본적으로 벤더 프리픽스를 처리합니다.
+    css: {
+      postcss: {
+        plugins: []
+      }
+    },
     server: {
       port: 3000,
       proxy: {
