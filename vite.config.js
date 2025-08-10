@@ -100,29 +100,7 @@ export default defineConfig(({ mode }) => {
       sourcemap: mode !== 'production',
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            // node_modules 기반 청킹
-            if (id.includes('node_modules')) {
-              if (id.includes('react-router') || id.includes('react-dom')) {
-                return 'react-vendor';
-              }
-              if (id.includes('lucide-react') || id.includes('react-select') || id.includes('emoji-picker-react')) {
-                return 'ui-vendor';
-              }
-              if (id.includes('axios') || id.includes('zustand') || id.includes('jwt-decode')) {
-                return 'utils-vendor';
-              }
-              if (id.includes('sockjs') || id.includes('stomp')) {
-                return 'realtime-vendor';
-              }
-              return 'vendor';
-            }
-          },
-          // 청크 파일명 최적화
-          chunkFileNames: (chunkInfo) => {
-            const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
-            return `js/[name]-${facadeModuleId}-[hash].js`;
-          },
+          // 기본 청킹 전략을 사용하여 UMD/ESM 호환성 이슈를 회피
           assetFileNames: 'assets/[name]-[hash][extname]'
         }
       },

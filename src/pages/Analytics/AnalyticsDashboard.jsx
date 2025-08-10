@@ -3,7 +3,14 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { Activity, TrendingUp, AlertCircle, Clock, Users, Globe, Zap, Server } from 'lucide-react';
 
 // 색상 팔레트 (디자인 시스템 준수)
-const COLORS = ['#00C471', '#EA4335', '#4285F4', '#33D08D', '#FFA500', '#606060'];
+const COLORS = [
+  'var(--green-500)',
+  'var(--red-500)',
+  'var(--blue)',
+  'var(--green-400)',
+  'var(--warning-yellow)',
+  'var(--black-300)'
+];
 
 export default function AnalyticsDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -66,10 +73,10 @@ export default function AnalyticsDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+      <div className="min-h-screen page-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00C471] mx-auto mb-4"></div>
-          <p className="text-[16px] text-[#666666]">Loading analytics...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--green-500)] mx-auto mb-4"></div>
+          <p className="text-[16px] text-[var(--black-300)]">Loading analytics...</p>
         </div>
       </div>
     );
@@ -83,11 +90,11 @@ export default function AnalyticsDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-[28px] font-bold text-[#111111]">Analytics Dashboard</h1>
+          <h1 className="text-[28px] font-bold text-[var(--black-500)]">Analytics Dashboard</h1>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="px-4 py-2 border border-[#E7E7E7] rounded-lg bg-white text-[#111111]"
+            className="px-4 py-2 border border-[var(--black-50)] rounded-lg bg-white text-[var(--black-500)]"
           >
             <option value="24h">Last 24 hours</option>
             <option value="7d">Last 7 days</option>
@@ -130,25 +137,25 @@ export default function AnalyticsDashboard() {
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Response Time Chart */}
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-            <h3 className="text-[18px] font-bold text-[#111111] mb-4">Response Time Trend</h3>
+          <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+            <h3 className="text-[18px] font-bold text-[var(--black-500)] mb-4">Response Time Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={generateTimeSeriesData()}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
-                <XAxis dataKey="time" stroke="#666666" />
-                <YAxis stroke="#666666" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--neutral-100)" />
+                <XAxis dataKey="time" stroke="var(--black-300)" />
+                <YAxis stroke="var(--black-300)" />
                 <Tooltip />
                 <Line
                   type="monotone"
                   dataKey="avg"
-                  stroke="#00C471"
+                  stroke="var(--green-500)"
                   strokeWidth={2}
                   dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="p95"
-                  stroke="#FF6B6B"
+                  stroke="var(--red-400)"
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
@@ -158,15 +165,15 @@ export default function AnalyticsDashboard() {
           </div>
 
           {/* Top Endpoints Chart */}
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-            <h3 className="text-[18px] font-bold text-[#111111] mb-4">Top Endpoints</h3>
+          <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+            <h3 className="text-[18px] font-bold text-[var(--black-500)] mb-4">Top Endpoints</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={formatTopPaths(topPaths)} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
-                <XAxis type="number" stroke="#666666" />
-                <YAxis dataKey="path" type="category" stroke="#666666" width={100} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--neutral-100)" />
+                <XAxis type="number" stroke="var(--black-300)" />
+                <YAxis dataKey="path" type="category" stroke="var(--black-300)" width={100} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#00C471" />
+                <Bar dataKey="count" fill="var(--green-500)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -174,8 +181,8 @@ export default function AnalyticsDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Error Distribution */}
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-            <h3 className="text-[18px] font-bold text-[#111111] mb-4">Error Distribution</h3>
+          <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+            <h3 className="text-[18px] font-bold text-[var(--black-500)] mb-4">Error Distribution</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -197,23 +204,23 @@ export default function AnalyticsDashboard() {
           </div>
 
           {/* Geographic Distribution */}
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-            <h3 className="text-[18px] font-bold text-[#111111] mb-4 flex items-center">
+          <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+            <h3 className="text-[18px] font-bold text-[var(--black-500)] mb-4 flex items-center">
               <Globe className="w-5 h-5 mr-2" />
               Geographic Distribution
             </h3>
             <div className="space-y-3">
               {formatGeoDistribution(geoDistribution)?.slice(0, 5).map((country, index) => (
                 <div key={index} className="flex justify-between items-center">
-                  <span className="text-[14px] text-[#666666]">{country.country}</span>
+                  <span className="text-[14px] text-[var(--black-300)]">{country.country}</span>
                   <div className="flex items-center">
-                    <div className="w-24 h-2 bg-[#E7E7E7] rounded-full mr-2">
+                    <div className="w-24 h-2 bg-[var(--black-50)] rounded-full mr-2">
                       <div
-                        className="h-full bg-[#00C471] rounded-full"
+                        className="h-full bg-[var(--green-500)] rounded-full"
                         style={{ width: `${(country.percentage)}%` }}
                       />
                     </div>
-                    <span className="text-[14px] font-semibold text-[#111111] w-12 text-right">
+                    <span className="text-[14px] font-semibold text-[var(--black-500)] w-12 text-right">
                       {country.percentage}%
                     </span>
                   </div>
@@ -223,33 +230,33 @@ export default function AnalyticsDashboard() {
           </div>
 
           {/* Real-time Metrics */}
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-            <h3 className="text-[18px] font-bold text-[#111111] mb-4 flex items-center">
+          <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+            <h3 className="text-[18px] font-bold text-[var(--black-500)] mb-4 flex items-center">
               <Server className="w-5 h-5 mr-2" />
               Real-time Metrics
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[14px] text-[#666666]">Active Connections</span>
-                <span className="text-[16px] font-semibold text-[#111111]">
+                <span className="text-[14px] text-[var(--black-300)]">Active Connections</span>
+                <span className="text-[16px] font-semibold text-[var(--black-500)]">
                   {realTimeMetrics?.activeConnections || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[14px] text-[#666666]">Req/sec</span>
-                <span className="text-[16px] font-semibold text-[#111111]">
+                <span className="text-[14px] text-[var(--black-300)]">Req/sec</span>
+                <span className="text-[16px] font-semibold text-[var(--black-500)]">
                   {realTimeMetrics?.requestsPerSecond || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[14px] text-[#666666]">CPU Usage</span>
-                <span className="text-[16px] font-semibold text-[#111111]">
+                <span className="text-[14px] text-[var(--black-300)]">CPU Usage</span>
+                <span className="text-[16px] font-semibold text-[var(--black-500)]">
                   {realTimeMetrics?.cpuUsage || 0}%
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[14px] text-[#666666]">Memory Usage</span>
-                <span className="text-[16px] font-semibold text-[#111111]">
+                <span className="text-[14px] text-[var(--black-300)]">Memory Usage</span>
+                <span className="text-[16px] font-semibold text-[var(--black-500)]">
                   {realTimeMetrics?.memoryUsage || 0}MB
                 </span>
               </div>
@@ -267,17 +274,17 @@ function MetricCard({ icon: Icon, title, value, change, color }) {
   const isGoodChange = (title.includes('Error') || title.includes('Response')) ? !isPositive : isPositive;
 
   return (
-    <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+    <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-full ${color === '#00C471' ? 'metric-pill-success' : color === '#45B7D1' ? 'metric-pill-info' : color === '#FF6B6B' ? 'metric-pill-danger' : 'metric-pill-warning'}`}>
           <Icon className="w-6 h-6" />
         </div>
-        <span className={`text-[14px] font-semibold ${isGoodChange ? 'text-[#00C471]' : 'text-[#FF6B6B]'}`}>
+        <span className={`text-[14px] font-semibold ${isGoodChange ? 'text-[var(--green-500)]' : 'text-[var(--red-400)]'}`}>
           {change}
         </span>
       </div>
-      <h3 className="text-[14px] text-[#666666] mb-1">{title}</h3>
-      <p className="text-[24px] font-bold text-[#111111]">{value}</p>
+      <h3 className="text-[14px] text-[var(--black-300)] mb-1">{title}</h3>
+      <p className="text-[24px] font-bold text-[var(--black-500)]">{value}</p>
     </div>
   );
 }
