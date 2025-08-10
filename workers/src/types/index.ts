@@ -32,6 +32,7 @@ export interface Variables {
     requestId: string;
     userId?: string;
     startTime: number;
+    user?: AuthUser;
 }
 
 // 인증 정보 타입

@@ -40,5 +40,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.28.1'
           # Deploy built assets in ./dist to Pages project 'studymate-client' as production (main)
-          command: pages deploy dist --project-name=studymate-client --branch=main
+          command: pages deploy dist --project-name=studymate-client --branch=main --commit-dirty=true

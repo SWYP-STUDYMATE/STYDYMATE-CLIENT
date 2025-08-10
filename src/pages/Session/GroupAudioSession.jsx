@@ -285,7 +285,7 @@ export default function GroupAudioSession() {
                         <button
                             onClick={handleToggleMute}
                             className={`p-4 rounded-full transition-all duration-200 ${isMuted
-                                ? 'bg-[var(--red)] hover:bg-[#D33B2C]'
+                                ? 'bg-[var(--red)] hover:bg-[var(--red-600)]'
                                 : 'bg-[var(--neutral-100)] hover:bg-[var(--black-50)]'
                                 }`}
                         >
@@ -300,7 +300,7 @@ export default function GroupAudioSession() {
                         <button
                             onClick={handleToggleSpeaker}
                             className={`p-4 rounded-full transition-all duration-200 ${speakerMuted
-                                ? 'bg-[var(--red)] hover:bg-[#D33B2C]'
+                                ? 'bg-[var(--red)] hover:bg-[var(--red-600)]'
                                 : 'bg-[var(--neutral-100)] hover:bg-[var(--black-50)]'
                                 }`}
                         >
@@ -322,7 +322,7 @@ export default function GroupAudioSession() {
                         {/* End Call Button */}
                         <button
                             onClick={handleEndCall}
-                            className="p-4 bg-[var(--red)] hover:bg-[#D33B2C] rounded-full transition-all duration-200"
+                            className="p-4 bg-[var(--red)] hover:bg-[var(--red-600)] rounded-full transition-all duration-200"
                         >
                             <PhoneOff className="w-6 h-6 text-white" />
                         </button>

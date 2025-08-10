@@ -2,7 +2,7 @@ import { Context, Next } from 'hono';
 import { verify } from 'hono/jwt';
 import { AuthUser, Variables } from '../types';
 import { authError, forbiddenError } from './error-handler';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 
 interface AuthOptions {
     optional?: boolean; // 인증이 선택적인지
@@ -73,7 +73,7 @@ export function auth(options: AuthOptions = {}) {
 
         // 사용자 정보 저장
         c.set('userId', user.id);
-        c.set('user', user);
+        c.set('user', user as unknown as any);
 
         await next();
     };

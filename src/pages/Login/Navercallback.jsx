@@ -70,7 +70,7 @@ export default function Navercallback() {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#FFFFFF] w-[768px] mx-auto">
+    <div className="flex flex-col items-center justify-center h-screen bg-white w-[768px] mx-auto">
       <h2 className="text-2xl font-bold mb-4">{message}</h2>
     </div>
   );

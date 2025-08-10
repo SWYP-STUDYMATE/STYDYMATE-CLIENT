@@ -42,7 +42,8 @@ export function setupMiddleware(app: Hono) {
 
     // 개발 환경에서만 pretty JSON 사용
     app.use('*', async (c, next) => {
-        if (c.env.ENVIRONMENT === 'development') {
+        const envValue = (c as any).env?.ENVIRONMENT;
+        if (envValue === 'development') {
             return prettyJSON()(c, next);
         }
         return next();

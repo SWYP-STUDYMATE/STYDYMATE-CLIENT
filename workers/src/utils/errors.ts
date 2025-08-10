@@ -106,7 +106,7 @@ export function formatErrorResponse(error: Error | AppError | HTTPException) {
   }
 
   // Generic error
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = (globalThis as any).NODE_ENV === 'development';
   return {
     error: {
       code: 'INTERNAL_ERROR',
@@ -131,7 +131,7 @@ export async function errorHandler(
   c.header('X-Request-ID', requestId);
 
   // Log to external service in production
-  if (process.env.NODE_ENV === 'production') {
+  if ((globalThis as any).NODE_ENV === 'production') {
     // Here you would send to Sentry, DataDog, etc.
     console.error('Production error:', {
       requestId,
@@ -147,7 +147,7 @@ export async function errorHandler(
     c.header('Retry-After', String(err.details.retryAfter));
   }
 
-  return c.json(error, status);
+  return c.json(error as any, { status });
 }
 
 // Async error wrapper

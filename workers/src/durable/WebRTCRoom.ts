@@ -116,7 +116,11 @@ export class WebRTCRoom extends DurableObject {
 
   private async handleJoin(request: Request): Promise<Response> {
     try {
-      const { userId, userName, roomType } = await request.json();
+      const { userId, userName, roomType } = await request.json() as {
+        userId: string;
+        userName: string;
+        roomType?: 'audio' | 'video';
+      };
       
       // Check if user already in room
       const existingParticipant = this.roomData.participants.find(p => p.id === userId);
@@ -167,7 +171,7 @@ export class WebRTCRoom extends DurableObject {
 
   private async handleLeave(request: Request): Promise<Response> {
     try {
-      const { userId } = await request.json();
+      const { userId } = await request.json() as { userId: string };
       await this.handleParticipantLeave(userId);
       
       return new Response(JSON.stringify({ success: true }));
@@ -181,17 +185,21 @@ export class WebRTCRoom extends DurableObject {
 
   private async handleSignal(request: Request): Promise<Response> {
     try {
-      const { from, to, signal } = await request.json();
+      const { from, to, signal } = await request.json() as {
+        from: string;
+        to: string;
+        signal: unknown;
+      };
 
-      // Forward signal to specific participant
-      const targetSocket = this.sessions.get(to);
-      if (targetSocket) {
-        targetSocket.send(JSON.stringify({
-          type: 'signal',
-          from,
-          signal
-        }));
-      }
+      // Forward signal to specific participant using WebSocket hibernation groups
+      const websockets = this.ctx.getWebSockets(to);
+      websockets.forEach((ws) => {
+        try {
+          ws.send(JSON.stringify({ type: 'signal', from, signal }));
+        } catch (e) {
+          console.error('Signal forward error:', e);
+        }
+      });
 
       return new Response(JSON.stringify({ success: true }));
     } catch (error) {
@@ -203,7 +211,7 @@ export class WebRTCRoom extends DurableObject {
   }
 
   private async handleInfo(): Promise<Response> {
-    const roomData = await this.state.storage.get('roomData') || this.roomData;
+    const roomData = await this.ctx.storage.get('roomData') || this.roomData;
     return new Response(JSON.stringify(roomData));
   }
 

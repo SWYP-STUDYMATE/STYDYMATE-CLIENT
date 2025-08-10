@@ -216,7 +216,7 @@ export default function AudioSession() {
                     <button
                         onClick={handleToggleMute}
                         className={`p-4 rounded-full transition-colors duration-200 ${isMuted
-                            ? 'bg-[var(--red)] hover:bg-[#D33B2C]'
+                            ? 'bg-[var(--red)] hover:bg-[var(--red-600)]'
                             : 'bg-[var(--black-400)] hover:bg-[var(--black-300)]'
                             }`}
                     >
@@ -231,7 +231,7 @@ export default function AudioSession() {
                     <button
                         onClick={handleToggleSpeaker}
                         className={`p-4 rounded-full transition-colors duration-200 ${speakerMuted
-                            ? 'bg-[var(--red)] hover:bg-[#D33B2C]'
+                            ? 'bg-[var(--red)] hover:bg-[var(--red-600)]'
                             : 'bg-[var(--black-400)] hover:bg-[var(--black-300)]'
                             }`}
                     >
@@ -245,7 +245,7 @@ export default function AudioSession() {
                     {/* End Call Button */}
                     <button
                         onClick={handleEndCall}
-                        className="p-4 bg-[var(--red)] hover:bg-[#D33B2C] rounded-full transition-colors duration-200"
+                        className="p-4 bg-[var(--red)] hover:bg-[var(--red-600)] rounded-full transition-colors duration-200"
                     >
                         <PhoneOff className="w-6 h-6" />
                     </button>

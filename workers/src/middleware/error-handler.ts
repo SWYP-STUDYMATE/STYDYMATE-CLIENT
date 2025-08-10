@@ -34,7 +34,9 @@ export async function errorHandler(c: Context, next: Next) {
                     timestamp: new Date().toISOString(),
                     requestId: c.get('requestId')
                 }
-            }, error.statusCode);
+            }, {
+                status: error.statusCode
+            });
         }
 
         // Hono HTTP 예외 처리
@@ -49,7 +51,7 @@ export async function errorHandler(c: Context, next: Next) {
                     timestamp: new Date().toISOString(),
                     requestId: c.get('requestId')
                 }
-            }, error.status);
+            }, { status: error.status });
         }
 
         // 예상치 못한 에러
@@ -65,7 +67,7 @@ export async function errorHandler(c: Context, next: Next) {
                 timestamp: new Date().toISOString(),
                 requestId: c.get('requestId')
             }
-        }, 500);
+        }, { status: 500 });
     }
 }
 
@@ -83,7 +85,7 @@ export function notFoundHandler(c: Context): Response {
             timestamp: new Date().toISOString(),
             requestId: c.get('requestId')
         }
-    }, 404);
+    }, { status: 404 });
 }
 
 /**

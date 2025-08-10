@@ -1,5 +1,5 @@
 import { Context, Next } from 'hono';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 import { Variables } from '../types';
 import { APICache } from '../services/cache';
 
@@ -105,7 +105,9 @@ export function sessionCache(config: CacheConfig = {}) {
   return cache({
     ...config,
     keyGenerator: (c) => {
-      const sessionId = c.req.header('x-session-id') || c.req.cookie('session_id') || 'no-session';
+      const cookies = (c.req as any).cookie ? (c.req as any).cookie() : undefined;
+      const sessionCookie = typeof cookies === 'object' ? cookies['session_id'] : undefined;
+      const sessionId = c.req.header('x-session-id') || sessionCookie || 'no-session';
       const url = new URL(c.req.url);
       return `session:${sessionId}:${url.pathname}${url.search}`;
     }
@@ -172,7 +174,7 @@ export async function getCacheStats(kv: KVNamespace): Promise<{
   
   return {
     totalKeys: list.keys.length,
-    estimatedSize: list.keys.reduce((sum, key) => sum + (key.metadata?.size || 0), 0),
+    estimatedSize: list.keys.reduce((sum, key: any) => sum + (key.metadata?.size || 0), 0),
     cacheTypes
   };
 }

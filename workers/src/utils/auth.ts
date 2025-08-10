@@ -2,7 +2,7 @@
 
 import { Context } from 'hono';
 import { verify } from 'hono/jwt';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 
 export interface AuthUser {
   userId: string;
@@ -34,7 +34,7 @@ export async function verifyToken(token: string, secret: string): Promise<AuthUs
 
 // Auth middleware for Hono
 export async function authMiddleware(
-  c: Context<{ Bindings: Env }>,
+  c: Context<{ Bindings: Env; Variables: import('../types').Variables }>,
   next: () => Promise<void>
 ) {
   const authHeader = c.req.header('Authorization');

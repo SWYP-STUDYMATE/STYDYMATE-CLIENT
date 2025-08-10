@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { ApiError } from '../types';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 
 /**
  * 보안 헤더 미들웨어
@@ -17,7 +17,7 @@ export async function securityHeaders(c: Context, next: Next) {
     c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
     // CSP는 환경에 따라 다르게 설정
-    const isDevelopment = c.env.ENVIRONMENT === 'development';
+    const isDevelopment = (c as any).env?.ENVIRONMENT === 'development';
     if (!isDevelopment) {
         c.header(
             'Content-Security-Policy',

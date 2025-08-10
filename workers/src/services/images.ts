@@ -57,9 +57,9 @@ export async function uploadImage(
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to upload image',
                 response.status,
                 'CLOUDFLARE_IMAGES_ERROR',
-                'Failed to upload image',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
@@ -75,10 +75,10 @@ export async function uploadImage(
         console.error('Cloudflare Images upload error:', error);
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to upload image',
             500,
             'IMAGE_UPLOAD_ERROR',
-            'Failed to upload image',
-            error.message
+            (error as any).message
         );
     }
 }
@@ -269,9 +269,9 @@ export async function listImages(
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to list images',
                 response.status,
                 'IMAGE_LIST_ERROR',
-                'Failed to list images',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
@@ -293,10 +293,10 @@ export async function listImages(
         console.error('Image list error:', error);
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to list images',
             500,
             'IMAGE_LIST_ERROR',
-            'Failed to list images',
-            error.message
+            (error as any).message
         );
     }
 }
@@ -322,9 +322,9 @@ export async function getImageDetails(
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to get image details',
                 response.status,
                 'IMAGE_DETAILS_ERROR',
-                'Failed to get image details',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
@@ -342,10 +342,10 @@ export async function getImageDetails(
         console.error('Image details error:', error);
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to get image details',
             500,
             'IMAGE_DETAILS_ERROR',
-            'Failed to get image details',
-            error.message
+            (error as any).message
         );
     }
 }
@@ -376,9 +376,9 @@ export async function createVariant(
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to create variant',
                 response.status,
                 'VARIANT_CREATE_ERROR',
-                'Failed to create variant',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
@@ -388,10 +388,10 @@ export async function createVariant(
         console.error('Variant creation error:', error);
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to create variant',
             500,
             'VARIANT_CREATE_ERROR',
-            'Failed to create variant',
-            error.message
+            (error as any).message
         );
     }
 }

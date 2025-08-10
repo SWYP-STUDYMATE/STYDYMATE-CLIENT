@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { AppBindings as Env } from '../index';
 import { authMiddleware } from '../utils/auth';
 import { getAggregatedMetrics } from '../middleware/analytics';
-import { successResponse, errorResponse } from '../utils/response';
+import { successResponse, preflightResponse } from '../utils/response';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -32,7 +32,7 @@ app.get('/metrics', authMiddleware as any, async (c) => {
         );
 
         if (!metrics) {
-            return errorResponse(c, 'Analytics not available', 503);
+            return c.json({ success: false, error: { message: 'Analytics not available' } }, { status: 503 });
         }
 
         return successResponse(c, {
@@ -42,7 +42,7 @@ app.get('/metrics', authMiddleware as any, async (c) => {
         });
     } catch (error) {
         console.error('Metrics query error:', error);
-        return errorResponse(c, 'Failed to query metrics');
+        return c.json({ success: false, error: { message: 'Failed to query metrics' } }, { status: 500 });
     }
 });
 
@@ -86,7 +86,7 @@ app.get('/dashboard', authMiddleware as any, async (c) => {
         });
     } catch (error) {
         console.error('Dashboard data error:', error);
-        return errorResponse(c, 'Failed to load dashboard data');
+        return c.json({ success: false, error: { message: 'Failed to load dashboard data' } }, { status: 500 });
     }
 });
 
@@ -98,7 +98,7 @@ app.get('/stream', async (c) => {
     }
 
     const webSocketPair = new (globalThis as any).WebSocketPair();
-    const [client, server] = Object.values(webSocketPair);
+    const [client, server] = Object.values(webSocketPair) as [WebSocket, WebSocket];
 
     server.accept();
 
@@ -112,7 +112,7 @@ app.get('/stream', async (c) => {
 
     // 실시간 메트릭 스트리밍 시작
     const { streamMetrics } = await import('../middleware/analytics');
-    streamMetrics(server, c.env);
+    streamMetrics(server as WebSocket, c.env);
 
     return new Response(null, {
         status: 101,
