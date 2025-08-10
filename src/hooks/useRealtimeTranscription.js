@@ -85,58 +85,53 @@ export function useRealtimeTranscription({
 
   // 미디어 레코더 초기화
   const initializeRecorder = useCallback(async (stream) => {
-    try {
-      // 오디오 트랙만 추출
-      const audioStream = new MediaStream();
-      stream.getAudioTracks().forEach(track => {
-        if (track.enabled) {
-          audioStream.addTrack(track);
-        }
-      });
-
-      if (audioStream.getAudioTracks().length === 0) {
-        throw new Error('오디오 트랙을 찾을 수 없습니다.');
+    // 오디오 트랙만 추출
+    const audioStream = new MediaStream();
+    stream.getAudioTracks().forEach(track => {
+      if (track.enabled) {
+        audioStream.addTrack(track);
       }
+    });
 
-      // MediaRecorder 옵션 설정
-      const options = {
-        mimeType: 'audio/webm;codecs=opus',
-        audioBitsPerSecond: 16000
-      };
-
-      // 지원되는 MIME 타입 확인
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options.mimeType = 'audio/webm';
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          throw new Error('브라우저가 오디오 녹음을 지원하지 않습니다.');
-        }
-      }
-
-      const recorder = new MediaRecorder(audioStream, options);
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        processAudioChunk();
-      };
-
-      recorder.onerror = (event) => {
-        const errorMessage = '녹음 중 오류가 발생했습니다.';
-        setError(errorMessage);
-        if (onError) {
-          onError(new Error(errorMessage));
-        }
-      };
-
-      return recorder;
-    } catch (err) {
-      // Surface the error to the caller without redundant catch/throw
-      throw err;
+    if (audioStream.getAudioTracks().length === 0) {
+      throw new Error('오디오 트랙을 찾을 수 없습니다.');
     }
+
+    // MediaRecorder 옵션 설정
+    const options = {
+      mimeType: 'audio/webm;codecs=opus',
+      audioBitsPerSecond: 16000
+    };
+
+    // 지원되는 MIME 타입 확인
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options.mimeType = 'audio/webm';
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        throw new Error('브라우저가 오디오 녹음을 지원하지 않습니다.');
+      }
+    }
+
+    const recorder = new MediaRecorder(audioStream, options);
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunksRef.current.push(event.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      processAudioChunk();
+    };
+
+    recorder.onerror = () => {
+      const errorMessage = '녹음 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      if (onError) {
+        onError(new Error(errorMessage));
+      }
+    };
+
+    return recorder;
   }, [processAudioChunk, onError]);
 
   // 전사 시작

@@ -25,10 +25,10 @@ export default function ProgressBar({ total, value, className = "" }) {
   }, [value, total]);
 
   return (
-    <div className={`w-[716px] h-[14px] bg-[#E7E7E7] overflow-hidden mx-auto relative ${className}`}>
+    <div className={`w-[716px] h-[14px] bg-[var(--black-50)] overflow-hidden mx-auto relative ${className}`}>
       <div
         ref={barRef}
-        className="h-full bg-[#00C471] absolute left-0 top-0"
+        className="h-full bg-[var(--green-500)] absolute left-0 top-0"
         style={{
           width: `${animPercent}%`,
           transition,

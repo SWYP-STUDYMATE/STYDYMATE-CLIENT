@@ -12,7 +12,7 @@ on:
       environment:
         description: 'Deployment environment'
         required: true
-        default: 'staging'
+        default: 'production'
         type: choice
         options:
           - production
@@ -110,6 +110,9 @@ jobs:
   deploy-staging:
     if: false  # disabled; staging deployments removed per policy
     runs-on: ubuntu-latest
+    steps:
+      - name: Staging deployment disabled
+        run: echo "Staging deployment is disabled by policy. No actions will be performed."
 
   deploy-production:
     name: Deploy to Production
