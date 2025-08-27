@@ -5,6 +5,8 @@ import api from "../../api";
 
 export default function Login() {
   const [autoLogin, setAutoLogin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,32 +17,40 @@ export default function Login() {
   }, [navigate]);
 
   const handleNaverLogin = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.get("/login/naver");
+      const response = await api.get("/api/v1/login/naver");
       const loginUrl = response.data;
       if (loginUrl) {
         window.location.href = loginUrl;
       } else {
-        alert("네이버 로그인 URL을 받아오지 못했습니다.");
+        setError("네이버 로그인 URL을 받아오지 못했습니다.");
       }
     } catch (e) {
       console.error(e);
-      alert("네이버 로그인 요청에 실패했습니다.");
+      setError("네이버 로그인 요청에 실패했습니다.");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   const handleGoogleLogin = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.get("/login/google");
+      const response = await api.get("/api/v1/login/google");
       const loginUrl = response.data;
       if (loginUrl) {
         window.location.href = loginUrl;
       } else {
-        alert("네이버 로그인 URL을 받아오지 못했습니다.");
+        setError("구글 로그인 URL을 받아오지 못했습니다.");
       }
     } catch (e) {
       console.error(e);
-      alert("구글 로그인 요청에 실패했습니다.");
+      setError("구글 로그인 요청에 실패했습니다.");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -55,10 +65,26 @@ export default function Login() {
       </h1>
       <p className="mt-[12px] text-[16px] font-medium text-[#929292] leading-[24px]">간편하게 바로 시작해 보세요</p>
       </div>
+      
+      {/* 로딩 상태 */}
+      {isLoading && (
+        <div data-testid="loading" className="flex justify-center items-center ml-[24px] mt-[16px]">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00C471]"></div>
+          <span className="ml-2 text-[14px] text-[#606060]">로그인 중...</span>
+        </div>
+      )}
+      
+      {/* 에러 메시지 */}
+      {error && (
+        <div data-testid="error-message" className="ml-[24px] mt-[16px] p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-[6px]">
+          <p className="text-[14px] text-[#DC2626] font-medium">{error}</p>
+        </div>
+      )}
       {/* 체크박스 */}
       <div className="flex items-center ml-[24px] mt-[32px] mb-[40px]">
         <button
           type="button"
+          data-testid="auto-login-checkbox"
           aria-pressed={autoLogin}
           onClick={() => {
             setAutoLogin((v) => {
@@ -99,8 +125,14 @@ export default function Login() {
       </div>
       <div className="w-[720px] mx-auto">
         <button
-          className="flex justify-center items-center w-full py-[14px] bg-[#09AA5C] text-[#FFFFFF] text-[18px] font-bold leading-[28px] rounded-[6px] cursor-pointer focus:outline-none"
+          data-testid="naver-login-button"
+          className={`flex justify-center items-center w-full py-[14px] text-[#FFFFFF] text-[18px] font-bold leading-[28px] rounded-[6px] focus:outline-none transition-colors duration-200 ${
+            isLoading 
+              ? "bg-[#929292] cursor-not-allowed" 
+              : "bg-[#09AA5C] cursor-pointer hover:bg-[#08964F]"
+          }`}
           onClick={handleNaverLogin}
+          disabled={isLoading}
           tabIndex={0}
         >
           <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/naverlogo.png')] bg-contain bg-no-repeat bg-center"></span>
@@ -109,8 +141,14 @@ export default function Login() {
       </div>
       <div className="w-[720px] mx-auto mt-[20px]">
         <button
-          className="flex justify-center items-center w-full py-[14px] bg-[#FAFAFA] text-[#171717] text-[18px] font-bold leading-[24px] rounded-[6px] cursor-pointer focus:outline-none shadow-[0_0_0_1px_rgba(0,0,0,0.08)]"
+          data-testid="google-login-button"
+          className={`flex justify-center items-center w-full py-[14px] text-[18px] font-bold leading-[24px] rounded-[6px] focus:outline-none transition-colors duration-200 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] ${
+            isLoading 
+              ? "bg-[#F1F3F5] text-[#929292] cursor-not-allowed" 
+              : "bg-[#FAFAFA] text-[#171717] cursor-pointer hover:bg-[#F1F3F5]"
+          }`}
           onClick={handleGoogleLogin}
+          disabled={isLoading}
           tabIndex={0}
         >
           <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/googlelogo.png')] bg-contain bg-no-repeat bg-center"></span>
