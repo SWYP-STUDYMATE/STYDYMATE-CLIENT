@@ -49,15 +49,28 @@ API_VERSION = "v1"
 [env.production]
 name = "studymate-api-production"
 
+# Production Workers AI 바인딩
+[env.production.ai]
+binding = "AI"
+
+# Production Durable Objects 바인딩
+[[env.production.durable_objects.bindings]]
+name = "ROOM"
+class_name = "WebRTCRoom"
+
 # Production R2 Storage
 [[env.production.r2_buckets]]
 binding = "STORAGE"
-bucket_name = "studymate-storage-production"
+bucket_name = "studymate-storage"
 
 # Production KV Namespace
 [[env.production.kv_namespaces]]
 binding = "CACHE"
 id = "42a956e075ea4bda84dade92a95a0756"
+
+# Production Analytics Engine binding
+[[env.production.analytics_engine_datasets]]
+binding = "ANALYTICS"
 
 # Production Environment Variables
 [env.production.vars]
@@ -80,11 +93,6 @@ zone_name = "languagemate.kr"
 [observability]
 enabled = true
 
-# Build configuration
-[build]
-command = "npm run build"
-watch_paths = ["src/**/*.ts"]
-
 # Development server configuration
 [dev]
 port = 8787
@@ -99,10 +107,6 @@ startup_cpu_ms = 100  # 100ms CPU time for startup
 # Analytics Engine binding
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
-
-# Compatibility settings
-[compatibility]
-include_future_compat_date = false
 
 
 

@@ -91,7 +91,7 @@ class ErrorBoundary extends React.Component {
               </CommonButton>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-sm text-[#929292] cursor-pointer mb-2">
                   개발자 정보 (개발 환경에서만 표시)

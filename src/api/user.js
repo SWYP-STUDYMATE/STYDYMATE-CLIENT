@@ -1,6 +1,28 @@
 import api from './index.js';
 
-// 사용자 프로필 조회
+// 완전한 사용자 프로필 조회 (Spring Boot API 연동)
+export const getUserCompleteProfile = async () => {
+  try {
+    const response = await api.get('/user/complete-profile');
+    return response.data;
+  } catch (error) {
+    console.error('Get user complete profile error:', error);
+    throw error;
+  }
+};
+
+// 완전한 사용자 프로필 업데이트 (Spring Boot API 연동)
+export const updateUserCompleteProfile = async (profileData) => {
+  try {
+    const response = await api.put('/user/complete-profile', profileData);
+    return response.data;
+  } catch (error) {
+    console.error('Update user complete profile error:', error);
+    throw error;
+  }
+};
+
+// 레거시 프로필 조회 (기존 유지)
 export const getUserProfile = async () => {
   try {
     const response = await api.get('/user/profile');
@@ -11,7 +33,7 @@ export const getUserProfile = async () => {
   }
 };
 
-// 사용자 프로필 업데이트
+// 레거시 프로필 업데이트 (기존 유지)
 export const updateUserProfile = async (profileData) => {
   try {
     const response = await api.patch('/user/profile', profileData);
@@ -121,10 +143,10 @@ export const updateUserScheduleInfo = async (scheduleData) => {
   }
 };
 
-// 온보딩 상태 조회
+// 온보딩 상태 조회 (Spring Boot API 연동)
 export const getOnboardingStatus = async () => {
   try {
-    const response = await api.get('/user/onboarding/status');
+    const response = await api.get('/user/onboarding-status');
     return response.data;
   } catch (error) {
     console.error('Get onboarding status error:', error);
@@ -132,10 +154,10 @@ export const getOnboardingStatus = async () => {
   }
 };
 
-// 온보딩 완료 처리
-export const completeOnboarding = async () => {
+// 온보딩 완료 처리 (Spring Boot API 연동)
+export const completeOnboarding = async (onboardingData) => {
   try {
-    const response = await api.post('/user/onboarding/complete');
+    const response = await api.post('/user/complete-onboarding', onboardingData);
     return response.data;
   } catch (error) {
     console.error('Complete onboarding error:', error);
@@ -154,7 +176,7 @@ export const getUserStats = async () => {
   }
 };
 
-// 사용자 설정 조회
+// 사용자 설정 조회 (Spring Boot API 연동)
 export const getUserSettings = async () => {
   try {
     const response = await api.get('/user/settings');
@@ -165,10 +187,10 @@ export const getUserSettings = async () => {
   }
 };
 
-// 사용자 설정 업데이트
+// 사용자 설정 업데이트 (Spring Boot API 연동)
 export const updateUserSettings = async (settings) => {
   try {
-    const response = await api.patch('/user/settings', settings);
+    const response = await api.put('/user/settings', settings);
     return response.data;
   } catch (error) {
     console.error('Update user settings error:', error);
@@ -176,13 +198,13 @@ export const updateUserSettings = async (settings) => {
   }
 };
 
-// 프로필 이미지 업로드
+// 프로필 이미지 업로드 (Spring Boot API 연동)
 export const uploadProfileImage = async (imageFile) => {
   try {
     const formData = new FormData();
-    formData.append('image', imageFile);
+    formData.append('file', imageFile);
 
-    const response = await api.post('/user/profile/image', formData, {
+    const response = await api.post('/user/profile-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

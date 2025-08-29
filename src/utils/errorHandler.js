@@ -195,7 +195,7 @@ export const getUserFriendlyMessage = (error) => {
 
 // 에러 리포팅 (선택적)
 export const reportError = (error, additionalInfo = {}) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.group('🚨 Error Report');
     console.error('Error:', error);
     console.log('Additional Info:', additionalInfo);

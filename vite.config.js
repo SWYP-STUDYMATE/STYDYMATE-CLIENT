@@ -96,13 +96,13 @@ export default defineConfig(({ mode }) => {
     },
     // global 치환은 일부 UMD/CJS 번들(react scheduler 등)과 충돌 가능성이 있어 제거
     optimizeDeps: {
-      include: ['sockjs-client', 'stompjs', 'scheduler', 'react', 'react-dom']
+      include: ['sockjs-client', '@stomp/stompjs', 'scheduler', 'react', 'react-dom']
     },
     build: {
       outDir: 'dist',
       sourcemap: mode !== 'production',
-      // 프로덕션 최적화를 위한 압축 활성화
-      minify: mode === 'production' ? 'esbuild' : false,
+      // 프로덕션 최적화를 위한 압축 비활성화 (디버깅용)
+      minify: false,
       target: 'es2019',
       commonjsOptions: {
         include: [/node_modules/],
@@ -120,7 +120,7 @@ export default defineConfig(({ mode }) => {
             router: ['react-router-dom'],
             store: ['zustand'],
             ui: ['lucide-react', 'emoji-picker-react'],
-            api: ['axios', 'sockjs-client', 'stompjs']
+            api: ['axios', 'sockjs-client', '@stomp/stompjs']
           }
         }
       },

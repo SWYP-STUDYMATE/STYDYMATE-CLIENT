@@ -1,109 +1,17 @@
 import api from './index.js';
 
-// 온보딩 상태 조회
-export const getOnboardingStatus = async () => {
+// 온보딩 데이터 조회 (Spring Boot API 연동)
+export const getOnboardingData = async () => {
   try {
-    const response = await api.get('/onboarding/status');
+    const response = await api.get('/onboarding/data');
     return response.data;
   } catch (error) {
-    console.error('Get onboarding status error:', error);
+    console.error('Get onboarding data error:', error);
     throw error;
   }
 };
 
-// 온보딩 1단계 데이터 저장 (기본 정보)
-export const saveOnboardingStep1 = async (data) => {
-  try {
-    const response = await api.post('/onboarding/step/1', {
-      englishName: data.englishName,
-      residence: data.residence,
-      profileImage: data.profileImage,
-      intro: data.intro
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Save onboarding step 1 error:', error);
-    throw error;
-  }
-};
-
-// 온보딩 2단계 데이터 저장 (언어 정보)
-export const saveOnboardingStep2 = async (data) => {
-  try {
-    const response = await api.post('/onboarding/step/2', {
-      nativeLanguage: data.nativeLanguage,
-      targetLanguage: data.targetLanguage,
-      proficiencyLevel: data.proficiencyLevel,
-      hasLevelTest: data.hasLevelTest
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Save onboarding step 2 error:', error);
-    throw error;
-  }
-};
-
-// 온보딩 3단계 데이터 저장 (관심사 및 목표)
-export const saveOnboardingStep3 = async (data) => {
-  try {
-    const response = await api.post('/onboarding/step/3', {
-      interests: data.interests,
-      learningGoals: data.learningGoals,
-      motivation: data.motivation,
-      preferredTopics: data.preferredTopics
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Save onboarding step 3 error:', error);
-    throw error;
-  }
-};
-
-// 온보딩 4단계 데이터 저장 (파트너 선호도)
-export const saveOnboardingStep4 = async (data) => {
-  try {
-    const response = await api.post('/onboarding/step/4', {
-      preferredAge: data.preferredAge,
-      preferredGender: data.preferredGender,
-      preferredNationalities: data.preferredNationalities,
-      sessionType: data.sessionType,
-      partnerLevel: data.partnerLevel
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Save onboarding step 4 error:', error);
-    throw error;
-  }
-};
-
-// 온보딩 5단계 데이터 저장 (스케줄 정보)
-export const saveOnboardingStep5 = async (data) => {
-  try {
-    const response = await api.post('/onboarding/step/5', {
-      timezone: data.timezone,
-      availability: data.availability,
-      preferredDuration: data.preferredDuration,
-      flexibleSchedule: data.flexibleSchedule
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Save onboarding step 5 error:', error);
-    throw error;
-  }
-};
-
-// 온보딩 완료 처리
-export const completeOnboarding = async () => {
-  try {
-    const response = await api.post('/onboarding/complete');
-    return response.data;
-  } catch (error) {
-    console.error('Complete onboarding error:', error);
-    throw error;
-  }
-};
-
-// 온보딩 진행률 조회
+// 온보딩 진행 상태 조회 (Spring Boot API 연동)
 export const getOnboardingProgress = async () => {
   try {
     const response = await api.get('/onboarding/progress');
@@ -114,24 +22,264 @@ export const getOnboardingProgress = async () => {
   }
 };
 
-// 특정 단계 데이터 조회
-export const getOnboardingStepData = async (step) => {
+// 전체 온보딩 완료 처리 (Spring Boot API 연동)
+export const completeAllOnboarding = async (onboardingData) => {
   try {
-    const response = await api.get(`/onboarding/step/${step}`);
+    const response = await api.post('/onboarding/complete', onboardingData);
     return response.data;
   } catch (error) {
-    console.error(`Get onboarding step ${step} error:`, error);
+    console.error('Complete all onboarding error:', error);
     throw error;
   }
 };
 
-// 온보딩 데이터 재설정 (다시 온보딩)
-export const resetOnboarding = async () => {
+// 단계별 온보딩 저장 함수들 (기존 API와 호환성 유지)
+
+// 1단계: 개인정보 저장
+export const saveOnboardingStep1 = async (personalData) => {
   try {
-    const response = await api.post('/onboarding/reset');
+    const response = await api.post('/onboarding/step1', personalData);
     return response.data;
   } catch (error) {
-    console.error('Reset onboarding error:', error);
+    console.error('Save onboarding step1 error:', error);
+    throw error;
+  }
+};
+
+// 2단계: 프로필 정보 저장
+export const saveOnboardingStep2 = async (profileData) => {
+  try {
+    const response = await api.post('/onboarding/step2', profileData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step2 error:', error);
+    throw error;
+  }
+};
+
+// 3단계: 학습 정보 저장
+export const saveOnboardingStep3 = async (learningData) => {
+  try {
+    const response = await api.post('/onboarding/step3', learningData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step3 error:', error);
+    throw error;
+  }
+};
+
+// 4단계: 선호도 저장
+export const saveOnboardingStep4 = async (preferenceData) => {
+  try {
+    const response = await api.post('/onboarding/step4', preferenceData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step4 error:', error);
+    throw error;
+  }
+};
+
+// 언어 정보 저장
+export const saveLanguageInfo = async (languageData) => {
+  try {
+    const response = await api.post('/onboard/language/native-language', {
+      nativeLanguageId: languageData.nativeLanguageId
+    });
+    
+    // 목표 언어들 저장
+    if (languageData.targetLanguages && languageData.targetLanguages.length > 0) {
+      for (const targetLang of languageData.targetLanguages) {
+        await api.post('/onboard/language/language-level', {
+          languageId: targetLang.languageId,
+          currentLevelId: targetLang.currentLevelId,
+          targetLevelId: targetLang.targetLevelId
+        });
+      }
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Save language info error:', error);
+    throw error;
+  }
+};
+
+// 관심사 정보 저장
+export const saveInterestInfo = async (interestData) => {
+  try {
+    const requests = [];
+    
+    // 동기 저장
+    if (interestData.motivationIds && interestData.motivationIds.length > 0) {
+      for (const motivationId of interestData.motivationIds) {
+        requests.push(
+          api.post('/onboard/interest/motivation', { motivationId })
+        );
+      }
+    }
+    
+    // 주제 저장
+    if (interestData.topicIds && interestData.topicIds.length > 0) {
+      for (const topicId of interestData.topicIds) {
+        requests.push(
+          api.post('/onboard/interest/topic', { topicId })
+        );
+      }
+    }
+    
+    // 학습 스타일 저장
+    if (interestData.learningStyleIds && interestData.learningStyleIds.length > 0) {
+      for (const learningStyleId of interestData.learningStyleIds) {
+        requests.push(
+          api.post('/onboard/interest/learning-style', { learningStyleId })
+        );
+      }
+    }
+    
+    // 학습 기대 저장
+    if (interestData.learningExpectationIds && interestData.learningExpectationIds.length > 0) {
+      for (const learningExpectationId of interestData.learningExpectationIds) {
+        requests.push(
+          api.post('/onboard/interest/learning-expectation', { learningExpectationId })
+        );
+      }
+    }
+    
+    await Promise.all(requests);
+    return { success: true };
+  } catch (error) {
+    console.error('Save interest info error:', error);
+    throw error;
+  }
+};
+
+// 파트너 선호도 저장
+export const savePartnerInfo = async (partnerData) => {
+  try {
+    const requests = [];
+    
+    // 파트너 성격 저장
+    if (partnerData.partnerPersonalityIds && partnerData.partnerPersonalityIds.length > 0) {
+      for (const personalityId of partnerData.partnerPersonalityIds) {
+        requests.push(
+          api.post('/onboard/partner/personality', { partnerPersonalityId: personalityId })
+        );
+      }
+    }
+    
+    // 그룹 크기 저장
+    if (partnerData.groupSizeIds && partnerData.groupSizeIds.length > 0) {
+      for (const groupSizeId of partnerData.groupSizeIds) {
+        requests.push(
+          api.post('/onboard/partner/group-size', { groupSizeId })
+        );
+      }
+    }
+    
+    await Promise.all(requests);
+    return { success: true };
+  } catch (error) {
+    console.error('Save partner info error:', error);
+    throw error;
+  }
+};
+
+// 스케줄 정보 저장
+export const saveScheduleInfo = async (scheduleData) => {
+  try {
+    const requests = [];
+    
+    if (scheduleData.scheduleIds && scheduleData.scheduleIds.length > 0) {
+      for (const scheduleId of scheduleData.scheduleIds) {
+        requests.push(
+          api.post('/onboard/schedule/schedule', { scheduleId })
+        );
+      }
+    }
+    
+    await Promise.all(requests);
+    return { success: true };
+  } catch (error) {
+    console.error('Save schedule info error:', error);
+    throw error;
+  }
+};
+
+// 온보딩 옵션 조회 함수들 (기존 API 활용)
+
+// 언어 목록 조회
+export const getLanguages = async () => {
+  try {
+    const response = await api.get('/onboard/language/languages');
+    return response.data;
+  } catch (error) {
+    console.error('Get languages error:', error);
+    throw error;
+  }
+};
+
+// 언어 레벨 타입 조회
+export const getLanguageLevelTypes = async () => {
+  try {
+    const response = await api.get('/onboard/language/level-types-language');
+    return response.data;
+  } catch (error) {
+    console.error('Get language level types error:', error);
+    throw error;
+  }
+};
+
+// 파트너 레벨 타입 조회
+export const getPartnerLevelTypes = async () => {
+  try {
+    const response = await api.get('/onboard/language/level-types-partner');
+    return response.data;
+  } catch (error) {
+    console.error('Get partner level types error:', error);
+    throw error;
+  }
+};
+
+// 동기 목록 조회
+export const getMotivations = async () => {
+  try {
+    const response = await api.get('/onboard/interest/motivations');
+    return response.data;
+  } catch (error) {
+    console.error('Get motivations error:', error);
+    throw error;
+  }
+};
+
+// 주제 목록 조회
+export const getTopics = async () => {
+  try {
+    const response = await api.get('/onboard/interest/topics');
+    return response.data;
+  } catch (error) {
+    console.error('Get topics error:', error);
+    throw error;
+  }
+};
+
+// 학습 스타일 목록 조회
+export const getLearningStyles = async () => {
+  try {
+    const response = await api.get('/onboard/interest/learning-styles');
+    return response.data;
+  } catch (error) {
+    console.error('Get learning styles error:', error);
+    throw error;
+  }
+};
+
+// 학습 기대 목록 조회
+export const getLearningExpectations = async () => {
+  try {
+    const response = await api.get('/onboard/interest/learning-expectations');
+    return response.data;
+  } catch (error) {
+    console.error('Get learning expectations error:', error);
     throw error;
   }
 };

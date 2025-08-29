@@ -12,10 +12,13 @@ export async function findMatchingPartners(preferences) {
       body: JSON.stringify({
         userId: localStorage.getItem('userId') || 'guest',
         preferences: {
-          targetLanguage: preferences.targetLanguage || 'en',
-          nativeLanguage: preferences.nativeLanguage || 'ko',
+          targetLanguage: preferences.targetLanguage,
+          nativeLanguage: preferences.nativeLanguage,
           proficiencyLevel: preferences.proficiencyLevel,
-          sessionType: preferences.sessionType || '1on1',
+          location: preferences.location,
+          minAge: preferences.minAge,
+          maxAge: preferences.maxAge,
+          sessionType: preferences.sessionType,
           timezone: preferences.timezone || 'Asia/Seoul',
           availability: preferences.availability || [],
           interests: preferences.interests || [],

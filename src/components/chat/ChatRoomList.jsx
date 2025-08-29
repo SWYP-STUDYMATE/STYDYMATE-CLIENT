@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { createChatRoom, joinChatRoom } from "../../api/chat";
+import { joinChatRoom } from "../../api/chat";
 import { MessageCircle, Search, Plus } from "lucide-react";
+import CreateChatRoomModal from "./CreateChatRoomModal";
 
 export default function ChatRoomList({
   rooms,
@@ -9,6 +10,7 @@ export default function ChatRoomList({
   onJoinRoom,
 }) {
   const [query, setQuery] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // 모든 채팅방을 하나의 목록으로 합치기
   const allRooms = [...rooms];
@@ -32,6 +34,11 @@ export default function ChatRoomList({
       console.error("채팅방 참여 실패:", error);
       alert("채팅방 참여에 실패했습니다.");
     }
+  };
+
+  const handleRoomCreated = (newRoom) => {
+    onSelectRoom(newRoom);
+    onNewRoomCreated();
   };
 
   return (
@@ -100,33 +107,20 @@ export default function ChatRoomList({
 
           {/* 새 채팅방 생성 버튼 */}
           <button
-            onClick={async () => {
-              const name = prompt("새 채팅방 이름을 입력하세요");
-              if (!name) return;
-
-              try {
-                const newRoom = await createChatRoom({
-                  roomName: name,
-                  roomType: "GROUP",
-                  isPublic: true,
-                  maxParticipants: 4,
-                  participantIds: [],
-                });
-
-                // 새로 생성된 방을 즉시 선택
-                onSelectRoom(newRoom);
-                onNewRoomCreated();
-              } catch (error) {
-                console.error("채팅방 생성 실패:", error);
-                alert("채팅방 생성에 실패했습니다.");
-              }
-            }}
+            onClick={() => setIsCreateModalOpen(true)}
             className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors flex items-center justify-center"
           >
             <Plus className="w-4 h-4 mr-1" />새 채팅방
           </button>
         </div>
       </div>
+
+      {/* Create Chat Room Modal */}
+      <CreateChatRoomModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onRoomCreated={handleRoomCreated}
+      />
     </div>
   );
 }

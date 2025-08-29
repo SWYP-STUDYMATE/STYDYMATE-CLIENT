@@ -142,3 +142,6 @@ export async function validateApiKey(
 
   await next();
 }
+
+// Alias for authMiddleware (for compatibility)
+export const validateAuth = authMiddleware;

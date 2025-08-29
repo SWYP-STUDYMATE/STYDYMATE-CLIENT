@@ -210,3 +210,6 @@ export function validateType(
     );
   }
 }
+
+// Alias for errorHandler (for compatibility)
+export const handleError = errorHandler;

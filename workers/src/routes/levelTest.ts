@@ -151,13 +151,13 @@ levelTestRoutes.post('/analyze', async (c) => {
       communication: 0
     };
 
-    validEvaluations.forEach(eval => {
-      if (eval?.evaluation.scores) {
-        totalScores.grammar += eval.evaluation.scores.grammar || 0;
-        totalScores.vocabulary += eval.evaluation.scores.vocabulary || 0;
-        totalScores.fluency += eval.evaluation.scores.fluency || 0;
-        totalScores.taskAchievement += eval.evaluation.scores.taskAchievement || 0;
-        totalScores.communication += eval.evaluation.scores.communication || 0;
+    validEvaluations.forEach(evalItem => {
+      if (evalItem?.evaluation.scores) {
+        totalScores.grammar += evalItem.evaluation.scores.grammar || 0;
+        totalScores.vocabulary += evalItem.evaluation.scores.vocabulary || 0;
+        totalScores.fluency += evalItem.evaluation.scores.fluency || 0;
+        totalScores.taskAchievement += evalItem.evaluation.scores.taskAchievement || 0;
+        totalScores.communication += evalItem.evaluation.scores.communication || 0;
       }
     });
 

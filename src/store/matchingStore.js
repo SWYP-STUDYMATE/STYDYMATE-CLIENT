@@ -19,12 +19,15 @@ const useMatchingStore = create(
       
       // 매칭 필터 조건
       matchingFilters: {
-        targetLanguage: "en", // 학습하고 싶은 언어
-        nativeLanguage: "ko", // 모국어
-        proficiencyLevel: "", // beginner, intermediate, advanced
-        sessionType: "1on1", // 1on1, group
+        targetLanguage: "", // 학습하고 싶은 언어
+        nativeLanguage: "", // 도움을 줄 수 있는 언어
+        proficiencyLevel: "", // beginner, intermediate, advanced, native
+        location: "", // 지역
+        minAge: "", // 최소 연령
+        maxAge: "", // 최대 연령
+        sessionType: "", // 1on1, group, text_only, voice_only, video
         timezone: "Asia/Seoul",
-        availability: [], // 가능한 시간대
+        availability: [], // 가능한 시간대 (morning, afternoon, evening, night, weekdays, weekends)
         interests: [], // 관심사
         learningGoals: [], // 학습 목표
       },
@@ -47,10 +50,13 @@ const useMatchingStore = create(
       
       resetMatchingFilters: () => set({
         matchingFilters: {
-          targetLanguage: "en",
-          nativeLanguage: "ko",
+          targetLanguage: "",
+          nativeLanguage: "",
           proficiencyLevel: "",
-          sessionType: "1on1",
+          location: "",
+          minAge: "",
+          maxAge: "",
+          sessionType: "",
           timezone: "Asia/Seoul",
           availability: [],
           interests: [],

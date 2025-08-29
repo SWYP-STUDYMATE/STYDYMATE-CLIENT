@@ -1,4 +1,4 @@
-import { Hono, type MiddlewareHandler } from 'hono';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { timing } from 'hono/timing';
 import { levelTestRoutes } from './routes/levelTest';
@@ -15,7 +15,7 @@ import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';
 import { successResponse } from './utils/response';
-import type { Variables } from './types';
+import { Variables } from './types';
 
 // Export Durable Object
 export { WebRTCRoom };

@@ -20,6 +20,7 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.1.1",
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
     "emoji-picker-react": "^4.13.2",
@@ -33,7 +34,6 @@
     "recharts": "^3.1.2",
     "socket.io-client": "^4.8.1",
     "sockjs-client": "^1.6.1",
-    "stompjs": "^2.3.3",
     "tailwindcss": "^4.1.11",
     "zustand": "^5.0.6"
   },
@@ -52,6 +52,7 @@
     "playwright": "^1.54.2",
     "postcss": "^8.5.6",
     "rollup-plugin-visualizer": "^6.0.3",
+    "terser": "^5.43.1",
     "vite": "^7.0.4",
     "vite-plugin-pwa": "^1.0.2",
     "web-vitals": "^5.1.0"

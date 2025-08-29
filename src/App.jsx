@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { lazyLoad } from './utils/lazyLoad';
 import ErrorBoundary from './components/ErrorBoundary';
+import Layout from './components/Layout';
 
 // 즉시 로드가 필요한 컴포넌트들 (로그인, 메인)
 import Login from './pages/Login/Login';
@@ -24,7 +25,7 @@ const LevelTestComplete = lazyLoad(() => import('./pages/LevelTest/LevelTestComp
 const LevelTestResult = lazyLoad(() => import('./pages/LevelTest/LevelTestResult'));
 const Schedule = lazyLoad(() => import('./pages/Schedule/Schedule'));
 const AudioConnectionCheck = lazyLoad(() => import('./pages/Session/AudioConnectionCheck'));
-const AnalyticsDashboard = lazyLoad(() => import('./components/AnalyticsDashboard'));
+const AnalyticsPage = lazyLoad(() => import('./pages/Analytics/AnalyticsPage'));
 const VideoSessionRoom = lazyLoad(() => import('./pages/Session/VideoSessionRoom'));
 const VideoConnectionCheck = lazyLoad(() => import('./pages/Session/VideoSessionCheck'));
 const AudioSessionRoom = lazyLoad(() => import('./pages/Session/AudioSessionRoom'));
@@ -36,10 +37,30 @@ const SessionScheduleNew = lazyLoad(() => import('./pages/Session/SessionSchedul
 const MatchingMain = lazyLoad(() => import('./pages/Matching/MatchingMain'));
 const MatchingProfile = lazyLoad(() => import('./pages/Matching/MatchingProfile'));
 
+// Settings pages
+const SettingsMain = lazyLoad(() => import('./pages/Settings/SettingsMain'));
+const AccountSettings = lazyLoad(() => import('./pages/Settings/AccountSettings'));
+const NotificationSettings = lazyLoad(() => import('./pages/Settings/NotificationSettings'));
+const PrivacySettings = lazyLoad(() => import('./pages/Settings/PrivacySettings'));
+const SecuritySettings = lazyLoad(() => import('./pages/Settings/SecuritySettings'));
+const LanguageSettings = lazyLoad(() => import('./pages/Settings/LanguageSettings'));
+const DataSettings = lazyLoad(() => import('./pages/Settings/DataSettings'));
+const LoginHistory = lazyLoad(() => import('./pages/Settings/LoginHistory'));
+const DeleteAccount = lazyLoad(() => import('./pages/Settings/DeleteAccount'));
+
+// Notification pages
+const NotificationCenter = lazyLoad(() => import('./pages/Notifications/NotificationCenter'));
+
+// Achievement pages
+const AchievementsPage = lazyLoad(() => import('./pages/Achievements/AchievementsPage'));
+
+// Mates pages
+const MatesPage = lazyLoad(() => import('./pages/Mates/MatesPage'));
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <div className="page-bg min-h-screen">
+      <Layout>
         <Routes>
         <Route path='/' element={<Login />} />
         <Route path='/login/oauth2/code/naver' element={<Navercallback />} />
@@ -73,9 +94,29 @@ export default function App() {
         <Route path='/session/schedule/new' element={<SessionScheduleNew />} />
         <Route path='/matching' element={<MatchingMain />} />
         <Route path='/matching/profile/:userId' element={<MatchingProfile />} />
-        <Route path='/analytics' element={<AnalyticsDashboard />} />
+        <Route path='/analytics' element={<AnalyticsPage />} />
+        
+        {/* Settings Routes */}
+        <Route path='/settings' element={<SettingsMain />} />
+        <Route path='/settings/account' element={<AccountSettings />} />
+        <Route path='/settings/notifications' element={<NotificationSettings />} />
+        <Route path='/settings/privacy' element={<PrivacySettings />} />
+        <Route path='/settings/security' element={<SecuritySettings />} />
+        <Route path='/settings/language' element={<LanguageSettings />} />
+        <Route path='/settings/data' element={<DataSettings />} />
+        <Route path='/settings/login-history' element={<LoginHistory />} />
+        <Route path='/settings/delete-account' element={<DeleteAccount />} />
+        
+        {/* Notification Routes */}
+        <Route path='/notifications' element={<NotificationCenter />} />
+        
+        {/* Achievement Routes */}
+        <Route path='/achievements' element={<AchievementsPage />} />
+        
+        {/* Mates Routes */}
+        <Route path='/mates' element={<MatesPage />} />
         </Routes>
-      </div>
+      </Layout>
     </ErrorBoundary>
   )
 }
