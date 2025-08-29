@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
-import api from "../api";
+import { getUserProfile, getUserInfo } from "../api/user";
 import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
 import CommonButton from "../components/CommonButton";
@@ -27,14 +27,14 @@ export default function Main() {
 
     const fetchUserProfile = async () => {
       try {
-        // 1. 사용자 이름(닉네임) 가져오기
-        // TODO: 현재 네이버로부터 한국어 이름을 받아오는 주소이기 때문에 추후 영어 닉네임 받아오는 api 주소로 변경
-        const nameResponse = await api.get("/user/name");
-        setEnglishName(nameResponse.data.name);
+        // 1. 사용자 기본 정보 가져오기
+        const userInfoResponse = await getUserInfo();
+        setEnglishName(userInfoResponse.englishName || userInfoResponse.name);
 
-        // 2. 프로필 이미지 URL 가져오기
-        const profileResponse = await api.get("/user/profile");
-        setProfileImage(profileResponse.data.url);
+        // 2. 사용자 프로필 정보 가져오기
+        const profileResponse = await getUserProfile();
+        setProfileImage(profileResponse.profileImage);
+        setResidence(profileResponse.residence);
       } catch (error) {
         console.error("프로필 정보를 가져오는데 실패했습니다.", error);
         navigate("/", { replace: true });

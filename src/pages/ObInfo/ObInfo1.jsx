@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Header from "../../components/Header";
 import ProgressBar from "../../components/PrograssBar";
-import api from "../../api";
+import { saveOnboardingStep1 } from "../../api/onboarding";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
@@ -26,10 +26,15 @@ export default function OnboardingInfo() {
   const handleNext = async () => {
     if (window.confirm(`입력한 이름이 "${inputValue}" 맞습니까?`)) {
       try {
-        await api.post("/user/english-name", { englishName: inputValue });
+        await saveOnboardingStep1({
+          englishName: inputValue,
+          residence: '',
+          profileImage: null,
+          intro: ''
+        });
         setEnglishName(inputValue);
         navigate("/onboarding-info/2");
-        console.log("영어 이름 저장 완료:", inputValue);
+        console.log("온보딩 1단계 저장 완료:", inputValue);
       } catch (e) {
         alert("영어 이름 저장에 실패했습니다.");
         console.error(e);
