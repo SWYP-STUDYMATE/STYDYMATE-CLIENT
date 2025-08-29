@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { lazyLoad } from './utils/lazyLoad';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // 즉시 로드가 필요한 컴포넌트들 (로그인, 메인)
 import Login from './pages/Login/Login';
@@ -37,8 +38,9 @@ const MatchingProfile = lazyLoad(() => import('./pages/Matching/MatchingProfile'
 
 export default function App() {
   return (
-    <div className="page-bg min-h-screen">
-      <Routes>
+    <ErrorBoundary>
+      <div className="page-bg min-h-screen">
+        <Routes>
         <Route path='/' element={<Login />} />
         <Route path='/login/oauth2/code/naver' element={<Navercallback />} />
         <Route path='/login/oauth2/code/google' element={<GoogleCallback />} />
@@ -72,7 +74,8 @@ export default function App() {
         <Route path='/matching' element={<MatchingMain />} />
         <Route path='/matching/profile/:userId' element={<MatchingProfile />} />
         <Route path='/analytics' element={<AnalyticsDashboard />} />
-      </Routes>
-    </div>
+        </Routes>
+      </div>
+    </ErrorBoundary>
   )
 }

@@ -1,4 +1,6 @@
 // WebRTC API Client
+import { handleApiError, handleWebRTCError, withRetry } from '../utils/errorHandler.js';
+
 const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 const API_VERSION = 'v1';
 

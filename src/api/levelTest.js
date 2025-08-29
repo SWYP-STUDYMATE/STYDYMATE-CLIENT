@@ -1,24 +1,30 @@
-const API_BASE_URL = import.meta.env.VITE_WORKERS_URL || 'http://localhost:8787';
+import { handleApiError, handleLevelTestError, withRetry } from '../utils/errorHandler.js';
+
+const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 
 // 레벨 테스트 질문 조회
 export async function getLevelTestQuestions() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/level-test/questions`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    });
+  return withRetry(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/level-test/questions`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.message || `HTTP ${response.status}`);
+        error.response = { status: response.status, data: errorData };
+        throw error;
+      }
+
+      return await response.json();
+    } catch (error) {
+      handleLevelTestError(error, 'getLevelTestQuestions');
     }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Get level test questions error:', error);
-    throw error;
-  }
+  }, 2);
 }
 
 // 레벨 테스트 결과 제출

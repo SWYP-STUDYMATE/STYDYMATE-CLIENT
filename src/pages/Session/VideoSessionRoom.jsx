@@ -4,6 +4,7 @@ import VideoControls from '../../components/VideoControls';
 import LiveTranscription from '../../components/LiveTranscription';
 import SubtitleDisplay, { SubtitleController } from '../../components/SubtitleDisplay';
 import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor } from 'lucide-react';
+import { webrtcAPI } from '../../api/webrtc';
 
 export default function VideoSessionRoom() {
   const navigate = useNavigate();
@@ -106,11 +107,29 @@ export default function VideoSessionRoom() {
         localVideoRef.current.srcObject = stream;
       }
 
-      // Setup WebSocket connection for signaling
-      setupWebSocket();
+      // Join room using Workers API
+      const userId = localStorage.getItem('userId') || 'guest';
+      const userName = localStorage.getItem('userName') || 'Anonymous';
+      
+      try {
+        const joinResult = await webrtcAPI.joinRoom(roomId, { 
+          userId, 
+          userName 
+        });
+        
+        console.log('Joined room:', joinResult);
+        
+        // Setup WebSocket connection for signaling using Workers API
+        setupWebSocket();
 
-      // Create peer connection
-      setupPeerConnection();
+        // Create peer connection
+        setupPeerConnection();
+      } catch (apiError) {
+        console.error('Failed to join room via API:', apiError);
+        // Fallback to direct WebSocket connection
+        setupWebSocket();
+        setupPeerConnection();
+      }
 
     } catch (error) {
       console.error('Failed to initialize call:', error);
@@ -119,12 +138,21 @@ export default function VideoSessionRoom() {
   };
 
   const setupWebSocket = () => {
-    // Replace with actual WebSocket URL
-    wsRef.current = new WebSocket(`wss://your-signaling-server.com/room/${roomId}`);
+    // Use Workers API WebSocket URL
+    const userId = localStorage.getItem('userId') || 'guest';
+    const userName = localStorage.getItem('userName') || 'Anonymous';
+    const wsUrl = webrtcAPI.getWebSocketURL(roomId, userId, userName);
+    
+    wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
-      console.log('WebSocket connected');
-      wsRef.current.send(JSON.stringify({ type: 'join', roomId }));
+      console.log('WebSocket connected to Workers signaling server');
+      wsRef.current.send(JSON.stringify({ 
+        type: 'join', 
+        roomId,
+        userId,
+        userName
+      }));
     };
 
     wsRef.current.onmessage = async (event) => {
@@ -468,7 +496,7 @@ export default function VideoSessionRoom() {
     return Array.from(languages);
   }, [subtitleLanguage, currentLanguage, partnerInfo.nativeLanguage]);
 
-  const cleanup = () => {
+  const cleanup = async () => {
     // Exit PiP if active
     if (document.pictureInPictureElement) {
       document.exitPictureInPicture();
@@ -481,6 +509,15 @@ export default function VideoSessionRoom() {
 
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+
+    // Leave room via Workers API
+    try {
+      const userId = localStorage.getItem('userId') || 'guest';
+      await webrtcAPI.leaveRoom(roomId, userId);
+      console.log('Left room via Workers API');
+    } catch (error) {
+      console.error('Failed to leave room via API:', error);
     }
 
     // Close peer connection
