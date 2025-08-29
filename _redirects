@@ -1,6 +1,6 @@
-# SPA 라우팅 설정
-/*    /index.html   200
+# API 프록시 - OAuth 로그인을 위해 활성화
+/api/*  https://api.languagemate.kr/api/:splat  200
+/ws/*   https://api.languagemate.kr/ws/:splat   200
 
-# API 프록시 (필요시)
-# /api/*  https://api.languagemate.kr/api/:splat  200
-# /ws/*   https://api.languagemate.kr/ws/:splat   200
+# SPA 라우팅 설정 (API 프록시보다 아래에 위치해야 함)
+/*    /index.html   200
