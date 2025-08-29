@@ -19,15 +19,15 @@ export default function Login() {
   const handleNaverLogin = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    // 서버가 302 리다이렉트를 반환하므로 직접 이동
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "/api"}/v1/login/naver`;
+    // Cloudflare 프록시 우회하여 직접 API 서버로 리다이렉트
+    window.location.href = "https://api.languagemate.kr/api/v1/login/naver";
   }, []);
 
   const handleGoogleLogin = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    // 서버가 302 리다이렉트를 반환하므로 직접 이동
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "/api"}/v1/login/google`;
+    // Cloudflare 프록시 우회하여 직접 API 서버로 리다이렉트
+    window.location.href = "https://api.languagemate.kr/api/v1/login/google";
   }, []);
 
   return (
