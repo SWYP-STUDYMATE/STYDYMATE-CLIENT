@@ -14,6 +14,7 @@ import StudyStats from "../components/StudyStats";
 import LanguageProfile from "../components/LanguageProfile";
 import LanguageExchangeMates from "../components/LanguageExchangeMates";
 import AchievementBadges from "../components/AchievementBadges";
+import { isMockMode, showMockModeBanner, mockApiCalls } from "../api/mockApi";
 
 export default function Main() {
   const navigate = useNavigate();
@@ -25,19 +26,34 @@ export default function Main() {
     const accessToken = params.get("accessToken");
     const userId = params.get("userId");
 
+    // Mock 모드 배너 표시
+    showMockModeBanner();
+
     const fetchUserProfile = async () => {
       try {
-        // 1. 사용자 기본 정보 가져오기
-        const userInfoResponse = await getUserInfo();
-        setEnglishName(userInfoResponse.englishName || userInfoResponse.name);
+        if (isMockMode()) {
+          // Mock 모드: 가짜 데이터 사용
+          console.log("🎭 Mock 모드로 사용자 정보 로드");
+          const mockUserData = await mockApiCalls.getUserInfo();
+          const userData = mockUserData.data;
+          
+          setEnglishName(userData.englishName);
+          setProfileImage(userData.profileImage);
+          setResidence("Seoul, Korea"); // Mock 거주지
+        } else {
+          // 실제 API 모드
+          const userInfoResponse = await getUserInfo();
+          setEnglishName(userInfoResponse.englishName || userInfoResponse.name);
 
-        // 2. 사용자 프로필 정보 가져오기
-        const profileResponse = await getUserProfile();
-        setProfileImage(profileResponse.profileImage);
-        setResidence(profileResponse.residence);
+          const profileResponse = await getUserProfile();
+          setProfileImage(profileResponse.profileImage);
+          setResidence(profileResponse.residence);
+        }
       } catch (error) {
         console.error("프로필 정보를 가져오는데 실패했습니다.", error);
-        navigate("/", { replace: true });
+        if (!isMockMode()) {
+          navigate("/", { replace: true });
+        }
       }
     };
 
