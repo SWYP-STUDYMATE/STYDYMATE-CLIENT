@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useLevelTestStore from '../../store/levelTestStore';
 import RadarChart from '../../components/RadarChart';
 import CommonButton from '../../components/CommonButton';
+import { getLevelTestResult } from '../../api/levelTest';
 import { Trophy, Target, BookOpen, Users, Calendar, ChevronRight } from 'lucide-react';
 
 const LEVEL_DESCRIPTIONS = {
@@ -66,12 +67,7 @@ export default function LevelTestResult() {
 
   const fetchResult = async () => {
     try {
-      const response = await fetch(`/api/level-test/result/${userId}`);
-      if (!response.ok) {
-        throw new Error('Result not found');
-      }
-      
-      const data = await response.json();
+      const data = await getLevelTestResult(userId);
       setResult(data);
       useLevelTestStore.getState().setTestResult(data);
     } catch (error) {

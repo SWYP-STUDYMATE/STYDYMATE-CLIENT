@@ -23,10 +23,6 @@ dev-debug.log
 # OS specific
 .DS_Store
 
-# Task files
-# tasks.json
-# tasks/ 
-
 # Playwright
 test-results/
 playwright-report/
@@ -34,3 +30,7 @@ playwright/.cache/
 
 # Build output
 dist/
+
+# Task files
+# tasks.json
+# tasks/ 

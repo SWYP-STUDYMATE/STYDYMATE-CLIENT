@@ -2,19 +2,40 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import useLevelTestStore from '../../store/levelTestStore';
+import { getLevelTestQuestions } from '../../api/levelTest';
 
 export default function LevelTestStart() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
-  const { resetTest, setCurrentStep } = useLevelTestStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const { resetTest, setCurrentStep, setQuestions } = useLevelTestStore();
 
-  const handleStart = () => {
-    setIsAnimating(true);
-    resetTest(); // 테스트 초기화
-    setCurrentStep('check');
-    setTimeout(() => {
-      navigate('/level-test/check');
-    }, 300);
+  const handleStart = async () => {
+    try {
+      setIsAnimating(true);
+      setIsLoading(true);
+      
+      // Workers API에서 질문 가져오기
+      const questionsData = await getLevelTestQuestions();
+      
+      resetTest(); // 테스트 초기화
+      setQuestions(questionsData.questions || []);
+      setCurrentStep('check');
+      
+      setTimeout(() => {
+        navigate('/level-test/check');
+      }, 300);
+    } catch (error) {
+      console.error('Failed to load test questions:', error);
+      // 에러 발생 시에도 기본 플로우 진행
+      resetTest();
+      setCurrentStep('check');
+      setTimeout(() => {
+        navigate('/level-test/check');
+      }, 300);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -94,8 +115,9 @@ export default function LevelTestStart() {
             onClick={handleStart}
             className="w-full"
             variant="success"
+            disabled={isLoading}
           >
-            시작하기
+            {isLoading ? '준비 중...' : '시작하기'}
           </CommonButton>
         </div>
       </div>

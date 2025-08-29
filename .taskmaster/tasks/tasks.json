@@ -738,5 +738,80 @@
       "description": "Tasks for master context",
       "updated": "2025-08-08T11:07:25.632Z"
     }
+  },
+  "backend-api": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "레벨 테스트 페이지 Workers API 연동",
+        "description": "기존 레벨 테스트 페이지를 Workers의 levelTest API와 연동",
+        "details": "- LevelTestStart 페이지에서 Workers /questions API 호출\n- LevelTestRecording에서 /audio API로 음성 파일 업로드\n- /analyze API로 분석 요청\n- /result/:userId API로 결과 조회\n- LevelTestResult 페이지에서 결과 시각화\n- 컬러 가이드 준수 (#00C471, #111111 등)\n- API 에러 처리 및 로딩 상태 관리",
+        "testStrategy": "",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "매칭 시스템 페이지 구현",
+        "description": "Workers matching API와 연동하는 매칭 페이지",
+        "details": "- 매칭 목록 페이지 (/matching) 구현\n- MatchingProfileCard 컴포넌트 개선\n- 파트너 상세 프로필 모달\n- 매칭 요청 버튼 및 API 연동\n- 필터링 기능 (거주지, 언어수준, 관심사)\n- 디자인 시스템 준수 (Green/Black 팔레트)\n- 반응형 레이아웃",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "WebRTC 세션 페이지 구현",
+        "description": "Workers WebRTC API와 연동하는 화상/음성 세션 페이지",
+        "details": "- 세션 생성 페이지 (/session/create) 구현\n- 세션 목록 페이지 개선\n- WebRTC 연결 및 시그널링 처리\n- VideoSessionRoom 컴포넌트에 Workers API 연동\n- AudioSessionRoom 컴포넌트 개선\n- 참가자 관리 (최대 4명)\n- 연결 상태 표시 및 에러 처리\n- VideoControls, AudioControls 컴포넌트",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "실시간 번역 및 자막 기능 구현",
+        "description": "Workers transcribe/translate API와 연동하는 실시간 기능",
+        "details": "- RealtimeSubtitles 컴포넌트 구현\n- TranslatedSubtitles 컴포넌트 구현\n- WebSocket 기반 실시간 음성-텍스트 변환\n- 실시간 번역 기능 연동\n- 자막 표시 UI/UX 개선\n- 언어 선택 토글 기능\n- 세션 중 자막 ON/OFF 기능",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "파일 업로드 시스템 연동",
+        "description": "Workers upload API와 연동하는 파일 업로드 기능",
+        "details": "- ProfileImageUpload 컴포넌트 Workers API 연동\n- 채팅 이미지 업로드 기능 개선\n- 오디오 파일 업로드 (레벨테스트용)\n- 파일 업로드 진행률 표시\n- 파일 타입 검증 및 에러 처리\n- 이미지 미리보기 기능\n- CDN URL 처리",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "분석 대시보드 페이지 구현",
+        "description": "Workers analytics API와 연동하는 사용자 통계 페이지",
+        "details": "- AnalyticsDashboard 컴포넌트 Workers API 연동\n- 학습 통계 시각화 (차트 라이브러리)\n- 세션 참여 기록 표시\n- 레벨 테스트 결과 히스토리\n- 매칭 성공률 통계\n- WeeklyActivityChart 컴포넌트 구현\n- StudyStats 컴포넌트 실제 데이터 연동",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-29T08:35:08.726Z",
+      "updated": "2025-08-29T08:42:01.168Z",
+      "description": "STUDYMATE-SERVER 백엔드 API 개발 태스크"
+    }
   }
 }

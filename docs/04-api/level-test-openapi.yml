@@ -1,0 +1,687 @@
+openapi: 3.0.3
+info:
+  title: STUDYMATE Level Test API
+  description: |
+    STUDYMATE 레벨 테스트 API 문서
+    
+    ## 기능 개요
+    - 영어 레벨 테스트 질문 제공
+    - 음성 녹음 파일 업로드 및 분석
+    - AI 기반 언어 능력 평가
+    - CEFR 레벨 결과 제공
+    
+    ## 인증
+    모든 API는 JWT Bearer Token을 통한 인증이 필요합니다.
+    
+    ## 에러 처리
+    모든 에러 응답은 표준 형식을 따릅니다:
+    ```json
+    {
+      "success": false,
+      "error": {
+        "code": "ERROR_CODE",
+        "message": "Human readable message",
+        "details": {}
+      },
+      "meta": {
+        "timestamp": "2024-01-01T00:00:00Z",
+        "version": "v1"
+      }
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: STUDYMATE API Team
+    url: https://languagemate.kr
+  license:
+    name: MIT
+servers:
+  - url: https://api.languagemate.kr/api/v1
+    description: Production server
+  - url: https://api-staging.languagemate.kr/api/v1
+    description: Staging server
+  - url: http://localhost:8787/api/v1
+    description: Development server
+
+paths:
+  /level-test/questions:
+    get:
+      summary: 레벨 테스트 질문 목록 조회
+      description: |
+        레벨 테스트에 사용될 질문들을 조회합니다.
+        총 4개의 질문이 난이도별로 제공됩니다.
+      tags:
+        - Level Test
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 성공적으로 질문 목록을 조회했습니다
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      questions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Question'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /level-test/submit:
+    post:
+      summary: 개별 질문 음성 답변 제출
+      description: |
+        특정 질문에 대한 음성 답변을 제출합니다.
+        음성 파일은 자동으로 텍스트로 변환되어 임시 저장됩니다.
+      tags:
+        - Level Test
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - audio
+                - questionNumber
+                - userId
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: WebM 형식의 오디오 파일
+                questionNumber:
+                  type: string
+                  description: 질문 번호 (1-4)
+                  example: "1"
+                userId:
+                  type: string
+                  description: 사용자 ID
+                  example: "user123"
+      responses:
+        '200':
+          description: 음성 파일이 성공적으로 처리되었습니다
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      questionNumber:
+                        type: integer
+                        example: 1
+                      transcription:
+                        type: string
+                        example: "Hello, my name is John and I'm from Seoul."
+                      saved:
+                        type: boolean
+                        example: true
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '413':
+          description: 파일 크기가 너무 큽니다
+        '415':
+          description: 지원하지 않는 파일 형식입니다
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /level-test/complete:
+    post:
+      summary: 레벨 테스트 완료 및 평가 요청
+      description: |
+        제출된 모든 답변을 종합하여 최종 평가를 수행합니다.
+        AI가 각 답변을 분석하여 CEFR 레벨과 상세 피드백을 제공합니다.
+      tags:
+        - Level Test
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+              properties:
+                userId:
+                  type: string
+                  description: 사용자 ID
+                  example: "user123"
+      responses:
+        '200':
+          description: 테스트가 성공적으로 완료되고 평가되었습니다
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/LevelTestResult'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          description: 충분하지 않은 답변 또는 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "INSUFFICIENT_SUBMISSIONS"
+                  message: "최소 2개 이상의 답변이 필요합니다"
+                  details: {
+                    "minRequired": 2,
+                    "submitted": 1
+                  }
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: 테스트 데이터를 찾을 수 없습니다
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /level-test/result/{userId}:
+    get:
+      summary: 레벨 테스트 결과 조회
+      description: |
+        특정 사용자의 최신 레벨 테스트 결과를 조회합니다.
+        결과는 30일간 캐시됩니다.
+      tags:
+        - Level Test
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 사용자 ID
+          schema:
+            type: string
+            example: "user123"
+      responses:
+        '200':
+          description: 성공적으로 결과를 조회했습니다
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/LevelTestResult'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: 결과를 찾을 수 없습니다
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "RESULT_NOT_FOUND"
+                  message: "레벨 테스트 결과를 찾을 수 없습니다"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /level-test/progress/{userId}:
+    get:
+      summary: 레벨 테스트 진행 상황 조회
+      description: |
+        특정 사용자의 현재 테스트 진행 상황을 조회합니다.
+        완료된 질문 수와 답변 내용을 확인할 수 있습니다.
+      tags:
+        - Level Test
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 사용자 ID
+          schema:
+            type: string
+            example: "user123"
+      responses:
+        '200':
+          description: 성공적으로 진행 상황을 조회했습니다
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        example: "user123"
+                      completedQuestions:
+                        type: integer
+                        example: 2
+                      totalQuestions:
+                        type: integer
+                        example: 4
+                      answers:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SubmissionAnswer'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /level-test/audio/{userId}/{questionId}:
+    get:
+      summary: 음성 파일 다운로드
+      description: |
+        저장된 음성 파일을 다운로드합니다.
+        음성 파일은 WebM 형식으로 제공됩니다.
+      tags:
+        - Level Test
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: 사용자 ID
+          schema:
+            type: string
+            example: "user123"
+        - name: questionId
+          in: path
+          required: true
+          description: 질문 ID
+          schema:
+            type: string
+            example: "1"
+      responses:
+        '200':
+          description: 음성 파일
+          content:
+            audio/webm:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: "public, max-age=3600"
+            Content-Type:
+              schema:
+                type: string
+                example: "audio/webm"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: 음성 파일을 찾을 수 없습니다
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Bearer Token을 사용한 인증입니다.
+        예: `Authorization: Bearer eyJhbGciOiJIUzI1NiIs...`
+
+  schemas:
+    Question:
+      type: object
+      required:
+        - id
+        - text
+        - korean
+        - duration
+        - difficulty
+      properties:
+        id:
+          type: integer
+          description: 질문 ID
+          example: 1
+        text:
+          type: string
+          description: 영어 질문 내용
+          example: "Introduce yourself. Tell me about your name, where you're from, and what you do."
+        korean:
+          type: string
+          description: 한국어 번역
+          example: "자기소개를 해주세요. 이름, 출신지, 하는 일에 대해 말씀해주세요."
+        duration:
+          type: integer
+          description: 답변 시간 (초)
+          example: 60
+        difficulty:
+          type: string
+          description: 난이도 레벨
+          example: "A1-A2"
+          enum: ["A1-A2", "A2-B1", "B1-B2", "B2-C1"]
+
+    LevelTestResult:
+      type: object
+      required:
+        - userId
+        - level
+        - overallScore
+        - scores
+        - feedback
+        - timestamp
+      properties:
+        userId:
+          type: string
+          description: 사용자 ID
+          example: "user123"
+        level:
+          type: string
+          description: CEFR 레벨
+          example: "B1"
+          enum: ["A1", "A2", "B1", "B2", "C1", "C2"]
+        overallScore:
+          type: integer
+          description: 전체 점수 (0-100)
+          example: 72
+          minimum: 0
+          maximum: 100
+        scores:
+          type: object
+          description: 세부 평가 점수
+          properties:
+            pronunciation:
+              type: integer
+              example: 75
+              minimum: 0
+              maximum: 100
+            fluency:
+              type: integer
+              example: 68
+              minimum: 0
+              maximum: 100
+            grammar:
+              type: integer
+              example: 80
+              minimum: 0
+              maximum: 100
+            vocabulary:
+              type: integer
+              example: 70
+              minimum: 0
+              maximum: 100
+            coherence:
+              type: integer
+              example: 65
+              minimum: 0
+              maximum: 100
+            interaction:
+              type: integer
+              example: 72
+              minimum: 0
+              maximum: 100
+        strengths:
+          type: array
+          description: 강점 목록
+          items:
+            type: string
+          example: ["Strong grammar skills", "Strong vocabulary skills"]
+        improvements:
+          type: array
+          description: 개선점 목록
+          items:
+            type: string
+          example: ["Focus on improving fluency", "Focus on improving coherence"]
+        feedback:
+          type: string
+          description: AI 생성 상세 피드백
+          example: "Your English shows good foundational skills with particular strengths in grammar and vocabulary..."
+        evaluations:
+          type: array
+          description: 각 질문별 상세 평가
+          items:
+            $ref: '#/components/schemas/QuestionEvaluation'
+        timestamp:
+          type: string
+          format: date-time
+          description: 결과 생성 시간
+          example: "2024-01-15T10:30:00Z"
+
+    QuestionEvaluation:
+      type: object
+      properties:
+        questionNumber:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: "Introduce yourself and tell me about your background."
+        transcription:
+          type: string
+          example: "Hello, my name is John and I'm from Seoul."
+        evaluation:
+          type: object
+          properties:
+            scores:
+              type: object
+              properties:
+                pronunciation:
+                  type: integer
+                  example: 75
+                fluency:
+                  type: integer
+                  example: 68
+                grammar:
+                  type: integer
+                  example: 80
+                vocabulary:
+                  type: integer
+                  example: 70
+                coherence:
+                  type: integer
+                  example: 65
+                interaction:
+                  type: integer
+                  example: 72
+            feedback:
+              type: string
+              example: "Good pronunciation and grammar usage. Consider working on fluency."
+            suggestions:
+              type: array
+              items:
+                type: string
+              example: ["Practice speaking more naturally", "Work on connecting ideas smoothly"]
+        difficulty:
+          type: string
+          example: "A1-A2"
+
+    SubmissionAnswer:
+      type: object
+      properties:
+        questionNumber:
+          type: integer
+          example: 1
+        audioKey:
+          type: string
+          example: "level-test/user123/question_1.webm"
+        transcription:
+          type: string
+          example: "Hello, my name is John and I'm from Seoul."
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:25:00Z"
+
+    Meta:
+      type: object
+      required:
+        - timestamp
+        - version
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: 응답 생성 시간
+          example: "2024-01-15T10:30:00Z"
+        version:
+          type: string
+          description: API 버전
+          example: "v1"
+        requestId:
+          type: string
+          description: 요청 추적 ID (선택사항)
+          example: "req_abc123"
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+        - meta
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 에러 코드
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: 에러 메시지
+              example: "Invalid request data"
+            details:
+              type: object
+              description: 추가 에러 상세 정보
+            field:
+              type: string
+              description: 에러가 발생한 필드명 (검증 에러인 경우)
+              example: "audioFile"
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+  responses:
+    UnauthorizedError:
+      description: 인증이 필요하거나 토큰이 유효하지 않습니다
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "Access token required"
+            meta:
+              timestamp: "2024-01-15T10:30:00Z"
+              version: "v1"
+
+    ValidationError:
+      description: 요청 데이터가 유효하지 않습니다
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "VALIDATION_ERROR"
+              message: "Missing required fields"
+              details:
+                audioFile: "Audio file is required"
+                questionNumber: "Question number is required"
+            meta:
+              timestamp: "2024-01-15T10:30:00Z"
+              version: "v1"
+
+    InternalServerError:
+      description: 서버 내부 오류가 발생했습니다
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_SERVER_ERROR"
+              message: "An unexpected error occurred"
+            meta:
+              timestamp: "2024-01-15T10:30:00Z"
+              version: "v1"
+
+  examples:
+    CompleteTestSuccess:
+      summary: 성공적인 테스트 완료 응답
+      value:
+        success: true
+        data:
+          userId: "user123"
+          level: "B1"
+          overallScore: 72
+          scores:
+            pronunciation: 75
+            fluency: 68
+            grammar: 80
+            vocabulary: 70
+            coherence: 65
+            interaction: 72
+          strengths:
+            - "Strong grammar skills"
+            - "Strong vocabulary skills"
+          improvements:
+            - "Focus on improving fluency"
+            - "Focus on improving coherence"
+          feedback: "Your English shows good foundational skills with particular strengths in grammar and vocabulary. To improve to the next level, focus on speaking more fluently and connecting ideas more coherently."
+          timestamp: "2024-01-15T10:30:00Z"
+        meta:
+          timestamp: "2024-01-15T10:30:00Z"
+          version: "v1"
+
+tags:
+  - name: Level Test
+    description: 영어 레벨 테스트 관련 API

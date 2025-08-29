@@ -1,121 +1,84 @@
 # STUDYMATE-CLIENT 문서
 
+## ⚠️ 문서 구조 변경 안내
+
+**마스터 PRD**: `.taskmaster/docs/prd.txt`가 전체 STUDYMATE 프로젝트의 **Single Source of Truth**입니다.
+
 ## 📚 문서 개요
 
-STUDYMATE-CLIENT 프로젝트의 종합 문서입니다. 프로젝트 이해, 개발, 배포, 유지보수에 필요한 모든 정보를 체계적으로 정리했습니다.
+STUDYMATE-CLIENT 프로젝트의 **프론트엔드 전용** 문서입니다. 백엔드 관련 문서는 STUDYMATE-SERVER에서 관리합니다.
 
 ## 📁 문서 구조
 
 ```
 docs/
-├── 01-overview/           # 프로젝트 개요
-├── 02-requirements/       # 요구사항 정의
-├── 03-architecture/       # 시스템 아키텍처
-├── 04-api/               # API 명세
-├── 05-database/          # 데이터베이스 설계
-├── 06-frontend/          # 프론트엔드 가이드
-├── 07-backend/           # 백엔드 가이드
-├── 08-infrastructure/    # 인프라 & 배포
-├── 09-processes/         # 개발 프로세스
-├── 10-decisions/         # 기술적 결정사항
-└── 99-logs/              # 작업 로그 & 회고
+├── 06-frontend/          # 프론트엔드 전용 가이드 (유지)
+├── 08-infrastructure/    # Cloudflare Pages 배포만 (유지)
+├── 99-logs/              # 클라이언트 작업 로그 (유지)
+└── (다른 디렉터리는 STUDYMATE-SERVER로 이관 또는 삭제)
+
+.taskmaster/docs/
+└── prd.txt               # 마스터 PRD (전체 프로젝트)
 ```
 
 ## 🚀 빠른 시작
 
-### 새 팀원을 위한 필독 문서
-1. **[프로젝트 개요](01-overview/project-overview.md)** - 프로젝트 전체 이해
-2. **[시스템 아키텍처](03-architecture/system-architecture.md)** - 기술 구조 파악
-3. **[API 명세서](04-api/api-specification.md)** - API 사용법 숙지
-4. **[스타일 가이드](06-frontend/style-guide.md)** - UI 개발 규칙
-5. **[배포 가이드](08-infrastructure/deployment-guide.md)** - 배포 프로세스 이해
+### 필독 문서 (우선순위)
+1. **[마스터 PRD](../.taskmaster/docs/prd.txt)** - 전체 프로젝트 이해 (최우선!)
+2. **[스타일 가이드](06-frontend/style-guide.md)** - UI 개발 규칙
+3. **[컴포넌트 라이브러리](06-frontend/components/README.md)** - React 컴포넌트 가이드
+4. **[Cloudflare 배포 가이드](08-infrastructure/deployment-guide.md)** - 클라이언트 배포
+5. **[STUDYMATE-SERVER API 문서](../../STUDYMATE-SERVER/docs/04-api/api-reference.md)** - 백엔드 API 연동
 
-### 역할별 추천 문서
+### 프론트엔드 개발자 전용 문서
+- **[스타일 가이드](06-frontend/style-guide.md)** - 디자인 시스템, 색상 팔레트, Tailwind 설정
+- **[컴포넌트 라이브러리](06-frontend/components/README.md)** - React 컴포넌트 사용법
+- **[Cloudflare 배포](08-infrastructure/deployment-guide.md)** - Pages 배포 및 Workers 연동
 
-#### 프론트엔드 개발자
-- [스타일 가이드](06-frontend/style-guide.md)
-- [컴포넌트 라이브러리](06-frontend/components/README.md)
-- [API 연동 가이드](04-api/api-specification.md)
-- [성능 최적화 가이드](06-frontend/performance-guide.md)
+## ⚠️ 클라이언트 개발 시 필수 참조
 
-#### 백엔드 개발자
-- [API 명세서](04-api/api-specification.md)
-- [데이터베이스 스키마](05-database/database-schema.md)
-- [시스템 아키텍처](03-architecture/system-architecture.md)
-- [보안 가이드](08-infrastructure/security-guide.md)
+**프론트엔드 개발자는 다음 서버 관련 문서와 폴더를 반드시 확인해야 합니다:**
 
-#### DevOps/인프라 담당자
-- [배포 가이드](08-infrastructure/deployment-guide.md)
-- [모니터링 가이드](08-infrastructure/monitoring-guide.md)
-- [보안 설정](08-infrastructure/security-guide.md)
-- [트러블슈팅](08-infrastructure/troubleshooting.md)
+### 🏗️ 백엔드 서버 (STUDYMATE-SERVER)
+- **[API 명세서](../../STUDYMATE-SERVER/docs/04-api/api-reference.md)** - REST API 및 WebSocket 연동 필수
+- **[에러 처리](../../STUDYMATE-SERVER/docs/07-backend/error-handling.md)** - 통일된 에러 코드 및 메시지
+- **[서버 소스코드](../../STUDYMATE-SERVER/src/)** - 실제 구현된 API 엔드포인트 확인
+  - `domain/*/dto/response/` - API 응답 데이터 구조
+  - `domain/*/controller/` - API 엔드포인트 정의
 
-#### 프로젝트 매니저
-- [프로젝트 개요](01-overview/project-overview.md)
-- [요구사항 정의](02-requirements/functional-requirements.md)
-- [개발 프로세스](09-processes/development-workflow.md)
-- [품질 관리](09-processes/quality-management.md)
+### ⚙️ Node.js Workers (Cloudflare) 
+**주의: Worker 폴더는 아직 생성되지 않았으나, 다음 기능 개발 시 필수 확인:**
+- **WebRTC 시그널링 서버** - 화상/음성 통화 연동
+- **AI 레벨테스트 API** - OpenAI 통합 음성 분석
+- **파일 처리 시스템** - Cloudflare R2 Storage 연동
 
-## 📋 문서별 상세 안내
+### 🔗 개발 시 필수 체크
+- **API 응답 타입**: TypeScript 인터페이스와 서버 DTO 일치 확인
+- **WebSocket 이벤트**: 서버에서 발송하는 이벤트 타입 확인  
+- **에러 핸들링**: 서버 에러 코드와 클라이언트 처리 로직 동기화
+- **상태 관리**: 서버 상태와 Zustand store 동기화
 
-### 01. 프로젝트 개요 (Overview)
-- **[project-overview.md](01-overview/project-overview.md)**: 전체 프로젝트 소개, 목표, 기술 스택
+## 📋 클라이언트 전용 문서
 
-### 02. 요구사항 (Requirements)
-- **[functional-requirements.md](02-requirements/functional-requirements.md)**: 기능적 요구사항 정의
-- **[non-functional-requirements.md](02-requirements/non-functional-requirements.md)**: 비기능적 요구사항 정의
-- **[user-stories.md](02-requirements/user-stories.md)**: 사용자 스토리 및 시나리오
+### 마스터 문서 (최우선)
+- **[전체 프로젝트 PRD](../.taskmaster/docs/prd.txt)** - 전체 STUDYMATE 프로젝트의 마스터 요구사항서
 
-### 03. 시스템 아키텍처 (Architecture)
-- **[system-architecture.md](03-architecture/system-architecture.md)**: 전체 시스템 구조 및 설계
-- **[frontend-architecture.md](03-architecture/frontend-architecture.md)**: 프론트엔드 아키텍처
-- **[integration-architecture.md](03-architecture/integration-architecture.md)**: 시스템 간 연동 구조
+### 06. 프론트엔드 (Frontend) - 유지
+- **[style-guide.md](06-frontend/style-guide.md)** - 디자인 시스템, 색상 팔레트, Tailwind 설정
+- **[components/README.md](06-frontend/components/README.md)** - React 컴포넌트 라이브러리
 
-### 04. API 명세 (API)
-- **[api-specification.md](04-api/api-specification.md)**: REST API 및 WebSocket API 명세
-- **[authentication.md](04-api/authentication.md)**: 인증 및 권한 관리
-- **[error-codes.md](04-api/error-codes.md)**: 에러 코드 정의
+### 08. 인프라 (Infrastructure) - 클라이언트 전용
+- **[deployment-guide.md](08-infrastructure/deployment-guide.md)** - Cloudflare Pages 배포 가이드
 
-### 05. 데이터베이스 (Database)
-- **[database-schema.md](05-database/database-schema.md)**: DB 스키마 및 ERD
-- **[data-modeling.md](05-database/data-modeling.md)**: 데이터 모델링 가이드
+### 99. 작업 로그 & 회고 (Logs) - 클라이언트 작업만
+- **[work-sessions/](99-logs/work-sessions/)** - 클라이언트 개발 세션 기록
+- **[failure-patterns/](99-logs/failure-patterns/)** - 클라이언트 실패 패턴 분석
+- **[retrospectives/](99-logs/retrospectives/)** - 클라이언트 팀 회고
 
-### 06. 프론트엔드 (Frontend)
-- **[style-guide.md](06-frontend/style-guide.md)**: 디자인 시스템 및 스타일 가이드
-- **[components/README.md](06-frontend/components/README.md)**: 컴포넌트 라이브러리
-- **[api-integration.md](06-frontend/api-integration.md)**: API 연동 가이드
-- **[testing-guide.md](06-frontend/testing-guide.md)**: 테스트 작성 가이드
-- **[performance-guide.md](06-frontend/performance-guide.md)**: 성능 최적화 가이드
-
-### 07. 백엔드 (Backend)
-- **[service-architecture.md](07-backend/service-architecture.md)**: 서비스 구조 및 패턴
-- **[websocket-guide.md](07-backend/websocket-guide.md)**: WebSocket 구현 가이드
-- **[error-handling.md](07-backend/error-handling.md)**: 에러 처리 전략
-- **[utils/README.md](07-backend/utils/README.md)**: 유틸리티 함수 모음
-
-### 08. 인프라 (Infrastructure)
-- **[deployment-guide.md](08-infrastructure/deployment-guide.md)**: 배포 프로세스 및 가이드
-- **[security-guide.md](08-infrastructure/security-guide.md)**: 보안 설정 및 가이드
-- **[monitoring-guide.md](08-infrastructure/monitoring-guide.md)**: 모니터링 및 로그 관리
-- **[troubleshooting.md](08-infrastructure/troubleshooting.md)**: 문제 해결 가이드
-
-### 09. 개발 프로세스 (Processes)
-- **[development-workflow.md](09-processes/development-workflow.md)**: 개발 워크플로우
-- **[git-workflow.md](09-processes/git-workflow.md)**: Git 브랜치 전략
-- **[code-review.md](09-processes/code-review.md)**: 코드 리뷰 가이드
-- **[testing-strategy.md](09-processes/testing-strategy.md)**: 테스트 전략
-- **[quality-management.md](09-processes/quality-management.md)**: 품질 관리 프로세스
-
-### 10. 기술적 결정사항 (Decisions)
-- **[adr-template.md](10-decisions/adr-template.md)**: ADR 템플릿
-- **[adr-001-frontend-framework.md](10-decisions/adr-001-frontend-framework.md)**: React 선택 근거
-- **[adr-002-state-management.md](10-decisions/adr-002-state-management.md)**: Zustand 선택 근거
-- **[adr-003-css-framework.md](10-decisions/adr-003-css-framework.md)**: Tailwind CSS 선택 근거
-
-### 99. 작업 로그 & 회고 (Logs)
-- **[work-sessions/](99-logs/work-sessions/)**: 개발 세션 기록
-- **[failure-patterns/](99-logs/failure-patterns/)**: 실패 패턴 분석
-- **[retrospectives/](99-logs/retrospectives/)**: 스프린트 회고
+### 참조 문서 (다른 프로젝트)
+- **[STUDYMATE-SERVER 문서](../../STUDYMATE-SERVER/docs/)** - 백엔드 API, DB, 시스템 아키텍처
+- **[API 명세서](../../STUDYMATE-SERVER/docs/04-api/api-reference.md)** - REST API 및 WebSocket
+- **[전체 시스템 아키텍처](../../STUDYMATE-SERVER/docs/03-architecture/system-architecture.md)** - 시스템 전체 구조
 
 ## 🔧 문서 활용 방법
 

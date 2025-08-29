@@ -1,0 +1,151 @@
+# STUDYMATE-SERVER 백엔드 API 개발 - Product Requirements Document
+
+## 1. 프로젝트 개요
+
+STUDYMATE-CLIENT 프론트엔드에서 필요로 하는 Spring Boot 백엔드 API를 개발합니다.
+Cloudflare Workers는 이미 완전히 구현되어 있으므로, STUDYMATE-SERVER에서만 사용자 데이터 관리 API를 구현합니다.
+
+### 기술 스택
+- Backend: Spring Boot (기존 STUDYMATE-SERVER 확장)
+- Database: PostgreSQL/MySQL (기존 DB 활용)
+- Frontend 연동: React 프론트엔드와 REST API 통신
+
+## 2. 백엔드 개발 태스크
+
+### 2.1 사용자 프로필 관리 API
+- UserProfile Entity 설계 및 구현
+- 사용자 프로필 CRUD API 엔드포인트
+- 프로필 이미지 URL 관리 (Cloudflare Images 연동)
+- 프로필 데이터 유효성 검증
+- 사용자 기본 정보 조회/수정 API
+
+### 2.2 온보딩 시스템 API
+- OnboardingData Entity 설계 및 구현
+- 온보딩 4단계 데이터 저장 API
+- 온보딩 진행 상태 관리 API
+- 온보딩 완료 처리 API
+- 단계별 데이터 조회/수정 API
+
+### 2.3 매칭 시스템 API
+- MatchingRequest Entity 설계 및 구현
+- 추천 파트너 조회 API (알고리즘 기반)
+- 매칭 요청/응답 처리 API
+- 매칭 상태 관리 API
+- 호환성 점수 계산 로직
+
+### 2.4 채팅 시스템 확장 API
+- 기존 채팅 API 확장
+- 이미지/음성 메시지 메타데이터 저장
+- 채팅방 파일 업로드 연동 API
+- 메시지 검색 및 필터링 API
+
+### 2.5 세션 예약 관리 API
+- SessionReservation Entity 설계 및 구현
+- 세션 예약/수정/취소 API
+- 캘린더 데이터 조회 API
+- 세션 리마인더 시스템
+- 세션 히스토리 관리 API
+
+### 2.6 사용자 통계 및 분석 API
+- UserStats Entity 설계 및 구현
+- 학습 통계 데이터 수집 API
+- 주간/월간 활동 분석 API
+- 언어별 진도 추적 API
+- 대시보드 데이터 제공 API
+
+### 2.7 알림 시스템 API
+- Notification Entity 설계 및 구현
+- 알림 생성/조회/읽음 처리 API
+- 알림 설정 관리 API
+- 푸시 알림 연동 준비
+- 알림 템플릿 관리
+
+## 3. 데이터베이스 설계
+
+### 3.1 테이블 구조 설계
+- user_profiles 테이블
+- onboarding_data 테이블
+- matching_requests 테이블
+- session_reservations 테이블
+- user_statistics 테이블
+- notifications 테이블
+
+### 3.2 관계 설정 및 인덱스 최적화
+- 외래키 관계 설정
+- 조회 성능 최적화를 위한 인덱스
+- 데이터 무결성 제약조건
+
+## 4. API 보안 및 인증
+
+### 4.1 JWT 토큰 검증
+- 기존 JWT 인증 시스템 활용
+- API 엔드포인트별 권한 설정
+- 토큰 유효성 검증 미들웨어
+
+### 4.2 데이터 검증 및 보안
+- 입력 데이터 유효성 검증
+- SQL 인젝션 방지
+- XSS 공격 방지
+- CORS 설정 최적화
+
+## 5. 프론트엔드 연동
+
+### 5.1 API 클라이언트 업데이트
+- 기존 api/index.js 확장
+- 새로운 API 엔드포인트 추가
+- 에러 처리 개선
+- 로딩 상태 관리 개선
+
+### 5.2 Zustand Store 통합
+- localStorage 기반 store를 API 연동으로 변경
+- 서버 데이터와 클라이언트 상태 동기화
+- 옵티미스틱 업데이트 구현
+- 캐시 무효화 전략
+
+## 6. 테스트 및 검증
+
+### 6.1 API 테스트
+- Unit 테스트 작성
+- Integration 테스트 작성
+- API 문서화 (Swagger)
+- Postman 컬렉션 생성
+
+### 6.2 프론트엔드 통합 테스트
+- API 연동 테스트
+- E2E 테스트 업데이트
+- 에러 케이스 테스트
+- 성능 테스트
+
+## 7. 개발 우선순위
+
+### Phase 1 - 핵심 사용자 데이터 (Week 1)
+1. UserProfile API 구현
+2. 프론트엔드 프로필 API 연동
+3. OnboardingData API 구현
+4. 온보딩 플로우 API 연동
+
+### Phase 2 - 매칭 시스템 (Week 2)
+1. MatchingRequest API 구현
+2. 매칭 알고리즘 기본 구현
+3. 프론트엔드 매칭 페이지 API 연동
+4. 매칭 상태 관리
+
+### Phase 3 - 세션 관리 (Week 3)
+1. SessionReservation API 구현
+2. 캘린더 데이터 API
+3. 프론트엔드 세션 예약 연동
+4. 세션 상태 관리
+
+### Phase 4 - 통계 및 알림 (Week 4)
+1. UserStats API 구현
+2. 분석 대시보드 API
+3. Notification API 구현
+4. 전체 시스템 통합 테스트
+
+## 8. 기술적 제약사항
+
+- 기존 STUDYMATE-SERVER 아키텍처 준수
+- 기존 데이터베이스 스키마와 호환성 유지
+- Cloudflare Workers와 중복 기능 방지
+- 프론트엔드 기존 디자인 시스템 준수
+- RESTful API 설계 원칙 준수

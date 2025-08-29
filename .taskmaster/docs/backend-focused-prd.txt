@@ -1,0 +1,116 @@
+# STUDYMATE-SERVER 백엔드 API 개발 PRD
+
+## 1. 매칭 시스템 API 구현 (최우선)
+
+STUDYMATE-CLIENT 프론트엔드의 매칭 페이지와 연동될 매칭 시스템 백엔드 API를 구현합니다.
+
+### 구현해야 할 API:
+- GET /api/v1/matching/partners - 추천 파트너 목록
+- POST /api/v1/matching/request - 매칭 요청
+- GET /api/v1/matching/requests - 받은/보낸 매칭 요청  
+- POST /api/v1/matching/accept/{id} - 매칭 수락
+- POST /api/v1/matching/reject/{id} - 매칭 거절
+- GET /api/v1/matching/matches - 매칭된 파트너 목록
+
+### 필요한 Entity:
+- MatchingRequest
+- MatchingProfile  
+- UserCompatibility
+
+## 2. 온보딩 완료 처리 API
+
+현재 프론트엔드에서 localStorage로 관리되는 온보딩 데이터를 서버로 이관합니다.
+
+### 구현해야 할 API:
+- POST /api/v1/user/complete-onboarding - 온보딩 완료 처리
+- GET /api/v1/user/onboarding-status - 온보딩 상태 확인
+- GET /api/v1/user/profile-summary - 종합 프로필 정보
+
+### 필요한 Entity:
+- OnboardingData
+- UserProfile 확장
+
+## 3. 세션 관리 API
+
+WebRTC 세션과 연계하여 세션 메타데이터를 관리합니다.
+
+### 구현해야 할 API:
+- POST /api/v1/sessions - 세션 생성
+- GET /api/v1/sessions - 세션 목록
+- GET /api/v1/sessions/{id} - 세션 상세
+- PUT /api/v1/sessions/{id}/join - 세션 참가
+- PUT /api/v1/sessions/{id}/leave - 세션 나가기
+
+### 필요한 Entity:
+- Session
+- SessionParticipant
+- SessionHistory
+
+## 4. 알림 시스템 API
+
+사용자 알림 관리 시스템을 구현합니다.
+
+### 구현해야 할 API:
+- GET /api/v1/notifications - 알림 목록
+- POST /api/v1/notifications/read/{id} - 알림 읽음 처리
+- DELETE /api/v1/notifications/{id} - 알림 삭제
+
+### 필요한 Entity:
+- Notification
+- NotificationSettings
+
+## 5. 사용자 통계 API
+
+학습 통계 및 진도 추적을 위한 API를 구현합니다.
+
+### 구현해야 할 API:
+- GET /api/v1/analytics/dashboard - 대시보드 데이터
+- GET /api/v1/analytics/weekly-stats - 주간 통계
+- GET /api/v1/analytics/language-progress - 언어별 진도
+- POST /api/v1/analytics/session-complete - 세션 완료 기록
+
+### 필요한 Entity:
+- UserStats
+- SessionRecord
+- LanguageProgress
+
+## 6. 프로필 관리 API 확장
+
+현재 부족한 프로필 관리 기능을 보완합니다.
+
+### 구현해야 할 API:
+- GET /api/v1/user/profile - 프로필 조회 (확장)
+- PUT /api/v1/user/profile - 프로필 전체 업데이트
+- PATCH /api/v1/user/profile/image - 프로필 이미지 업데이트
+- GET /api/v1/user/settings - 사용자 설정 조회
+- PUT /api/v1/user/settings - 사용자 설정 변경
+
+### 필요한 Entity:
+- UserSettings
+- UserPreferences
+
+## 7. 채팅 시스템 확장
+
+기존 채팅 시스템을 파일 업로드와 연동합니다.
+
+### 구현해야 할 API:
+- POST /api/v1/chat/rooms/{roomId}/upload - 파일 업로드 메타데이터 저장
+- GET /api/v1/chat/rooms/{roomId}/files - 채팅방 파일 목록
+- DELETE /api/v1/chat/files/{fileId} - 채팅 파일 삭제
+
+### 필요한 Entity:
+- ChatFile
+- FileMetadata
+
+## 8. 레벨 테스트 연동 API
+
+Cloudflare Workers의 레벨 테스트 결과를 사용자 프로필에 연동합니다.
+
+### 구현해야 할 API:
+- POST /api/v1/level-test/save-result - 레벨 테스트 결과 저장
+- GET /api/v1/level-test/history - 레벨 테스트 히스토리
+- GET /api/v1/user/language-level - 현재 언어 레벨
+
+### 필요한 Entity:
+- LevelTestResult
+- LanguageLevel

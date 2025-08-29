@@ -192,6 +192,12 @@ const useLevelTestStore = create(
       resetTimer: () => set({ timerSeconds: 180, timeRemaining: 180, isTimerRunning: false }),
       setTimerSeconds: (seconds) => set({ timerSeconds: seconds, timeRemaining: seconds }),
       
+      // 질문 설정
+      setQuestions: (questions) => set({ 
+        questions: questions || [],
+        totalQuestions: questions?.length || 4
+      }),
+
       // 질문 네비게이션
       nextQuestion: () => set((state) => {
         const nextIndex = Math.min(state.totalQuestions - 1, state.currentQuestionIndex + 1);
