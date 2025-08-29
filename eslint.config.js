@@ -12,6 +12,11 @@ export default defineConfig([
     'test-results',
     'tests-e2e/**/*',
     'playwright.config.ts',
+    // TypeScript 파일들 완전히 무시 (TypeScript parser 미설정)
+    '**/*.ts',
+    '**/*.tsx',
+    'e2e/**/*.ts',
+    'e2e/**/*.tsx',
   ]),
 
   // App source (React/browser)
