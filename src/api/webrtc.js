@@ -1,10 +1,10 @@
 // WebRTC API Client
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 const API_VERSION = 'v1';
 
 class WebRTCAPI {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/api/${API_VERSION}/room`;
+    this.baseURL = `${API_BASE_URL}`;
   }
 
   /**
@@ -16,7 +16,7 @@ class WebRTCAPI {
    */
   async createRoom(options = {}) {
     try {
-      const response = await fetch(`${this.baseURL}/create`, {
+      const response = await fetch(`${this.baseURL}/webrtc/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ class WebRTCAPI {
    */
   async joinRoom(roomId, userInfo) {
     try {
-      const response = await fetch(`${this.baseURL}/${roomId}/join`, {
+      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ class WebRTCAPI {
    */
   async leaveRoom(roomId, userId) {
     try {
-      const response = await fetch(`${this.baseURL}/${roomId}/leave`, {
+      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/leave`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ class WebRTCAPI {
    */
   async getRoomInfo(roomId) {
     try {
-      const response = await fetch(`${this.baseURL}/${roomId}/info`, {
+      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/info`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -131,7 +131,7 @@ class WebRTCAPI {
    */
   async updateRoomSettings(roomId, settings) {
     try {
-      const response = await fetch(`${this.baseURL}/${roomId}/settings`, {
+      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/settings`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ class WebRTCAPI {
   getWebSocketURL(roomId, userId, userName = 'Anonymous') {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const apiHost = new URL(this.baseURL).host;
-    return `${wsProtocol}//${apiHost}/api/${API_VERSION}/room/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`;
+    return `${wsProtocol}//${apiHost}/webrtc/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`;
   }
 }
 

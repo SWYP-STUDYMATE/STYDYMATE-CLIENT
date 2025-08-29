@@ -61,15 +61,25 @@ export default function MatchingProfile() {
         responseRate: 95
     };
 
-    const handleAcceptMatch = () => {
-        acceptMatch(user.id);
-        setIsScheduling(true);
+    const handleAcceptMatch = async () => {
+        try {
+            await acceptMatch(user.id);
+            setIsScheduling(true);
+        } catch (error) {
+            console.error('Failed to accept match:', error);
+            alert('매칭 수락 중 오류가 발생했습니다.');
+        }
     };
 
-    const handleRejectMatch = () => {
+    const handleRejectMatch = async () => {
         if (window.confirm('이 매칭을 거절하시겠습니까?')) {
-            rejectMatch(user.id);
-            navigate('/matching');
+            try {
+                await rejectMatch(user.id);
+                navigate('/matching');
+            } catch (error) {
+                console.error('Failed to reject match:', error);
+                alert('매칭 거절 중 오류가 발생했습니다.');
+            }
         }
     };
 

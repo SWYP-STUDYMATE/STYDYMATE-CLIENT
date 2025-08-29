@@ -390,6 +390,13 @@ npx wrangler pages deploy dist --project-name=studymate-client --branch=preview
 
 ## ⚠️ 개발 시 주의사항
 
+### 📝 필수 상호 참조 규칙
+**클라이언트 개발 시 반드시 확인해야 할 서버 관련 사항:**
+- **API 엔드포인트**: `../STUDYMATE-SERVER/src/*/controller/` 실제 구현 확인
+- **DTO 응답 형식**: `../STUDYMATE-SERVER/src/*/dto/response/` TypeScript 인터페이스와 일치
+- **에러 코드**: `../STUDYMATE-SERVER/docs/07-backend/error-handling.md` 에러 처리 로직 동기화
+- **WebSocket 이벤트**: 서버 소켓 이벤트와 클라이언트 핸들러 일치
+
 ### API 통신 규칙
 - **백엔드 API (STUDYMATE-SERVER)**
   - 모든 비즈니스 로직 및 데이터 처리

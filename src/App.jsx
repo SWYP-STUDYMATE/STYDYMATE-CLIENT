@@ -32,6 +32,8 @@ const VideoControlsDemo = lazyLoad(() => import('./pages/Session/VideoControlsDe
 const SessionList = lazyLoad(() => import('./pages/Session/SessionList'));
 const SessionCalendar = lazyLoad(() => import('./pages/Session/SessionCalendar'));
 const SessionScheduleNew = lazyLoad(() => import('./pages/Session/SessionScheduleNew'));
+const MatchingMain = lazyLoad(() => import('./pages/Matching/MatchingMain'));
+const MatchingProfile = lazyLoad(() => import('./pages/Matching/MatchingProfile'));
 
 export default function App() {
   return (
@@ -67,6 +69,8 @@ export default function App() {
         <Route path='/sessions' element={<SessionList />} />
         <Route path='/sessions/calendar' element={<SessionCalendar />} />
         <Route path='/session/schedule/new' element={<SessionScheduleNew />} />
+        <Route path='/matching' element={<MatchingMain />} />
+        <Route path='/matching/profile/:userId' element={<MatchingProfile />} />
         <Route path='/analytics' element={<AnalyticsDashboard />} />
       </Routes>
     </div>

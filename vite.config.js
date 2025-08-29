@@ -101,8 +101,8 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: mode !== 'production',
-      // scheduler 관련 번들 안전성 확인을 위해 우선 비압축 빌드로 검증
-      minify: false,
+      // 프로덕션 최적화를 위한 압축 활성화
+      minify: mode === 'production' ? 'esbuild' : false,
       target: 'es2019',
       commonjsOptions: {
         include: [/node_modules/],
@@ -111,8 +111,17 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         output: {
-          // 기본 청킹 전략을 사용하여 UMD/ESM 호환성 이슈를 회피
-          assetFileNames: 'assets/[name]-[hash][extname]'
+          // 청킹 전략 최적화
+          assetFileNames: 'assets/[name]-[hash][extname]',
+          chunkFileNames: 'js/[name]-[hash].js',
+          entryFileNames: 'js/[name]-[hash].js',
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            router: ['react-router-dom'],
+            store: ['zustand'],
+            ui: ['lucide-react', 'emoji-picker-react'],
+            api: ['axios', 'sockjs-client', 'stompjs']
+          }
         }
       },
       // 압축 및 트리쉐이킹 최적화
