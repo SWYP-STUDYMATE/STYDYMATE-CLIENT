@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_WORKERS_URL || 'http://localhost:8787';
+const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 
 // 매칭 파트너 검색
 export async function findMatchingPartners(preferences) {

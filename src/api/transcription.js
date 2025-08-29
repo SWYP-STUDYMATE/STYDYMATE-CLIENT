@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_WORKERS_URL || 'http://localhost:8787';
+const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 
 // 실시간 음성 전사
 export async function transcribeAudio(audioBlob, options = {}) {

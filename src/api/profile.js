@@ -1,5 +1,5 @@
 // Profile API with Cloudflare Workers integration
-const WORKERS_API_URL = import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev';
+const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 
 /**
  * Upload profile image to Cloudflare Images
