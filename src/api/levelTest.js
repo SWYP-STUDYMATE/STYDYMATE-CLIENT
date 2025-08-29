@@ -6,7 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8
 export async function getLevelTestQuestions() {
   return withRetry(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/level-test/questions`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/level-test/questions`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,

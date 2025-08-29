@@ -18,7 +18,7 @@ class WebRTCAPI {
    */
   async createRoom(options = {}) {
     try {
-      const response = await fetch(`${this.baseURL}/webrtc/create`, {
+      const response = await fetch(`${this.baseURL}/api/v1/room/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

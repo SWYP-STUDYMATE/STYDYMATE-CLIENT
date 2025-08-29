@@ -83,6 +83,7 @@ export default function App() {
         <Route path='/level-test/complete' element={<LevelTestComplete />} />
         <Route path='/level-test/result' element={<LevelTestResult />} />
         <Route path='/schedule' element={<Schedule />} />
+        <Route path='/session' element={<SessionList />} />
         <Route path='/session/audio-check' element={<AudioConnectionCheck />} />
         <Route path='/session/video/:roomId' element={<VideoSessionRoom />} />
         <Route path='/session/video-check' element={<VideoConnectionCheck />} />
