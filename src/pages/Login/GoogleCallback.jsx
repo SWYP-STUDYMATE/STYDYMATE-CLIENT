@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
 
-export default function Navercallback() {
-  const [message, setMessage] = useState("네이버 로그인 처리 중...");
+export default function GoogleCallback() {
+  const [message, setMessage] = useState("Google 로그인 처리 중...");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,19 +17,19 @@ export default function Navercallback() {
     const errorDescription = params.get("error_description");
 
     // 콘솔로 토큰과 기타 파라미터들 찍기
-    console.log("네이버 콜백 accessToken:", accessToken);
-    console.log("네이버 콜백 refreshToken:", refreshToken);
-    console.log("네이버 콜백 code:", code);
-    console.log("네이버 콜백 state:", state);
+    console.log("Google 콜백 accessToken:", accessToken);
+    console.log("Google 콜백 refreshToken:", refreshToken);
+    console.log("Google 콜백 code:", code);
+    console.log("Google 콜백 state:", state);
     
     if (error) {
-      console.log("네이버 콜백 error:", error, errorDescription);
-      setMessage("네이버 로그인 실패: " + (errorDescription || error));
+      console.log("Google 콜백 error:", error, errorDescription);
+      setMessage("Google 로그인 실패: " + (errorDescription || error));
     } else if (accessToken && refreshToken) {
       // 백엔드에서 토큰을 직접 전달받은 경우
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
-      setMessage("네이버 로그인 성공! 사용자 정보를 가져오는 중...");
+      setMessage("Google 로그인 성공! 사용자 정보를 가져오는 중...");
       
       const fetchUserInfo = async () => {
         try {
@@ -39,7 +39,7 @@ export default function Navercallback() {
           localStorage.setItem("userName", nameRes.data.name);
           console.log("유저 이름 저장 완료:", nameRes.data.name);
           
-          setMessage("네이버 로그인 성공! 메인 페이지로 이동합니다...");
+          setMessage("Google 로그인 성공! 메인 페이지로 이동합니다...");
           setTimeout(() => {
             navigate("/agreement", { replace: true });
           }, 2000);
@@ -53,14 +53,13 @@ export default function Navercallback() {
       };
       fetchUserInfo();
     } else if (code && state) {
+      // 기존 방식 (code를 통한 토큰 교환)
       const fetchTokens = async () => { 
         try {
-          // 백엔드 요청 URL도 콘솔에 찍기
-          const url = `/login/oauth2/code/naver?code=${code}&state=${state}`;
+          const url = `/login/oauth2/code/google?code=${code}&state=${state}`;
           console.log("백엔드 요청 URL:", url);
 
           const res = await api.get(url);
-          // 백엔드 응답 전체 콘솔에 찍기
           console.log("백엔드 응답:", res.data);
 
           if (res.data && res.data.accessToken && res.data.refreshToken) {
@@ -72,7 +71,7 @@ export default function Navercallback() {
             if (typeof res.data.isNewUser !== 'undefined') {
               localStorage.setItem('isNewUser', String(res.data.isNewUser));
             }
-            // 유저 이름을 zustand에 저장 (동기화)
+            
             try {
               const nameRes = await api.get("/user/name");
               const setName = useProfileStore.getState().setName;
@@ -81,7 +80,8 @@ export default function Navercallback() {
             } catch (e) {
               console.error("유저 이름 불러오기 실패:", e);
             }
-            setMessage("네이버 로그인 성공! 메인 페이지로 이동합니다...");
+            
+            setMessage("Google 로그인 성공! 메인 페이지로 이동합니다...");
             setTimeout(() => {
               navigate("/agreement", { replace: true });
             }, 2000);
@@ -89,7 +89,6 @@ export default function Navercallback() {
             setMessage("토큰을 받아오지 못했습니다.");
           }
         } catch (e) {
-          // 에러 객체도 콘솔에 찍기
           console.error("토큰 요청 실패:", e);
           setMessage("토큰 요청 실패: " + (e.response?.data?.message || e.message));
           setTimeout(() => {

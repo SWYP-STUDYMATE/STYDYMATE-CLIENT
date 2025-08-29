@@ -7,6 +7,7 @@ import Main from './pages/Main';
 
 // 레이지 로드 컴포넌트들
 const Navercallback = lazyLoad(() => import('./pages/Login/Navercallback'));
+const GoogleCallback = lazyLoad(() => import('./pages/Login/GoogleCallback'));
 const Agreement = lazyLoad(() => import('./pages/Login/Agreement'));
 const SignupComplete = lazyLoad(() => import('./pages/Login/SignupComplete'));
 const OnboardingInfoRouter = lazyLoad(() => import('./pages/ObInfo/ObInfoRouter'));
@@ -38,6 +39,7 @@ export default function App() {
       <Routes>
         <Route path='/' element={<Login />} />
         <Route path='/login/oauth2/code/naver' element={<Navercallback />} />
+        <Route path='/login/oauth2/code/google' element={<GoogleCallback />} />
         <Route path='/agreement' element={<Agreement />} />
         <Route path='/signup-complete' element={<SignupComplete />} />
         <Route path='/main' element={<Main />} />
