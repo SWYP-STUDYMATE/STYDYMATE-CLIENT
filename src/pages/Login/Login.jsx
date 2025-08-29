@@ -16,42 +16,18 @@ export default function Login() {
     }
   }, [navigate]);
 
-  const handleNaverLogin = useCallback(async () => {
+  const handleNaverLogin = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    try {
-      const response = await api.get("/api/v1/login/naver");
-      const loginUrl = response.data;
-      if (loginUrl) {
-        window.location.href = loginUrl;
-      } else {
-        setError("네이버 로그인 URL을 받아오지 못했습니다.");
-      }
-    } catch (e) {
-      console.error(e);
-      setError("네이버 로그인 요청에 실패했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+    // 서버가 302 리다이렉트를 반환하므로 직접 이동
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "/api"}/v1/login/naver`;
   }, []);
 
-  const handleGoogleLogin = useCallback(async () => {
+  const handleGoogleLogin = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    try {
-      const response = await api.get("/api/v1/login/google");
-      const loginUrl = response.data;
-      if (loginUrl) {
-        window.location.href = loginUrl;
-      } else {
-        setError("구글 로그인 URL을 받아오지 못했습니다.");
-      }
-    } catch (e) {
-      console.error(e);
-      setError("구글 로그인 요청에 실패했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+    // 서버가 302 리다이렉트를 반환하므로 직접 이동
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "/api"}/v1/login/google`;
   }, []);
 
   return (

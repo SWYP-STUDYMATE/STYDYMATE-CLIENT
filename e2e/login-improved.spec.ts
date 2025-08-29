@@ -130,8 +130,8 @@ test.describe('개선된 로그인 페이지', () => {
   test('자동 로그인 체크박스 기능 테스트', async ({ page }) => {
     const autoLoginCheckbox = page.locator('[data-testid="auto-login-checkbox"]');
     
-    // 초기 상태는 체크되지 않음
-    await expect(autoLoginCheckbox).not.toBeChecked();
+    // 초기 상태는 체크되지 않음 (aria-pressed로 확인)
+    await expect(autoLoginCheckbox).toHaveAttribute('aria-pressed', 'false');
     
     // 체크박스 클릭
     await autoLoginCheckbox.click();
@@ -145,13 +145,16 @@ test.describe('개선된 로그인 페이지', () => {
   });
 
   test('이미 로그인된 사용자 리다이렉트', async ({ page }) => {
+    // 먼저 페이지를 로드한 후 로컬스토리지 설정
+    await page.goto('http://localhost:3000/');
+    
     // 로컬스토리지에 토큰 설정
     await page.evaluate(() => {
       localStorage.setItem('accessToken', 'mock-access-token');
     });
     
-    // 로그인 페이지로 이동
-    await page.goto('http://localhost:3000/');
+    // 페이지 새로고침하여 토큰 체크 로직 실행
+    await page.reload();
     
     // 메인 페이지로 자동 리다이렉트 확인
     await expect(page).toHaveURL('/main');
@@ -196,6 +199,9 @@ test.describe('개선된 로그인 페이지', () => {
     // 토큰이 포함된 메인 페이지로 이동 (OAuth 콜백 후 상황)
     await page.goto(`http://localhost:3000/main?accessToken=${mockToken}`);
     
+    // 토큰 처리가 완료될 때까지 대기
+    await page.waitForTimeout(500);
+    
     // 토큰이 로컬스토리지에 저장되었는지 확인
     const savedToken = await page.evaluate(() => 
       localStorage.getItem('accessToken')
@@ -204,6 +210,7 @@ test.describe('개선된 로그인 페이지', () => {
     expect(savedToken).toBe(mockToken);
     
     // URL에서 토큰 파라미터가 제거되었는지 확인
+    await page.waitForURL('/main');
     await expect(page).toHaveURL('/main');
   });
 });
