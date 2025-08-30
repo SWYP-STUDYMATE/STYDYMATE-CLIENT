@@ -145,17 +145,23 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:relative lg:z-auto lg:shadow-none
-        w-80 lg:w-72
-        ${className}
-      `}>
+      <aside 
+        className={`
+          fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:relative lg:z-auto lg:shadow-none
+          w-80 lg:w-72
+          ${className}
+        `}
+        role="navigation"
+        aria-label="메인 네비게이션"
+        data-testid="sidebar"
+      >
         {/* Profile Section */}
         <div className="p-6 border-b border-[#E7E7E7]">
           <div className="flex items-center space-x-4">
@@ -163,7 +169,7 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
               {profileImage ? (
                 <img
                   src={profileImage}
-                  alt="프로필"
+                  alt={`${englishName || '사용자'} 프로필 사진`}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -204,6 +210,9 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
                         ? 'bg-[#00C471] text-white'
                         : 'text-[#666666] hover:bg-[#F1F3F5] hover:text-[#111111]'
                     }`}
+                    aria-label={`${item.label} - ${item.description}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    data-testid={`sidebar-${item.id}-button`}
                   >
                     <Icon className="w-5 h-5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -215,7 +224,10 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
                       </p>
                     </div>
                     {item.badge && (
-                      <span className="bg-red-500 text-white text-[10px] px-2 py-1 rounded-full">
+                      <span 
+                        className="bg-red-500 text-white text-[10px] px-2 py-1 rounded-full"
+                        aria-label={`새 알림 ${item.badge}개`}
+                      >
                         {item.badge}
                       </span>
                     )}
@@ -269,7 +281,7 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
             <span className="text-[14px] font-medium">로그아웃</span>
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
 };

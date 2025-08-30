@@ -90,10 +90,10 @@ export default function OnboardingInfo3() {
   };
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <ProgressBar total={5} value={3} className="mt-[19px]" />
-      <div className="mx-auto mt-[19px] w-[720px]">
+      <div className="mx-auto mt-[19px] max-w-[720px] w-full">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
           프로필 사진을 업로드 해주세요.
         </h1>
@@ -101,7 +101,7 @@ export default function OnboardingInfo3() {
           (선택) 얼굴이 보이는 사진을 올리면 첫 만남이 더 편해집니다.
         </p>
       </div>
-      <div className="mx-auto mt-[70px] w-[720px] flex flex-col items-center">
+      <div className="mx-auto mt-[70px] max-w-[720px] w-full flex flex-col items-center">
         <div className="relative w-[300px] h-[300px] mb-[114px]">   
           <div className="w-full h-full rounded-full bg-[#e7e7e7] flex items-center justify-center overflow-hidden cursor-pointer" onClick={handleSelectPhoto}>
             {image ? (

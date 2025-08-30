@@ -1,3 +1,7 @@
+import { log } from '../utils/logger';
+import { toast } from '../components/Toast';
+import { handleApiError } from '../utils/errorHandler';
+
 const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 
 // 실시간 음성 전사
@@ -26,7 +30,8 @@ export async function transcribeAudio(audioBlob, options = {}) {
 
     return await response.json();
   } catch (error) {
-    console.error('Transcribe audio error:', error);
+    log.error('음성 전사 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }
@@ -55,7 +60,8 @@ export async function translateText(text, options = {}) {
 
     return await response.json();
   } catch (error) {
-    console.error('Translate text error:', error);
+    log.error('텍스트 번역 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }

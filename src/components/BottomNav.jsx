@@ -76,11 +76,15 @@ const BottomNav = ({ className = '' }) => {
   }
 
   return (
-    <nav className={`
-      fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#E7E7E7]
-      lg:hidden
-      ${className}
-    `}>
+    <nav 
+      className={`
+        fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#E7E7E7]
+        lg:hidden
+        ${className}
+      `}
+      role="navigation"
+      aria-label="하단 메인 네비게이션"
+    >
       <div className="flex items-center justify-around py-2 pb-safe">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -93,13 +97,19 @@ const BottomNav = ({ className = '' }) => {
               className={`flex flex-col items-center justify-center min-w-0 flex-1 py-2 transition-colors ${
                 isActive ? 'text-[#00C471]' : 'text-[#929292]'
               }`}
+              aria-label={`${item.label} 페이지로 이동`}
+              aria-current={isActive ? 'page' : undefined}
+              data-testid={`${item.id}-nav-button`}
             >
               <div className="relative">
                 <Icon className="w-6 h-6 mb-1" />
                 
                 {/* 채팅 알림 배지 (예시) */}
                 {item.id === 'chat' && (
-                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center">
+                  <div 
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                    aria-label="읽지 않은 메시지 2개"
+                  >
                     <span className="text-[10px] font-bold">2</span>
                   </div>
                 )}

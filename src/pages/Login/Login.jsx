@@ -45,7 +45,7 @@ export default function Login() {
   }, []);
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <div className="ml-[24px] mt-[53px]">
       <h1
@@ -113,7 +113,7 @@ export default function Login() {
           자동 로그인
         </label>
       </div>
-      <div className="w-[720px] mx-auto">
+      <div className="max-w-[720px] w-full mx-auto">
         <button
           data-testid="naver-login-button"
           className={`flex justify-center items-center w-full py-[14px] text-[#FFFFFF] text-[18px] font-bold leading-[28px] rounded-[6px] focus:outline-none transition-colors duration-200 ${
@@ -129,7 +129,7 @@ export default function Login() {
           네이버로 로그인
         </button>
       </div>
-      <div className="w-[720px] mx-auto mt-[20px]">
+      <div className="max-w-[720px] w-full mx-auto mt-[20px]">
         <button
           data-testid="google-login-button"
           className={`flex justify-center items-center w-full py-[14px] text-[18px] font-bold leading-[24px] rounded-[6px] focus:outline-none transition-colors duration-200 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] ${

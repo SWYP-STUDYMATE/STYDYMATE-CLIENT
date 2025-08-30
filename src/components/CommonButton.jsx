@@ -20,7 +20,7 @@ export default function CommonButton({ text, variant = "primary", className = ""
 
   return (
     <button
-      className={`w-full h-[56px] text-[18px] font-bold rounded-[6px] transition-colors duration-200 ${variantClass} ${className}`}
+      className={`w-full h-[56px] text-[18px] font-bold rounded-[6px] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${variantClass} ${className}`}
       {...props}
     >
       {text}

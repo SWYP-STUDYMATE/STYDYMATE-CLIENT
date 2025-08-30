@@ -52,15 +52,15 @@ export default function OnboardingInfo2() {
   };
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] min-h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <ProgressBar total={5} value={2} className="mt-[19px]" />
-      <div className="mx-auto mt-[19px] w-[720px]">
+      <div className="mx-auto mt-[19px] max-w-[720px] w-full px-6">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
           현재 거주지와 시간대를 선택해주세요.
         </h1>
       </div>
-      <div className="mx-auto mt-[32px] w-[720px]">
+      <div className="mx-auto mt-[32px] max-w-[720px] w-full px-6">
         <label className="block text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px]">
           거주지 & 시간대
         </label>

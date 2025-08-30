@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { submitLevelTest, getLevelTestResult, completeLevelTest } from "../api/levelTest";
+import { log } from '../utils/logger';
+import { toast } from '../components/Toast';
 
 const useLevelTestStore = create(
   persist(

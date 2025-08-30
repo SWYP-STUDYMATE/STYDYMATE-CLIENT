@@ -44,16 +44,16 @@ export default function OnboardingInfo() {
   };
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] min-h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <ProgressBar total={5} value={1} className="mt-[19px]" />
-      <div className="mx-auto mt-[19px] w-[720px]">
+      <div className="mx-auto mt-[19px] max-w-[720px] w-full px-6">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
           파트너가 편하게 부를 수 있는 이름을 입력해주세요!
         </h1>
       </div>
       {/* Figma nickname input section */}
-      <div className="mx-auto mt-[32px] w-[720px]">
+      <div className="mx-auto mt-[32px] max-w-[720px] w-full px-6">
         <label className="block text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px]">
           영어 이름
         </label>

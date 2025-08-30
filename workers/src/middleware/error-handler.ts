@@ -1,6 +1,7 @@
 import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ApiError, ApiResponse } from '../types';
+import { log } from '../utils/logger';
 
 /**
  * 전역 에러 핸들링 미들웨어
@@ -10,16 +11,17 @@ export async function errorHandler(c: Context, next: Next) {
     try {
         await next();
     } catch (error) {
-        console.error('[Error]', {
-            requestId: c.get('requestId'),
-            path: c.req.path,
-            method: c.req.method,
-            error: error instanceof Error ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            } : error
-        });
+        // 통합 로거 사용
+        log.error(
+            'Unhandled error in request',
+            error instanceof Error ? error : new Error(String(error)),
+            {
+                requestId: c.get('requestId'),
+                path: c.req.path,
+                method: c.req.method,
+                component: 'ERROR_HANDLER'
+            }
+        );
 
         // API 에러 처리
         if (error instanceof ApiError) {

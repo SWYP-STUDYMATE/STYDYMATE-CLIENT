@@ -54,15 +54,15 @@ export default function ObLang1() {
   };
      
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <ProgressBar total={4} value={1} className="mt-[19px]" />
-      <div className="mx-auto mt-[19px] w-[720px]">
+      <div className="mx-auto mt-[19px] max-w-[720px] w-full">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
           모국어를 선택해주세요.
         </h1>
       </div>
-      <div className="mx-auto mt-[32px] w-[720px]">
+      <div className="mx-auto mt-[32px] max-w-[720px] w-full">
         <label className="block text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px]">
           모국어 선택
         </label>

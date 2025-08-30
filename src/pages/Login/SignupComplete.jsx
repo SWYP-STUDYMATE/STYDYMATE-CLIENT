@@ -33,7 +33,7 @@ export default function SignupComplete() {
   if (loading) {
     return (
       <div className="bg-[#fafafa] min-h-screen">
-        <div className="bg-white w-[768px] min-h-screen mx-auto">
+        <div className="bg-white max-w-[768px] w-full min-h-screen mx-auto">
           <Header />
           <div className="flex items-center justify-center h-full">
             <div className="text-[16px] text-[#767676]">로딩 중...</div>
@@ -45,7 +45,7 @@ export default function SignupComplete() {
 
   return (
     <div className="bg-[#fafafa] min-h-screen">
-      <div className="bg-white w-[768px] min-h-screen mx-auto">
+      <div className="bg-white max-w-[768px] w-full min-h-screen mx-auto">
         <Header />
         <div className="pt-[52px] px-[24px] flex flex-col ">
           <h1 className="font-bold text-[32px] mb-[12px] leading-[42px] tracking-[-0.8px]">

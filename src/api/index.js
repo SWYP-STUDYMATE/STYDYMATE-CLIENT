@@ -1,4 +1,7 @@
 import axios from "axios";
+import { log } from '../utils/logger';
+import { handleApiError } from '../utils/errorHandler';
+import { toast } from '../components/Toast';
 
 const api = axios.create({
   // 프로덕션: 프런트 도메인(languagemate.kr)에서 /api 리버스프록시 → api.languagemate.kr
@@ -6,27 +9,59 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
 });
 
-// 요청 인터셉터: accessToken 자동 첨부
+// 요청 인터셉터: accessToken 자동 첨부 및 로깅
 api.interceptors.request.use(
   (config) => {
+    // 시작 시간 기록
+    config.startTime = Date.now();
+    
     const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+    
+    log.debug(`API 요청 시작: ${config.method?.toUpperCase()} ${config.url}`, {
+      headers: config.headers,
+      data: config.data
+    }, 'API');
+    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    log.error('API 요청 설정 실패', error, 'API');
+    return Promise.reject(error);
+  }
 );
 
-// 응답 인터셉터: accessToken 만료 시 refresh_token으로 재발급
+// 응답 인터셉터: accessToken 만료 시 refresh_token으로 재발급 및 로깅
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 응답 시간 계산 및 로깅
+    const duration = response.config.startTime ? Date.now() - response.config.startTime : 0;
+    const method = response.config.method?.toUpperCase() || 'UNKNOWN';
+    const url = response.config.url || 'unknown';
+    
+    log.api(method, url, response.status, duration);
+    
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     
+    // 에러 로깅
+    const duration = originalRequest.startTime ? Date.now() - originalRequest.startTime : 0;
+    const method = originalRequest.method?.toUpperCase() || 'UNKNOWN';
+    const url = originalRequest.url || 'unknown';
+    
+    if (error.response) {
+      log.api(method, url, error.response.status, duration);
+    } else {
+      log.error(`네트워크 오류: ${method} ${url}`, error, 'API');
+    }
+
     // 403 Forbidden 오류 처리
     if (error.response && error.response.status === 403) {
-      console.error("403 Forbidden: 권한이 없습니다. 토큰 재발급을 시도합니다.");
+      log.warn("403 Forbidden: 권한이 없습니다. 토큰 재발급을 시도합니다.", null, 'AUTH');
       
       // 403 오류도 토큰 문제일 수 있으므로 한 번만 토큰 재발급 시도
       if (!originalRequest._retry) {
@@ -35,7 +70,7 @@ api.interceptors.response.use(
           const refreshToken = localStorage.getItem("refreshToken");
           if (!refreshToken) throw new Error("No refresh token");
           
-          console.log("403 오류 발생! refreshToken으로 재발급 시도");
+          log.info("403 오류 발생! refreshToken으로 재발급 시도", null, 'AUTH');
           const res = await api.post(
             "/auth/refresh",
             null,
@@ -57,16 +92,16 @@ api.interceptors.response.use(
             return api(originalRequest);
           }
         } catch (refreshError) {
-          console.error("403 오류 후 토큰 재발급 실패:", refreshError);
+          log.error("403 오류 후 토큰 재발급 실패", refreshError, 'AUTH');
         }
       }
       
       // 토큰 재발급으로도 해결되지 않으면 권한 문제로 처리
-      console.error("403 Forbidden: 권한이 없습니다. 로그인 페이지로 이동합니다.");
+      log.error("403 Forbidden: 권한이 없습니다. 로그인 페이지로 이동합니다.", null, 'AUTH');
       
-      // 사용자에게 알림
+      // 사용자 친화적 에러 메시지 표시
       if (typeof window !== 'undefined') {
-        alert("접근 권한이 없습니다. 다시 로그인해주세요.");
+        toast.error("권한 오류", "접근 권한이 없습니다. 다시 로그인해주세요.");
       }
       
       // 토큰을 삭제하고 로그인 페이지로 리다이렉트
@@ -90,14 +125,18 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem("refreshToken");
         if (!refreshToken) throw new Error("No refresh token");
-        console.log("accessToken 만료! refreshToken으로 재발급 시도");
+        
+        log.info("accessToken 만료! refreshToken으로 재발급 시도", null, 'AUTH');
+        
         // 명세서에 따라 헤더로 refreshToken 전송
         const res = await api.post(
           "/auth/refresh",
           null,
           { headers: { Authorization: `Bearer ${refreshToken}` } }
         );
-        console.log("재발급 응답:", res.data);
+        
+        log.debug("토큰 재발급 응답 수신", res.data, 'AUTH');
+        
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
         if (newAccessToken) {
           localStorage.setItem("accessToken", newAccessToken);
@@ -115,14 +154,34 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         // refresh 실패: 토큰 삭제 및 로그인 페이지로 이동
+        log.error("토큰 재발급 실패, 로그인 페이지로 이동", refreshError, 'AUTH');
+        
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        
+        // 사용자 친화적 메시지
+        toast.error("세션 만료", "로그인이 만료되었습니다. 다시 로그인해주세요.");
+        
         setTimeout(() => {
           window.location.href = "/";
-        }, 5000);
+        }, 2000);
+        
         return Promise.reject(refreshError);
       }
     }
+
+    // 일반적인 API 에러 처리
+    try {
+      handleApiError(error, `${method} ${url}`);
+    } catch (handledError) {
+      // handleApiError에서 처리된 에러를 사용자에게 표시
+      if (typeof window !== 'undefined' && handledError.message) {
+        const errorTitle = handledError.type === 'NETWORK_ERROR' ? '네트워크 오류' : 'API 오류';
+        toast.error(errorTitle, handledError.message, { duration: 6000 });
+      }
+      return Promise.reject(handledError);
+    }
+    
     return Promise.reject(error);
   }
 );

@@ -60,10 +60,10 @@ export default function ObInt3() {
   };
 
   return (
-    <div className="bg-[#FFFFFF] min-h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] min-h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <ProgressBar total={5} value={3} className="mt-[19px]" />
-      <div className="w-full max-w-[720px] mx-auto mt-[19px]">
+      <div className="max-w-[720px] w-full mx-auto mt-[19px] px-6">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111] mb-[24px]">
           당신의 학습 스타일을 선택해 주세요.
         </h1>

@@ -150,9 +150,9 @@ const ObInfoGoogle = () => {
   };
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
       <Header />
-      <div className="mx-auto mt-[52px] w-[720px]">
+      <div className="mx-auto mt-[52px] max-w-[720px] w-full">
         {/* 제목 */}
         <div className="mb-[24px]">
           <h1 className="text-[32px] font-bold text-[#111111] mb-[12px] leading-[42px] tracking-[-0.8px]">

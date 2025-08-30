@@ -149,6 +149,7 @@ export const BlurredImage = ({
                 <img
                     src={blurDataURL}
                     alt=""
+                    aria-hidden="true"
                     className={`${className} absolute inset-0 filter blur-lg scale-110`}
                 />
             )}

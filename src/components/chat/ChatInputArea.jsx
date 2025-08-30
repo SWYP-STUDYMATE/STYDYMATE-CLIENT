@@ -61,7 +61,9 @@ export default function ChatInputArea({
               />
               <button
                 onClick={() => removeImagePreview(idx)}
-                className="absolute top-0.5 right-0.5 bg-black bg-opacity-50 text-white rounded-full p-0.5"
+                className="absolute top-0.5 right-0.5 bg-black bg-opacity-50 text-white rounded-full p-0.5 hover:bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-1 transition-all"
+                aria-label={`이미지 미리보기 ${idx + 1} 삭제`}
+                type="button"
               >
                 <X size={12} />
               </button>
@@ -71,10 +73,14 @@ export default function ChatInputArea({
       )}
       <div className="flex items-center">
         <div className="relative flex-1 flex items-center bg-gray-100 rounded-lg px-4 py-2">
-          <Paperclip
-            className="w-5 h-5 text-gray-500 mr-2 cursor-pointer"
+          <button
             onClick={() => fileInputRef.current.click()}
-          />
+            className="mr-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors"
+            aria-label="이미지 첨부"
+            type="button"
+          >
+            <Paperclip className="w-5 h-5 text-gray-500" />
+          </button>
           <input
             type="file"
             multiple
@@ -89,18 +95,23 @@ export default function ChatInputArea({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type your message"
-            className="flex-1 bg-transparent outline-none"
+            className="flex-1 bg-transparent outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1"
+            aria-label="메시지 입력"
           />
           <button
             onClick={() => setShowEmojiPicker((v) => !v)}
-            className="ml-2"
+            className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors"
+            aria-label={showEmojiPicker ? "이모지 피커 닫기" : "이모지 피커 열기"}
+            type="button"
           >
             <Smile className="w-5 h-5 text-gray-500" />
           </button>
         </div>
         <button
           onClick={() => setShowVoiceRecorder(true)}
-          className="ml-4 p-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+          className="ml-4 p-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+          aria-label="음성 메시지 녹음"
+          type="button"
         >
           <Mic className="w-5 h-5" />
         </button>

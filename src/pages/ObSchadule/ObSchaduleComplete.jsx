@@ -46,7 +46,7 @@ export default function ObSchaduleComplete() {
 
   if (loading) {
     return (
-      <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+      <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
         <Header />
         <div className="flex items-center justify-center h-full">
           <div className="text-[16px] text-[#767676]">로딩 중...</div>
@@ -56,9 +56,9 @@ export default function ObSchaduleComplete() {
   }
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
       <Header />
-      <div className="mx-auto mt-[52px] w-[720px]">
+      <div className="mx-auto mt-[52px] max-w-[720px] w-full">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
           {userName}님, 온보딩이 완료되었습니다! 🎉
         </h1>
@@ -66,14 +66,14 @@ export default function ObSchaduleComplete() {
         지금부터 간단한 영어 레벨 테스트를 진행해 나에게 딱 맞는 파트너와 학습 방법을 추천해 드릴게요.
         </p>
       </div>
-      <div className="mx-auto mt-[100px] w-[720px] flex justify-center">
+      <div className="mx-auto mt-[100px] max-w-[720px] w-full flex justify-center">
         <div
-          className="w-[720px] h-[405px] bg-center bg-no-repeat bg-contain"
+          className="max-w-[720px] w-full h-[405px] bg-center bg-no-repeat bg-contain"
           style={{ backgroundImage: "url('/assets/party4.png')" }}
         />
       </div>
-      <div className="mx-auto mt-[151px] w-[720px] flex justify-center">
-        <CommonButton text="레벨 테스트 시작하기" onClick={handleNext} variant="complete" className="w-full max-w-[720px]" />
+      <div className="mx-auto mt-[151px] max-w-[720px] w-full flex justify-center">
+        <CommonButton text="레벨 테스트 시작하기" onClick={handleNext} variant="complete" className="max-w-[720px] w-full" />
       </div>
     </div>
   );

@@ -67,6 +67,9 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
         onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
       >
         {/* Modal */}
         <div 
@@ -79,14 +82,19 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
               <div className="w-10 h-10 bg-[#00C471] bg-opacity-10 rounded-full flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-[#00C471]" />
               </div>
-              <h2 className="text-[20px] font-bold text-[#111111]">
+              <h2 
+                id="modal-title"
+                className="text-[20px] font-bold text-[#111111]"
+              >
                 새 채팅방 만들기
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F1F3F5] transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F1F3F5] transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
               disabled={isLoading}
+              aria-label="모달 닫기"
+              type="button"
             >
               <X className="w-5 h-5 text-[#929292]" />
             </button>
@@ -134,12 +142,14 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                 <button
                   type="button"
                   onClick={() => handleInputChange('roomType', 'GROUP')}
-                  className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors ${
+                  className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                     formData.roomType === 'GROUP'
                       ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
                       : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                   }`}
                   disabled={isLoading}
+                  aria-pressed={formData.roomType === 'GROUP'}
+                  aria-label="그룹 채팅 유형 선택"
                 >
                   <Users className="w-4 h-4" />
                   <span className="text-[14px] font-medium">그룹 채팅</span>
@@ -148,12 +158,14 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                 <button
                   type="button"
                   onClick={() => handleInputChange('roomType', 'DIRECT')}
-                  className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors ${
+                  className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                     formData.roomType === 'DIRECT'
                       ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
                       : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                   }`}
                   disabled={isLoading}
+                  aria-pressed={formData.roomType === 'DIRECT'}
+                  aria-label="1:1 채팅 유형 선택"
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span className="text-[14px] font-medium">1:1 채팅</span>
@@ -173,12 +185,14 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                     <button
                       type="button"
                       onClick={() => handleInputChange('isPublic', true)}
-                      className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors ${
+                      className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                         formData.isPublic
                           ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
                           : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                       }`}
                       disabled={isLoading}
+                      aria-pressed={formData.isPublic}
+                      aria-label="공개 채팅방 선택"
                     >
                       <Globe className="w-4 h-4" />
                       <span className="text-[14px] font-medium">공개</span>
@@ -187,12 +201,14 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                     <button
                       type="button"
                       onClick={() => handleInputChange('isPublic', false)}
-                      className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors ${
+                      className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                         !formData.isPublic
                           ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
                           : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                       }`}
                       disabled={isLoading}
+                      aria-pressed={!formData.isPublic}
+                      aria-label="비공개 채팅방 선택"
                     >
                       <Lock className="w-4 h-4" />
                       <span className="text-[14px] font-medium">비공개</span>
@@ -211,12 +227,14 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                         key={num}
                         type="button"
                         onClick={() => handleInputChange('maxParticipants', num)}
-                        className={`h-[40px] rounded-[6px] border-2 text-[14px] font-medium transition-colors ${
+                        className={`h-[40px] rounded-[6px] border-2 text-[14px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                           formData.maxParticipants === num
                             ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
                             : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                         }`}
                         disabled={isLoading}
+                        aria-pressed={formData.maxParticipants === num}
+                        aria-label={`최대 ${num}명 참여자 선택`}
                       >
                         {num}명
                       </button>

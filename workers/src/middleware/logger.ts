@@ -1,5 +1,6 @@
 import { Context, Next } from 'hono';
 import { Variables } from '../types';
+import { log, logger } from '../utils/logger';
 
 export interface LogContext {
     requestId: string;
@@ -14,15 +15,12 @@ export interface LogContext {
 }
 
 /**
- * 구조화된 로그 생성
+ * 환경 초기화
  */
-function createLog(level: 'info' | 'warn' | 'error', message: string, context: LogContext) {
-    return JSON.stringify({
-        level,
-        message,
-        timestamp: new Date().toISOString(),
-        ...context
-    });
+function initializeLogger(env?: any) {
+    if (env?.ENVIRONMENT) {
+        logger.setEnvironment(env.ENVIRONMENT);
+    }
 }
 
 /**
@@ -36,7 +34,10 @@ function generateRequestId(): string {
  * 로깅 미들웨어
  * 모든 요청/응답을 구조화된 형식으로 로깅
  */
-export async function logger(c: Context<{ Variables: Variables }>, next: Next) {
+export async function loggerMiddleware(c: Context<{ Variables: Variables }>, next: Next) {
+    // 환경 초기화 (최초 1회)
+    initializeLogger(c.env);
+
     const requestId = c.req.header('X-Request-ID') || generateRequestId();
     const startTime = Date.now();
 
@@ -45,7 +46,7 @@ export async function logger(c: Context<{ Variables: Variables }>, next: Next) {
     c.set('startTime', startTime);
 
     // 요청 로깅
-    const logContext: LogContext = {
+    const logContext = {
         requestId,
         method: c.req.method,
         path: c.req.path,
@@ -54,30 +55,22 @@ export async function logger(c: Context<{ Variables: Variables }>, next: Next) {
         userId: c.get('userId')
     };
 
-    console.log(createLog('info', 'Request received', logContext));
+    log.info('Request received', logContext);
 
     try {
         await next();
 
         // 응답 로깅
         const duration = Date.now() - startTime;
-        console.log(createLog('info', 'Request completed', {
-            ...logContext,
-            duration,
-            status: c.res.status
-        }));
+        log.api(c.req.method, c.req.path, c.res.status, duration, logContext);
     } catch (error) {
         // 에러 로깅
         const duration = Date.now() - startTime;
-        console.error(createLog('error', 'Request failed', {
-            ...logContext,
-            duration,
-            error: error instanceof Error ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            } : error
-        }));
+        log.error(
+            'Request failed', 
+            error instanceof Error ? error : new Error(String(error)),
+            { ...logContext, duration }
+        );
         throw error;
     }
 }
@@ -86,7 +79,7 @@ export async function logger(c: Context<{ Variables: Variables }>, next: Next) {
  * 성능 모니터링 미들웨어
  * 느린 요청을 감지하고 경고
  */
-export async function performanceMonitor(threshold: number = 3000) {
+export function performanceMonitor(threshold: number = 3000) {
     return async (c: Context<{ Variables: Variables }>, next: Next) => {
         const startTime = c.get('startTime');
 
@@ -94,13 +87,14 @@ export async function performanceMonitor(threshold: number = 3000) {
 
         const duration = Date.now() - startTime;
         if (duration > threshold) {
-            console.warn(createLog('warn', 'Slow request detected', {
+            log.warn('Slow request detected', {
                 requestId: c.get('requestId'),
                 method: c.req.method,
                 path: c.req.path,
                 duration,
-                status: c.res.status
-            }));
+                status: c.res.status,
+                component: 'PERFORMANCE'
+            });
         }
     };
 }

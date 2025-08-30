@@ -33,7 +33,7 @@ export default function CompleteOnboarding({
 
   if (loading) {
     return (
-      <div className="bg-white h-screen w-[768px] mx-auto">
+      <div className="bg-white h-screen max-w-[768px] w-full mx-auto">
         <Header />
         <div className="flex items-center justify-center h-full">
           <div className="text-[16px] text-[var(--black-300)]">로딩 중...</div>
@@ -43,9 +43,9 @@ export default function CompleteOnboarding({
   }
 
   return (
-    <div className="bg-white h-screen w-[768px] mx-auto">
+    <div className="bg-white h-screen max-w-[768px] w-full mx-auto">
       <Header />
-      <div className="mx-auto mt-[52px] w-[720px]">
+      <div className="mx-auto mt-[52px] max-w-[720px] w-full">
         <h1 className="text-[32px] font-bold leading-[42px] text-[var(--black-500)]">
           {userName}님, {onboarding}이 완료되었어요! ({step}/{totalSteps})
         </h1>
@@ -53,14 +53,14 @@ export default function CompleteOnboarding({
           {userName}님, Language Mate를 찾기위한 {subText}를 완료하셨어요!
         </p>
       </div>
-      <div className="mx-auto mt-[100px] w-[720px] flex justify-center">
+      <div className="mx-auto mt-[100px] max-w-[720px] w-full flex justify-center">
         <div
-          className="w-[720px] h-[405px] bg-center bg-no-repeat bg-contain"
+          className="max-w-[720px] w-full h-[405px] bg-center bg-no-repeat bg-contain"
           style={{ backgroundImage: "url('/assets/party3.png')" }}
         />
       </div>
-      <div className="mx-auto mt-[151px] w-[720px] flex justify-center">
-        <CommonButton text="다음 단계" onClick={onNext} variant="complete" className="w-full max-w-[720px]" />
+      <div className="mx-auto mt-[151px] max-w-[720px] w-full flex justify-center">
+        <CommonButton text="다음 단계" onClick={onNext} variant="complete" className="max-w-[720px] w-full" />
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ const Agreement = () => {
   }, [navigate]);
 
   return (
-    <div className="bg-[#FFFFFF] h-screen w-[768px] mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
         {/* 로고/타이틀 */}
         <Header />
         <div className="pt-[52px] px-[24px]">

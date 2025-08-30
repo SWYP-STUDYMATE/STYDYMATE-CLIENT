@@ -1,0 +1,137 @@
+/* 공통 제목 스타일 */
+.page-title {
+  @apply text-[32px] font-bold leading-[42px] text-[#111111] mb-[24px];
+}
+
+/* 공통 서브 제목 스타일 */
+.section-title {
+  @apply text-[18px] font-bold leading-[28px] text-[#111111];
+}
+
+/* 공통 레이블 스타일 */
+.form-label {
+  @apply text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px];
+}
+
+/* 공통 설명 텍스트 스타일 */
+.description-text {
+  @apply text-[16px] font-medium text-[#343a40] leading-[24px];
+}
+
+/* 공통 보조 텍스트 스타일 */
+.helper-text {
+  @apply text-[12px] text-[#929292];
+}
+
+/* 공통 로딩 텍스트 스타일 */
+.loading-text {
+  @apply text-[16px] text-[#6c757d];
+}
+
+/* 공통 컨테이너 스타일 */
+.page-container {
+  @apply bg-[#FFFFFF] min-h-screen max-w-[768px] w-full mx-auto;
+}
+
+.content-container {
+  @apply max-w-[720px] w-full mx-auto mt-[19px] px-6;
+}
+
+/* 공통 카드 스타일 */
+.card {
+  @apply bg-white rounded-[6px] border border-[#E7E7E7] shadow-sm;
+}
+
+.card-hover {
+  @apply hover:shadow-md hover:border-[#00C471] transition-all duration-200;
+}
+
+/* 공통 포커스 스타일 */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2;
+}
+
+/* 공통 버튼 베이스 스타일 */
+.btn-base {
+  @apply inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-[6px] font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+/* 공통 인풋 베이스 스타일 */
+.input-base {
+  @apply w-full px-[16px] py-[14px] border border-[#ced4da] rounded-[6px] bg-[#ffffff] text-[16px] font-medium text-[#111111] placeholder-[#929292] outline-none focus:border-[#111111] transition-colors duration-200;
+}
+
+/* 공통 체크박스/라디오 컨테이너 */
+.checkbox-container {
+  @apply flex items-center w-full px-[16px] py-[14px] bg-white border rounded-[6px] cursor-pointer transition min-h-[56px];
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .dark .page-title {
+    @apply text-gray-100;
+  }
+  
+  .dark .section-title {
+    @apply text-gray-200;
+  }
+  
+  .dark .form-label {
+    @apply text-gray-300;
+  }
+  
+  .dark .description-text {
+    @apply text-gray-400;
+  }
+  
+  .dark .page-container {
+    @apply bg-gray-900;
+  }
+  
+  .dark .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .dark .input-base {
+    @apply bg-gray-800 border-gray-600 text-gray-100 focus:border-[#00C471];
+  }
+}
+
+/* 성능 최적화 */
+* {
+  box-sizing: border-box;
+}
+
+/* GPU 가속 활용 */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* 스크롤 최적화 */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* 레이아웃 시프트 방지 */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+/* 접근성 숨김 */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

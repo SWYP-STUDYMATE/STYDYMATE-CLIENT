@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { lazyLoad } from './utils/lazyLoad';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
+import { ToastManager } from './components/Toast';
 import { isMockMode, showMockModeBanner } from './api/mockApi';
 import { useEffect } from 'react';
 
@@ -69,6 +70,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <ToastManager />
       <Layout>
         <Routes>
         <Route path='/' element={<Login />} />

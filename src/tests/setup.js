@@ -2,14 +2,14 @@ import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
 // Mock IntersectionObserver
-global.IntersectionObserver = vi.fn().mockImplementation((callback) => ({
+globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }))
 
 // Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation((callback) => ({
+globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
@@ -70,11 +70,11 @@ console.warn = (...args) => {
 }
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
-global.URL.createObjectURL = vi.fn(() => 'mocked-object-url')
-global.URL.revokeObjectURL = vi.fn()
+globalThis.URL.createObjectURL = vi.fn(() => 'mocked-object-url')
+globalThis.URL.revokeObjectURL = vi.fn()
 
 // Mock FileReader
-global.FileReader = class FileReader {
+globalThis.FileReader = class FileReader {
   constructor() {
     this.readAsDataURL = vi.fn(() => {
       this.onload({ target: { result: 'data:image/jpeg;base64,mock-base64-data' } })

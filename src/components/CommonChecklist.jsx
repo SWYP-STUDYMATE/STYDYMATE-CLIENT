@@ -11,7 +11,7 @@ import React from "react";
 export default function CommonChecklistItem({ label, checked, onChange, disabled = false, type = "checkbox" }) {
   return (
     <label
-      className={`flex items-center w-full px-[16px] py-[14px] bg-white border rounded-[6px] cursor-pointer transition min-h-[56px]
+      className={`flex items-center w-full px-[16px] py-[14px] bg-white border rounded-[6px] cursor-pointer transition min-h-[56px] focus-within:outline-none focus-within:ring-2 focus-within:ring-[#00C471] focus-within:ring-offset-2
         ${checked ? "border-[var(--green-500)] shadow-sm" : "border-[var(--black-50)]"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "hover:border-[var(--green-300)]"}
       `}
@@ -32,7 +32,8 @@ export default function CommonChecklistItem({ label, checked, onChange, disabled
         checked={checked}
         onChange={onChange}
         disabled={disabled}
-        className="hidden"
+        className="sr-only"
+        aria-describedby={`${type}-${label.replace(/\s+/g, '-').toLowerCase()}`}
       />
       <span className="text-[16px] font-medium text-[var(--black-500)] leading-[24px] select-none">
         {label}

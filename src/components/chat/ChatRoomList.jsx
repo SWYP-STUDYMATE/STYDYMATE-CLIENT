@@ -56,7 +56,8 @@ export default function ChatRoomList({
             placeholder="채팅방을 검색해보세요"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-transparent focus:outline-none text-sm text-gray-700"
+            className="flex-1 bg-transparent focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1 text-sm text-gray-700"
+            aria-label="채팅방 검색"
           />
         </div>
       </div>
@@ -73,14 +74,16 @@ export default function ChatRoomList({
               const name = other ? other.name : room.roomName;
 
               return (
-                <div
+                <button
                   key={room.roomId}
                   onClick={() => handleRoomClick(room)}
-                  className="flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-lg border border-gray-100"
+                  className="w-full flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-lg border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors text-left"
+                  aria-label={`${name} 채팅방 ${isParticipating ? '열기' : '참여하기'}`}
+                  type="button"
                 >
                   <img
                     src={other?.profileImage || "/assets/basicProfilePic.png"}
-                    alt=""
+                    alt={`${name} 프로필 사진`}
                     className="w-10 h-10 rounded-full mr-3"
                   />
                   <div className="flex-1 min-w-0">
@@ -96,7 +99,7 @@ export default function ChatRoomList({
                       ? new Date(room.lastMessageAt).toLocaleTimeString()
                       : ""}
                   </span>
-                </div>
+                </button>
               );
             })
           ) : (
@@ -108,7 +111,9 @@ export default function ChatRoomList({
           {/* 새 채팅방 생성 버튼 */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors flex items-center justify-center"
+            className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+            aria-label="새 채팅방 만들기"
+            type="button"
           >
             <Plus className="w-4 h-4 mr-1" />새 채팅방
           </button>

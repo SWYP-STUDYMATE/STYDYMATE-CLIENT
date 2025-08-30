@@ -185,7 +185,8 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                     <h3 className="text-lg font-medium text-[var(--black-500)]">음성 메시지</h3>
                     <button
                         onClick={handleCancel}
-                        className="p-2 hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
+                        className="p-2 hover:bg-[var(--neutral-100)] rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+                        aria-label="음성 메시지 취소"
                     >
                         <X className="w-5 h-5 text-[var(--black-200)]" />
                     </button>
@@ -225,7 +226,8 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                     {!isRecording && !audioBlob && (
                         <button
                             onClick={startRecording}
-                            className="flex items-center gap-2 px-6 py-3 bg-[var(--red-500)] hover:bg-[var(--red-600)] text-white rounded-full transition-colors"
+                            className="flex items-center gap-2 px-6 py-3 bg-[var(--red-500)] hover:bg-[var(--red-600)] text-white rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+                            aria-label="음성 녹음 시작"
                         >
                             <Mic className="w-5 h-5" />
                             <span>녹음 시작</span>
@@ -235,7 +237,8 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                     {isRecording && (
                         <button
                             onClick={stopRecording}
-                            className="flex items-center gap-2 px-6 py-3 bg-[var(--black-800)] hover:bg-[var(--black-900)] text-white rounded-full transition-colors"
+                            className="flex items-center gap-2 px-6 py-3 bg-[var(--black-800)] hover:bg-[var(--black-900)] text-white rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+                            aria-label="음성 녹음 중지"
                         >
                             <Square className="w-5 h-5" />
                             <span>녹음 중지</span>
@@ -246,22 +249,25 @@ export default function VoiceRecorder({ onSend, onCancel }) {
                         <>
                             <button
                                 onClick={startRecording}
-                                className="p-3 bg-[var(--neutral-100)] hover:bg-[var(--black-100)] rounded-full transition-colors"
+                                className="p-3 bg-[var(--neutral-100)] hover:bg-[var(--black-100)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
                                 title="다시 녹음"
+                                aria-label="다시 녹음"
                             >
                                 <Mic className="w-5 h-5 text-[var(--black-300)]" />
                             </button>
 
                             <button
                                 onClick={playRecording}
-                                className="px-6 py-3 bg-[var(--neutral-100)] hover:bg-[var(--black-100)] text-[var(--black-300)] rounded-full transition-colors"
+                                className="px-6 py-3 bg-[var(--neutral-100)] hover:bg-[var(--black-100)] text-[var(--black-300)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+                                aria-label="녹음된 음성 미리 듣기"
                             >
                                 {isPlaying ? '재생 중...' : '미리 듣기'}
                             </button>
 
                             <button
                                 onClick={handleSend}
-                                className="flex items-center gap-2 px-6 py-3 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-full transition-colors"
+                                className="flex items-center gap-2 px-6 py-3 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+                                aria-label="음성 메시지 전송"
                             >
                                 <Send className="w-5 h-5" />
                                 <span>전송</span>

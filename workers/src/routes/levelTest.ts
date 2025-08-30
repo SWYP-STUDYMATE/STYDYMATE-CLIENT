@@ -7,6 +7,7 @@ import { successResponse, createdResponse, setCacheHeaders } from '../utils/resp
 import { validationError, notFoundError } from '../middleware/error-handler';
 import { auth } from '../middleware/auth';
 import { UserCache, APICache } from '../services/cache';
+import { log } from '../utils/logger';
 
 export const levelTestRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 

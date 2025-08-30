@@ -100,15 +100,15 @@ export default function ObLang3() {
   };
 
   return (
-    <div className="relative bg-[#FFFFFF] min-h-screen w-[768px] mx-auto">
+    <div className="relative bg-[#FFFFFF] min-h-screen max-w-[768px] w-full mx-auto">
       <Header />
       <ProgressBar total={5} value={3} className="mt-[19px]" />
-      <div className="mx-auto mt-[19px] w-[720px]">
+      <div className="mx-auto mt-[19px] max-w-[720px] w-full">
         <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
           배우고 싶은 언어와 원하는 파트너 레벨을 선택해 주세요.
         </h1>
       </div>
-      <div className="mx-auto mt-[32px] w-[720px] flex flex-col gap-4 min-h-[620px] pb-[80px]">
+      <div className="mx-auto mt-[32px] max-w-[720px] w-full flex flex-col gap-4 min-h-[620px] pb-[80px]">
         <div className="flex gap-4">
           <label className="block text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px] w-[300px]">
             배우고 싶은 언어 (복수 선택 가능)
@@ -144,7 +144,7 @@ export default function ObLang3() {
           </div>
         ))}
       </div>
-      <div className="mx-auto w-[720px] mt-10">
+      <div className="mx-auto max-w-[720px] w-full mt-10">
         <CommonButton text="다음" disabled={!isButtonEnabled} onClick={handleNext} />
       </div>
     </div>
