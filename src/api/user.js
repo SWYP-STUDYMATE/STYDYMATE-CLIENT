@@ -1,4 +1,5 @@
 import api from './index.js';
+import { createMockableApi, mockApiCalls } from './mockApi.js';
 
 // 완전한 사용자 프로필 조회 (Spring Boot API 연동)
 export const getUserCompleteProfile = async () => {
@@ -22,16 +23,19 @@ export const updateUserCompleteProfile = async (profileData) => {
   }
 };
 
-// 레거시 프로필 조회 (기존 유지)
-export const getUserProfile = async () => {
-  try {
-    const response = await api.get('/user/profile');
-    return response.data;
-  } catch (error) {
-    console.error('Get user profile error:', error);
-    throw error;
-  }
-};
+// 레거시 프로필 조회 (Mock 모드 지원)
+export const getUserProfile = createMockableApi(
+  async () => {
+    try {
+      const response = await api.get('/user/profile');
+      return response.data;
+    } catch (error) {
+      console.error('Get user profile error:', error);
+      throw error;
+    }
+  },
+  () => mockApiCalls.getUserInfo()
+);
 
 // 레거시 프로필 업데이트 (기존 유지)
 export const updateUserProfile = async (profileData) => {
@@ -44,16 +48,19 @@ export const updateUserProfile = async (profileData) => {
   }
 };
 
-// 사용자 기본 정보 조회
-export const getUserInfo = async () => {
-  try {
-    const response = await api.get('/user/info');
-    return response.data;
-  } catch (error) {
-    console.error('Get user info error:', error);
-    throw error;
-  }
-};
+// 사용자 기본 정보 조회 (Mock 모드 지원)
+export const getUserInfo = createMockableApi(
+  async () => {
+    try {
+      const response = await api.get('/user/info');
+      return response.data;
+    } catch (error) {
+      console.error('Get user info error:', error);
+      throw error;
+    }
+  },
+  () => mockApiCalls.getUserInfo()
+);
 
 // 사용자 언어 정보 조회
 export const getUserLanguageInfo = async () => {

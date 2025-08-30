@@ -4,29 +4,41 @@ import { Mic, MicOff, Phone, PhoneOff, Globe, Volume2, VolumeX } from 'lucide-re
 import CommonButton from '../../components/CommonButton';
 import useSessionStore from '../../store/sessionStore';
 import useProfileStore from '../../store/profileStore';
+import useWebRTC from '../../hooks/useWebRTC';
 
 export default function AudioSession() {
     const navigate = useNavigate();
     const { sessionId } = useParams();
 
-    const [isMuted, setIsMuted] = useState(false);
     const [speakerMuted, setSpeakerMuted] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
     const [currentLanguage, setCurrentLanguage] = useState('en');
     const timerRef = useRef(null);
+    const remoteAudioRef = useRef(null);
 
     const {
         activeSession,
         sessionStatus,
-        connectionState,
         startSession,
         endSession,
-        toggleAudio,
         switchLanguage,
         sessionSettings
     } = useSessionStore();
 
     const { name: userName, profileImage: userProfileImage } = useProfileStore();
+
+    // WebRTC Hook 사용 (오디오만)
+    const {
+        connectionState,
+        localStream,
+        remoteStreams,
+        isAudioEnabled,
+        error,
+        stats,
+        toggleAudio,
+        disconnect: disconnectWebRTC,
+        getUserMedia
+    } = useWebRTC(sessionId, userName);
 
     // 더미 파트너 데이터 (실제로는 activeSession에서 가져와야 함)
     const partner = {

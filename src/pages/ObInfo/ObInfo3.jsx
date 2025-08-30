@@ -11,7 +11,7 @@ export default function OnboardingInfo3() {
   const [imageFile, setImageFile] = useState(null); // 실제 파일 저장용
   const [capture, setCapture] = useState(null); // capture 상태 추가
   const fileInputRef = useRef();
-  const setProfileImage = useProfileStore((state) => state.setProfileImage);
+  const { setProfileImage, saveProfileToServer } = useProfileStore();
   const navigate = useNavigate();
 
   // 파일 선택
@@ -63,13 +63,24 @@ export default function OnboardingInfo3() {
       const formData = new FormData();
       formData.append('file', imageFile);
 
-      await api.post("/user/profile-image", formData, {
+      const response = await api.post("/user/profile-image", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       
+      // 로컬 스토어 업데이트
       setProfileImage(image); // zustand 저장 (미리보기용 Base64)
+      
+      try {
+        // 서버에 프로필 전체 정보 저장
+        const profileImageUrl = response.data?.imageUrl || image;
+        await saveProfileToServer({ profileImage: profileImageUrl });
+        console.log('✅ 온보딩 프로필 이미지 서버 저장 성공');
+      } catch (serverError) {
+        console.warn('⚠️ 서버 프로필 저장 실패, 로컬만 업데이트:', serverError);
+      }
+      
       alert("사진이 저장되었습니다. 다음 단계로 이동합니다.");
       navigate("/onboarding-info/4");
     } catch (e) {

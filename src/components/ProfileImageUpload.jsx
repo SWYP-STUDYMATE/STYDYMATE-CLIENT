@@ -14,7 +14,7 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
   
-  const { profileImage, setProfileImage } = useProfileStore();
+  const { profileImage, setProfileImage, saveProfileToServer } = useProfileStore();
 
   // 파일 선택 처리
   const handleFileSelect = (file) => {
@@ -112,6 +112,15 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
       // 프로필 이미지 URL 저장
       const imageUrl = `${import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev'}${result.url}`;
       setProfileImage(imageUrl);
+
+      try {
+        // 서버에 프로필 이미지 저장
+        await saveProfileToServer({ profileImage: imageUrl });
+        console.log('✅ 프로필 이미지 서버 저장 성공');
+      } catch (serverError) {
+        console.warn('⚠️ 서버 프로필 저장 실패, 로컬만 업데이트:', serverError);
+        // 로컬 상태는 이미 업데이트되었으므로 사용자에게는 성공으로 보임
+      }
 
       // 성공 후 모달 닫기
       setTimeout(() => {

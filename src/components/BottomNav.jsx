@@ -50,7 +50,10 @@ const BottomNav = ({ className = '' }) => {
   ];
 
   const handleItemClick = (path) => {
-    navigate(path);
+    // Mock 모드 파라미터 유지
+    const currentSearch = location.search;
+    const mockParam = currentSearch.includes('mock=true') ? '?mock=true' : '';
+    navigate(path + mockParam);
   };
 
   const isActiveItem = (path) => {

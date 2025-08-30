@@ -32,13 +32,12 @@ export default function MatchingMain() {
         startMatching,
         fetchRecommendedPartners,
         setMatchingFilters,
-        resetMatching
     } = useMatchingStore();
 
     useEffect(() => {
         // 컴포넌트 마운트 시 추천 파트너 가져오기
         loadRecommendedPartners();
-    }, []);
+    }, [fetchRecommendedPartners]);
 
     const loadRecommendedPartners = async () => {
         setIsLoading(true);

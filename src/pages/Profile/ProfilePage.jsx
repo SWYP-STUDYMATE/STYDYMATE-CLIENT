@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useProfileStore from '../../store/profileStore';
+import { logout } from '../../api/auth';
 import useSessionStore from '../../store/sessionStore';
 import LanguageProfile from '../../components/LanguageProfile';
 import AchievementBadges from '../../components/AchievementBadges';
@@ -31,7 +32,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('profile'); // profile, stats, settings
   const [showImageUpload, setShowImageUpload] = useState(false);
 
-  const { englishName, profileImage, residence, intro } = useProfileStore();
+  const { englishName, profileImage, residence, intro, clearProfile } = useProfileStore();
   const { sessionStats } = useSessionStore();
 
   // 학습 통계 데이터 (실제로는 API에서 가져와야 함)
@@ -381,10 +382,24 @@ export default function ProfilePage() {
 
             {/* Logout Button */}
             <CommonButton
-              onClick={() => {
+              onClick={async () => {
                 if (window.confirm('로그아웃 하시겠습니까?')) {
-                  localStorage.clear();
-                  navigate('/');
+                  try {
+                    // 1. 서버에 로그아웃 요청
+                    await logout();
+                  } catch (error) {
+                    console.warn('서버 로그아웃 실패:', error);
+                  } finally {
+                    // 2. 클라이언트 측 완전 정리
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // 3. Zustand 스토어 초기화
+                    clearProfile();
+                    
+                    // 4. 로그인 페이지로 이동
+                    navigate('/', { replace: true });
+                  }
                 }
               }}
               variant="secondary"

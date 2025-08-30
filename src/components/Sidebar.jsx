@@ -15,6 +15,7 @@ import {
   LogOut
 } from 'lucide-react';
 import useProfileStore from '../store/profileStore';
+import { logout } from '../api/auth';
 
 const Sidebar = ({ isOpen, onClose, className = '' }) => {
   const navigate = useNavigate();
@@ -106,13 +107,31 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
   ];
 
   const handleItemClick = (path) => {
-    navigate(path);
+    // Mock 모드 파라미터 유지
+    const currentSearch = location.search;
+    const mockParam = currentSearch.includes('mock=true') ? '?mock=true' : '';
+    navigate(path + mockParam);
     onClose?.();
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      // 1. 서버에 로그아웃 요청
+      await logout();
+    } catch (error) {
+      console.warn('서버 로그아웃 실패:', error);
+      // 서버 오류가 있어도 클라이언트 로그아웃은 진행
+    } finally {
+      // 2. 클라이언트 측 완전 정리
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // 3. Zustand 스토어 초기화
+      useProfileStore.getState().clearProfile();
+      
+      // 4. 로그인 페이지로 리다이렉트
+      navigate('/', { replace: true });
+    }
   };
 
   const isActiveItem = (path) => {

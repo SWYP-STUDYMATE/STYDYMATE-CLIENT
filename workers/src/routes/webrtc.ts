@@ -229,6 +229,114 @@ webrtcRoutes.get('/:roomId/info', async (c) => {
   return successResponse(c, data);
 });
 
+// Get ICE servers for a room
+webrtcRoutes.get('/:roomId/ice-servers', async (c) => {
+  const roomId = c.req.param('roomId');
+
+  const id = c.env.ROOM.idFromName(roomId);
+  const room = c.env.ROOM.get(id);
+
+  const response = await room.fetch(new Request('http://room/ice-servers'));
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to get ICE servers');
+  }
+
+  return successResponse(c, await response.json());
+});
+
+// Get room metrics and analytics
+webrtcRoutes.get('/:roomId/metrics', auth({ optional: true }), async (c) => {
+  const roomId = c.req.param('roomId');
+
+  const id = c.env.ROOM.idFromName(roomId);
+  const room = c.env.ROOM.get(id);
+
+  const response = await room.fetch(new Request('http://room/metrics'));
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw notFoundError('Room');
+    }
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to get room metrics');
+  }
+
+  const data = await response.json();
+
+  return successResponse(c, {
+    ...data,
+    analytics: {
+      uptimeHours: Math.floor(data.metrics.sessionDuration / 3600),
+      averageParticipants: data.metrics.totalParticipants > 0 ? 
+        data.metrics.peakParticipants / Math.max(1, data.currentParticipants) : 0,
+      messagesPerMinute: data.metrics.sessionDuration > 0 ? 
+        (data.metrics.messagesExchanged / (data.metrics.sessionDuration / 60)) : 0
+    }
+  });
+});
+
+// Upload recording chunk to R2 storage
+webrtcRoutes.post('/:roomId/recording/upload', auth({ optional: true }), async (c) => {
+  const roomId = c.req.param('roomId');
+  const formData = await c.req.formData();
+  
+  const file = formData.get('recording') as File;
+  const userId = formData.get('userId') as string;
+  const filename = formData.get('filename') as string;
+  
+  if (!file || !userId || !filename) {
+    throw validationError('recording, userId, and filename are required');
+  }
+
+  // Generate unique filename
+  const timestamp = Date.now();
+  const extension = filename.split('.').pop() || 'webm';
+  const storageKey = `recordings/${roomId}/${userId}/${timestamp}-${filename}`;
+
+  try {
+    // Upload to R2
+    await c.env.STORAGE.put(storageKey, file.stream(), {
+      httpMetadata: {
+        contentType: file.type || 'video/webm'
+      }
+    });
+
+    // Get Durable Object to notify about the upload
+    const id = c.env.ROOM.idFromName(roomId);
+    const room = c.env.ROOM.get(id);
+
+    // Notify room about recording chunk
+    await room.fetch(new Request('http://room/websocket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'recording-chunk',
+        userId,
+        data: {
+          filename: storageKey,
+          originalFilename: filename,
+          size: file.size,
+          duration: formData.get('duration') || 0,
+          contentType: file.type
+        }
+      })
+    }));
+
+    return successResponse(c, {
+      uploadedTo: storageKey,
+      size: file.size,
+      contentType: file.type,
+      uploadedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Recording upload error:', error);
+    throw new Error('Failed to upload recording');
+  }
+});
+
 // List active rooms (admin only)
 webrtcRoutes.get('/list', auth({ roles: ['admin'] }), async (c) => {
   // This would require a separate storage mechanism to track active rooms

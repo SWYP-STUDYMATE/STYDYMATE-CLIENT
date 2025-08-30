@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import api from "../../api";
+import { isMockMode, showMockModeBanner } from "../../api/mockApi";
 
 export default function Login() {
   const [autoLogin, setAutoLogin] = useState(false);
@@ -10,6 +10,21 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Mock 모드 배너 표시
+    if (isMockMode()) {
+      showMockModeBanner();
+      console.log("🎭 Mock 모드 활성화됨 - 토큰 생성 후 메인으로 이동");
+      
+      // Mock 토큰 생성
+      localStorage.setItem('accessToken', 'mock-access-token-' + Date.now());
+      localStorage.setItem('refreshToken', 'mock-refresh-token-' + Date.now());
+      localStorage.setItem('mockCurrentUser', '0'); // 기본 사용자: Alex Johnson
+      
+      navigate("/main", { replace: true });
+      return;
+    }
+
+    // 실제 모드에서 기존 토큰 확인
     const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
       navigate("/main", { replace: true });

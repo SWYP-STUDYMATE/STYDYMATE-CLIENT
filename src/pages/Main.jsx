@@ -19,15 +19,17 @@ import { isMockMode, showMockModeBanner, mockApiCalls } from "../api/mockApi";
 export default function Main() {
   const navigate = useNavigate();
   const { search } = useLocation();
-  const { setProfileImage, setEnglishName, setResidence } = useProfileStore(); // 스토어 action 가져오기
+  const { setProfileImage, setEnglishName, setResidence, loadProfileFromServer } = useProfileStore(); // 스토어 action 가져오기
 
   useEffect(() => {
     const params = new URLSearchParams(search);
     const accessToken = params.get("accessToken");
     const userId = params.get("userId");
 
-    // Mock 모드 배너 표시
-    showMockModeBanner();
+    // Mock 모드 배너 표시 (DOM 로드 후)
+    setTimeout(() => {
+      showMockModeBanner();
+    }, 100);
 
     const fetchUserProfile = async () => {
       try {
@@ -41,18 +43,31 @@ export default function Main() {
           setProfileImage(userData.profileImage);
           setResidence("Seoul, Korea"); // Mock 거주지
         } else {
-          // 실제 API 모드
-          const userInfoResponse = await getUserInfo();
-          setEnglishName(userInfoResponse.englishName || userInfoResponse.name);
+          // 실제 API 모드 - 서버에서 통합 프로필 로드
+          console.log("🔄 서버에서 프로필 로드 시도...");
+          const profileData = await loadProfileFromServer();
+          
+          if (profileData) {
+            console.log("✅ 서버 프로필 로드 성공");
+          } else {
+            // 서버 실패 시 기존 방식으로 fallback
+            console.log("⚠️ 서버 프로필 로드 실패, 기존 API 사용");
+            const userInfoResponse = await getUserInfo();
+            setEnglishName(userInfoResponse.englishName || userInfoResponse.name);
 
-          const profileResponse = await getUserProfile();
-          setProfileImage(profileResponse.profileImage);
-          setResidence(profileResponse.residence);
+            const profileResponse = await getUserProfile();
+            setProfileImage(profileResponse.profileImage);
+            setResidence(profileResponse.residence);
+          }
         }
       } catch (error) {
         console.error("프로필 정보를 가져오는데 실패했습니다.", error);
         if (!isMockMode()) {
-          navigate("/", { replace: true });
+          // 토큰이 유효하지 않으면 로그인 페이지로
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            localStorage.clear();
+            navigate("/", { replace: true });
+          }
         }
       }
     };
@@ -70,7 +85,7 @@ export default function Main() {
     } else {
       navigate("/", { replace: true });
     }
-  }, [search, navigate, setProfileImage, setEnglishName]);
+  }, [search, navigate, setProfileImage, setEnglishName, loadProfileFromServer]);
 
   const englishName = useProfileStore((state) => state.englishName);
 

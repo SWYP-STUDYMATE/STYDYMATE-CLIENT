@@ -154,6 +154,86 @@ class WebRTCAPI {
   }
 
   /**
+   * Get ICE servers for WebRTC connection
+   * @param {string} roomId - Room ID
+   * @returns {Promise<Object>} ICE servers configuration
+   */
+  async getIceServers(roomId) {
+    try {
+      const response = await fetch(`${this.baseURL}/api/v1/room/${roomId}/ice-servers`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get ICE servers');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('ICE servers error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get room metrics and analytics
+   * @param {string} roomId - Room ID
+   * @returns {Promise<Object>} Room metrics data
+   */
+  async getRoomMetrics(roomId) {
+    try {
+      const response = await fetch(`${this.baseURL}/api/v1/room/${roomId}/metrics`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get room metrics');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Room metrics error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload recording file to server
+   * @param {string} roomId - Room ID
+   * @param {string} userId - User ID
+   * @param {File} recordingFile - Recording file blob
+   * @param {string} filename - Original filename
+   * @param {number} duration - Recording duration in seconds
+   * @returns {Promise<Object>} Upload result
+   */
+  async uploadRecording(roomId, userId, recordingFile, filename, duration = 0) {
+    try {
+      const formData = new FormData();
+      formData.append('recording', recordingFile);
+      formData.append('userId', userId);
+      formData.append('filename', filename);
+      formData.append('duration', duration.toString());
+
+      const response = await fetch(`${this.baseURL}/api/v1/room/${roomId}/recording/upload`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload recording');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Recording upload error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get WebSocket URL for a room
    * @param {string} roomId - Room ID
    * @param {string} userId - User ID
@@ -163,7 +243,7 @@ class WebRTCAPI {
   getWebSocketURL(roomId, userId, userName = 'Anonymous') {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const apiHost = new URL(this.baseURL).host;
-    return `${wsProtocol}//${apiHost}/webrtc/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`;
+    return `${wsProtocol}//${apiHost}/api/v1/room/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`;
   }
 }
 

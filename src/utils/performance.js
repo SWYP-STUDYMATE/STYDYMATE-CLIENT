@@ -4,11 +4,17 @@
 export const measureWebVitals = (onPerfEntry) => {
   if (onPerfEntry && onPerfEntry instanceof Function) {
     import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
-      onCLS(onPerfEntry); // Cumulative Layout Shift
-      onINP(onPerfEntry); // Interaction to Next Paint (FID 대체)
-      onFCP(onPerfEntry); // First Contentful Paint
-      onLCP(onPerfEntry); // Largest Contentful Paint
-      onTTFB(onPerfEntry); // Time to First Byte
+      try {
+        onCLS(onPerfEntry); // Cumulative Layout Shift
+        onINP(onPerfEntry); // Interaction to Next Paint (FID 대체)
+        onFCP(onPerfEntry); // First Contentful Paint
+        onLCP(onPerfEntry); // Largest Contentful Paint
+        onTTFB(onPerfEntry); // Time to First Byte
+      } catch (error) {
+        console.warn('Web Vitals measurement error:', error);
+      }
+    }).catch(error => {
+      console.warn('Web Vitals import error:', error);
     });
   }
 };

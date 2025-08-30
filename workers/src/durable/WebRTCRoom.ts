@@ -4,9 +4,11 @@ import { DurableObject } from 'cloudflare:workers';
 export class WebRTCRoom extends DurableObject {
   private roomData: RoomData;
   private roomId: string;
+  private env: any;
 
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
+    this.env = env;
     
     // Initialize room ID from Durable Object ID
     this.roomId = state.id.toString();
@@ -21,7 +23,45 @@ export class WebRTCRoom extends DurableObject {
       settings: {
         allowScreenShare: true,
         allowRecording: false,
-        autoMuteOnJoin: false
+        autoMuteOnJoin: false,
+        stunServers: [
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun.cloudflare.com:3478' }
+        ],
+        turnServers: [
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:freestun.net:3478',
+            username: 'free',
+            credential: 'free'
+          }
+        ],
+        recordingSettings: {
+          enabled: true,
+          autoStart: false,
+          maxDuration: 60, // 1시간
+          format: 'webm',
+          quality: 'medium',
+          audioOnly: false
+        }
+      },
+      metrics: {
+        totalParticipants: 0,
+        peakParticipants: 0,
+        messagesExchanged: 0,
+        connectionErrors: 0,
+        lastActivity: new Date().toISOString(),
+        sessionDuration: 0
       }
     };
     
@@ -39,6 +79,8 @@ export class WebRTCRoom extends DurableObject {
     
     // Handle HTTP requests
     switch (url.pathname) {
+      case '/init':
+        return this.handleInit(request);
       case '/join':
         return this.handleJoin(request);
       case '/leave':
@@ -47,6 +89,10 @@ export class WebRTCRoom extends DurableObject {
         return this.handleInfo();
       case '/settings':
         return this.handleSettings(request);
+      case '/ice-servers':
+        return this.handleIceServers();
+      case '/metrics':
+        return this.handleMetrics();
       default:
         return new Response('Not Found', { status: 404 });
     }
@@ -96,7 +142,18 @@ export class WebRTCRoom extends DurableObject {
     };
     
     this.roomData.participants.push(participant);
+    
+    // Update metrics for participant join
+    this.updateMetrics('join');
     await this.saveRoomData();
+    
+    // Send analytics
+    await this.sendAnalytics('participant_joined', {
+      userId,
+      userName,
+      totalParticipants: this.roomData.participants.length,
+      roomType: this.roomData.type
+    });
     
     // Send initial room state to new participant
     server.send(JSON.stringify({
@@ -112,6 +169,43 @@ export class WebRTCRoom extends DurableObject {
     }, userId);
     
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  private async handleInit(request: Request): Promise<Response> {
+    try {
+      const { roomType = 'audio', maxParticipants = 4, metadata = {} } = await request.json() as {
+        roomType?: 'audio' | 'video';
+        maxParticipants?: number;
+        metadata?: any;
+      };
+
+      // Update room data with initialization parameters
+      this.roomData.type = roomType;
+      this.roomData.maxParticipants = maxParticipants;
+      this.roomData.createdAt = new Date().toISOString();
+      
+      // Save room data to storage
+      await this.saveRoomData();
+
+      return new Response(JSON.stringify({
+        success: true,
+        roomId: this.roomId,
+        roomType,
+        maxParticipants,
+        metadata,
+        createdAt: this.roomData.createdAt
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error('Init error:', error);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to initialize room' 
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   private async handleJoin(request: Request): Promise<Response> {
@@ -231,6 +325,8 @@ export class WebRTCRoom extends DurableObject {
       await this.handleWebSocketMessage(ws, userData.userId, msg);
     } catch (error) {
       console.error('WebSocket message error:', error);
+      this.updateMetrics('error');
+      await this.sendAnalytics('websocket_error', { error: error.toString() });
       ws.send(JSON.stringify({ 
         type: 'error', 
         message: 'Invalid message format' 
@@ -247,6 +343,9 @@ export class WebRTCRoom extends DurableObject {
   
   async webSocketError(ws: WebSocket, error: unknown) {
     console.error('WebSocket error:', error);
+    this.updateMetrics('error');
+    await this.sendAnalytics('websocket_connection_error', { error: error.toString() });
+    
     const userData = ws.deserializeAttachment() as WebSocketData;
     if (userData) {
       await this.handleParticipantLeave(userData.userId);
@@ -255,6 +354,9 @@ export class WebRTCRoom extends DurableObject {
   
   private async handleWebSocketMessage(ws: WebSocket, userId: string, message: any) {
     const { type, data } = message;
+    
+    // Update message metrics
+    this.updateMetrics('message');
 
     switch (type) {
       case 'offer':
@@ -297,6 +399,39 @@ export class WebRTCRoom extends DurableObject {
         });
         break;
         
+      case 'start-recording':
+        // 녹화 시작 브로드캐스트
+        if (this.roomData.settings.allowRecording && this.roomData.settings.recordingSettings?.enabled) {
+          this.broadcast({
+            type: 'recording-started',
+            initiatedBy: userId,
+            timestamp: new Date().toISOString(),
+            settings: this.roomData.settings.recordingSettings
+          });
+          await this.sendAnalytics('recording_started', { userId });
+        }
+        break;
+
+      case 'stop-recording':
+        // 녹화 중지 브로드캐스트
+        this.broadcast({
+          type: 'recording-stopped',
+          stoppedBy: userId,
+          timestamp: new Date().toISOString()
+        });
+        await this.sendAnalytics('recording_stopped', { userId });
+        break;
+
+      case 'recording-chunk':
+        // 녹화 청크 업로드 완료 알림
+        await this.handleRecordingChunk(userId, data);
+        break;
+
+      case 'quality-report':
+        // 연결 품질 리포트 처리
+        await this.handleQualityReport(userId, data);
+        break;
+        
       case 'ping':
         ws.send(JSON.stringify({ type: 'pong' }));
         break;
@@ -325,7 +460,17 @@ export class WebRTCRoom extends DurableObject {
     
     // Remove participant
     this.roomData.participants.splice(participantIndex, 1);
+    
+    // Update metrics
+    this.updateMetrics('leave');
     await this.saveRoomData();
+    
+    // Send analytics
+    await this.sendAnalytics('participant_left', {
+      userId,
+      remainingParticipants: this.roomData.participants.length,
+      sessionDuration: this.roomData.metrics.sessionDuration
+    });
     
     // Notify others
     this.broadcast({
@@ -409,6 +554,50 @@ export class WebRTCRoom extends DurableObject {
       }
     });
   }
+
+  private async handleIceServers(): Promise<Response> {
+    const iceServers = [
+      ...this.roomData.settings.stunServers || [],
+      ...this.roomData.settings.turnServers || []
+    ];
+
+    return new Response(JSON.stringify({
+      iceServers,
+      ttl: 3600 // ICE 서버 정보 TTL (1시간)
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  private async handleMetrics(): Promise<Response> {
+    // Update session duration before returning metrics
+    this.updateMetrics('message'); // This will update the session duration
+    
+    const activeParticipants = this.getActiveParticipants();
+    
+    const metricsData = {
+      roomId: this.roomData.id,
+      currentParticipants: activeParticipants.length,
+      metrics: this.roomData.metrics,
+      roomSettings: {
+        type: this.roomData.type,
+        maxParticipants: this.roomData.maxParticipants,
+        createdAt: this.roomData.createdAt
+      },
+      participants: activeParticipants.map(p => ({
+        id: p.id,
+        name: p.name,
+        joinedAt: p.joinedAt,
+        audioEnabled: p.audioEnabled,
+        videoEnabled: p.videoEnabled,
+        isScreenSharing: p.isScreenSharing
+      }))
+    };
+
+    return new Response(JSON.stringify(metricsData), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
   
   private getActiveParticipants(): Participant[] {
     const connectedUserIds = new Set<string>();
@@ -425,6 +614,194 @@ export class WebRTCRoom extends DurableObject {
   
   private async saveRoomData() {
     await this.ctx.storage.put('roomData', this.roomData);
+  }
+
+  private updateMetrics(type: 'join' | 'leave' | 'message' | 'error', data?: any) {
+    const now = new Date().toISOString();
+    this.roomData.metrics.lastActivity = now;
+
+    switch (type) {
+      case 'join':
+        this.roomData.metrics.totalParticipants++;
+        const currentCount = this.roomData.participants.length;
+        if (currentCount > this.roomData.metrics.peakParticipants) {
+          this.roomData.metrics.peakParticipants = currentCount;
+        }
+        break;
+      case 'message':
+        this.roomData.metrics.messagesExchanged++;
+        break;
+      case 'error':
+        this.roomData.metrics.connectionErrors++;
+        break;
+    }
+
+    // Calculate session duration
+    const createdTime = new Date(this.roomData.createdAt).getTime();
+    const currentTime = new Date(now).getTime();
+    this.roomData.metrics.sessionDuration = Math.floor((currentTime - createdTime) / 1000);
+  }
+
+  private async sendAnalytics(event: string, data: any) {
+    try {
+      // Cloudflare Analytics Engine에 메트릭 전송 (env.ANALYTICS 바인딩 사용)
+      if (this.env?.ANALYTICS) {
+        await this.env.ANALYTICS.writeDataPoint({
+          blobs: [this.roomData.id, event],
+          doubles: [
+            this.roomData.participants.length,
+            this.roomData.metrics.peakParticipants,
+            this.roomData.metrics.messagesExchanged,
+            this.roomData.metrics.connectionErrors
+          ],
+          indexes: [this.roomData.id]
+        });
+      }
+    } catch (error) {
+      console.error('Analytics error:', error);
+    }
+  }
+
+  private async handleRecordingChunk(userId: string, data: any) {
+    try {
+      const { filename, size, duration } = data;
+      
+      // 녹화 청크 메타데이터 저장
+      const recordingMetadata = {
+        roomId: this.roomData.id,
+        userId,
+        filename,
+        size,
+        duration,
+        timestamp: new Date().toISOString(),
+        participants: this.roomData.participants.map(p => ({
+          id: p.id,
+          name: p.name
+        }))
+      };
+
+      // KV에 녹화 메타데이터 저장
+      if (this.env?.CACHE) {
+        const recordingKey = `recording:${this.roomData.id}:${filename}`;
+        await this.env.CACHE.put(recordingKey, JSON.stringify(recordingMetadata), {
+          expirationTtl: 86400 * 30 // 30일 보관
+        });
+      }
+
+      // 다른 참가자들에게 녹화 청크 알림
+      this.broadcast({
+        type: 'recording-chunk-saved',
+        filename,
+        size,
+        duration,
+        uploadedBy: userId,
+        timestamp: recordingMetadata.timestamp
+      }, userId);
+
+      await this.sendAnalytics('recording_chunk_saved', {
+        userId,
+        filename,
+        size,
+        duration
+      });
+
+    } catch (error) {
+      console.error('Recording chunk handling error:', error);
+    }
+  }
+
+  private async handleQualityReport(userId: string, data: any) {
+    try {
+      const { qualityData, timestamp } = data;
+      
+      // 품질 데이터를 KV에 저장 (실시간 분석용)
+      if (this.env?.CACHE) {
+        const qualityKey = `quality:${this.roomId}:${userId}:${Date.now()}`;
+        const qualityReport = {
+          roomId: this.roomData.id,
+          userId,
+          timestamp: timestamp || new Date().toISOString(),
+          quality: qualityData,
+          participantCount: this.roomData.participants.length
+        };
+
+        await this.env.CACHE.put(qualityKey, JSON.stringify(qualityReport), {
+          expirationTtl: 3600 // 1시간 보관
+        });
+      }
+
+      // Analytics Engine에 품질 데이터 전송
+      await this.sendQualityAnalytics(userId, qualityData);
+
+      // 품질이 나쁜 경우 다른 참가자들에게 알림
+      if (qualityData.overall === 'poor' || qualityData.overall === 'fair') {
+        this.broadcast({
+          type: 'quality-alert',
+          userId,
+          quality: qualityData.overall,
+          issues: this.extractQualityIssues(qualityData),
+          timestamp: new Date().toISOString()
+        }, userId);
+      }
+
+      // 참가자의 품질 정보 업데이트
+      const participant = this.roomData.participants.find(p => p.id === userId);
+      if (participant) {
+        (participant as any).connectionQuality = qualityData.overall;
+        (participant as any).lastQualityUpdate = new Date().toISOString();
+        await this.saveRoomData();
+      }
+
+    } catch (error) {
+      console.error('Quality report handling error:', error);
+    }
+  }
+
+  private async sendQualityAnalytics(userId: string, qualityData: any) {
+    try {
+      if (this.env?.ANALYTICS) {
+        await this.env.ANALYTICS.writeDataPoint({
+          blobs: [this.roomData.id, userId, 'quality_report'],
+          doubles: [
+            qualityData.audio?.stats?.packetLossRate || 0,
+            qualityData.video?.stats?.packetLossRate || 0,
+            qualityData.network?.stats?.roundTripTime || 0,
+            qualityData.audio?.stats?.jitter || 0,
+            this.getQualityScore(qualityData.overall)
+          ],
+          indexes: [this.roomData.id, userId]
+        });
+      }
+    } catch (error) {
+      console.error('Quality analytics error:', error);
+    }
+  }
+
+  private getQualityScore(quality: string): number {
+    const scores = { 'excellent': 100, 'good': 75, 'fair': 50, 'poor': 25 };
+    return scores[quality] || 0;
+  }
+
+  private extractQualityIssues(qualityData: any): string[] {
+    const issues = [];
+    
+    if (qualityData.audio?.stats?.packetLossRate > 0.05) {
+      issues.push('audio_packet_loss');
+    }
+    
+    if (qualityData.video?.stats?.packetLossRate > 0.05) {
+      issues.push('video_packet_loss');
+    }
+    
+    if (qualityData.network?.stats?.roundTripTime > 300) {
+      issues.push('high_latency');
+    }
+    
+    if (qualityData.audio?.stats?.jitter > 50) {
+      issues.push('audio_jitter');
+    }
+    
+    return issues;
   }
   
   private async restoreParticipants() {
@@ -451,12 +828,40 @@ interface RoomData {
   createdAt: string;
   type: 'audio' | 'video';
   settings: RoomSettings;
+  metrics: RoomMetrics;
+}
+
+interface RoomMetrics {
+  totalParticipants: number;
+  peakParticipants: number;
+  messagesExchanged: number;
+  connectionErrors: number;
+  lastActivity: string;
+  sessionDuration: number; // in seconds
 }
 
 interface RoomSettings {
   allowScreenShare: boolean;
   allowRecording: boolean;
   autoMuteOnJoin: boolean;
+  stunServers?: RTCIceServer[];
+  turnServers?: RTCIceServer[];
+  recordingSettings?: RecordingSettings;
+}
+
+interface RecordingSettings {
+  enabled: boolean;
+  autoStart: boolean;
+  maxDuration: number; // in minutes
+  format: 'webm' | 'mp4';
+  quality: 'low' | 'medium' | 'high';
+  audioOnly: boolean;
+}
+
+interface RTCIceServer {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
 }
 
 interface Participant {
@@ -466,6 +871,8 @@ interface Participant {
   audioEnabled: boolean;
   videoEnabled: boolean;
   isScreenSharing: boolean;
+  connectionQuality?: 'excellent' | 'good' | 'fair' | 'poor';
+  lastQualityUpdate?: string;
 }
 
 interface WebSocketData {
