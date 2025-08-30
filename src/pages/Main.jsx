@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
-import { getUserProfile, getUserInfo } from "../api/user";
+import { getUserProfile, getUserInfo, getOnboardingStatus } from "../api/user";
 import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
 import CommonButton from "../components/CommonButton";
@@ -31,11 +31,11 @@ export default function Main() {
       showMockModeBanner();
     }, 100);
 
-    const fetchUserProfile = async () => {
+    const checkOnboardingAndLoadProfile = async () => {
       try {
         if (isMockMode()) {
-          // Mock 모드: 가짜 데이터 사용
-          console.log("🎭 Mock 모드로 사용자 정보 로드");
+          // Mock 모드: 온보딩 완료된 것으로 가정하고 가짜 데이터 사용
+          console.log("🎭 Mock 모드로 사용자 정보 로드 (온보딩 완료 가정)");
           const mockUserData = await mockApiCalls.getUserInfo();
           const userData = mockUserData.data;
           
@@ -43,7 +43,22 @@ export default function Main() {
           setProfileImage(userData.profileImage);
           setResidence("Seoul, Korea"); // Mock 거주지
         } else {
-          // 실제 API 모드 - 서버에서 통합 프로필 로드
+          // 1. 온보딩 상태 확인
+          console.log("🔄 온보딩 상태 확인 중...");
+          const onboardingStatus = await getOnboardingStatus();
+          console.log("온보딩 상태:", onboardingStatus);
+          
+          // 온보딩이 완료되지 않았으면 온보딩 페이지로 리다이렉트
+          if (!onboardingStatus.isCompleted) {
+            console.log("⚠️ 온보딩 미완료, 온보딩 페이지로 이동");
+            // 현재 완료된 단계에 따라 적절한 온보딩 페이지로 이동
+            const nextStep = onboardingStatus.nextStep || 1;
+            navigate(`/onboarding-info/${nextStep}`, { replace: true });
+            return;
+          }
+          
+          // 2. 온보딩 완료 시 프로필 로드
+          console.log("✅ 온보딩 완료, 프로필 로드 시작");
           console.log("🔄 서버에서 프로필 로드 시도...");
           const profileData = await loadProfileFromServer();
           
@@ -61,12 +76,20 @@ export default function Main() {
           }
         }
       } catch (error) {
-        console.error("프로필 정보를 가져오는데 실패했습니다.", error);
+        console.error("온보딩 확인 또는 프로필 로드 실패:", error);
         if (!isMockMode()) {
           // 토큰이 유효하지 않으면 로그인 페이지로
           if (error.response?.status === 401 || error.response?.status === 403) {
             localStorage.clear();
             navigate("/", { replace: true });
+            return;
+          }
+          
+          // 온보딩 API 오류 시 기본 온보딩 페이지로
+          if (error.response?.status === 404 || error.message.includes('onboarding')) {
+            console.log("⚠️ 온보딩 API 오류, 기본 온보딩 페이지로 이동");
+            navigate("/onboarding-info/1", { replace: true });
+            return;
           }
         }
       }
@@ -79,9 +102,9 @@ export default function Main() {
       }
       // URL에서 토큰 파라미터 제거
       navigate("/main", { replace: true });
-      fetchUserProfile(); // 토큰 저장 후 즉시 프로필 정보 요청
+      checkOnboardingAndLoadProfile(); // 토큰 저장 후 온보딩 확인 및 프로필 요청
     } else if (localStorage.getItem("accessToken")) {
-      fetchUserProfile(); // 페이지 새로고침 시 프로필 정보 요청
+      checkOnboardingAndLoadProfile(); // 페이지 새로고침 시 온보딩 확인 및 프로필 요청
     } else {
       navigate("/", { replace: true });
     }

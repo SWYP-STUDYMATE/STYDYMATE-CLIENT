@@ -3,6 +3,7 @@ import Header from "../../components/Header";
 import CommonButton from "../../components/CommonButton";
 import { useNavigate } from "react-router-dom";
 import { getUserName } from "../../api";
+import { completeOnboarding } from "../../api/user";
 
 export default function ObSchaduleComplete() {
   const navigate = useNavigate();
@@ -25,9 +26,22 @@ export default function ObSchaduleComplete() {
     fetchUserName();
   }, []);
 
-  const handleNext = () => {
-    // 다음 온보딩 단계로 이동하거나 메인 페이지로 이동
-    navigate("/main");
+  const handleNext = async () => {
+    try {
+      // 서버에 온보딩 완료 상태 저장
+      await completeOnboarding({
+        completedAt: new Date().toISOString(),
+        allStepsCompleted: true
+      });
+      console.log("✅ 온보딩 완료 상태 서버 저장 성공");
+      
+      // 레벨 테스트 또는 메인 페이지로 이동
+      navigate("/main");
+    } catch (error) {
+      console.error("온보딩 완료 저장 실패:", error);
+      // 저장 실패해도 메인 페이지로 이동
+      navigate("/main");
+    }
   };
 
   if (loading) {
