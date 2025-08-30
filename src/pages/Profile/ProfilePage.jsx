@@ -67,12 +67,23 @@ export default function ProfilePage() {
     navigate('/onboarding-info/1'); // 프로필 편집 페이지로 이동
   };
 
-  const handleNotificationToggle = (setting) => {
-    setNotificationSettings(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
-    // TODO: API 호출하여 서버에 저장
+  const handleNotificationToggle = async (setting) => {
+    const newSettings = {
+      ...notificationSettings,
+      [setting]: !notificationSettings[setting]
+    };
+    
+    try {
+      const { updateNotificationSettings } = await import('../../api/settings.js');
+      await updateNotificationSettings(newSettings);
+      
+      setNotificationSettings(newSettings);
+      console.log('알림 설정 저장 성공:', newSettings);
+    } catch (error) {
+      console.error('알림 설정 저장 실패:', error);
+      // 에러 발생 시 원래 상태로 복구하지 않고 로컬 상태만 업데이트
+      setNotificationSettings(newSettings);
+    }
   };
 
   return (

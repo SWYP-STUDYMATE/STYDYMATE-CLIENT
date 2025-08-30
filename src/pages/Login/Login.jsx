@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { isMockMode, showMockModeBanner } from "../../api/mockApi";
+import { isMockMode } from "../../api/mockApi";
 
 export default function Login() {
   const [autoLogin, setAutoLogin] = useState(false);
@@ -10,9 +10,8 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Mock 모드 배너 표시
+    // Mock 모드 체크 (배너는 App.jsx에서 전역 처리)
     if (isMockMode()) {
-      showMockModeBanner();
       console.log("🎭 Mock 모드 활성화됨 - 토큰 생성 후 메인으로 이동");
       
       // Mock 토큰 생성

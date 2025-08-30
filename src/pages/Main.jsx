@@ -14,7 +14,7 @@ import StudyStats from "../components/StudyStats";
 import LanguageProfile from "../components/LanguageProfile";
 import LanguageExchangeMates from "../components/LanguageExchangeMates";
 import AchievementBadges from "../components/AchievementBadges";
-import { isMockMode, showMockModeBanner, mockApiCalls } from "../api/mockApi";
+import { isMockMode, mockApiCalls } from "../api/mockApi";
 
 export default function Main() {
   const navigate = useNavigate();
@@ -26,10 +26,7 @@ export default function Main() {
     const accessToken = params.get("accessToken");
     const userId = params.get("userId");
 
-    // Mock 모드 배너 표시 (DOM 로드 후)
-    setTimeout(() => {
-      showMockModeBanner();
-    }, 100);
+    // Mock 모드 배너는 App.jsx에서 전역으로 처리
 
     const checkOnboardingAndLoadProfile = async () => {
       try {

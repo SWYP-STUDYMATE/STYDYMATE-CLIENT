@@ -1,5 +1,14 @@
 // Enhanced Mock API for comprehensive testing without authentication
-const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true' || window.location.search.includes('mock=true');
+// 프로덕션 환경에서는 Mock 모드 완전 차단
+const isProduction = import.meta.env.PROD;
+const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
+
+const MOCK_MODE = !isProduction && (
+  import.meta.env.VITE_MOCK_MODE === 'true' || 
+  window.location.search.includes('mock=true') ||
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1'
+);
 
 // Mock 사용자 데이터베이스 - 다중 사용자 시뮬레이션
 const mockUsers = [
@@ -531,6 +540,12 @@ export const mockApiCalls = {
 // API 호출을 Mock 또는 실제 API로 라우팅하는 래퍼
 export const createMockableApi = (realApiCall, mockCall) => {
   return async (...args) => {
+    // 프로덕션 환경에서는 Mock API 완전 차단
+    if (isProduction && MOCK_MODE) {
+      console.error('🚫 프로덕션 환경에서는 Mock API를 사용할 수 없습니다. 실제 API로 전환됩니다.');
+      return realApiCall(...args);
+    }
+    
     if (MOCK_MODE) {
       console.log(`🎭 [Mock Mode] Calling mock API instead of real API`);
       // Mock 응답은 약간의 지연을 추가하여 실제 API처럼 느끼게 함
@@ -558,7 +573,13 @@ export const toggleMockMode = () => {
 
 // Enhanced Mock 배너 표시 함수 - 사용자 전환 기능 포함
 export const showMockModeBanner = () => {
-  console.log('🎭 showMockModeBanner 호출됨:', { MOCK_MODE, isMockMode: isMockMode() });
+  console.log('🎭 showMockModeBanner 호출됨:', { MOCK_MODE, isMockMode: isMockMode(), isProduction, isDevelopment });
+  
+  // 프로덕션 환경에서는 Mock 배너 차단
+  if (isProduction) {
+    console.warn('⚠️ Mock 모드는 프로덕션 환경에서 사용할 수 없습니다.');
+    return;
+  }
   
   if (isMockMode() && typeof document !== 'undefined') {
     // Mock 모드 배너가 이미 있으면 제거

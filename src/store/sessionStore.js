@@ -76,8 +76,25 @@ const useSessionStore = create((set) => ({
 
   // 예정된 세션 불러오기
   loadUpcomingSessions: async () => {
-    // TODO: API 호출
-    // 현재는 더미 데이터로 대체
+    try {
+      // 실제 API 호출 시도
+      const response = await fetch('/api/v1/sessions/upcoming', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const sessions = await response.json();
+        set({ upcomingSessions: sessions });
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to load upcoming sessions from API, using dummy data:', error);
+    }
+    
+    // API 실패 시 더미 데이터 사용
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();

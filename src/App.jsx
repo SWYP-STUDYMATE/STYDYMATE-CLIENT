@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import { lazyLoad } from './utils/lazyLoad';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
+import { isMockMode, showMockModeBanner } from './api/mockApi';
+import { useEffect } from 'react';
 
 // 즉시 로드가 필요한 컴포넌트들 (로그인, 메인)
 import Login from './pages/Login/Login';
@@ -58,6 +60,13 @@ const AchievementsPage = lazyLoad(() => import('./pages/Achievements/Achievement
 const MatesPage = lazyLoad(() => import('./pages/Mates/MatesPage'));
 
 export default function App() {
+  // Mock 모드 배너를 전역적으로 적용
+  useEffect(() => {
+    if (isMockMode()) {
+      showMockModeBanner();
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <Layout>

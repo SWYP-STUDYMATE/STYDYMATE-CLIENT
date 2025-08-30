@@ -66,13 +66,18 @@ const useLevelTestStore = create(
       // API 메서드들
       loadQuestions: async () => {
         try {
-          // TODO: Implement getQuestions API
-          // const questions = await getQuestions();
-          // set({ questions });
-          console.log('Using default questions');
+          const { getSpringBootLevelTestSettings } = await import('../api/levelTest.js');
+          const settings = await getSpringBootLevelTestSettings();
+          
+          if (settings?.questions?.length > 0) {
+            set({ questions: settings.questions });
+          } else {
+            console.log('Using default questions');
+          }
         } catch (error) {
           console.error('Failed to load questions:', error);
           // Use default questions on error
+          console.log('Using default questions as fallback');
         }
       },
       
@@ -86,22 +91,33 @@ const useLevelTestStore = create(
         set({ isSubmitting: true, submitError: null });
         
         try {
-          // Get all recording blobs
-          const audioBlobs = state.recordings.map(r => r.blob);
+          const { startSpringBootLevelTest, uploadSpringBootAudioAnswer, completeSpringBootLevelTest, getSpringBootLevelTestResult } = await import('../api/levelTest.js');
           
-          // Submit to API
-          // TODO: Implement proper batch submission
-          let result = { level: 'B1', overallScore: 65, scores: {} };
+          // Start level test
+          const testData = await startSpringBootLevelTest('en');
+          const testId = testData.testId;
           
-          // Submit each recording individually for now
-          for (let i = 0; i < audioBlobs.length; i++) {
-            await submitLevelTest(audioBlobs[i], i + 1);
+          // Submit each recording
+          for (let i = 0; i < state.recordings.length; i++) {
+            const recording = state.recordings[i];
+            await uploadSpringBootAudioAnswer(testId, i + 1, recording.blob);
           }
           
-          // Get final result
+          // Complete the test
+          await completeSpringBootLevelTest(testId);
+          
+          // Get result
+          let result = await getSpringBootLevelTestResult(testId);
+          
+          // Get final result from workers API if needed
           const userId = localStorage.getItem('userId') || 'guest';
-          await completeLevelTest(userId);
-          result = await getLevelTestResult(userId);
+          try {
+            await completeLevelTest(userId);
+            const workerResult = await getLevelTestResult(userId);
+            result = workerResult || result;
+          } catch (error) {
+            console.warn('Workers API fallback failed, using Spring Boot result:', error);
+          }
           
           // Process result
           const testResult = {
