@@ -82,24 +82,18 @@ export default function LevelTestRecording() {
       try {
         setIsSubmitting(true);
 
-        // Submit current recording to API
-        const userId = localStorage.getItem('userId') || 'guest';
-        await submitLevelTest(currentRecording.blob, currentQuestionIndex + 1);
+        // Submit current recording to Workers API
+        const recordingBlob = recordingForCurrentQuestion?.blob || currentRecording?.blob;
+        if (recordingBlob) {
+          await submitLevelTest(recordingBlob, currentQuestionIndex + 1);
+        }
 
         if (currentQuestionIndex < totalQuestions - 1) {
           nextQuestion();
         } else {
-          // All questions completed
+          // All questions completed - navigate to complete page which will handle final submission
           setTestStatus('processing');
-
-          // Complete test and get evaluation
-          const result = await completeLevelTest(userId);
-
-          // Store result in store
-          setTestResult(result);
-
-          // Navigate to result page
-          navigate('/level-test/result');
+          navigate('/level-test/complete');
         }
       } catch (error) {
         console.error('Test submission error:', error);
@@ -112,7 +106,7 @@ export default function LevelTestRecording() {
       if (currentQuestionIndex < totalQuestions - 1) {
         nextQuestion();
       } else {
-        navigate('/level-test/result');
+        navigate('/level-test/complete');
       }
     }
   };

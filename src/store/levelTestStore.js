@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { submitLevelTest, getLevelTestResult, completeLevelTest } from "../api/levelTest";
 import { log } from '../utils/logger';
-import { toast } from '../components/Toast';
 
 const useLevelTestStore = create(
   persist(
@@ -68,21 +67,38 @@ const useLevelTestStore = create(
       // API 메서드들
       loadQuestions: async () => {
         try {
-          const { getSpringBootLevelTestSettings } = await import('../api/levelTest.js');
-          const settings = await getSpringBootLevelTestSettings();
+          const { getLevelTestQuestions } = await import('../api/levelTest.js');
+          const response = await getLevelTestQuestions();
           
-          if (settings?.questions?.length > 0) {
-            set({ questions: settings.questions });
+          if (response?.questions?.length > 0) {
+            set({ 
+              questions: response.questions,
+              totalQuestions: response.questions.length
+            });
+            log('Questions loaded from Workers API:', response.questions.length);
           } else {
             console.log('Using default questions');
           }
         } catch (error) {
-          console.error('Failed to load questions:', error);
+          console.error('Failed to load questions from Workers API:', error);
           // Use default questions on error
           console.log('Using default questions as fallback');
         }
       },
       
+      // Workers API 개별 제출 방식
+      submitQuestionAudio: async (audioBlob, questionNumber) => {
+        try {
+          const result = await submitLevelTest(audioBlob, questionNumber);
+          log('Question audio submitted successfully:', { questionNumber, transcription: result.transcription });
+          return result;
+        } catch (error) {
+          console.error('Failed to submit question audio:', error);
+          throw error;
+        }
+      },
+      
+      // Workers API 완전 새로운 제출 방식
       submitTest: async () => {
         const state = get();
         if (state.recordings.length !== state.totalQuestions) {
@@ -93,39 +109,37 @@ const useLevelTestStore = create(
         set({ isSubmitting: true, submitError: null });
         
         try {
-          const { startSpringBootLevelTest, uploadSpringBootAudioAnswer, completeSpringBootLevelTest, getSpringBootLevelTestResult } = await import('../api/levelTest.js');
+          const userId = localStorage.getItem('userId') || crypto.randomUUID();
           
-          // Start level test
-          const testData = await startSpringBootLevelTest('en');
-          const testId = testData.testId;
-          
-          // Submit each recording
+          // 1단계: 모든 오디오 파일을 Workers API에 개별 제출
+          const submissions = [];
           for (let i = 0; i < state.recordings.length; i++) {
             const recording = state.recordings[i];
-            await uploadSpringBootAudioAnswer(testId, i + 1, recording.blob);
+            try {
+              const result = await submitLevelTest(recording.blob, i + 1);
+              submissions.push({
+                questionId: i + 1,
+                transcription: result.transcription,
+                saved: result.saved
+              });
+              log('Audio submitted for question:', i + 1);
+            } catch (error) {
+              console.error(`Failed to submit audio for question ${i + 1}:`, error);
+              throw new Error(`Failed to submit question ${i + 1}`);
+            }
           }
           
-          // Complete the test
-          await completeSpringBootLevelTest(testId);
+          // 2단계: Workers API에서 테스트 완료 및 결과 생성
+          const completeResult = await completeLevelTest(userId);
           
-          // Get result
-          let result = await getSpringBootLevelTestResult(testId);
-          
-          // Get final result from workers API if needed
-          const userId = localStorage.getItem('userId') || 'guest';
-          try {
-            await completeLevelTest(userId);
-            const workerResult = await getLevelTestResult(userId);
-            result = workerResult || result;
-          } catch (error) {
-            console.warn('Workers API fallback failed, using Spring Boot result:', error);
-          }
+          // 3단계: 결과 조회
+          const result = await getLevelTestResult(userId);
           
           // Process result
           const testResult = {
-            level: result.level || 'B1',
-            overallScore: result.overallScore || 65,
-            scores: result.scores || {
+            level: result.level || completeResult.level || 'B1',
+            overallScore: result.overallScore || completeResult.overallScore || 65,
+            scores: result.scores || completeResult.scores || {
               pronunciation: 70,
               fluency: 65,
               grammar: 60,
@@ -133,18 +147,19 @@ const useLevelTestStore = create(
               coherence: 65,
               interaction: 60
             },
-            strengths: result.strengths || [
+            strengths: result.strengths || completeResult.strengths || [
               'Good pronunciation and intonation',
               'Natural speaking pace',
               'Clear communication'
             ],
-            improvements: result.improvements || [
+            improvements: result.improvements || completeResult.improvements || [
               'Expand vocabulary range',
               'Use more complex grammar structures',
               'Improve coherence in longer responses'
             ],
-            feedback: result.feedback || 'Good overall performance. Continue practicing to improve fluency and expand vocabulary.',
-            date: new Date().toISOString()
+            feedback: result.feedback || completeResult.feedback || 'Good overall performance. Continue practicing to improve fluency and expand vocabulary.',
+            date: new Date().toISOString(),
+            submissions // API 호출 기록 포함
           };
           
           set({ 

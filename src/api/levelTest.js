@@ -1,14 +1,16 @@
-import { handleApiError, handleLevelTestError, withRetry } from '../utils/errorHandler.js';
+import { handleLevelTestError, withRetry } from '../utils/errorHandler.js';
 
 const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
+const LEVEL_TEST_API = `${API_BASE_URL}/api/v1/level-test`;
 
 // 레벨 테스트 질문 조회
 export async function getLevelTestQuestions() {
   return withRetry(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/level-test/questions`, {
+      const response = await fetch(`${LEVEL_TEST_API}/questions`, {
         method: 'GET',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
       });
@@ -23,19 +25,20 @@ export async function getLevelTestQuestions() {
       return await response.json();
     } catch (error) {
       handleLevelTestError(error, 'getLevelTestQuestions');
+      throw error;
     }
   }, 2);
 }
 
-// 레벨 테스트 결과 제출
-export async function submitLevelTest(audioBlob, questionNumber) {
+// 개별 음성 파일 업로드
+export async function uploadAudioFile(audioBlob, questionId) {
   try {
     const formData = new FormData();
-    formData.append('audio', audioBlob, `question_${questionNumber}.webm`);
-    formData.append('questionNumber', questionNumber.toString());
-    formData.append('userId', localStorage.getItem('userId') || 'guest');
+    formData.append('audio', audioBlob, `question_${questionId}.webm`);
+    formData.append('questionId', questionId.toString());
+    formData.append('userId', localStorage.getItem('userId') || crypto.randomUUID());
 
-    const response = await fetch(`${API_BASE_URL}/level-test/submit`, {
+    const response = await fetch(`${LEVEL_TEST_API}/audio`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -44,7 +47,36 @@ export async function submitLevelTest(audioBlob, questionNumber) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Audio upload error:', error);
+    throw error;
+  }
+}
+
+// 개별 질문 답변 제출 (Workers API /submit 엔드포인트)
+export async function submitLevelTest(audioBlob, questionNumber) {
+  try {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, `question_${questionNumber}.webm`);
+    formData.append('questionNumber', questionNumber.toString());
+    formData.append('userId', localStorage.getItem('userId') || crypto.randomUUID());
+
+    const response = await fetch(`${LEVEL_TEST_API}/submit`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     return await response.json();
@@ -54,10 +86,34 @@ export async function submitLevelTest(audioBlob, questionNumber) {
   }
 }
 
+// AI 분석 요청
+export async function analyzeResponses(userId, responses) {
+  try {
+    const response = await fetch(`${LEVEL_TEST_API}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+      body: JSON.stringify({ userId, responses }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Analysis error:', error);
+    throw error;
+  }
+}
+
 // 레벨 테스트 완료 및 평가 요청
 export async function completeLevelTest(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/level-test/complete`, {
+    const response = await fetch(`${LEVEL_TEST_API}/complete`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,7 +123,8 @@ export async function completeLevelTest(userId) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     return await response.json();
@@ -80,7 +137,7 @@ export async function completeLevelTest(userId) {
 // 레벨 테스트 결과 조회
 export async function getLevelTestResult(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/level-test/result/${userId}`, {
+    const response = await fetch(`${LEVEL_TEST_API}/result/${userId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -88,7 +145,8 @@ export async function getLevelTestResult(userId) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     return await response.json();
@@ -101,7 +159,7 @@ export async function getLevelTestResult(userId) {
 // 레벨 테스트 진행 상태 조회
 export async function getLevelTestProgress(userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/level-test/progress/${userId}`, {
+    const response = await fetch(`${LEVEL_TEST_API}/progress/${userId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -109,7 +167,8 @@ export async function getLevelTestProgress(userId) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     return await response.json();

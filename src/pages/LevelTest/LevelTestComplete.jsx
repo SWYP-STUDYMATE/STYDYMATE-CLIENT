@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useLevelTestStore from '../../store/levelTestStore';
+import { completeLevelTest, getLevelTestResult } from '../../api/levelTest';
 
 export default function LevelTestComplete() {
   const navigate = useNavigate();
@@ -11,6 +12,8 @@ export default function LevelTestComplete() {
 
   const testStatus = useLevelTestStore(state => state.testStatus);
   const setTestStatus = useLevelTestStore(state => state.setTestStatus);
+  const setTestResult = useLevelTestStore(state => state.setTestResult);
+  const recordings = useLevelTestStore(state => state.recordings);
 
   useEffect(() => {
     // 테스트 상태가 'processing'이 아니면 리디렉션
@@ -19,14 +22,43 @@ export default function LevelTestComplete() {
       return;
     }
 
-    // 3초 후 결과 페이지로 이동
-    const timer = setTimeout(() => {
-      setTestStatus('completed');
-      navigate('/level-test/result');
-    }, 3000);
+    // Workers API로 테스트 완료 및 결과 생성
+    const processTest = async () => {
+      try {
+        setIsProcessing(true);
+        const userId = localStorage.getItem('userId') || crypto.randomUUID();
+        
+        // 최소 2초 대기 (UX를 위해)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 테스트 완료 및 평가 요청
+        const completeResult = await completeLevelTest(userId);
+        
+        // 결과 조회 (평가 완료 후)
+        const result = await getLevelTestResult(userId);
+        
+        // 테스트 결과를 Store에 저장
+        setTestResult(result);
+        
+        // 상태 업데이트 및 결과 페이지로 이동
+        setTestStatus('completed');
+        setIsProcessing(false);
+        navigate('/level-test/result');
+      } catch (err) {
+        console.error('Test processing error:', err);
+        setError(err.message || '테스트 분석 중 오류가 발생했습니다.');
+        setIsProcessing(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [testStatus, navigate, setTestStatus]);
+    // 녹음이 있는 경우에만 처리 진행
+    if (recordings.length > 0) {
+      processTest();
+    } else {
+      setError('녹음된 데이터가 없습니다.');
+      setIsProcessing(false);
+    }
+  }, [testStatus, navigate, setTestStatus, setTestResult, recordings.length]);
 
   return (
     <div className="min-h-screen page-bg flex items-center justify-center px-6">
