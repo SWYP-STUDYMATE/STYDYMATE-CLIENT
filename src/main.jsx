@@ -1,9 +1,13 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { reportWebVitals, measurePerformance } from './utils/webVitals'
+import { initializeMobileOptimizations } from './utils/mobileOptimizations'
 
 import './styles/index.css'
 import App from './App.jsx'
+
+// 모바일 최적화 초기화
+initializeMobileOptimizations();
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>

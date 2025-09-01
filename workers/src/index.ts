@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
 import { timing } from 'hono/timing';
 import { levelTestRoutes } from './routes/levelTest';
@@ -32,29 +32,33 @@ export interface AppBindings {
   JWT_SECRET?: string;
   API_KEYS?: string;
   INTERNAL_SECRET?: string;
+  INTERNAL_API_KEY?: string;
   API_VERSION?: string;
 }
+
+// Export Env type for other modules
+export type Env = AppBindings;
 
 // API 버전
 const API_VERSION = 'v1';
 
 // Create Hono app with typed context
-const app = new Hono();
+const app = new Hono<{ Bindings: AppBindings; Variables: Variables }>();
 
 // 기본 미들웨어 설정
-setupMiddleware(app as unknown as Hono);
+setupMiddleware(app as any);
 
 // Server timing
 app.use('*', timing());
 
 // Analytics 및 에러 추적 미들웨어
-app.use(errorTrackingMiddleware as MiddlewareHandler);
-app.use(analyticsMiddleware as MiddlewareHandler);
+app.use(errorTrackingMiddleware);
+app.use(analyticsMiddleware);
 
 // CORS middleware
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
-    origin: ((c as any).env?.CORS_ORIGIN as string) || 'http://localhost:3000',
+    origin: c.env?.CORS_ORIGIN || 'http://localhost:3000',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key'],
     exposeHeaders: ['Content-Length', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
@@ -91,7 +95,7 @@ app.get('/', (c) => {
 app.get('/health', (c) => {
   return successResponse(c, {
     status: 'healthy',
-    environment: (c as any).env?.ENVIRONMENT,
+    environment: c.env?.ENVIRONMENT,
     version: API_VERSION,
     services: {
       ai: 'operational',
@@ -112,7 +116,7 @@ http_requests_total{method="GET",endpoint="/health"} 1
 });
 
 // API v1 라우트 그룹
-const v1: any = new Hono();
+const v1 = new Hono<{ Bindings: AppBindings; Variables: Variables }>();
 
 // v1 API 라우트 등록
 v1.route('/level-test', levelTestRoutes);

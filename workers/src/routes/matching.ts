@@ -23,7 +23,7 @@ matchingRoutes.post('/request', async (c) => {
     }
 
     // Rate limiting: 5 requests per hour
-    const allowed = await checkRateLimit(c.env, user.userId, 'matching', 5, 3600);
+    const allowed = await checkRateLimit(c.env, user.id, 'matching', 5, 3600);
     if (!allowed) {
       return c.json({ error: 'Too many matching requests' }, 429);
     }
@@ -40,7 +40,7 @@ matchingRoutes.post('/request', async (c) => {
     ]);
 
     const request: MatchingRequest = {
-      userId: user.userId,
+      userId: user.id,
       userLevel: body.userLevel,
       targetLanguage: body.targetLanguage,
       nativeLanguage: body.nativeLanguage,
@@ -57,7 +57,7 @@ matchingRoutes.post('/request', async (c) => {
 
     return c.json({
       success: true,
-      requestId: user.userId,
+      requestId: user.id,
       matches,
       message: matches.length > 0 
         ? `Found ${matches.length} potential matches`
@@ -81,7 +81,7 @@ matchingRoutes.get('/my-matches', async (c) => {
     }
 
     // Get stored request
-    const requestData = await c.env.CACHE.get(`match:pending:${user.userId}`);
+    const requestData = await c.env.CACHE.get(`match:pending:${user.id}`);
     if (!requestData) {
       return c.json({
         success: true,
@@ -123,7 +123,7 @@ matchingRoutes.post('/accept/:matchId', async (c) => {
       `match:accepted:${matchId}`,
       JSON.stringify({
         matchId,
-        userId: user.userId,
+        userId: user.id,
         partnerId,
         roomId,
         acceptedAt: new Date().toISOString(),
@@ -137,7 +137,7 @@ matchingRoutes.post('/accept/:matchId', async (c) => {
       `notification:${partnerId}`,
       JSON.stringify({
         type: 'match_accepted',
-        from: user.userId,
+        from: user.id,
         roomId,
         timestamp: new Date().toISOString()
       }),
@@ -145,7 +145,7 @@ matchingRoutes.post('/accept/:matchId', async (c) => {
     );
 
     // Remove from pending
-    await removeMatchRequest(c.env, user.userId);
+    await removeMatchRequest(c.env, user.id);
 
     return c.json({
       success: true,
@@ -170,7 +170,7 @@ matchingRoutes.post('/reject/:matchId', async (c) => {
     
     // Store rejection to avoid re-matching
     await c.env.CACHE.put(
-      `match:rejected:${user.userId}:${matchId}`,
+      `match:rejected:${user.id}:${matchId}`,
       'true',
       { expirationTtl: 604800 } // 7 days
     );
@@ -193,7 +193,7 @@ matchingRoutes.delete('/request', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    await removeMatchRequest(c.env, user.userId);
+    await removeMatchRequest(c.env, user.id);
 
     return c.json({
       success: true,
@@ -222,7 +222,7 @@ matchingRoutes.get('/stats', async (c) => {
     };
 
     // Check for active request
-    const activeRequest = await c.env.CACHE.get(`match:pending:${user.userId}`);
+    const activeRequest = await c.env.CACHE.get(`match:pending:${user.id}`);
     stats.activeRequest = !!activeRequest;
 
     // Get accepted matches count (would typically query a database)
@@ -235,7 +235,7 @@ matchingRoutes.get('/stats', async (c) => {
       const data = await c.env.CACHE.get(key.name);
       if (data) {
         const match = JSON.parse(data);
-        if (match.userId === user.userId || match.partnerId === user.userId) {
+        if (match.userId === user.id || match.partnerId === user.id) {
           stats.acceptedMatches++;
         }
       }

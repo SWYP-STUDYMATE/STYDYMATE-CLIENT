@@ -3,12 +3,14 @@
 import { Context } from 'hono';
 import { verify } from 'hono/jwt';
 import type { AppBindings as Env } from '../index';
+import type { Variables } from '../types';
+import { log } from './logger';
 
 export interface AuthUser {
-  userId: string;
-  email: string;
-  role: string;
-  exp: number;
+  id: string;
+  email?: string;
+  role?: string;
+  permissions?: string[];
 }
 
 // Verify JWT token from STUDYMATE-SERVER with signature verification
@@ -21,20 +23,20 @@ export async function verifyToken(token: string, secret: string): Promise<AuthUs
       return null;
     }
     return {
-      userId: payload.userId || payload.sub,
+      id: payload.userId || payload.sub,
       email: payload.email,
       role: payload.role || 'user',
-      exp: payload.exp
+      permissions: payload.permissions || []
     };
   } catch (error) {
-    console.error('Token verification error:', error);
+    log.error('Token verification error', error as Error, { component: 'AUTH_SERVICE' });
     return null;
   }
 }
 
 // Auth middleware for Hono
 export async function authMiddleware(
-  c: Context<{ Bindings: Env; Variables: import('../types').Variables }>,
+  c: Context<{ Bindings: Env; Variables: Variables }>,
   next: () => Promise<void>
 ) {
   const authHeader = c.req.header('Authorization');
@@ -59,7 +61,7 @@ export async function authMiddleware(
 
 // Optional auth middleware (doesn't fail if no token)
 export async function optionalAuthMiddleware(
-  c: Context<{ Bindings: Env }>,
+  c: Context<{ Bindings: Env; Variables: Variables }>,
   next: () => Promise<void>
 ) {
   const authHeader = c.req.header('Authorization');
@@ -124,7 +126,7 @@ export async function checkRateLimit(
 
 // API key validation for service-to-service calls
 export async function validateApiKey(
-  c: Context<{ Bindings: Env }>,
+  c: Context<{ Bindings: Env; Variables: Variables }>,
   next: () => Promise<void>
 ) {
   const apiKey = c.req.header('X-API-Key');

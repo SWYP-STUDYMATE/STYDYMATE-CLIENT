@@ -1,10 +1,11 @@
 import { DurableObject } from 'cloudflare:workers';
+import { log } from '../utils/logger';
 
 // Durable Object for WebRTC Room Management with Hibernation Support
 export class WebRTCRoom extends DurableObject {
   private roomData: RoomData;
   private roomId: string;
-  private env: any;
+  protected env: any;
 
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
@@ -198,7 +199,7 @@ export class WebRTCRoom extends DurableObject {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      console.error('Init error:', error);
+      log.error('Init error', error as Error, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to initialize room' 
       }), {
@@ -253,7 +254,7 @@ export class WebRTCRoom extends DurableObject {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      console.error('Join error:', error);
+      log.error('Join error', error as Error, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to join room' 
       }), { 
@@ -270,7 +271,7 @@ export class WebRTCRoom extends DurableObject {
       
       return new Response(JSON.stringify({ success: true }));
     } catch (error) {
-      console.error('Leave error:', error);
+      log.error('Leave error', error as Error, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to leave room' 
       }), { status: 500 });
@@ -291,13 +292,13 @@ export class WebRTCRoom extends DurableObject {
         try {
           ws.send(JSON.stringify({ type: 'signal', from, signal }));
         } catch (e) {
-          console.error('Signal forward error:', e);
+          log.error('Signal forward error', e as Error, { component: 'WEBRTC_ROOM' });
         }
       });
 
       return new Response(JSON.stringify({ success: true }));
     } catch (error) {
-      console.error('Signal error:', error);
+      log.error('Signal error', error as Error, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to send signal' 
       }), { status: 500 });
@@ -324,9 +325,9 @@ export class WebRTCRoom extends DurableObject {
       
       await this.handleWebSocketMessage(ws, userData.userId, msg);
     } catch (error) {
-      console.error('WebSocket message error:', error);
+      log.error('WebSocket message error', error as Error, { component: 'WEBRTC_ROOM' });
       this.updateMetrics('error');
-      await this.sendAnalytics('websocket_error', { error: error.toString() });
+      await this.sendAnalytics('websocket_error', { error: String(error) });
       ws.send(JSON.stringify({ 
         type: 'error', 
         message: 'Invalid message format' 
@@ -342,9 +343,9 @@ export class WebRTCRoom extends DurableObject {
   }
   
   async webSocketError(ws: WebSocket, error: unknown) {
-    console.error('WebSocket error:', error);
+    log.error('WebSocket error', error as Error, { component: 'WEBRTC_ROOM' });
     this.updateMetrics('error');
-    await this.sendAnalytics('websocket_connection_error', { error: error.toString() });
+    await this.sendAnalytics('websocket_connection_error', { error: String(error) });
     
     const userData = ws.deserializeAttachment() as WebSocketData;
     if (userData) {
@@ -437,7 +438,7 @@ export class WebRTCRoom extends DurableObject {
         break;
 
       default:
-        console.warn('Unknown message type:', type);
+        log.warn('Unknown message type', { component: 'WEBRTC_ROOM' }, { type });
     }
   }
 
@@ -537,7 +538,7 @@ export class WebRTCRoom extends DurableObject {
           ws.send(data);
         }
       } catch (error) {
-        console.error('Broadcast error:', error);
+        log.error('Broadcast error', error as Error, { component: 'WEBRTC_ROOM' });
       }
     });
   }
@@ -550,7 +551,7 @@ export class WebRTCRoom extends DurableObject {
       try {
         ws.send(data);
       } catch (error) {
-        console.error(`Send to ${userId} error:`, error);
+        log.error('Send to user error', error as Error, { component: 'WEBRTC_ROOM' }, { userId });
       }
     });
   }
@@ -778,7 +779,7 @@ export class WebRTCRoom extends DurableObject {
   }
 
   private getQualityScore(quality: string): number {
-    const scores = { 'excellent': 100, 'good': 75, 'fair': 50, 'poor': 25 };
+    const scores: Record<string, number> = { 'excellent': 100, 'good': 75, 'fair': 50, 'poor': 25 };
     return scores[quality] || 0;
   }
 

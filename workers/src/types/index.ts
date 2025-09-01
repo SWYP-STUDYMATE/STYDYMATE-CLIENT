@@ -35,6 +35,11 @@ export interface Variables {
     user?: AuthUser;
 }
 
+// Context Variable Map for Hono
+export interface ContextVariableMap {
+    user: AuthUser;
+}
+
 // 인증 정보 타입
 export interface AuthUser {
     id: string;

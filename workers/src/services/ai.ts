@@ -1,5 +1,7 @@
 // Cloudflare Workers AI 서비스
 
+import { log } from '../utils/logger';
+
 // 오디오를 청크로 나누는 함수
 export async function splitAudioIntoChunks(audioBuffer: ArrayBuffer, chunkSize: number = 1024 * 1024): Promise<ArrayBuffer[]> {
     const chunks: ArrayBuffer[] = [];
@@ -21,7 +23,7 @@ async function processAudioChunk(
 ): Promise<WhisperResponse> {
     try {
         const response = await ai.run('@cf/openai/whisper-large-v3-turbo', {
-            audio: [...new Uint8Array(audioChunk)],
+            audio: [...new Uint8Array(audioChunk)] as any,
             task: options.task || 'transcribe',
             language: options.language || 'auto',
             vad_filter: options.vad_filter || true,
@@ -31,7 +33,7 @@ async function processAudioChunk(
 
         return response;
     } catch (error) {
-        console.error('Whisper chunk processing error:', error);
+        log.error('Whisper chunk processing error', error as Error, { component: 'AI_SERVICE' });
         return { text: '[Error transcribing chunk]', word_count: 0 };
     }
 }
@@ -93,7 +95,7 @@ export async function processAudio(
             chunks: chunks.length
         };
     } catch (error) {
-        console.error('Whisper processing error:', error);
+        log.error('Whisper processing error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to process audio with Whisper');
     }
 }
@@ -128,7 +130,7 @@ export async function analyzeText(ai: Ai, text: string): Promise<LanguageAnalysi
 
         // Parse the JSON response
         try {
-            const analysis = JSON.parse(response.response);
+            const analysis = JSON.parse((response as any).response);
             return analysis;
         } catch {
             // Fallback if JSON parsing fails
@@ -143,7 +145,7 @@ export async function analyzeText(ai: Ai, text: string): Promise<LanguageAnalysi
             };
         }
     } catch (error) {
-        console.error('Text analysis error:', error);
+        log.error('Text analysis error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to analyze text');
     }
 }
@@ -178,9 +180,9 @@ export async function generateEmbedding(ai: Ai, text: string): Promise<number[]>
             text: text
         });
 
-        return response.data[0] || [];
+        return (response as any).data?.[0] || [];
     } catch (error) {
-        console.error('Embedding generation error:', error);
+        log.error('Embedding generation error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to generate embedding');
     }
 }
@@ -193,7 +195,7 @@ export async function generateText(
 ): Promise<LLMResponse> {
     try {
         const model = options.model || '@cf/meta/llama-3.2-3b-instruct';
-        const response = await ai.run(model, {
+        const response = await ai.run(model as any, {
             prompt: prompt,
             stream: options.stream || false,
             max_tokens: options.max_tokens || 1024,
@@ -207,16 +209,16 @@ export async function generateText(
         });
 
         return {
-            text: response.response || response,
+            text: (response as any).response || response,
             model: model,
-            usage: response.usage || {
+            usage: (response as any).usage || {
                 prompt_tokens: 0,
                 completion_tokens: 0,
                 total_tokens: 0
             }
         };
     } catch (error) {
-        console.error('Text generation error:', error);
+        log.error('Text generation error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to generate text');
     }
 }
@@ -258,20 +260,20 @@ export async function generateChatCompletion(
             requestParams.tools = options.tools;
         }
 
-        const response = await ai.run(model, requestParams);
+        const response = await ai.run(model as any, requestParams);
 
         return {
-            text: response.response || response,
+            text: (response as any).response || response,
             model: model,
-            usage: response.usage || {
+            usage: (response as any).usage || {
                 prompt_tokens: 0,
                 completion_tokens: 0,
                 total_tokens: 0
             },
-            tool_calls: response.tool_calls
+            tool_calls: (response as any).tool_calls
         };
     } catch (error) {
-        console.error('Chat completion error:', error);
+        log.error('Chat completion error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to generate chat completion');
     }
 }
@@ -344,7 +346,7 @@ Respond in JSON format:
             };
         }
     } catch (error) {
-        console.error('Language evaluation error:', error);
+        log.error('Language evaluation error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to evaluate language level');
     }
 }
@@ -383,7 +385,7 @@ Keep the tone encouraging and constructive. Format in clear sections.`;
 
         return response.text;
     } catch (error) {
-        console.error('Feedback generation error:', error);
+        log.error('Feedback generation error', error as Error, { component: 'AI_SERVICE' });
         return 'Unable to generate detailed feedback at this time.';
     }
 }
@@ -425,7 +427,7 @@ Return ONLY a JSON array of 5 topic strings, no other text.`;
             ];
         }
     } catch (error) {
-        console.error('Topic generation error:', error);
+        log.error('Topic generation error', error as Error, { component: 'AI_SERVICE' });
         return [];
     }
 }
@@ -457,7 +459,7 @@ Text to translate: "${text}"`;
 
         return response.text.trim();
     } catch (error) {
-        console.error('Translation error:', error);
+        log.error('Translation error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to translate text');
     }
 }
@@ -521,7 +523,7 @@ Text to translate: "${text}"`;
 
         return translations;
     } catch (error) {
-        console.error('Multi-translation error:', error);
+        log.error('Multi-translation error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to translate to multiple languages');
     }
 }
@@ -572,7 +574,7 @@ Provide a JSON response with:
             };
         }
     } catch (error) {
-        console.error('Session summary error:', error);
+        log.error('Session summary error', error as Error, { component: 'AI_SERVICE' });
         throw new Error('Failed to generate session summary');
     }
 }

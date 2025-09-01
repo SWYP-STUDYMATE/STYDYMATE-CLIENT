@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { processAudio, WhisperOptions } from '../services/ai';
 import { handleError } from '../utils/errors';
+import type { AppBindings as Env } from '../index';
+import { log } from '../utils/logger';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -18,7 +20,7 @@ app.post('/transcribe', async (c) => {
         if (contentType?.includes('multipart/form-data')) {
             // FormData로 오디오 파일과 옵션 받기
             const formData = await c.req.formData();
-            const audioFile = formData.get('audio') as File;
+            const audioFile = formData.get('audio') as File | null;
 
             if (!audioFile) {
                 return c.json({ error: 'No audio file provided' }, 400);
@@ -84,7 +86,11 @@ app.post('/transcribe', async (c) => {
         });
 
     } catch (error) {
-        return handleError(c, error);
+        log.error('Transcription error', error as Error, { component: 'WHISPER_SERVICE' });
+        return c.json({
+            error: 'Transcription failed',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        }, 500);
     }
 });
 

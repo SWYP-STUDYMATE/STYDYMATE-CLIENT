@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -11,7 +11,10 @@ app.use('/*', cors());
 app.post('/upload', async (c) => {
   try {
     const formData = await c.req.formData();
-    const file = formData.get('image') as File;
+    const file = formData.get('image') as File | null;
+    if (!file) {
+        return c.json({ error: 'No image file provided' }, 400);
+    }
     const userId = formData.get('userId') as string;
     const type = formData.get('type') as string || 'profile'; // profile, chat, etc.
 
@@ -188,7 +191,7 @@ app.delete('/:fileName', async (c) => {
 
     // 메타데이터 확인으로 소유권 검증
     const metadata = await c.env.CACHE.get(`image:${fileName}`, { type: 'json' });
-    if (!metadata || metadata.userId !== userId) {
+    if (!metadata || (metadata as any).userId !== userId) {
       return c.json({ error: 'Unauthorized' }, 403);
     }
 
@@ -224,7 +227,7 @@ app.get('/list/:userId', async (c) => {
     const list = await c.env.STORAGE.list({ prefix, limit: 1000 });
 
     const images = await Promise.all(
-      list.objects.map(async (obj) => {
+      list.objects.map(async (obj: any) => {
         // 캐시에서 메타데이터 조회
         const metadata = await c.env.CACHE.get(`image:${obj.key}`, { type: 'json' });
         

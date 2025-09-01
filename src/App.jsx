@@ -3,7 +3,11 @@ import { lazyLoad } from './utils/lazyLoad';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import { ToastManager } from './components/Toast';
+import NotificationToastManager from './components/NotificationToastManager';
+import ServerStatusIndicator from './components/ServerStatusIndicator';
 import { isMockMode, showMockModeBanner } from './api/mockApi';
+import { initializeNotificationWebSocket } from './services/notificationWebSocket';
+import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect } from 'react';
 
 // 즉시 로드가 필요한 컴포넌트들 (로그인, 메인)
@@ -35,6 +39,7 @@ const AudioSessionRoom = lazyLoad(() => import('./pages/Session/AudioSessionRoom
 const ProfilePage = lazyLoad(() => import('./pages/Profile/ProfilePage'));
 const VideoControlsDemo = lazyLoad(() => import('./pages/Session/VideoControlsDemo'));
 const SessionList = lazyLoad(() => import('./pages/Session/SessionList'));
+const SessionCreate = lazyLoad(() => import('./pages/Session/SessionCreate'));
 const SessionCalendar = lazyLoad(() => import('./pages/Session/SessionCalendar'));
 const SessionScheduleNew = lazyLoad(() => import('./pages/Session/SessionScheduleNew'));
 const MatchingMain = lazyLoad(() => import('./pages/Matching/MatchingMain'));
@@ -53,6 +58,7 @@ const DeleteAccount = lazyLoad(() => import('./pages/Settings/DeleteAccount'));
 
 // Notification pages
 const NotificationCenter = lazyLoad(() => import('./pages/Notifications/NotificationCenter'));
+const NotificationList = lazyLoad(() => import('./pages/Notifications/NotificationList'));
 
 // Achievement pages
 const AchievementsPage = lazyLoad(() => import('./pages/Achievements/AchievementsPage'));
@@ -68,9 +74,34 @@ export default function App() {
     }
   }, []);
 
+  // 알림 시스템 초기화
+  useEffect(() => {
+    const initializeNotificationServices = async () => {
+      try {
+        // 로그인된 사용자인 경우에만 초기화
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          // WebSocket 알림 서비스 초기화
+          await initializeNotificationWebSocket();
+          console.log('Notification WebSocket initialized');
+
+          // 푸시 알림 서비스 초기화
+          await initializePushNotifications();
+          console.log('Push notification service initialized');
+        }
+      } catch (error) {
+        console.error('Failed to initialize notification services:', error);
+      }
+    };
+
+    initializeNotificationServices();
+  }, []);
+
   return (
     <ErrorBoundary>
+      <ServerStatusIndicator />
       <ToastManager />
+      <NotificationToastManager />
       <Layout>
         <Routes>
         <Route path='/' element={<Login />} />
@@ -102,6 +133,7 @@ export default function App() {
         <Route path='/session/video-controls-demo' element={<VideoControlsDemo />} />
         <Route path='/profile' element={<ProfilePage />} />
         <Route path='/sessions' element={<SessionList />} />
+        <Route path='/sessions/create' element={<SessionCreate />} />
         <Route path='/sessions/calendar' element={<SessionCalendar />} />
         <Route path='/session/schedule/new' element={<SessionScheduleNew />} />
         <Route path='/matching' element={<MatchingMain />} />
@@ -120,7 +152,8 @@ export default function App() {
         <Route path='/settings/delete-account' element={<DeleteAccount />} />
         
         {/* Notification Routes */}
-        <Route path='/notifications' element={<NotificationCenter />} />
+        <Route path='/notifications' element={<NotificationList />} />
+        <Route path='/notifications/center' element={<NotificationCenter />} />
         
         {/* Achievement Routes */}
         <Route path='/achievements' element={<AchievementsPage />} />

@@ -16,17 +16,36 @@ export default function ChatContainer() {
   useEffect(() => {
     reloadChatRooms();
 
-    const globalClient = initGlobalStompClient((newRoom) => {
-      console.log("새 방 알림 수신:", newRoom);
-      console.log("현재 사용자 ID:", currentUserId);
-      console.log("새로 생성된 방의 참여자들:", newRoom.participants);
+    // 글로벌 WebSocket 클라이언트 초기화
+    let globalClient = null;
+    
+    const initializeGlobalClient = async () => {
+      try {
+        globalClient = await initGlobalStompClient(
+          (newRoom) => {
+            console.log("새 방 알림 수신:", newRoom);
+            console.log("현재 사용자 ID:", currentUserId);
+            console.log("새로 생성된 방의 참여자들:", newRoom.participants);
 
-      // 새로운 채팅방이 생성되었을 때 즉시 목록 새로고침
-      reloadChatRooms();
+            // 새로운 채팅방이 생성되었을 때 즉시 목록 새로고침
+            reloadChatRooms();
 
-      // 현재 선택된 방이 있다면 초기화 (새로운 방이 생성되었으므로)
-      setCurrentRoom(null);
-    });
+            // 현재 선택된 방이 있다면 초기화 (새로운 방이 생성되었으므로)
+            setCurrentRoom(null);
+          },
+          (status, data) => {
+            console.log("WebSocket 연결 상태:", status, data);
+          },
+          (type, error) => {
+            console.error("WebSocket 에러:", type, error);
+          }
+        );
+      } catch (error) {
+        console.error("글로벌 클라이언트 초기화 실패:", error);
+      }
+    };
+
+    initializeGlobalClient();
 
     return () => {
       if (globalClient) {

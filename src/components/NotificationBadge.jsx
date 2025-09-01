@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { getUnreadNotificationCount } from '../api/notifications';
+import useNotificationStore from '../store/notificationStore';
 
 const NotificationBadge = ({ 
   className = "",
@@ -11,8 +11,7 @@ const NotificationBadge = ({
   refreshInterval = 30000 // 30초마다 업데이트
 }) => {
   const navigate = useNavigate();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const { unreadCount, loading, loadUnreadCount } = useNotificationStore();
 
   useEffect(() => {
     loadUnreadCount();
@@ -21,7 +20,7 @@ const NotificationBadge = ({
     const interval = setInterval(loadUnreadCount, refreshInterval);
     
     return () => clearInterval(interval);
-  }, [refreshInterval]);
+  }, [loadUnreadCount, refreshInterval]);
 
   // 페이지 포커스 시에도 업데이트
   useEffect(() => {
@@ -31,20 +30,7 @@ const NotificationBadge = ({
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  const loadUnreadCount = async () => {
-    try {
-      setLoading(true);
-      const response = await getUnreadNotificationCount();
-      setUnreadCount(response.count || 0);
-    } catch (error) {
-      console.error('Failed to load unread count:', error);
-      setUnreadCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadUnreadCount]);
 
   const handleClick = () => {
     if (onClick) {

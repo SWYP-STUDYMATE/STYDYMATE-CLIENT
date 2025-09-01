@@ -1,31 +1,41 @@
-import { useState, useEffect } from 'react';
-import { MessageSquare, X, Languages } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { MessageSquare, X, Languages, Volume2 } from 'lucide-react';
 
 export default function SubtitleOverlay({ 
   subtitle,
   position = 'bottom',
   showLanguage = true,
+  showSpeaker = false,
+  autoHide = true,
+  hideDelay = 4000,
   onClose 
 }) {
   const [isVisible, setIsVisible] = useState(false);
 
+  const hideTimer = useCallback(() => {
+    if (!autoHide) return;
+    
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, hideDelay);
+    return timer;
+  }, [autoHide, hideDelay]);
+
   useEffect(() => {
     if (subtitle) {
       setIsVisible(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, 4000);
-      return () => clearTimeout(timer);
+      const timer = hideTimer();
+      return () => timer && clearTimeout(timer);
     }
-  }, [subtitle]);
+  }, [subtitle, hideTimer]);
 
-  if (!subtitle || !isVisible) return null;
-
-  const positionClasses = {
+  const positionClasses = useMemo(() => ({
     top: 'top-4 left-1/2 transform -translate-x-1/2',
     bottom: 'bottom-20 left-1/2 transform -translate-x-1/2',
     center: 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
-  };
+  }), []);
+
+  if (!subtitle || !isVisible) return null;
 
   return (
     <div 
@@ -35,13 +45,24 @@ export default function SubtitleOverlay({
     >
       <div className="bg-black/90 backdrop-blur-sm text-white px-6 py-3 rounded-lg shadow-2xl max-w-2xl">
         <div className="flex items-center gap-3">
+          {showSpeaker && subtitle.speaker && (
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              <Volume2 className="w-3 h-3" />
+              <span>{subtitle.speaker}</span>
+            </div>
+          )}
           {showLanguage && (
             <div className="flex items-center gap-1 text-xs text-gray-400">
               <Languages className="w-3 h-3" />
               <span>{subtitle.language || 'auto'}</span>
             </div>
           )}
-          <p className="text-lg font-medium leading-relaxed">{subtitle.text}</p>
+          <p className="text-lg font-medium leading-relaxed flex-1">{subtitle.text}</p>
+          {subtitle.confidence && (
+            <div className="text-xs text-gray-500 ml-2">
+              {Math.round(subtitle.confidence * 100)}%
+            </div>
+          )}
           {onClose && (
             <button
               onClick={onClose}
@@ -61,30 +82,76 @@ export function DualSubtitleOverlay({
   localSubtitle,
   remoteSubtitle,
   localLabel = '나',
-  remoteLabel = '상대방'
+  remoteLabel = '상대방',
+  showConfidence = false,
+  showTimestamp = false,
+  className = ''
 }) {
+  const [localVisible, setLocalVisible] = useState(false);
+  const [remoteVisible, setRemoteVisible] = useState(false);
+
+  useEffect(() => {
+    if (localSubtitle) {
+      setLocalVisible(true);
+      const timer = setTimeout(() => setLocalVisible(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [localSubtitle]);
+
+  useEffect(() => {
+    if (remoteSubtitle) {
+      setRemoteVisible(true);
+      const timer = setTimeout(() => setRemoteVisible(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [remoteSubtitle]);
+
   return (
-    <>
+    <div className={className}>
       {/* 로컬 자막 (하단 왼쪽) */}
-      {localSubtitle && (
-        <div className="fixed bottom-20 left-4 z-50 animate-fadeIn">
-          <div className="bg-primary-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg">
-            <div className="text-xs text-primary-200 mb-1">{localLabel}</div>
-            <p className="text-sm font-medium">{localSubtitle.text}</p>
+      {localSubtitle && localVisible && (
+        <div className="fixed bottom-20 left-4 z-50 transition-all duration-300 animate-fadeIn">
+          <div className="bg-[#00C471]/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg max-w-md">
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs text-green-200 font-medium">{localLabel}</div>
+              {showTimestamp && localSubtitle.timestamp && (
+                <div className="text-xs text-green-300">
+                  {new Date(localSubtitle.timestamp).toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+            <p className="text-sm font-medium leading-relaxed">{localSubtitle.text}</p>
+            {showConfidence && localSubtitle.confidence && (
+              <div className="text-xs text-green-300 mt-1">
+                신뢰도: {Math.round(localSubtitle.confidence * 100)}%
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* 리모트 자막 (하단 오른쪽) */}
-      {remoteSubtitle && (
-        <div className="fixed bottom-20 right-4 z-50 animate-fadeIn">
-          <div className="bg-gray-800/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg">
-            <div className="text-xs text-gray-400 mb-1">{remoteLabel}</div>
-            <p className="text-sm font-medium">{remoteSubtitle.text}</p>
+      {remoteSubtitle && remoteVisible && (
+        <div className="fixed bottom-20 right-4 z-50 transition-all duration-300 animate-fadeIn">
+          <div className="bg-gray-800/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg max-w-md">
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs text-gray-400 font-medium">{remoteLabel}</div>
+              {showTimestamp && remoteSubtitle.timestamp && (
+                <div className="text-xs text-gray-500">
+                  {new Date(remoteSubtitle.timestamp).toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+            <p className="text-sm font-medium leading-relaxed">{remoteSubtitle.text}</p>
+            {showConfidence && remoteSubtitle.confidence && (
+              <div className="text-xs text-gray-500 mt-1">
+                신뢰도: {Math.round(remoteSubtitle.confidence * 100)}%
+              </div>
+            )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

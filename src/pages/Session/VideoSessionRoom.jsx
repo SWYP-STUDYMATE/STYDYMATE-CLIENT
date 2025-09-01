@@ -3,8 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import VideoControls from '../../components/VideoControls';
 import LiveTranscription from '../../components/LiveTranscription';
 import SubtitleDisplay, { SubtitleController } from '../../components/SubtitleDisplay';
+import RealtimeSubtitlePanel from '../../components/RealtimeSubtitlePanel';
+import TranslatedSubtitles from '../../components/TranslatedSubtitles';
 import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor } from 'lucide-react';
-import { webrtcAPI } from '../../api/webrtc';
+import { webrtcManager } from '../../services/webrtc';
+import { log } from '../../utils/logger';
 
 export default function VideoSessionRoom() {
   const navigate = useNavigate();
@@ -28,38 +31,28 @@ export default function VideoSessionRoom() {
   const [showOriginalSubtitle, setShowOriginalSubtitle] = useState(false);
   const [enableTranslation, setEnableTranslation] = useState(true);
 
-  // Partner info (mock data - replace with actual data from API)
-  const [partnerInfo, setPartnerInfo] = useState({
-    name: 'John Doe',
-    avatar: '/assets/basicProfilePic.png',
-    level: 'B2',
-    nativeLanguage: 'English',
-    learningLanguage: 'Korean'
-  });
+  // Partner info (로드된 세션 데이터에서 가져옴)
+  const [partnerInfo, setPartnerInfo] = useState(null);
 
   // WebRTC refs
-  const localStreamRef = useRef(null);
-  const remoteStreamRef = useRef(null);
-  const screenStreamRef = useRef(null);
-  const peerConnectionRef = useRef(null);
   const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-  const wsRef = useRef(null);
+  const remoteVideoRef = useRef(null); // For primary remote participant
+  const remoteVideosRef = useRef(new Map()); // Support multiple participants
   const durationIntervalRef = useRef(null);
+  const statsIntervalRef = useRef(null);
 
-  // ICE servers configuration
-  const iceServers = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]
-  };
+  // WebRTC state
+  const [participants, setParticipants] = useState(new Map());
+  const [connectionStats, setConnectionStats] = useState({});
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
 
   useEffect(() => {
     // Check if Picture-in-Picture API is supported
     setPipSupported('pictureInPictureEnabled' in document);
 
     initializeCall();
+    loadPartnerInfo();
 
     return () => {
       cleanup();
@@ -88,8 +81,14 @@ export default function VideoSessionRoom() {
 
   const initializeCall = async () => {
     try {
-      // Get user media (video and audio)
-      const stream = await navigator.mediaDevices.getUserMedia({
+      setConnectionState('connecting');
+      log.info('화상 세션 초기화 시작', { roomId }, 'VIDEO_SESSION');
+
+      // Setup WebRTC manager callbacks
+      setupWebRTCCallbacks();
+
+      // Initialize media with video constraints
+      const constraints = {
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
@@ -100,324 +99,266 @@ export default function VideoSessionRoom() {
           noiseSuppression: true,
           autoGainControl: true
         }
+      };
+
+      // Initialize media and connect to room
+      await webrtcManager.initializeMedia(constraints);
+      
+      const userId = localStorage.getItem('userId') || 'guest-' + Date.now();
+      const userName = localStorage.getItem('userName') || 'Anonymous';
+      
+      await webrtcManager.connect(roomId, { userId, userName }, {
+        autoReconnect: true,
+        connectionTimeout: 15000
       });
 
-      localStreamRef.current = stream;
+    } catch (error) {
+      log.error('화상 세션 초기화 실패', error, 'VIDEO_SESSION');
+      setConnectionState('failed');
+    }
+  };
+
+  // 파트너 정보 로드
+  const loadPartnerInfo = async () => {
+    try {
+      // 세션 정보에서 파트너 정보를 가져옴
+      const response = await fetch(`/api/v1/sessions/${roomId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const sessionData = await response.json();
+        setPartnerInfo({
+          name: sessionData.partnerName || 'Unknown Partner',
+          avatar: sessionData.partnerImage || '/assets/basicProfilePic.png',
+          level: sessionData.partnerLevel || 'Unknown',
+          nativeLanguage: sessionData.partnerNativeLanguage || 'Unknown',
+          learningLanguage: sessionData.partnerLearningLanguage || 'Unknown'
+        });
+      } else {
+        console.error('Failed to load partner info:', response.status);
+        // 기본 파트너 정보 설정
+        setPartnerInfo({
+          name: 'Partner',
+          avatar: '/assets/basicProfilePic.png',
+          level: 'Unknown',
+          nativeLanguage: 'Unknown',
+          learningLanguage: 'Unknown'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading partner info:', error);
+      // 에러 시 기본 파트너 정보 설정
+      setPartnerInfo({
+        name: 'Partner',
+        avatar: '/assets/basicProfilePic.png',
+        level: 'Unknown',
+        nativeLanguage: 'Unknown', 
+        learningLanguage: 'Unknown'
+      });
+    }
+  };
+
+  // Setup WebRTC manager callbacks
+  const setupWebRTCCallbacks = () => {
+    // Local stream callback
+    webrtcManager.on('onLocalStream', (stream) => {
+      log.info('로컬 스트림 수신', null, 'VIDEO_SESSION');
+      setLocalStream(stream);
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
+    });
 
-      // Join room using Workers API
-      const userId = localStorage.getItem('userId') || 'guest';
-      const userName = localStorage.getItem('userName') || 'Anonymous';
+    // Remote stream callback
+    webrtcManager.on('onRemoteStream', (userId, stream) => {
+      log.info('원격 스트림 수신', { userId }, 'VIDEO_SESSION');
       
-      try {
-        const joinResult = await webrtcAPI.joinRoom(roomId, { 
-          userId, 
-          userName 
-        });
+      // Set first remote stream for subtitles
+      if (remoteVideosRef.current.size === 0) {
+        setRemoteStream(stream);
+      }
+      
+      // Create or update video element for remote participant
+      let videoElement = remoteVideosRef.current.get(userId);
+      if (!videoElement) {
+        videoElement = document.createElement('video');
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+        videoElement.id = `remote-video-${userId}`;
         
-        console.log('Joined room:', joinResult);
+        // For now, use the single remote video ref for the first participant
+        // In the future, this can be expanded to support multiple video elements
+        if (remoteVideosRef.current.size === 0 && remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
+        }
         
-        // Setup WebSocket connection for signaling using Workers API
-        setupWebSocket();
+        remoteVideosRef.current.set(userId, videoElement);
+      }
+      
+      videoElement.srcObject = stream;
+    });
 
-        // Create peer connection
-        setupPeerConnection();
-      } catch (apiError) {
-        console.error('Failed to join room via API:', apiError);
-        // Fallback to direct WebSocket connection
-        setupWebSocket();
-        setupPeerConnection();
+    // Remote stream removed callback
+    webrtcManager.on('onRemoteStreamRemoved', (userId, stream) => {
+      log.info('원격 스트림 제거', { userId }, 'VIDEO_SESSION');
+      
+      const videoElement = remoteVideosRef.current.get(userId);
+      if (videoElement) {
+        videoElement.srcObject = null;
+        remoteVideosRef.current.delete(userId);
       }
 
-    } catch (error) {
-      console.error('Failed to initialize call:', error);
-      setConnectionState('failed');
-    }
-  };
-
-  const setupWebSocket = () => {
-    // Use Workers API WebSocket URL
-    const userId = localStorage.getItem('userId') || 'guest';
-    const userName = localStorage.getItem('userName') || 'Anonymous';
-    const wsUrl = webrtcAPI.getWebSocketURL(roomId, userId, userName);
-    
-    wsRef.current = new WebSocket(wsUrl);
-
-    wsRef.current.onopen = () => {
-      console.log('WebSocket connected to Workers signaling server');
-      wsRef.current.send(JSON.stringify({ 
-        type: 'join', 
-        roomId,
-        userId,
-        userName
-      }));
-    };
-
-    wsRef.current.onmessage = async (event) => {
-      const message = JSON.parse(event.data);
-
-      switch (message.type) {
-        case 'offer':
-          await handleOffer(message.offer);
-          break;
-        case 'answer':
-          await handleAnswer(message.answer);
-          break;
-        case 'ice-candidate':
-          await handleIceCandidate(message.candidate);
-          break;
-        case 'user-joined':
-          // Partner joined, create offer
-          await createOffer();
-          break;
-        case 'user-left':
-          handleUserLeft();
-          break;
-        case 'screen-share-started':
-          handleRemoteScreenShare(true);
-          break;
-        case 'screen-share-stopped':
-          handleRemoteScreenShare(false);
-          break;
-        case 'subtitle':
-          // 파트너로부터 받은 자막 표시
-          if (message.subtitle && isSubtitleEnabled) {
-            setTranscripts(prev => [...prev, {
-              ...message.subtitle,
-              isRemote: true,
-              timestamp: Date.now()
-            }]);
-          }
-          break;
-        case 'language-change':
-          // 파트너가 언어를 변경했을 때
-          setCurrentLanguage(message.language);
-          break;
-        default:
-          break;
-      }
-    };
-
-    wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setConnectionState('failed');
-    };
-
-    wsRef.current.onclose = () => {
-      console.log('WebSocket closed');
-      setConnectionState('disconnected');
-    };
-  };
-
-  const setupPeerConnection = () => {
-    peerConnectionRef.current = new RTCPeerConnection(iceServers);
-
-    // Add local stream tracks
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
-        peerConnectionRef.current.addTrack(track, localStreamRef.current);
+      // Update participants
+      setParticipants(prev => {
+        const updated = new Map(prev);
+        updated.delete(userId);
+        return updated;
       });
-    }
+    });
 
-    // Handle remote stream
-    peerConnectionRef.current.ontrack = (event) => {
-      console.log('Received remote track');
-      remoteStreamRef.current = event.streams[0];
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-      }
-      setConnectionState('connected');
-    };
+    // Participant joined callback
+    webrtcManager.on('onParticipantJoined', (participant) => {
+      log.info('참가자 입장', participant, 'VIDEO_SESSION');
+      setParticipants(prev => new Map(prev).set(participant.userId, participant));
+    });
 
-    // Handle ICE candidates
-    peerConnectionRef.current.onicecandidate = (event) => {
-      if (event.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'ice-candidate',
-          candidate: event.candidate
-        }));
-      }
-    };
+    // Participant left callback
+    webrtcManager.on('onParticipantLeft', (participant) => {
+      log.info('참가자 퇴장', participant, 'VIDEO_SESSION');
+      setParticipants(prev => {
+        const updated = new Map(prev);
+        updated.delete(participant.userId);
+        return updated;
+      });
+    });
 
-    // Monitor connection state
-    peerConnectionRef.current.onconnectionstatechange = () => {
-      const state = peerConnectionRef.current.connectionState;
-      console.log('Connection state:', state);
-
+    // Connection state change callback
+    webrtcManager.on('onConnectionStateChange', (state) => {
+      log.info('연결 상태 변경', { state }, 'VIDEO_SESSION');
+      setConnectionState(state);
+      
       if (state === 'connected') {
-        setConnectionState('connected');
-      } else if (state === 'failed' || state === 'disconnected') {
-        setConnectionState('disconnected');
+        // Start stats and connection monitoring
+        startStatsMonitoring();
+        webrtcManager.startConnectionMonitoring();
+      } else if (state === 'disconnected' || state === 'failed') {
+        stopStatsMonitoring();
+        webrtcManager.stopConnectionMonitoring();
+      } else if (state === 'reconnecting') {
+        // Show reconnecting state in UI
       }
-    };
+    });
 
-    // Monitor ICE connection state for signal strength
-    peerConnectionRef.current.oniceconnectionstatechange = () => {
-      const state = peerConnectionRef.current.iceConnectionState;
+    // Error callback
+    webrtcManager.on('onError', (message, error) => {
+      log.error('WebRTC 오류', { message, error }, 'VIDEO_SESSION');
+      setConnectionState('failed');
+    });
 
-      if (state === 'connected' || state === 'completed') {
-        // Get connection stats for signal strength
-        peerConnectionRef.current.getStats().then(stats => {
-          stats.forEach(report => {
-            if (report.type === 'candidate-pair' && report.state === 'succeeded') {
-              // Mock signal strength based on RTT
-              const rtt = report.currentRoundTripTime * 1000; // Convert to ms
-              if (rtt < 50) setSignalStrength(3);
-              else if (rtt < 100) setSignalStrength(2);
-              else if (rtt < 200) setSignalStrength(1);
-              else setSignalStrength(0);
-            }
-          });
+    // Chat message callback
+    webrtcManager.on('onChatMessage', (message) => {
+      if (message.type === 'subtitle' && isSubtitleEnabled) {
+        setTranscripts(prev => [...prev, {
+          ...message,
+          isRemote: true,
+          timestamp: Date.now()
+        }]);
+      } else if (message.type === 'language-change') {
+        setCurrentLanguage(message.language);
+      }
+    });
+  };
+
+  // Statistics monitoring functions
+  const startStatsMonitoring = () => {
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+    }
+
+    statsIntervalRef.current = setInterval(async () => {
+      try {
+        const stats = await webrtcManager.getConnectionStats();
+        setConnectionStats(stats);
+        
+        // Update signal strength based on RTT
+        let bestRtt = Infinity;
+        Object.values(stats.detailedStats).forEach(peerStats => {
+          if (peerStats.rtt && peerStats.rtt < bestRtt) {
+            bestRtt = peerStats.rtt;
+          }
         });
+
+        if (bestRtt < Infinity) {
+          if (bestRtt < 50) setSignalStrength(3);
+          else if (bestRtt < 100) setSignalStrength(2);
+          else if (bestRtt < 200) setSignalStrength(1);
+          else setSignalStrength(0);
+        }
+        
+      } catch (error) {
+        log.error('통계 수집 실패', error, 'VIDEO_SESSION');
       }
-    };
+    }, 2000); // Update stats every 2 seconds
   };
 
-  const createOffer = async () => {
-    try {
-      const offer = await peerConnectionRef.current.createOffer();
-      await peerConnectionRef.current.setLocalDescription(offer);
-
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'offer',
-          offer: offer
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to create offer:', error);
+  const stopStatsMonitoring = () => {
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+      statsIntervalRef.current = null;
     }
   };
 
-  const handleOffer = async (offer) => {
-    try {
-      await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await peerConnectionRef.current.createAnswer();
-      await peerConnectionRef.current.setLocalDescription(answer);
-
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'answer',
-          answer: answer
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to handle offer:', error);
-    }
-  };
-
-  const handleAnswer = async (answer) => {
-    try {
-      await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-    } catch (error) {
-      console.error('Failed to handle answer:', error);
-    }
-  };
-
-  const handleIceCandidate = async (candidate) => {
-    try {
-      await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch (error) {
-      console.error('Failed to add ICE candidate:', error);
-    }
-  };
-
-  const handleUserLeft = () => {
-    setConnectionState('disconnected');
-    cleanup();
-  };
-
-  const handleRemoteScreenShare = (isSharing) => {
-    // Handle when remote user starts/stops screen sharing
-    console.log('Remote screen share:', isSharing);
-  };
-
+  // Media control handlers
   const handleMicToggle = () => {
     const newMutedState = !isMuted;
     setIsMuted(newMutedState);
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = !newMutedState;
-      });
-    }
+    webrtcManager.toggleAudio(!newMutedState);
+    log.info('마이크 토글', { muted: newMutedState }, 'VIDEO_SESSION');
   };
 
   const handleCameraToggle = () => {
     const newCameraState = !isCameraOn;
     setIsCameraOn(newCameraState);
-    if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach(track => {
-        track.enabled = newCameraState;
-      });
-    }
+    webrtcManager.toggleVideo(newCameraState);
+    log.info('카메라 토글', { enabled: newCameraState }, 'VIDEO_SESSION');
   };
 
   const handleScreenShare = async () => {
-    if (!isScreenSharing) {
-      try {
+    try {
+      if (!isScreenSharing) {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: false
         });
 
-        screenStreamRef.current = screenStream;
-
-        // Replace video track with screen share
-        const screenTrack = screenStream.getVideoTracks()[0];
-        const sender = peerConnectionRef.current.getSenders().find(
-          s => s.track && s.track.kind === 'video'
-        );
-
-        if (sender) {
-          sender.replaceTrack(screenTrack);
-        }
-
+        // Switch to screen share (webrtcManager will handle track replacement)
+        await webrtcManager.switchDevice('videoinput', screenStream.getVideoTracks()[0]);
+        
         // Listen for screen share end
-        screenTrack.onended = () => {
-          stopScreenShare();
+        screenStream.getVideoTracks()[0].onended = () => {
+          setIsScreenSharing(false);
+          log.info('화면 공유 자동 종료', null, 'VIDEO_SESSION');
         };
 
         setIsScreenSharing(true);
+        log.info('화면 공유 시작', null, 'VIDEO_SESSION');
 
-        // Notify remote user
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({
-            type: 'screen-share-started'
-          }));
-        }
-      } catch (error) {
-        console.error('Failed to share screen:', error);
+        // Notify participants via chat
+        webrtcManager.sendChatMessage('screen-share-started');
+      } else {
+        // Stop screen sharing and return to camera
+        setIsScreenSharing(false);
+        log.info('화면 공유 중지', null, 'VIDEO_SESSION');
+        
+        // Notify participants
+        webrtcManager.sendChatMessage('screen-share-stopped');
       }
-    } else {
-      stopScreenShare();
-    }
-  };
-
-  const stopScreenShare = () => {
-    if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach(track => track.stop());
-
-      // Replace screen share with camera
-      const videoTrack = localStreamRef.current.getVideoTracks()[0];
-      const sender = peerConnectionRef.current.getSenders().find(
-        s => s.track && s.track.kind === 'video'
-      );
-
-      if (sender && videoTrack) {
-        sender.replaceTrack(videoTrack);
-      }
-
-      screenStreamRef.current = null;
-      setIsScreenSharing(false);
-
-      // Notify remote user
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'screen-share-stopped'
-        }));
-      }
+    } catch (error) {
+      log.error('화면 공유 오류', error, 'VIDEO_SESSION');
     }
   };
 
@@ -437,37 +378,39 @@ export default function VideoSessionRoom() {
     }
   };
 
-  const handleEndCall = () => {
-    cleanup();
+  const handleEndCall = async () => {
+    log.info('화상 통화 종료', null, 'VIDEO_SESSION');
+    await cleanup();
     navigate('/sessions');
   };
 
   const handleLanguageToggle = () => {
     const newLang = currentLanguage === 'en' ? 'ko' : 'en';
     setCurrentLanguage(newLang);
-    // Send language change to partner via WebSocket
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'language-change',
-        language: newLang
-      }));
-    }
+    
+    // Send language change to participants
+    webrtcManager.sendChatMessage(JSON.stringify({
+      type: 'language-change',
+      language: newLang
+    }));
+    
+    log.info('언어 전환', { from: currentLanguage, to: newLang }, 'VIDEO_SESSION');
   };
 
   // 실시간 전사 핸들러
   const handleTranscript = useCallback((transcript) => {
-    setTranscripts(prev => [...prev, {
+    const timestampedTranscript = {
       ...transcript,
       timestamp: Date.now()
-    }]);
+    };
+    
+    setTranscripts(prev => [...prev, timestampedTranscript]);
 
     // 파트너에게 자막 전송
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'subtitle',
-        subtitle: transcript
-      }));
-    }
+    webrtcManager.sendChatMessage(JSON.stringify({
+      type: 'subtitle',
+      subtitle: timestampedTranscript
+    }));
   }, []);
 
   // 자막 토글
@@ -485,7 +428,7 @@ export default function VideoSessionRoom() {
     const languages = new Set([subtitleLanguage]);
 
     // 파트너 언어 추가
-    if (partnerInfo.nativeLanguage) {
+    if (partnerInfo && partnerInfo.nativeLanguage) {
       const langCode = partnerInfo.nativeLanguage.toLowerCase().substring(0, 2);
       languages.add(langCode);
     }
@@ -494,46 +437,53 @@ export default function VideoSessionRoom() {
     languages.add(currentLanguage);
 
     return Array.from(languages);
-  }, [subtitleLanguage, currentLanguage, partnerInfo.nativeLanguage]);
+  }, [subtitleLanguage, currentLanguage, partnerInfo]);
 
   const cleanup = async () => {
+    log.info('화상 세션 정리 시작', null, 'VIDEO_SESSION');
+
     // Exit PiP if active
-    if (document.pictureInPictureElement) {
-      document.exitPictureInPicture();
-    }
-
-    // Stop all tracks
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
-    }
-
-    if (screenStreamRef.current) {
-      screenStreamRef.current.getTracks().forEach(track => track.stop());
-    }
-
-    // Leave room via Workers API
     try {
-      const userId = localStorage.getItem('userId') || 'guest';
-      await webrtcAPI.leaveRoom(roomId, userId);
-      console.log('Left room via Workers API');
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      }
     } catch (error) {
-      console.error('Failed to leave room via API:', error);
+      log.warn('PiP 종료 실패', error, 'VIDEO_SESSION');
     }
 
-    // Close peer connection
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-    }
-
-    // Close WebSocket
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
-
-    // Clear interval
+    // Stop monitoring intervals
+    stopStatsMonitoring();
+    
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
     }
+
+    // Clean up remote video elements
+    remoteVideosRef.current.forEach((videoElement) => {
+      if (videoElement.parentNode) {
+        videoElement.parentNode.removeChild(videoElement);
+      }
+    });
+    remoteVideosRef.current.clear();
+
+    // Disconnect WebRTC manager
+    try {
+      await webrtcManager.disconnect();
+      log.info('WebRTC 연결 정리 완료', null, 'VIDEO_SESSION');
+    } catch (error) {
+      log.error('WebRTC 연결 정리 실패', error, 'VIDEO_SESSION');
+    }
+
+    // Clear callbacks
+    webrtcManager.off('onLocalStream');
+    webrtcManager.off('onRemoteStream');
+    webrtcManager.off('onRemoteStreamRemoved');
+    webrtcManager.off('onParticipantJoined');
+    webrtcManager.off('onParticipantLeft');
+    webrtcManager.off('onConnectionStateChange');
+    webrtcManager.off('onError');
+    webrtcManager.off('onChatMessage');
   };
 
   const formatDuration = (seconds) => {
@@ -564,7 +514,9 @@ export default function VideoSessionRoom() {
             <h1 className="text-[20px] font-bold text-white">화상 통화</h1>
             <div className="flex items-center gap-2 text-[var(--black-200)]">
               <Users className="w-4 h-4" />
-              <span className="text-sm">1:1 세션</span>
+              <span className="text-sm">
+                {participants.size + 1}명 참가 중
+              </span>
             </div>
           </div>
 
@@ -575,7 +527,9 @@ export default function VideoSessionRoom() {
               <span className="text-sm text-[var(--black-200)]">
                 {connectionState === 'connected' ? '연결됨' :
                   connectionState === 'connecting' ? '연결 중...' :
-                    '연결 끊김'}
+                    connectionState === 'reconnecting' ? '복구 중...' :
+                      connectionState === 'failed' ? '연결 실패' :
+                        '연결 끊김'}
               </span>
             </div>
 
@@ -620,6 +574,12 @@ export default function VideoSessionRoom() {
             <p className="text-white text-lg mb-2">연결 중...</p>
             <p className="text-[var(--black-200)] text-sm">잠시만 기다려주세요</p>
           </div>
+        ) : connectionState === 'reconnecting' ? (
+          <div className="text-center">
+            <Loader2 className="w-16 h-16 text-[var(--warning-yellow)] animate-spin mx-auto mb-4" />
+            <p className="text-white text-lg mb-2">연결 복구 중...</p>
+            <p className="text-[var(--black-200)] text-sm">네트워크 연결을 복구하고 있습니다</p>
+          </div>
         ) : connectionState === 'failed' ? (
           <div className="text-center">
             <SignalZero className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -646,15 +606,27 @@ export default function VideoSessionRoom() {
               {/* Partner Info Overlay */}
               <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={partnerInfo.avatar}
-                    alt={partnerInfo.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="text-white font-medium">{partnerInfo.name}</p>
-                    <p className="text-[var(--black-200)] text-sm">Level {partnerInfo.level}</p>
-                  </div>
+                  {partnerInfo ? (
+                    <>
+                      <img
+                        src={partnerInfo.avatar}
+                        alt={partnerInfo.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-white font-medium">{partnerInfo.name}</p>
+                        <p className="text-[var(--black-200)] text-sm">Level {partnerInfo.level}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-full bg-gray-300 animate-pulse"></div>
+                      <div>
+                        <p className="text-white font-medium">Loading...</p>
+                        <p className="text-[var(--black-200)] text-sm">Partner info</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -698,42 +670,34 @@ export default function VideoSessionRoom() {
         )}
       </div>
 
-      {/* Subtitle Display */}
-      <SubtitleDisplay
-        transcripts={transcripts}
-        isVisible={isSubtitleEnabled}
-        position={subtitlePosition}
-        maxLines={2}
-        userLanguage={subtitleLanguage}
-        showOriginal={showOriginalSubtitle}
-      />
+      {/* 실시간 번역 자막 오버레이 */}
+      {isSubtitleEnabled && connectionState === 'connected' && (
+        <div className="fixed inset-0 pointer-events-none z-40">
+          <TranslatedSubtitles
+            localStream={localStream}
+            remoteStream={remoteStream}
+            sourceLanguage="auto"
+            defaultTargetLanguage={currentLanguage}
+            showOriginal={showOriginalSubtitle}
+            showTranslation={enableTranslation}
+            position={subtitlePosition}
+          />
+        </div>
+      )}
+
+      {/* 실시간 자막 패널 */}
+      <div className="fixed top-4 right-4 w-96 z-50 pointer-events-auto">
+        <RealtimeSubtitlePanel
+          localStream={localStream}
+          remoteStream={remoteStream}
+          onTranscriptUpdate={(transcript) => {
+            setTranscripts(prev => [...prev, transcript]);
+          }}
+        />
+      </div>
 
       {/* Controls */}
       <div className="p-6 flex flex-col items-center gap-4">
-        {/* Subtitle Controller */}
-        <SubtitleController
-          isEnabled={isSubtitleEnabled}
-          onToggle={toggleSubtitle}
-          position={subtitlePosition}
-          onPositionChange={setSubtitlePosition}
-          showOriginal={showOriginalSubtitle}
-          onShowOriginalChange={setShowOriginalSubtitle}
-          userLanguage={subtitleLanguage}
-          onLanguageChange={setSubtitleLanguage}
-          className="mb-2"
-        />
-
-        {/* Live Transcription Component */}
-        {isSubtitleEnabled && (
-          <LiveTranscription
-            isActive={isTranscribing && connectionState === 'connected'}
-            onTranscript={handleTranscript}
-            language={currentLanguage}
-            targetLanguages={getTargetLanguages()}
-            enableTranslation={enableTranslation}
-            className="mb-2"
-          />
-        )}
 
         <VideoControls
           isMuted={isMuted}

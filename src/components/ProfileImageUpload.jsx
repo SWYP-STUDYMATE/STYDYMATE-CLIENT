@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, Camera, X, Loader2 } from 'lucide-react';
-import { uploadProfileImage, deleteProfileImage } from '../api/profile';
+import { uploadProfileImage, deleteProfileImage, validateFile, getFileUrl } from '../api/profile';
 import useProfileStore from '../store/profileStore';
 
 export default function ProfileImageUpload({ isOpen, onClose }) {
@@ -20,28 +20,24 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
   const handleFileSelect = (file) => {
     if (!file) return;
 
-    // 파일 유효성 검사
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      setError('JPG, PNG, WebP, GIF 파일만 업로드 가능합니다.');
-      return;
+    try {
+      // 개선된 파일 유효성 검사 사용
+      validateFile(file, 'image');
+      
+      setSelectedFile(file);
+      setError(null);
+
+      // 미리보기 생성
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } catch (validationError) {
+      setError(validationError.message);
+      setSelectedFile(null);
+      setPreview(null);
     }
-
-    // 파일 크기 검사 (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('파일 크기는 10MB 이하여야 합니다.');
-      return;
-    }
-
-    setSelectedFile(file);
-    setError(null);
-
-    // 미리보기 생성
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   // 파일 선택 이벤트
@@ -92,7 +88,7 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
     setError(null);
 
     try {
-      // 프로그레스 시뮬레이션 (실제로는 XMLHttpRequest나 fetch의 progress 이벤트 사용)
+      // 프로그레스 시뮬레이션
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -103,18 +99,24 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
         });
       }, 200);
 
-      // 이미지 업로드
-      const result = await uploadProfileImage(selectedFile);
+      // Workers API를 통한 이미지 업로드
+      const result = await uploadProfileImage(selectedFile, {
+        uploadedAt: new Date().toISOString(),
+        source: 'profile-upload'
+      });
       
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      // 프로필 이미지 URL 저장
-      const imageUrl = `${import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev'}${result.url}`;
+      // 완전한 이미지 URL 생성
+      const imageUrl = getFileUrl(result.key);
+      console.log('✅ 업로드 완료, 이미지 URL:', imageUrl);
+
+      // 로컬 스토어에 이미지 URL 저장
       setProfileImage(imageUrl);
 
       try {
-        // 서버에 프로필 이미지 저장
+        // 서버에 프로필 이미지 저장 (Spring Boot API)
         await saveProfileToServer({ profileImage: imageUrl });
         console.log('✅ 프로필 이미지 서버 저장 성공');
       } catch (serverError) {
@@ -128,7 +130,7 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
       }, 500);
     } catch (err) {
       console.error('Upload failed:', err);
-      setError('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+      setError(err.message || '이미지 업로드에 실패했습니다. 다시 시도해주세요.');
       setUploadProgress(0);
     } finally {
       setIsUploading(false);

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 import { getCacheStats, invalidateCache, warmCache } from '../middleware/cache';
 import { auth } from '../middleware/auth';
 import { CacheService, SessionCache, UserCache, APICache } from '../services/cache';
@@ -209,12 +209,12 @@ app.get('/keys', async (c) => {
 
     return c.json({
       success: true,
-      keys: list.keys.map(key => ({
+      keys: list.keys.map((key: any) => ({
         name: key.name,
         expiration: key.expiration,
         metadata: key.metadata
       })),
-      cursor: list.cursor,
+      cursor: (list as any).cursor,
       complete: list.list_complete
     });
 

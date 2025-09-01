@@ -24,15 +24,21 @@ import AchievementBadges from '../../components/AchievementBadges';
 import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
 import LanguageLevelProgress from '../../components/profile/LanguageLevelProgress';
 import ProfileImageUpload from '../../components/ProfileImageUpload';
+import ProfileEditor from '../../components/ProfileEditor';
+import ProfileCard from '../../components/ProfileCard';
+import FileManager from '../../components/FileManager';
 import OptimizedImage from '../../components/OptimizedImage';
 import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
+import { getOptimizedImageUrl } from '../../api/profile';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('profile'); // profile, stats, settings
+  const [activeTab, setActiveTab] = useState('profile'); // profile, stats, settings, files
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
+  const [userFiles, setUserFiles] = useState([]); // 사용자 업로드 파일 목록
 
-  const { englishName, profileImage, residence, intro, clearProfile } = useProfileStore();
+  const { englishName, name, profileImage, residence, intro, clearProfile, loadProfileFromServer } = useProfileStore();
   const { sessionStats } = useSessionStore();
 
   // 학습 통계 데이터 (실제로는 API에서 가져와야 함)
@@ -64,7 +70,25 @@ export default function ProfilePage() {
   };
 
   const handleEditProfile = () => {
-    navigate('/onboarding-info/1'); // 프로필 편집 페이지로 이동
+    setShowProfileEditor(true); // 개선된 프로필 편집기 사용
+  };
+
+  // 프로필 업데이트 핸들러
+  const handleProfileUpdate = async (updatedData) => {
+    console.log('프로필 업데이트:', updatedData);
+    // 프로필 스토어는 자동으로 업데이트됨
+    // 필요한 경우 추가 로직 수행
+  };
+
+  // 파일 삭제 핸들러
+  const handleFileDelete = (deletedFile) => {
+    setUserFiles(prev => prev.filter(file => file.key !== deletedFile.key));
+  };
+
+  // 파일 선택 핸들러
+  const handleFileSelect = (selectedFile) => {
+    console.log('선택된 파일:', selectedFile);
+    // 파일 상세 보기나 다운로드 등의 로직
   };
 
   const handleNotificationToggle = async (setting) => {
@@ -114,7 +138,7 @@ export default function ProfilePage() {
         <div className="flex items-center space-x-4">
           <div className="relative">
             <OptimizedImage
-              src={profileImage || DEFAULT_PROFILE_IMAGE}
+              src={getOptimizedImageUrl(profileImage, { width: 80, height: 80 }) || DEFAULT_PROFILE_IMAGE}
               alt="Profile"
               className="w-20 h-20 rounded-full object-cover"
               width={80}
@@ -158,6 +182,15 @@ export default function ProfilePage() {
               }`}
           >
             학습 통계
+          </button>
+          <button
+            onClick={() => setActiveTab('files')}
+            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'files'
+              ? 'text-[#00C471] border-[#00C471]'
+              : 'text-[#929292] border-transparent'
+              }`}
+          >
+            파일 관리
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -298,6 +331,47 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {activeTab === 'files' && (
+          <div className="space-y-6">
+            {/* 파일 관리 컴포넌트 */}
+            <FileManager
+              files={userFiles}
+              onFileDelete={handleFileDelete}
+              onFileSelect={handleFileSelect}
+              allowDelete={true}
+              allowPreview={true}
+              className="w-full"
+            />
+
+            {/* 업로드 가이드 */}
+            {userFiles.length === 0 && (
+              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] text-center">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-2">파일 업로드 가이드</h3>
+                <p className="text-[14px] text-[#606060] mb-4">
+                  프로필 사진, 오디오 녹음, 채팅 이미지 등을 업로드하고 관리할 수 있습니다.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                  <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
+                    <h4 className="text-[14px] font-bold text-[#111111] mb-2">이미지</h4>
+                    <p className="text-[12px] text-[#606060] mb-1">JPG, PNG, WebP, GIF</p>
+                    <p className="text-[12px] text-[#929292]">최대 10MB</p>
+                  </div>
+                  <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
+                    <h4 className="text-[14px] font-bold text-[#111111] mb-2">오디오</h4>
+                    <p className="text-[12px] text-[#606060] mb-1">MP3, WAV, WebM, OGG</p>
+                    <p className="text-[12px] text-[#929292]">최대 50MB</p>
+                  </div>
+                  <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
+                    <h4 className="text-[14px] font-bold text-[#111111] mb-2">비디오</h4>
+                    <p className="text-[12px] text-[#606060] mb-1">MP4, WebM, MOV</p>
+                    <p className="text-[12px] text-[#929292]">최대 100MB</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'settings' && (
           <div className="space-y-6">
             {/* Notification Settings */}
@@ -426,6 +500,13 @@ export default function ProfilePage() {
       <ProfileImageUpload
         isOpen={showImageUpload}
         onClose={() => setShowImageUpload(false)}
+      />
+
+      {/* 프로필 편집 모달 */}
+      <ProfileEditor
+        isOpen={showProfileEditor}
+        onClose={() => setShowProfileEditor(false)}
+        onSave={handleProfileUpdate}
       />
     </div>
   );

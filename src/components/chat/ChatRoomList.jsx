@@ -87,18 +87,34 @@ export default function ChatRoomList({
                     className="w-10 h-10 rounded-full mr-3"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-800 truncate">{name}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-gray-800 truncate">{name}</p>
+                      {isParticipating && room.unreadCount > 0 && (
+                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full ml-2">
+                          {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 truncate">
                       {isParticipating
                         ? room.lastMessage || "메시지가 없습니다"
                         : `참여자 ${room.participants.length}명`}
                     </p>
                   </div>
-                  <span className="text-xs text-gray-400 ml-2">
-                    {isParticipating && room.lastMessageAt
-                      ? new Date(room.lastMessageAt).toLocaleTimeString()
-                      : ""}
-                  </span>
+                  <div className="flex flex-col items-end ml-2">
+                    <span className="text-xs text-gray-400">
+                      {isParticipating && room.lastMessageAt
+                        ? new Date(room.lastMessageAt).toLocaleTimeString("ko-KR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          })
+                        : ""}
+                    </span>
+                    {isParticipating && room.isLastMessageRead === false && (
+                      <div className="w-2 h-2 bg-[#00C471] rounded-full mt-1"></div>
+                    )}
+                  </div>
                 </button>
               );
             })

@@ -2,6 +2,7 @@
 // https://developers.cloudflare.com/images/
 
 import { AppError } from '../utils/errors';
+import { log } from '../utils/logger';
 
 // 이미지 업로드 함수
 export async function uploadImage(
@@ -53,7 +54,7 @@ export async function uploadImage(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
@@ -72,7 +73,7 @@ export async function uploadImage(
             metadata: result.result.metadata
         };
     } catch (error) {
-        console.error('Cloudflare Images upload error:', error);
+        log.error('Cloudflare Images upload error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
             'Failed to upload image',
@@ -116,13 +117,13 @@ export async function createDirectUploadURL(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to create direct upload URL',
                 response.status,
                 'DIRECT_UPLOAD_ERROR',
-                'Failed to create direct upload URL',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
@@ -132,13 +133,13 @@ export async function createDirectUploadURL(
             uploadURL: result.result.uploadURL
         };
     } catch (error) {
-        console.error('Direct upload URL error:', error);
+        log.error('Direct upload URL error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to create direct upload URL',
             500,
             'DIRECT_UPLOAD_ERROR',
-            'Failed to create direct upload URL',
-            error.message
+            String(error)
         );
     }
 }
@@ -178,26 +179,26 @@ export async function generateSignedURL(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to generate signed URL',
                 response.status,
                 'SIGNED_URL_ERROR',
-                'Failed to generate signed URL',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
 
         return result.result.signedURL;
     } catch (error) {
-        console.error('Signed URL generation error:', error);
+        log.error('Signed URL generation error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to generate signed URL',
             500,
             'SIGNED_URL_ERROR',
-            'Failed to generate signed URL',
-            error.message
+            String(error)
         );
     }
 }
@@ -219,26 +220,26 @@ export async function deleteImage(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
+                'Failed to delete image',
                 response.status,
                 'IMAGE_DELETE_ERROR',
-                'Failed to delete image',
                 result.errors?.[0]?.message || 'Unknown error'
             );
         }
 
         return true;
     } catch (error) {
-        console.error('Image deletion error:', error);
+        log.error('Image deletion error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
+            'Failed to delete image',
             500,
             'IMAGE_DELETE_ERROR',
-            'Failed to delete image',
-            error.message
+            String(error)
         );
     }
 }
@@ -265,7 +266,7 @@ export async function listImages(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
@@ -290,7 +291,7 @@ export async function listImages(
             perPage: result.result_info.per_page
         };
     } catch (error) {
-        console.error('Image list error:', error);
+        log.error('Image list error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
             'Failed to list images',
@@ -318,7 +319,7 @@ export async function getImageDetails(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
@@ -339,7 +340,7 @@ export async function getImageDetails(
             size: result.result.size
         };
     } catch (error) {
-        console.error('Image details error:', error);
+        log.error('Image details error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
             'Failed to get image details',
@@ -372,7 +373,7 @@ export async function createVariant(
             }
         );
 
-        const result = await response.json();
+        const result: any = await response.json();
 
         if (!response.ok || !result.success) {
             throw new AppError(
@@ -385,7 +386,7 @@ export async function createVariant(
 
         return true;
     } catch (error) {
-        console.error('Variant creation error:', error);
+        log.error('Variant creation error', error as Error, { component: 'IMAGES_SERVICE' });
         if (error instanceof AppError) throw error;
         throw new AppError(
             'Failed to create variant',

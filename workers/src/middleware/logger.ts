@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { Variables } from '../types';
-import { log, logger } from '../utils/logger';
+import { log, logger as utilLogger } from '../utils/logger';
 
 export interface LogContext {
     requestId: string;
@@ -19,7 +19,7 @@ export interface LogContext {
  */
 function initializeLogger(env?: any) {
     if (env?.ENVIRONMENT) {
-        logger.setEnvironment(env.ENVIRONMENT);
+        utilLogger.setEnvironment(env.ENVIRONMENT);
     }
 }
 
@@ -34,7 +34,7 @@ function generateRequestId(): string {
  * 로깅 미들웨어
  * 모든 요청/응답을 구조화된 형식으로 로깅
  */
-export async function loggerMiddleware(c: Context<{ Variables: Variables }>, next: Next) {
+export async function logger(c: Context<{ Variables: Variables }>, next: Next) {
     // 환경 초기화 (최초 1회)
     initializeLogger(c.env);
 

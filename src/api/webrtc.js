@@ -1,5 +1,6 @@
 // WebRTC API Client
 import { handleApiError, handleWebRTCError, withRetry } from '../utils/errorHandler.js';
+import { log } from '../utils/logger';
 
 const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 const API_VERSION = 'v1';
@@ -36,7 +37,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('Room creation error:', error);
+      log.error('WebRTC 룸 생성 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -69,7 +71,8 @@ class WebRTCAPI {
 
       return result;
     } catch (error) {
-      console.error('Room join error:', error);
+      log.error('WebRTC 룸 입장 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -97,7 +100,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('Room leave error:', error);
+      log.error('WebRTC 룸 나가기 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -120,7 +124,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('Room info error:', error);
+      log.error('WebRTC 룸 정보 조회 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -148,7 +153,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('Room settings update error:', error);
+      log.error('WebRTC 룸 설정 업데이트 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -171,7 +177,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('ICE servers error:', error);
+      log.error('ICE 서버 조회 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -194,7 +201,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('Room metrics error:', error);
+      log.error('WebRTC 룸 메트릭 조회 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }
@@ -228,7 +236,8 @@ class WebRTCAPI {
 
       return await response.json();
     } catch (error) {
-      console.error('Recording upload error:', error);
+      log.error('녹음 파일 업로드 실패', error, 'WEBRTC');
+      handleApiError(error);
       throw error;
     }
   }

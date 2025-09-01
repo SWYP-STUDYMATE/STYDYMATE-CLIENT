@@ -7,7 +7,15 @@ import {
   getMatchingStatus,
   getMatchingHistory,
   getRecommendedPartners,
-  analyzeCompatibility
+  analyzeCompatibility,
+  getSpringBootRecommendedPartners,
+  searchSpringBootPartners,
+  sendSpringBootMatchRequest,
+  acceptSpringBootMatchRequest,
+  rejectSpringBootMatchRequest,
+  getSpringBootReceivedMatchRequests,
+  getSpringBootSentMatchRequests,
+  getSpringBootMatches
 } from "../api/matching";
 
 const useMatchingStore = create(
@@ -182,18 +190,33 @@ const useMatchingStore = create(
         return proficiencyLevel && availability.length > 0;
       },
       
-      // 추천 파트너 가져오기
+      // 추천 파트너 가져오기 (Spring Boot API 우선 사용)
       fetchRecommendedPartners: async () => {
         try {
-          const result = await getRecommendedPartners();
+          const state = get();
+          // Spring Boot API 사용
+          const result = await getSpringBootRecommendedPartners(state.matchingFilters);
+          const partners = result.content || result.data || [];
+          
           set({
-            matchedUsers: result.partners || [],
-            matchingStatus: (result.partners && result.partners.length > 0) ? "matched" : "idle"
+            matchedUsers: partners,
+            matchingStatus: partners.length > 0 ? "matched" : "idle"
           });
-          return result;
+          return { partners };
         } catch (error) {
           console.error('Fetch recommended partners error:', error);
-          throw error;
+          // Spring Boot API 실패시 Workers API fallback
+          try {
+            const result = await getRecommendedPartners();
+            set({
+              matchedUsers: result.partners || [],
+              matchingStatus: (result.partners && result.partners.length > 0) ? "matched" : "idle"
+            });
+            return result;
+          } catch (fallbackError) {
+            console.error('Fallback API error:', fallbackError);
+            throw error;
+          }
         }
       },
 
@@ -233,6 +256,62 @@ const useMatchingStore = create(
           return analysis;
         } catch (error) {
           console.error('Analyze compatibility error:', error);
+          throw error;
+        }
+      },
+
+      // 매칭 요청 보내기 (Spring Boot API)
+      sendMatchRequest: async (partnerId, message = '') => {
+        try {
+          const result = await sendSpringBootMatchRequest(partnerId, message);
+          return result;
+        } catch (error) {
+          console.error('Send match request error:', error);
+          throw error;
+        }
+      },
+
+      // 받은 매칭 요청 조회
+      fetchReceivedRequests: async (status = 'pending') => {
+        try {
+          const result = await getSpringBootReceivedMatchRequests(status);
+          return result.content || result.data || [];
+        } catch (error) {
+          console.error('Fetch received requests error:', error);
+          throw error;
+        }
+      },
+
+      // 보낸 매칭 요청 조회
+      fetchSentRequests: async (status = 'pending') => {
+        try {
+          const result = await getSpringBootSentMatchRequests(status);
+          return result.content || result.data || [];
+        } catch (error) {
+          console.error('Fetch sent requests error:', error);
+          throw error;
+        }
+      },
+
+      // 매칭된 파트너 목록 조회
+      fetchMatches: async () => {
+        try {
+          const result = await getSpringBootMatches();
+          return result.content || result.data || [];
+        } catch (error) {
+          console.error('Fetch matches error:', error);
+          throw error;
+        }
+      },
+
+      // 파트너 검색 (Spring Boot API)
+      searchPartners: async (searchQuery, filters = {}) => {
+        try {
+          const result = await searchSpringBootPartners(searchQuery, filters);
+          const partners = result.content || result.data || [];
+          return partners;
+        } catch (error) {
+          console.error('Search partners error:', error);
           throw error;
         }
       },

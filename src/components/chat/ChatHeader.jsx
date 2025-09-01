@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Phone, Video, MoreVertical, LogOut } from "lucide-react";
+import { Phone, Video, Search, MoreVertical, LogOut } from "lucide-react";
 import OptimizedImage from '../OptimizedImage';
 import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
 
-export default function ChatHeader({ room, currentUserId, onLeaveRoom }) {
+export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchToggle }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -58,6 +58,7 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom }) {
             /* 전화 로직 */
           }}
           className="p-2 hover:bg-gray-100 rounded-full"
+          title="음성 통화"
         >
           <Phone className="w-5 h-5 text-gray-600" />
         </button>
@@ -66,8 +67,16 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom }) {
             /* 영상통화 로직 */
           }}
           className="p-2 hover:bg-gray-100 rounded-full"
+          title="영상 통화"
         >
           <Video className="w-5 h-5 text-gray-600" />
+        </button>
+        <button
+          onClick={onSearchToggle}
+          className="p-2 hover:bg-gray-100 rounded-full"
+          title="메시지 검색 (Ctrl+F)"
+        >
+          <Search className="w-5 h-5 text-gray-600" />
         </button>
 
         {/* 메뉴 버튼 */}

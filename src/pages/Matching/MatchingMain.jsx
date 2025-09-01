@@ -15,10 +15,12 @@ import CommonButton from '../../components/CommonButton';
 import MatchingProfileCard from '../../components/MatchingProfileCard';
 import FilterPanel from '../../components/FilterPanel';
 import useMatchingStore from '../../store/matchingStore';
+import { useToast } from '../../components/ErrorToast';
 
 export default function MatchingMain() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('recommended');
+    const { showError, showSuccess, ToastContainer } = useToast();
     const [showFilters, setShowFilters] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +34,7 @@ export default function MatchingMain() {
         startMatching,
         fetchRecommendedPartners,
         setMatchingFilters,
+        searchPartners,
     } = useMatchingStore();
 
     useEffect(() => {
@@ -61,10 +64,23 @@ export default function MatchingMain() {
         }
     };
 
-    const handleFilterChange = (filters) => {
+    const handleFilterChange = async (filters) => {
         setMatchingFilters(filters);
-        // 필터 변경 시 추천 파트너 다시 로드
-        loadRecommendedPartners();
+        
+        setIsLoading(true);
+        try {
+            if (activeTab === 'recommended') {
+                await loadRecommendedPartners();
+            } else if (activeTab === 'search' && searchQuery.trim()) {
+                // 검색 중인 경우 필터를 적용하여 재검색
+                const results = await searchPartners(searchQuery, filters);
+                setSearchResults(results);
+            }
+        } catch (error) {
+            console.error('Failed to apply filters:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleViewProfile = (userId) => {
@@ -76,25 +92,15 @@ export default function MatchingMain() {
         
         setIsLoading(true);
         try {
-            // 검색 API 호출 (실제 구현시 searchSpringBootPartners 사용)
-            const mockResults = [
-                // Mock 데이터 - 실제로는 API에서 가져옴
-                {
-                    id: 'search-1',
-                    name: '김영희',
-                    age: 25,
-                    country: '대한민국',
-                    targetLanguage: 'en',
-                    nativeLanguage: 'ko',
-                    proficiencyLevel: 'intermediate',
-                    interests: ['영화', '음악'],
-                    profileImage: null
-                }
-            ];
-            setSearchResults(mockResults);
+            // Spring Boot API를 통한 파트너 검색
+            const results = await searchPartners(searchQuery, matchingFilters);
+            setSearchResults(results);
         } catch (error) {
             console.error('Search error:', error);
+            // API 실패 시 빈 배열로 설정
             setSearchResults([]);
+            // 사용자에게 에러 메시지 표시
+            showError('매칭 파트너 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
             setIsLoading(false);
         }
@@ -351,6 +357,8 @@ export default function MatchingMain() {
                     </div>
                 </div>
             )}
+            
+            <ToastContainer />
         </div>
     );
 }

@@ -1,0 +1,378 @@
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
+
+class WebSocketService {
+  constructor() {
+    this.client = null;
+    this.isConnecting = false;
+    this.isConnected = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectDelay = 1000; // 시작 지연 시간 (밀리초)
+    this.maxReconnectDelay = 30000; // 최대 지연 시간
+    this.subscriptions = new Map();
+    this.messageQueue = [];
+    this.connectionListeners = new Set();
+    this.errorListeners = new Set();
+  }
+
+  /**
+   * WebSocket 연결 설정
+   * @param {Object} options - 연결 옵션
+   * @param {string} options.endpoint - WebSocket 엔드포인트
+   * @param {Object} options.headers - 연결 헤더
+   * @param {boolean} options.debug - 디버그 모드
+   */
+  connect(options = {}) {
+    if (this.isConnecting || this.isConnected) {
+      console.log("WebSocket is already connecting or connected");
+      return Promise.resolve();
+    }
+
+    const {
+      endpoint = "/ws/chat",
+      headers = {},
+      debug = false
+    } = options;
+
+    this.isConnecting = true;
+    
+    const token = localStorage.getItem("accessToken");
+    const baseUrl = import.meta.env.VITE_WS_URL || "https://api.languagemate.kr";
+    const socketUrl = `${baseUrl}${endpoint}?token=${token}`;
+
+    return new Promise((resolve, reject) => {
+      try {
+        this.client = new Client({
+          webSocketFactory: () => new SockJS(socketUrl),
+          connectHeaders: {
+            Authorization: `Bearer ${token}`,
+            ...headers
+          },
+          debug: debug ? (str) => console.log("STOMP Debug:", str) : undefined,
+          
+          onConnect: (frame) => {
+            console.log("WebSocket Connected:", frame);
+            this.isConnecting = false;
+            this.isConnected = true;
+            this.reconnectAttempts = 0;
+            
+            // 대기 중인 메시지 전송
+            this.flushMessageQueue();
+            
+            // 기존 구독 재설정
+            this.reestablishSubscriptions();
+            
+            // 연결 리스너 호출
+            this.connectionListeners.forEach(listener => {
+              try {
+                listener('connected', frame);
+              } catch (error) {
+                console.error("Connection listener error:", error);
+              }
+            });
+            
+            resolve();
+          },
+          
+          onStompError: (frame) => {
+            console.error("STOMP Error:", frame);
+            this.isConnecting = false;
+            this.isConnected = false;
+            
+            // 에러 리스너 호출
+            this.errorListeners.forEach(listener => {
+              try {
+                listener('stomp_error', frame);
+              } catch (error) {
+                console.error("Error listener error:", error);
+              }
+            });
+            
+            this.handleReconnection();
+            reject(new Error(`STOMP Error: ${frame.headers.message}`));
+          },
+          
+          onWebSocketClose: (event) => {
+            console.log("WebSocket Closed:", event);
+            this.isConnecting = false;
+            this.isConnected = false;
+            
+            // 연결 리스너 호출
+            this.connectionListeners.forEach(listener => {
+              try {
+                listener('disconnected', event);
+              } catch (error) {
+                console.error("Connection listener error:", error);
+              }
+            });
+            
+            // 정상 종료가 아닌 경우 재연결 시도
+            if (!event.wasClean) {
+              this.handleReconnection();
+            }
+          },
+          
+          onWebSocketError: (error) => {
+            console.error("WebSocket Error:", error);
+            this.isConnecting = false;
+            this.isConnected = false;
+            
+            // 에러 리스너 호출
+            this.errorListeners.forEach(listener => {
+              try {
+                listener('websocket_error', error);
+              } catch (error) {
+                console.error("Error listener error:", error);
+              }
+            });
+            
+            this.handleReconnection();
+            reject(error);
+          }
+        });
+
+        this.client.activate();
+      } catch (error) {
+        this.isConnecting = false;
+        this.isConnected = false;
+        console.error("Failed to create WebSocket client:", error);
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * 재연결 처리
+   */
+  handleReconnection() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error("Max reconnection attempts reached");
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(
+      this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      this.maxReconnectDelay
+    );
+
+    console.log(
+      `Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`
+    );
+
+    setTimeout(() => {
+      if (!this.isConnected && !this.isConnecting) {
+        this.connect().catch(error => {
+          console.error("Reconnection failed:", error);
+        });
+      }
+    }, delay);
+  }
+
+  /**
+   * 구독 추가
+   * @param {string} destination - 구독할 목적지
+   * @param {Function} callback - 메시지 콜백
+   * @param {Object} headers - 구독 헤더
+   * @returns {string} 구독 ID
+   */
+  subscribe(destination, callback, headers = {}) {
+    const subscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const subscriptionInfo = {
+      destination,
+      callback,
+      headers,
+      subscription: null
+    };
+
+    this.subscriptions.set(subscriptionId, subscriptionInfo);
+
+    if (this.isConnected && this.client) {
+      try {
+        subscriptionInfo.subscription = this.client.subscribe(
+          destination,
+          (message) => {
+            try {
+              const parsedMessage = JSON.parse(message.body);
+              callback(parsedMessage, message);
+            } catch (error) {
+              console.error("Error parsing message:", error);
+              callback(message.body, message);
+            }
+          },
+          headers
+        );
+      } catch (error) {
+        console.error("Failed to subscribe:", error);
+      }
+    }
+
+    return subscriptionId;
+  }
+
+  /**
+   * 구독 해제
+   * @param {string} subscriptionId - 구독 ID
+   */
+  unsubscribe(subscriptionId) {
+    const subscriptionInfo = this.subscriptions.get(subscriptionId);
+    if (subscriptionInfo && subscriptionInfo.subscription) {
+      try {
+        subscriptionInfo.subscription.unsubscribe();
+      } catch (error) {
+        console.error("Failed to unsubscribe:", error);
+      }
+    }
+    this.subscriptions.delete(subscriptionId);
+  }
+
+  /**
+   * 기존 구독 재설정 (재연결 시 사용)
+   */
+  reestablishSubscriptions() {
+    this.subscriptions.forEach((subscriptionInfo, subscriptionId) => {
+      if (!subscriptionInfo.subscription && this.client) {
+        try {
+          subscriptionInfo.subscription = this.client.subscribe(
+            subscriptionInfo.destination,
+            (message) => {
+              try {
+                const parsedMessage = JSON.parse(message.body);
+                subscriptionInfo.callback(parsedMessage, message);
+              } catch (error) {
+                console.error("Error parsing message:", error);
+                subscriptionInfo.callback(message.body, message);
+              }
+            },
+            subscriptionInfo.headers
+          );
+        } catch (error) {
+          console.error("Failed to reestablish subscription:", error);
+        }
+      }
+    });
+  }
+
+  /**
+   * 메시지 전송
+   * @param {string} destination - 전송 목적지
+   * @param {Object} message - 전송할 메시지
+   * @param {Object} headers - 전송 헤더
+   */
+  send(destination, message, headers = {}) {
+    if (this.isConnected && this.client) {
+      try {
+        this.client.publish({
+          destination,
+          body: JSON.stringify(message),
+          headers
+        });
+      } catch (error) {
+        console.error("Failed to send message:", error);
+        // 연결이 끊어진 경우 큐에 추가
+        this.messageQueue.push({ destination, message, headers });
+      }
+    } else {
+      // 연결되지 않은 경우 메시지 큐에 추가
+      this.messageQueue.push({ destination, message, headers });
+      
+      // 연결되지 않은 경우 연결 시도
+      if (!this.isConnecting) {
+        this.connect().catch(error => {
+          console.error("Failed to connect for message sending:", error);
+        });
+      }
+    }
+  }
+
+  /**
+   * 대기 중인 메시지 전송
+   */
+  flushMessageQueue() {
+    while (this.messageQueue.length > 0 && this.isConnected) {
+      const { destination, message, headers } = this.messageQueue.shift();
+      this.send(destination, message, headers);
+    }
+  }
+
+  /**
+   * 연결 상태 리스너 추가
+   * @param {Function} listener - 연결 상태 콜백 (status, data)
+   */
+  addConnectionListener(listener) {
+    this.connectionListeners.add(listener);
+  }
+
+  /**
+   * 연결 상태 리스너 제거
+   * @param {Function} listener - 제거할 리스너
+   */
+  removeConnectionListener(listener) {
+    this.connectionListeners.delete(listener);
+  }
+
+  /**
+   * 에러 리스너 추가
+   * @param {Function} listener - 에러 콜백 (type, error)
+   */
+  addErrorListener(listener) {
+    this.errorListeners.add(listener);
+  }
+
+  /**
+   * 에러 리스너 제거
+   * @param {Function} listener - 제거할 리스너
+   */
+  removeErrorListener(listener) {
+    this.errorListeners.delete(listener);
+  }
+
+  /**
+   * WebSocket 연결 해제
+   */
+  disconnect() {
+    if (this.client) {
+      try {
+        // 모든 구독 해제
+        this.subscriptions.forEach((subscriptionInfo) => {
+          if (subscriptionInfo.subscription) {
+            subscriptionInfo.subscription.unsubscribe();
+          }
+        });
+        this.subscriptions.clear();
+        
+        // 클라이언트 비활성화
+        this.client.deactivate();
+      } catch (error) {
+        console.error("Error during disconnect:", error);
+      }
+    }
+    
+    this.client = null;
+    this.isConnecting = false;
+    this.isConnected = false;
+    this.reconnectAttempts = 0;
+    this.messageQueue = [];
+    this.connectionListeners.clear();
+    this.errorListeners.clear();
+  }
+
+  /**
+   * 연결 상태 확인
+   * @returns {boolean} 연결 상태
+   */
+  getConnectionStatus() {
+    return {
+      isConnected: this.isConnected,
+      isConnecting: this.isConnecting,
+      reconnectAttempts: this.reconnectAttempts
+    };
+  }
+}
+
+// 싱글톤 인스턴스
+const websocketService = new WebSocketService();
+
+export default websocketService;

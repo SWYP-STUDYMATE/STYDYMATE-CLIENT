@@ -74,11 +74,32 @@ export default function Main() {
         }
       } catch (error) {
         console.error("온보딩 확인 또는 프로필 로드 실패:", error);
+        
+        // 네트워크 오류 (서버 연결 불가)
+        if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+          console.error("🔌 네트워크 연결 오류: 서버에 연결할 수 없습니다.");
+          // 서버 연결 문제시 기본 프로필로 설정 (UI는 계속 표시)
+          setEnglishName("사용자");
+          setProfileImage("/assets/basicProfilePic.png");
+          setResidence("위치 정보 없음");
+          return;
+        }
+        
         if (!isMockMode()) {
           // 토큰이 유효하지 않으면 로그인 페이지로
           if (error.response?.status === 401 || error.response?.status === 403) {
+            console.log("🔐 인증 오류: 로그인 페이지로 이동");
             localStorage.clear();
             navigate("/", { replace: true });
+            return;
+          }
+          
+          // 서버 오류 (5xx) 시 기본 프로필로 설정
+          if (error.response?.status >= 500) {
+            console.error("🚨 서버 내부 오류: 기본 프로필로 설정");
+            setEnglishName("사용자");
+            setProfileImage("/assets/basicProfilePic.png");
+            setResidence("위치 정보 없음");
             return;
           }
           

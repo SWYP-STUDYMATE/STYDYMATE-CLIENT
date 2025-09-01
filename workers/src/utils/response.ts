@@ -171,3 +171,28 @@ export function preflightResponse(c: Context): Response {
         }
     });
 }
+
+/**
+ * 에러 응답 생성
+ */
+export function errorResponse(
+    c: Context,
+    message: string,
+    code?: string,
+    details?: any,
+    status: number = 500
+): Response {
+    const response: ApiResponse = {
+        success: false,
+        error: {
+            message,
+            code: code || 'INTERNAL_ERROR',
+            details
+        },
+        meta: {
+            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId')
+        }
+    };
+    return c.json(response, status as any);
+}

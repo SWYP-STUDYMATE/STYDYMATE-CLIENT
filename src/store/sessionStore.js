@@ -77,7 +77,7 @@ const useSessionStore = create((set) => ({
   // 예정된 세션 불러오기
   loadUpcomingSessions: async () => {
     try {
-      // 실제 API 호출 시도
+      // 실제 API 호출
       const response = await fetch('/api/v1/sessions/upcoming', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -88,80 +88,48 @@ const useSessionStore = create((set) => ({
       if (response.ok) {
         const sessions = await response.json();
         set({ upcomingSessions: sessions });
-        return;
+        return sessions;
+      } else {
+        console.error('Failed to load upcoming sessions:', response.status);
+        // API 실패 시 빈 상태로 설정
+        set({ upcomingSessions: [] });
+        throw new Error(`API Error: ${response.status}`);
       }
     } catch (error) {
-      console.error('Failed to load upcoming sessions from API, using dummy data:', error);
+      console.error('Failed to load upcoming sessions from API:', error);
+      // 에러 발생 시 빈 상태로 설정
+      set({ upcomingSessions: [] });
+      throw error;
     }
-    
-    // API 실패 시 더미 데이터 사용
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    
-    const dummySessions = [
-      {
-        id: '1',
-        date: new Date(year, month, today.getDate() + 2, 14, 0), // 오늘로부터 2일 후
-        partnerId: 'emma123',
-        partnerName: 'Emma Wilson',
-        partnerImage: '/assets/basicProfilePic.png',
-        type: 'video',
-        duration: 60,
-        language: 'en',
-        status: 'scheduled'
-      },
-      {
-        id: '2',
-        date: new Date(year, month, today.getDate() + 2, 16, 30), // 오늘로부터 2일 후
-        partnerId: 'john456',
-        partnerName: 'John Smith',
-        partnerImage: '/assets/basicProfilePic.png',
-        type: 'audio',
-        duration: 30,
-        language: 'ko',
-        status: 'scheduled'
-      },
-      {
-        id: '3',
-        date: new Date(year, month, today.getDate() + 5, 10, 0), // 오늘로부터 5일 후
-        partnerId: 'group789',
-        partnerName: '그룹 세션',
-        partnerImage: '/assets/basicProfilePic.png',
-        type: 'video',
-        duration: 45,
-        language: 'en',
-        status: 'scheduled',
-        participants: 4
-      },
-      {
-        id: '4',
-        date: new Date(year, month, today.getDate() - 3, 15, 0), // 3일 전
-        partnerId: 'sarah111',
-        partnerName: 'Sarah Johnson',
-        partnerImage: '/assets/basicProfilePic.png',
-        type: 'video',
-        duration: 60,
-        language: 'en',
-        status: 'completed'
-      },
-      {
-        id: '5',
-        date: new Date(year, month, today.getDate() + 10, 19, 0), // 10일 후
-        partnerId: 'mike222',
-        partnerName: 'Mike Chen',
-        partnerImage: '/assets/basicProfilePic.png',
-        type: 'audio',
-        duration: 45,
-        language: 'ko',
-        status: 'scheduled'
+  },
+
+  // 전체 세션 불러오기
+  loadSessions: async () => {
+    try {
+      const response = await fetch('/api/v1/sessions', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const sessions = await response.json();
+        set({ 
+          sessions: sessions,
+          upcomingSessions: sessions.filter(s => s.status === 'scheduled')
+        });
+        return sessions;
+      } else {
+        console.error('Failed to load sessions:', response.status);
+        set({ sessions: [], upcomingSessions: [] });
+        throw new Error(`API Error: ${response.status}`);
       }
-    ];
-    
-    set({ 
-      upcomingSessions: dummySessions.filter(s => s.status === 'scheduled'),
-      sessions: dummySessions 
-    });
+    } catch (error) {
+      console.error('Failed to load sessions from API:', error);
+      set({ sessions: [], upcomingSessions: [] });
+      throw error;
+    }
   },
 
   // 세션 추가

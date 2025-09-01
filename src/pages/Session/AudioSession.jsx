@@ -92,7 +92,6 @@ export default function AudioSession() {
     };
 
     const handleToggleMute = () => {
-        setIsMuted(!isMuted);
         toggleAudio();
     };
 
@@ -145,7 +144,7 @@ export default function AudioSession() {
                                 alt={userName}
                                 className="w-32 h-32 rounded-full object-cover border-4 border-[var(--black-400)]"
                             />
-                            {!isMuted && (
+                            {isAudioEnabled && (
                                 <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--green-500)] rounded-full flex items-center justify-center">
                                     <Mic className="w-4 h-4 text-white" />
                                 </div>
@@ -227,12 +226,12 @@ export default function AudioSession() {
                     {/* Mute Button */}
                     <button
                         onClick={handleToggleMute}
-                        className={`p-4 rounded-full transition-colors duration-200 ${isMuted
+                        className={`p-4 rounded-full transition-colors duration-200 ${!isAudioEnabled
                             ? 'bg-[var(--red)] hover:bg-[var(--red-600)]'
                             : 'bg-[var(--black-400)] hover:bg-[var(--black-300)]'
                             }`}
                     >
-                        {isMuted ? (
+                        {!isAudioEnabled ? (
                             <MicOff className="w-6 h-6" />
                         ) : (
                             <Mic className="w-6 h-6" />

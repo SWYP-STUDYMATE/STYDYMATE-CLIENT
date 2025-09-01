@@ -192,31 +192,7 @@ export const getUserName = async () => {
   return res.data;
 };
 
-// TODO: API 구현 완료 후 Zustand 스토어 대체할 함수들
-// export const getUserProfile = async () => {
-//   const res = await api.get("/user/profile");
-//   return res.data;
-// };
-
-// export const getUserLanguageInfo = async () => {
-//   const res = await api.get("/user/language-info");
-//   return res.data;
-// };
-
-// export const getUserMotivationInfo = async () => {
-//   const res = await api.get("/user/motivation-info");
-//   return res.data;
-// };
-
-// export const getUserPartnerInfo = async () => {
-//   const res = await api.get("/user/partner-info");
-//   return res.data;
-// };
-
-// export const getUserScheduleInfo = async () => {
-//   const res = await api.get("/user/schedule-info");
-//   return res.data;
-// };
+// Note: 사용자 관련 API 함수들은 src/api/user.js에서 구현됨
 
 export default api;
 

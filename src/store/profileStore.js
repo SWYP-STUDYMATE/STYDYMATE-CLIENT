@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getUserCompleteProfile, updateUserCompleteProfile } from "../api/user";
+import { log } from "../utils/logger";
 
 // 서버와 동기화되는 프로필 스토어
 const useProfileStore = create(
@@ -28,9 +29,9 @@ const useProfileStore = create(
       // 서버에서 프로필 로드
       loadProfileFromServer: async () => {
         try {
-          console.log('서버에서 프로필 로드 시도...');
+          log.debug('서버에서 프로필 로드 시도', {}, 'PROFILE_STORE');
           const profileData = await getUserCompleteProfile();
-          console.log('서버 프로필 데이터:', profileData);
+          log.debug('서버 프로필 데이터 수신', { profileData }, 'PROFILE_STORE');
           
           set({
             englishName: profileData.englishName || "",
@@ -42,7 +43,7 @@ const useProfileStore = create(
           
           return profileData;
         } catch (error) {
-          console.warn('서버 프로필 로드 실패:', error);
+          log.warn('서버 프로필 로드 실패', error, 'PROFILE_STORE');
           // Mock 모드나 서버 오류 시 기본값 유지
           return null;
         }
@@ -51,9 +52,9 @@ const useProfileStore = create(
       // 서버에 프로필 저장
       saveProfileToServer: async (profileData) => {
         try {
-          console.log('서버에 프로필 저장 시도:', profileData);
+          log.debug('서버에 프로필 저장 시도', { profileData }, 'PROFILE_STORE');
           const updatedProfile = await updateUserCompleteProfile(profileData);
-          console.log('서버 프로필 저장 성공:', updatedProfile);
+          log.info('서버 프로필 저장 성공', { updatedProfile }, 'PROFILE_STORE');
           
           // 서버 응답으로 상태 업데이트
           set({
@@ -66,7 +67,7 @@ const useProfileStore = create(
           
           return updatedProfile;
         } catch (error) {
-          console.error('서버 프로필 저장 실패:', error);
+          log.error('서버 프로필 저장 실패', error, 'PROFILE_STORE');
           // 로컬 상태는 그대로 유지
           throw error;
         }
@@ -78,7 +79,7 @@ const useProfileStore = create(
         try {
           await useProfileStore.getState().saveProfileToServer({ englishName: name });
         } catch (error) {
-          console.warn('영어 이름 서버 저장 실패:', error);
+          log.warn('영어 이름 서버 저장 실패', error, 'PROFILE_STORE');
         }
       },
       
@@ -87,7 +88,7 @@ const useProfileStore = create(
         try {
           await useProfileStore.getState().saveProfileToServer({ residence });
         } catch (error) {
-          console.warn('거주지 서버 저장 실패:', error);
+          log.warn('거주지 서버 저장 실패', error, 'PROFILE_STORE');
         }
       },
       
@@ -96,7 +97,7 @@ const useProfileStore = create(
         try {
           await useProfileStore.getState().saveProfileToServer({ intro });
         } catch (error) {
-          console.warn('소개 서버 저장 실패:', error);
+          log.warn('소개 서버 저장 실패', error, 'PROFILE_STORE');
         }
       },
       
@@ -105,14 +106,14 @@ const useProfileStore = create(
         try {
           await useProfileStore.getState().saveProfileToServer({ profileImage });
         } catch (error) {
-          console.warn('프로필 이미지 서버 저장 실패:', error);
+          log.warn('프로필 이미지 서버 저장 실패', error, 'PROFILE_STORE');
         }
       },
       
       // 서버와 로컬 데이터 동기화 상태 확인
       syncWithServer: async () => {
         try {
-          console.log('🔄 서버와 데이터 동기화 확인 중...');
+          log.debug('서버와 데이터 동기화 확인 중', {}, 'PROFILE_STORE');
           const serverProfile = await getUserCompleteProfile();
           const localProfile = useProfileStore.getState();
           
@@ -124,7 +125,7 @@ const useProfileStore = create(
             serverProfile.intro !== localProfile.intro;
           
           if (hasServerChanges) {
-            console.log('⚠️ 서버에 더 최신 데이터 발견, 로컬 업데이트');
+            log.info('서버에 더 최신 데이터 발견, 로컬 업데이트 진행', {}, 'PROFILE_STORE');
             set({
               englishName: serverProfile.englishName || localProfile.englishName,
               name: serverProfile.name || localProfile.name,
@@ -135,10 +136,10 @@ const useProfileStore = create(
             return true; // 동기화됨
           }
           
-          console.log('✅ 로컬과 서버 데이터 일치');
+          log.debug('로컬과 서버 데이터 일치', {}, 'PROFILE_STORE');
           return false; // 이미 동기화됨
         } catch (error) {
-          console.warn('서버 동기화 확인 실패:', error);
+          log.warn('서버 동기화 확인 실패', error, 'PROFILE_STORE');
           return false;
         }
       },

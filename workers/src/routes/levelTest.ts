@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { Env } from '../index';
+import type { AppBindings as Env } from '../index';
 import { Variables, LevelTestSubmission, LevelTestResult } from '../types';
 import { processAudio, analyzeText, calculateLevel, evaluateLanguageLevel, generateLevelFeedback } from '../services/ai';
 import { saveToR2, getFromR2 } from '../services/storage';
@@ -54,7 +54,10 @@ levelTestRoutes.get('/questions', async (c) => {
 levelTestRoutes.post('/audio', async (c) => {
   try {
     const formData = await c.req.formData();
-    const audioFile = formData.get('audio') as File;
+    const audioFile = formData.get('audio') as File | null;
+    if (!audioFile) {
+        return c.json({ error: 'No audio file provided' }, 400);
+    }
     const questionId = formData.get('questionId') as string;
     const userId = formData.get('userId') as string;
 
@@ -256,7 +259,10 @@ levelTestRoutes.get('/audio/:userId/:questionId', async (c) => {
 levelTestRoutes.post('/submit', async (c) => {
   try {
     const formData = await c.req.formData();
-    const audio = formData.get('audio') as File;
+    const audio = formData.get('audio') as File | null;
+    if (!audio) {
+        return c.json({ error: 'No audio file provided' }, 400);
+    }
     const questionNumber = formData.get('questionNumber') as string;
     const userId = formData.get('userId') as string;
 
@@ -409,8 +415,8 @@ levelTestRoutes.post('/complete', async (c) => {
     );
 
     // 강점과 개선점
-    const strengths = [];
-    const improvements = [];
+    const strengths: string[] = [];
+    const improvements: string[] = [];
 
     Object.entries(avgScores).forEach(([category, score]) => {
       if (score >= 70) {
@@ -494,7 +500,10 @@ levelTestRoutes.post('/submit-all', async (c) => {
 
     // 모든 오디오 파일 수집
     for (let i = 1; i <= 4; i++) {
-      const audioFile = formData.get(`audio_${i}`) as File;
+      const audioFile = formData.get(`audio_${i}`) as File | null;
+      if (!audioFile) {
+          return c.json({ error: `No audio file provided for question ${i}` }, 400);
+      }
       if (audioFile) {
         audioFiles.push({ questionNumber: i, file: audioFile });
       }
@@ -585,8 +594,8 @@ levelTestRoutes.post('/submit-all', async (c) => {
     else level = 'A1';
 
     // 강점과 개선점 도출
-    const strengths = [];
-    const improvements = [];
+    const strengths: string[] = [];
+    const improvements: string[] = [];
 
     Object.entries(avgScores).forEach(([category, score]) => {
       if (score >= 70) {

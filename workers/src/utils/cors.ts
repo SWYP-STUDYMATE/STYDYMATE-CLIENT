@@ -56,7 +56,7 @@ export const publicCors = cors({
 
 // Preflight handler
 export function handlePreflight(c: Context) {
-  return c.text('', { status: 204 });
+  return c.text('', 204 as any);
 }
 
 // Security headers middleware

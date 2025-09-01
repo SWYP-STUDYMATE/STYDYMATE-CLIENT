@@ -94,7 +94,8 @@ export async function startStreamingTranscription(sessionId, options = {}) {
 
     return await response.json();
   } catch (error) {
-    console.error('Start streaming transcription error:', error);
+    log.error('스트리밍 전사 시작 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }
@@ -120,7 +121,8 @@ export async function stopStreamingTranscription(sessionId) {
 
     return await response.json();
   } catch (error) {
-    console.error('Stop streaming transcription error:', error);
+    log.error('스트리밍 전사 종료 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }
@@ -145,7 +147,8 @@ export async function sendAudioChunk(sessionId, audioChunk) {
 
     return await response.json();
   } catch (error) {
-    console.error('Send audio chunk error:', error);
+    log.error('오디오 청크 전송 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }
@@ -162,7 +165,7 @@ export function connectTranscriptionWebSocket(sessionId, options = {}) {
   const ws = new WebSocket(wsUrl);
   
   ws.onopen = () => {
-    console.log('Transcription WebSocket connected');
+    log.info('전사 WebSocket 연결됨', {}, 'TRANSCRIPTION');
     
     // Send configuration
     ws.send(JSON.stringify({
@@ -200,7 +203,8 @@ export async function detectLanguage(text) {
 
     return await response.json();
   } catch (error) {
-    console.error('Detect language error:', error);
+    log.error('언어 감지 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }
@@ -221,7 +225,8 @@ export async function getSupportedLanguages() {
 
     return await response.json();
   } catch (error) {
-    console.error('Get supported languages error:', error);
+    log.error('지원 언어 목록 조회 실패', error, 'TRANSCRIPTION');
+    handleApiError(error);
     throw error;
   }
 }

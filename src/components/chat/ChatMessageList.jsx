@@ -6,6 +6,8 @@ export default function ChatMessageList({
   messages,
   currentUserId,
   formatTimestamp,
+  highlightedMessageId,
+  containerRef,
 }) {
   const scrollRef = useRef();
 
@@ -19,10 +21,17 @@ export default function ChatMessageList({
     scrollToBottom();
   }, [messages]);
 
+  // containerRef를 부모에서 받은 ref로 설정
+  useEffect(() => {
+    if (containerRef) {
+      containerRef.current = scrollRef.current;
+    }
+  }, [containerRef]);
+
   return (
     <div
       ref={scrollRef}
-      className="flex-1 min-h-0 overflow-y-auto space-y-2 p-4"
+      className="flex-1 min-h-0 overflow-y-auto space-y-2 p-4 pb-2"
     >
       {messages.length === 0 ? (
         <EmptyPlaceholder />
@@ -35,12 +44,15 @@ export default function ChatMessageList({
             String(prevMsg.sender.userId) === String(msg.sender.userId);
           const showAvatar = !sameUser;
           const isLast = idx === messages.length - 1;
+          const isHighlighted = highlightedMessageId === msg.messageId;
 
           return (
             <div
               key={msg.messageId}
-              className={`flex items-end ${isMine ? "justify-end" : "justify-start"
-                }`}
+              data-message-id={msg.messageId}
+              className={`flex items-end ${isMine ? "justify-end" : "justify-start"} ${
+                isHighlighted ? "bg-yellow-100 rounded-lg p-2 -m-2 transition-colors duration-500" : ""
+              }`}
             >
               {/* 다른 사람의 메시지 (왼쪽) */}
               {!isMine && (

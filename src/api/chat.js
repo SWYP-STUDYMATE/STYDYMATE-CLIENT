@@ -1,8 +1,5 @@
 import api from './index.js';
-import SockJS from "sockjs-client";
-import { Client } from "@stomp/stompjs";
-
-const WS_BASE = import.meta.env.VITE_WS_URL || "https://api.languagemate.kr";
+import websocketService from '../services/websocketService.js';
 // REST: 내 채팅방 목록 조회
 export async function fetchChatRooms() {
   try {
@@ -87,108 +84,204 @@ export async function uploadChatAudio(roomId, file) {
   return res.data.data;
 }
 
-// WS+STOMP: 초기화 및 메시지 발송/구독
-export function initStompClient(roomId, onMessage) {
-  const token = localStorage.getItem("accessToken");
-  // 1) 토큰을 쿼리 파라미터로도 보내면 SockJS 핸드셰이크에 포함됩니다.
-  const socketUrl = `${WS_BASE}/ws/chat?token=${token}`;
-  
-  const client = new Client({
-    webSocketFactory: () => new SockJS(socketUrl),
-    connectHeaders: {
-      Authorization: `Bearer ${token}` // 2) CONNECT 프레임에도 헤더로 붙임
-    },
-    debug: (str) => {
-      console.log("STOMP Debug:", str);
-    },
-    onConnect: (frame) => {
-      console.log("STOMP Connected:", frame);
-      client.subscribe(`/sub/chat/room/${roomId}`, (message) => {
-        onMessage(JSON.parse(message.body));
+// WS+STOMP: 채팅방 클라이언트 초기화
+export async function initStompClient(roomId, onMessage, onConnectionChange, onError) {
+  try {
+    // WebSocket 연결 (이미 연결된 경우 재사용)
+    if (!websocketService.getConnectionStatus().isConnected) {
+      await websocketService.connect({
+        debug: import.meta.env.DEV
       });
-    },
-    onStompError: (frame) => {
-      console.error("STOMP Error:", frame);
     }
-  });
 
-  client.activate();
-  return client;
+    // 연결 상태 리스너 등록
+    if (onConnectionChange) {
+      websocketService.addConnectionListener(onConnectionChange);
+    }
+
+    // 에러 리스너 등록
+    if (onError) {
+      websocketService.addErrorListener(onError);
+    }
+
+    // 채팅방 메시지 구독
+    const subscriptionId = websocketService.subscribe(
+      `/sub/chat/room/${roomId}`,
+      (message) => {
+        if (onMessage) {
+          onMessage(message);
+        }
+      }
+    );
+
+    // 클라이언트 객체 반환 (기존 인터페이스 호환)
+    return {
+      send: (destination, headers, body) => {
+        try {
+          const message = typeof body === 'string' ? JSON.parse(body) : body;
+          websocketService.send(destination, message, headers);
+        } catch (error) {
+          console.error("Failed to send message:", error);
+        }
+      },
+      disconnect: () => {
+        websocketService.unsubscribe(subscriptionId);
+        if (onConnectionChange) {
+          websocketService.removeConnectionListener(onConnectionChange);
+        }
+        if (onError) {
+          websocketService.removeErrorListener(onError);
+        }
+      },
+      subscriptionId,
+      isConnected: () => websocketService.getConnectionStatus().isConnected
+    };
+  } catch (error) {
+    console.error("Failed to initialize STOMP client:", error);
+    if (onError) {
+      onError('connection_failed', error);
+    }
+    throw error;
+  }
 }
 
-export function initGlobalStompClient(onRoomCreated) {
-  const token = localStorage.getItem("accessToken");
-  const socketUrl = `${WS_BASE}/ws/chat?token=${token}`;
-  
-  let reconnectAttempts = 0;
-  const maxReconnectAttempts = 5;
-
-  const client = new Client({
-    webSocketFactory: () => new SockJS(socketUrl),
-    connectHeaders: {
-      Authorization: `Bearer ${token}`
-    },
-    debug: (str) => {
-      console.log("Global STOMP Debug:", str);
-    },
-    onConnect: (frame) => {
-      console.log("Global STOMP Connected:", frame);
-      reconnectAttempts = 0; // 연결 성공 시 재시도 횟수 초기화
-
-      // 채팅방 생성 알림 구독
-      client.subscribe(`/user/queue/rooms`, (message) => {
-        try {
-          const roomData = JSON.parse(message.body);
-          console.log("Received new room notification:", roomData);
-          onRoomCreated(roomData);
-        } catch (error) {
-          console.error("Error parsing room notification:", error);
-        }
+export async function initGlobalStompClient(onRoomCreated, onConnectionChange, onError) {
+  try {
+    // WebSocket 연결 (이미 연결된 경우 재사용)
+    if (!websocketService.getConnectionStatus().isConnected) {
+      await websocketService.connect({
+        debug: import.meta.env.DEV
       });
-
-      // 공개 채팅방 생성 알림 구독
-      client.subscribe(`/sub/chat/public-rooms`, (message) => {
-        try {
-          const roomData = JSON.parse(message.body);
-          console.log(
-            "Received public room creation notification:",
-            roomData
-          );
-          onRoomCreated(roomData);
-        } catch (error) {
-          console.error("Error parsing public room notification:", error);
-        }
-      });
-    },
-    onStompError: (frame) => {
-      console.error("Global STOMP Error:", frame);
-
-      // 재연결 시도
-      if (reconnectAttempts < maxReconnectAttempts) {
-        reconnectAttempts++;
-        console.log(
-          `Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`
-        );
-        setTimeout(() => {
-          client.activate();
-        }, 3000); // 3초 후 재연결 시도
-      } else {
-        console.error("Max reconnection attempts reached");
-      }
-    },
-    onDisconnect: () => {
-      console.log("Global STOMP client disconnected");
     }
-  });
 
-  client.activate();
+    // 연결 상태 리스너 등록
+    if (onConnectionChange) {
+      websocketService.addConnectionListener(onConnectionChange);
+    }
 
-  // 연결 해제 메서드 추가
-  const originalDeactivate = client.deactivate;
-  client.disconnect = () => {
-    console.log("Disconnecting global STOMP client");
-    originalDeactivate.call(client);
-  };
+    // 에러 리스너 등록
+    if (onError) {
+      websocketService.addErrorListener(onError);
+    }
 
-  return client;
+    // 채팅방 생성 알림 구독
+    const roomSubscriptionId = websocketService.subscribe(
+      `/user/queue/rooms`,
+      (roomData) => {
+        console.log("Received new room notification:", roomData);
+        if (onRoomCreated) {
+          onRoomCreated(roomData);
+        }
+      }
+    );
+
+    // 공개 채팅방 생성 알림 구독
+    const publicRoomSubscriptionId = websocketService.subscribe(
+      `/sub/chat/public-rooms`,
+      (roomData) => {
+        console.log("Received public room creation notification:", roomData);
+        if (onRoomCreated) {
+          onRoomCreated(roomData);
+        }
+      }
+    );
+
+    // 클라이언트 객체 반환 (기존 인터페이스 호환)
+    return {
+      disconnect: () => {
+        websocketService.unsubscribe(roomSubscriptionId);
+        websocketService.unsubscribe(publicRoomSubscriptionId);
+        if (onConnectionChange) {
+          websocketService.removeConnectionListener(onConnectionChange);
+        }
+        if (onError) {
+          websocketService.removeErrorListener(onError);
+        }
+      },
+      isConnected: () => websocketService.getConnectionStatus().isConnected,
+      subscriptionIds: [roomSubscriptionId, publicRoomSubscriptionId]
+    };
+  } catch (error) {
+    console.error("Failed to initialize global STOMP client:", error);
+    if (onError) {
+      onError('connection_failed', error);
+    }
+    throw error;
+  }
+}
+
+// 타이핑 상태 전송
+export function sendTypingStatus(roomId, isTyping) {
+  try {
+    websocketService.send('/pub/chat/typing', {
+      roomId,
+      isTyping,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Failed to send typing status:', error);
+  }
+}
+
+// 타이핑 상태 구독 (채팅방별)
+export function subscribeToTyping(roomId, onTypingChange) {
+  return websocketService.subscribe(
+    `/sub/chat/room/${roomId}/typing`,
+    (typingData) => {
+      if (onTypingChange) {
+        onTypingChange(typingData);
+      }
+    }
+  );
+}
+
+// 타이핑 상태 구독 해제
+export function unsubscribeFromTyping(subscriptionId) {
+  websocketService.unsubscribe(subscriptionId);
+}
+
+// 메시지 읽음 처리
+export async function markMessagesAsRead(roomId) {
+  try {
+    const res = await api.post(`/chat/rooms/${roomId}/read`);
+    return res.data.data;
+  } catch (error) {
+    console.error("메시지 읽음 처리 실패:", error);
+    throw error;
+  }
+}
+
+// 미읽은 메시지 수 조회
+export async function getUnreadMessageCount(roomId) {
+  try {
+    const res = await api.get(`/chat/rooms/${roomId}/unread-count`);
+    return res.data.data;
+  } catch (error) {
+    console.error("미읽은 메시지 수 조회 실패:", error);
+    return 0;
+  }
+}
+
+// 전체 미읽은 메시지 수 조회
+export async function getTotalUnreadCount() {
+  try {
+    const res = await api.get('/chat/unread-count');
+    return res.data.data;
+  } catch (error) {
+    console.error("전체 미읽은 메시지 수 조회 실패:", error);
+    return 0;
+  }
+}
+
+// 채팅 메시지 검색
+export async function searchChatMessages(roomId, keyword, page = 0, size = 20) {
+  try {
+    const res = await api.get(`/chat/rooms/${roomId}/messages/search`, {
+      params: { keyword, page, size }
+    });
+    return res.data.data;
+  } catch (error) {
+    console.error("메시지 검색 실패:", error);
+    return { content: [], totalElements: 0 };
+  }
 }

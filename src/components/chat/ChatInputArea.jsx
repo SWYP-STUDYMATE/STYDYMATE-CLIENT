@@ -14,6 +14,8 @@ export default function ChatInputArea({
   handleFileChange,
   removeImagePreview,
   fileInputRef,
+  onTypingStart,
+  onTypingStop,
 }) {
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
@@ -28,11 +30,27 @@ export default function ChatInputArea({
     setShowVoiceRecorder(false);
   };
 
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInput(value);
+    
+    // 타이핑 상태 전송 (빈 문자열이 아닐 때)
+    if (value.trim().length > 0 && onTypingStart) {
+      onTypingStart();
+    } else if (value.trim().length === 0 && onTypingStop) {
+      onTypingStop();
+    }
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage(input, selectedImageFiles, null);
       setInput("");
+      // 메시지 전송 시 타이핑 상태 중단
+      if (onTypingStop) {
+        onTypingStop();
+      }
     }
   };
 
@@ -92,7 +110,7 @@ export default function ChatInputArea({
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type your message"
             className="flex-1 bg-transparent outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1"

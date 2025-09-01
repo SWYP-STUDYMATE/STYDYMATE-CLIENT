@@ -147,7 +147,7 @@ export async function errorHandler(
     c.header('Retry-After', String(err.details.retryAfter));
   }
 
-  return c.json(error as any, { status });
+  return c.json(error as any, status as any);
 }
 
 // Async error wrapper

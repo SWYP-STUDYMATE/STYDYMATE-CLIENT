@@ -70,7 +70,7 @@ function generateFileKey(type: string, userId: string, fileName: string, folder?
 // Upload audio file
 uploadRoutes.post('/audio', auth(), bodySizeLimit(50 * 1024 * 1024), async (c) => {
   const formData = await c.req.formData();
-  const file = formData.get('file') as File;
+  const file = formData.get('file') as File | null;
   const folder = formData.get('folder') as string;
   const metadata = formData.get('metadata') as string;
 
@@ -106,7 +106,7 @@ uploadRoutes.post('/audio', auth(), bodySizeLimit(50 * 1024 * 1024), async (c) =
 // Upload image file
 uploadRoutes.post('/image', auth(), bodySizeLimit(10 * 1024 * 1024), async (c) => {
   const formData = await c.req.formData();
-  const file = formData.get('file') as File;
+  const file = formData.get('file') as File | null;
   const type = formData.get('type') as string; // 'profile' | 'chat' | 'general'
   const metadata = formData.get('metadata') as string;
 
@@ -163,7 +163,7 @@ uploadRoutes.post('/image', auth(), bodySizeLimit(10 * 1024 * 1024), async (c) =
 // Upload video file
 uploadRoutes.post('/video', auth(), bodySizeLimit(100 * 1024 * 1024), async (c) => {
   const formData = await c.req.formData();
-  const file = formData.get('file') as File;
+  const file = formData.get('file') as File | null;
   const metadata = formData.get('metadata') as string;
 
   if (!file) {

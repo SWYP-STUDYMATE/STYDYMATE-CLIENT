@@ -143,7 +143,7 @@ export class CacheService {
     
     return {
       totalKeys: list.keys.length,
-      estimatedSize: list.keys.reduce((sum, key) => sum + (key.metadata?.size || 0), 0),
+      estimatedSize: list.keys.reduce((sum, key) => sum + ((key.metadata as any)?.size || 0), 0),
       oldestKey: list.keys[0]?.name
     };
   }

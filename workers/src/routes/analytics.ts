@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { AppBindings as Env } from '../index';
 import { authMiddleware } from '../utils/auth';
 import { getAggregatedMetrics } from '../middleware/analytics';
-import { successResponse, preflightResponse } from '../utils/response';
+import { successResponse, preflightResponse, errorResponse } from '../utils/response';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -255,7 +255,7 @@ app.post('/events', async (c) => {
         const { events } = await c.req.json();
 
         if (!Array.isArray(events)) {
-            return errorResponse(c, 'Events must be an array', 400);
+            return errorResponse(c, 'Events must be an array', 'INVALID_INPUT', null, 400);
         }
 
         // Analytics Engine에 이벤트 전송

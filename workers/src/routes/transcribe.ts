@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Env } from '../index';
 import { processAudio, translateToMultipleLanguages } from '../services/ai';
 import { validateAuth } from '../utils/auth';
+import { log } from '../utils/logger';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -88,9 +89,8 @@ async function handleWebSocket(ws: WebSocket, env: Env) {
                         const transcription = await processAudio(env.AI, combinedBuffer, {
                             task: config.task,
                             language: config.language,
-                            vad_filter: true,
-                            word_timestamps: true
-                        });
+                            vad_filter: true
+                        } as any);
 
                         // 결과 전송
                         if (transcription.text && transcription.text.trim()) {
@@ -104,26 +104,26 @@ async function handleWebSocket(ws: WebSocket, env: Env) {
                                         env.AI,
                                         transcribedText,
                                         config.targetLanguages,
-                                        transcription.language || 'auto'
+                                        (transcription as any).language || 'auto'
                                     );
                                 } catch (error) {
-                                    console.error('Translation error:', error);
+                                    log.error('Translation error', error as Error, { component: 'TRANSCRIBE_SERVICE' });
                                 }
                             }
 
                             ws.send(JSON.stringify({
                                 type: 'transcription',
                                 text: transcribedText,
-                                language: transcription.language,
-                                words: transcription.words,
+                                language: (transcription as any).language,
+                                words: (transcription as any).words,
                                 translations,
                                 is_final: true,
                                 timestamp: Date.now(),
-                                confidence: transcription.confidence || 0.95
+                                confidence: (transcription as any).confidence || 0.95
                             }));
                         }
                     } catch (error) {
-                        console.error('Transcription error:', error);
+                        log.error('Transcription error', error as Error, { component: 'TRANSCRIBE_SERVICE' });
                         ws.send(JSON.stringify({
                             type: 'error',
                             message: 'Transcription failed'
@@ -134,7 +134,7 @@ async function handleWebSocket(ws: WebSocket, env: Env) {
                 }
             }
         } catch (error) {
-            console.error('WebSocket error:', error);
+            log.error('WebSocket error', error as Error, { component: 'TRANSCRIBE_SERVICE' });
             ws.send(JSON.stringify({
                 type: 'error',
                 message: 'Processing error'
@@ -196,16 +196,15 @@ app.post('/', validateAuth, async (c) => {
         const result = await processAudio(c.env.AI, audioBuffer, {
             task: task || 'transcribe',
             language: language || 'auto',
-            vad_filter: true,
-            word_timestamps: word_timestamps || false
-        });
+            vad_filter: true
+        } as any);
 
         return c.json({
             success: true,
             transcription: result
         });
     } catch (error) {
-        console.error('Transcription error:', error);
+        log.error('Transcription error', error as Error, { component: 'TRANSCRIBE_SERVICE' });
         return c.json({
             error: 'Transcription failed',
             message: error instanceof Error ? error.message : 'Unknown error'

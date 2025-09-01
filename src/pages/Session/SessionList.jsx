@@ -9,93 +9,80 @@ import {
     Users,
     Filter,
     ChevronRight,
-    List
+    List,
+    Loader2,
+    Play,
+    Trash2,
+    Edit3
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useSessionStore from '../../store/sessionStore';
+import { webrtcAPI } from '../../api/webrtc';
+import { log } from '../../utils/logger';
 
 export default function SessionList() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('upcoming');
     const [filterOpen, setFilterOpen] = useState(false);
+    const [loadingRooms, setLoadingRooms] = useState(false);
+    const [activeRooms, setActiveRooms] = useState([]);
+    const [isJoining, setIsJoining] = useState('');
 
     const {
         sessions,
         upcomingSessions,
-        pastSessions,
         sessionStats,
-        loadUpcomingSessions,
+        loadSessions,
         cancelSession
     } = useSessionStore();
 
-    // 더미 데이터 (실제로는 API에서 가져와야 함)
-    const dummyUpcomingSessions = [
-        {
-            id: '1',
-            partnerId: 'emma123',
-            partnerName: 'Emma Wilson',
-            partnerImage: '/assets/basicProfilePic.png',
-            type: 'video', // video or audio
-            scheduledAt: new Date(Date.now() + 3600000).toISOString(), // 1시간 후
-            duration: 60,
-            language: 'en',
-            status: 'scheduled'
-        },
-        {
-            id: '2',
-            partnerId: 'john456',
-            partnerName: 'John Smith',
-            partnerImage: '/assets/basicProfilePic.png',
-            type: 'audio',
-            scheduledAt: new Date(Date.now() + 86400000).toISOString(), // 내일
-            duration: 30,
-            language: 'ko',
-            status: 'scheduled'
-        },
-        {
-            id: '3',
-            partnerId: 'group789',
-            partnerName: '그룹 세션',
-            partnerImage: '/assets/basicProfilePic.png',
-            type: 'video',
-            scheduledAt: new Date(Date.now() + 172800000).toISOString(), // 2일 후
-            duration: 45,
-            language: 'en',
-            status: 'scheduled',
-            participants: 4
-        }
-    ];
-
-    const dummyPastSessions = [
-        {
-            id: '4',
-            partnerId: 'sarah111',
-            partnerName: 'Sarah Johnson',
-            partnerImage: '/assets/basicProfilePic.png',
-            type: 'video',
-            scheduledAt: new Date(Date.now() - 86400000).toISOString(), // 어제
-            duration: 60,
-            language: 'en',
-            status: 'completed',
-            rating: 5
-        },
-        {
-            id: '5',
-            partnerId: 'mike222',
-            partnerName: 'Mike Chen',
-            partnerImage: '/assets/basicProfilePic.png',
-            type: 'audio',
-            scheduledAt: new Date(Date.now() - 172800000).toISOString(), // 2일 전
-            duration: 45,
-            language: 'ko',
-            status: 'completed',
-            rating: 4
-        }
-    ];
+    // 전체 세션 데이터를 위한 상태  
+    const [allSessions, setAllSessions] = useState([]);
 
     useEffect(() => {
-        loadUpcomingSessions();
-    }, [loadUpcomingSessions]);
+        loadAllSessionsData();
+        loadActiveRooms();
+    }, []);
+
+    // 모든 세션 데이터 로드
+    const loadAllSessionsData = async () => {
+        try {
+            await loadSessions();
+        } catch (error) {
+            console.error('세션 데이터 로드 실패:', error);
+        }
+    };
+
+
+    // Load active WebRTC rooms
+    const loadActiveRooms = async () => {
+        try {
+            setLoadingRooms(true);
+            log.info('활성 룸 목록 조회 시작', null, 'SESSION_LIST');
+            
+            const response = await fetch('/api/v1/sessions/active-rooms', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const rooms = await response.json();
+                setActiveRooms(rooms);
+                log.info('활성 룸 목록 조회 완료', { count: rooms.length }, 'SESSION_LIST');
+            } else {
+                console.error('Failed to load active rooms:', response.status);
+                setActiveRooms([]);
+            }
+            
+        } catch (error) {
+            log.error('활성 룸 목록 조회 실패', error, 'SESSION_LIST');
+            setActiveRooms([]);
+        } finally {
+            setLoadingRooms(false);
+        }
+    };
 
     const formatSessionTime = (dateString) => {
         const date = new Date(dateString);
@@ -128,6 +115,32 @@ export default function SessionList() {
             navigate(`/session/video/${session.id}`);
         } else {
             navigate(`/session/audio/${session.id}`);
+        }
+    };
+
+    const handleJoinActiveRoom = async (room) => {
+        try {
+            setIsJoining(room.id);
+            log.info('활성 룸 입장 시도', { roomId: room.id }, 'SESSION_LIST');
+
+            const userId = localStorage.getItem('userId') || 'guest-' + Date.now();
+            const userName = localStorage.getItem('userName') || 'Anonymous';
+
+            // Try to join the room
+            await webrtcAPI.joinRoom(room.id, { userId, userName });
+            
+            // Navigate to appropriate session room
+            if (room.type === 'video') {
+                navigate(`/session/video/${room.id}`);
+            } else {
+                navigate(`/session/audio/${room.id}`);
+            }
+
+        } catch (error) {
+            log.error('활성 룸 입장 실패', error, 'SESSION_LIST');
+            alert('세션 입장에 실패했습니다: ' + (error.message || '알 수 없는 오류'));
+        } finally {
+            setIsJoining('');
         }
     };
 
@@ -227,6 +240,81 @@ export default function SessionList() {
         </div>
     );
 
+    const ActiveRoomCard = ({ room }) => (
+        <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)] mb-4">
+            <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-4">
+                    <img
+                        src={room.creator.avatar}
+                        alt={room.creator.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="text-[16px] font-semibold text-[var(--black-500)]">
+                                {room.title}
+                            </h3>
+                            {room.isPrivate && (
+                                <span className="px-2 py-1 bg-[var(--warning-yellow)] bg-opacity-20 text-[var(--warning-yellow)] text-[10px] rounded-full">
+                                    비공개
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center space-x-4 text-[14px] text-[var(--black-300)] mb-2">
+                            <span className="flex items-center space-x-1">
+                                <Users className="w-4 h-4" />
+                                <span>{room.participants}/{room.maxParticipants}명</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                                {room.type === 'video' ? (
+                                    <Video className="w-4 h-4" />
+                                ) : (
+                                    <Mic className="w-4 h-4" />
+                                )}
+                                <span>{room.type === 'video' ? '화상' : '음성'}</span>
+                            </span>
+                            <span className="text-[var(--black-200)]">
+                                {room.creator.name} 님이 생성
+                            </span>
+                        </div>
+                        <div className="text-[12px] text-[var(--black-200)]">
+                            {formatSessionTime(room.createdAt)}에 시작
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-[var(--neutral-100)] text-[var(--black-300)] text-[12px] rounded-full">
+                        {room.language === 'en' ? 'English' : room.language === 'ko' ? '한국어' : room.language}
+                    </span>
+                    <button
+                        onClick={() => handleJoinActiveRoom(room)}
+                        disabled={isJoining === room.id || room.participants >= room.maxParticipants}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors ${
+                            room.participants >= room.maxParticipants
+                                ? 'bg-[var(--black-50)] text-[var(--black-200)] cursor-not-allowed'
+                                : 'bg-[var(--green-500)] text-white hover:bg-[var(--green-600)]'
+                        }`}
+                    >
+                        {isJoining === room.id ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                입장 중...
+                            </>
+                        ) : room.participants >= room.maxParticipants ? (
+                            '만실'
+                        ) : (
+                            <>
+                                <Play className="w-4 h-4" />
+                                빠른 입장
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen page-bg">
             {/* Header */}
@@ -241,7 +329,7 @@ export default function SessionList() {
                             <Calendar className="w-5 h-5 text-[var(--black-300)]" />
                         </button>
                         <button
-                            onClick={() => navigate('/session/schedule')}
+                            onClick={() => navigate('/sessions/create')}
                             className="p-2 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-lg"
                         >
                             <Plus className="w-5 h-5" />
@@ -275,8 +363,24 @@ export default function SessionList() {
             </div>
 
             {/* Tabs */}
-            <div className="bg-white border-b border_[var(--black-50)]">
+            <div className="bg-white border-b border-[var(--black-50)]">
                 <div className="flex">
+                    <button
+                        onClick={() => setActiveTab('active')}
+                        className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'active'
+                            ? 'text-[var(--green-500)] border-[var(--green-500)]'
+                            : 'text-[var(--black-200)] border-transparent'
+                            }`}
+                    >
+                        <div className="flex items-center justify-center gap-2">
+                            <span>활성 세션</span>
+                            {activeRooms.length > 0 && (
+                                <span className="bg-[var(--green-500)] text-white text-[10px] px-2 py-1 rounded-full">
+                                    {activeRooms.length}
+                                </span>
+                            )}
+                        </div>
+                    </button>
                     <button
                         onClick={() => setActiveTab('upcoming')}
                         className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${activeTab === 'upcoming'
@@ -312,10 +416,60 @@ export default function SessionList() {
 
             {/* Session List */}
             <div className="px-6 pb-6">
-                {activeTab === 'upcoming' ? (
+                {activeTab === 'active' ? (
                     <>
-                        {dummyUpcomingSessions.length > 0 ? (
-                            dummyUpcomingSessions.map(session => (
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-[18px] font-semibold text-[var(--black-500)]">
+                                지금 입장 가능한 세션
+                            </h2>
+                            <button
+                                onClick={loadActiveRooms}
+                                disabled={loadingRooms}
+                                className="flex items-center gap-2 text-[var(--green-500)] text-[14px] hover:text-[var(--green-600)]"
+                            >
+                                {loadingRooms ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    '새로고침'
+                                )}
+                            </button>
+                        </div>
+
+                        {loadingRooms ? (
+                            <div className="text-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-[var(--green-500)]" />
+                                <p className="text-[var(--black-200)]">활성 세션을 불러오는 중...</p>
+                            </div>
+                        ) : activeRooms.length > 0 ? (
+                            activeRooms.map(room => (
+                                <ActiveRoomCard key={room.id} room={room} />
+                            ))
+                        ) : (
+                            <div className="text-center py-12">
+                                <p className="text-[16px] text-[var(--black-200)] mb-4">
+                                    현재 활성 세션이 없습니다
+                                </p>
+                                <div className="space-y-2">
+                                    <CommonButton
+                                        onClick={() => navigate('/sessions/create')}
+                                        variant="primary"
+                                    >
+                                        새 세션 만들기
+                                    </CommonButton>
+                                    <CommonButton
+                                        onClick={() => navigate('/matching')}
+                                        variant="secondary"
+                                    >
+                                        매칭으로 상대 찾기
+                                    </CommonButton>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : activeTab === 'upcoming' ? (
+                    <>
+                        {upcomingSessions.length > 0 ? (
+                            upcomingSessions.map(session => (
                                 <SessionCard key={session.id} session={session} />
                             ))
                         ) : (
@@ -334,8 +488,8 @@ export default function SessionList() {
                     </>
                 ) : (
                     <>
-                        {dummyPastSessions.length > 0 ? (
-                            dummyPastSessions.map(session => (
+                        {sessions.filter(s => s.status === 'completed').length > 0 ? (
+                            sessions.filter(s => s.status === 'completed').map(session => (
                                 <SessionCard key={session.id} session={session} isPast />
                             ))
                         ) : (

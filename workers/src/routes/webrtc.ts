@@ -4,6 +4,7 @@ import { Variables, WebRTCRoom } from '../types';
 import { successResponse, createdResponse } from '../utils/response';
 import { validationError, notFoundError, conflictError } from '../middleware/error-handler';
 import { auth } from '../middleware/auth';
+import { log } from '../utils/logger';
 
 export const webrtcRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -36,8 +37,8 @@ webrtcRoutes.post('/create', auth({ optional: true }), async (c) => {
   }));
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to initialize room');
+    const error = await response.json() as any;
+    throw new Error(String(error?.message) || 'Failed to initialize room');
   }
 
   const data = {
@@ -94,17 +95,17 @@ webrtcRoutes.post('/:roomId/join', auth({ optional: true }), async (c) => {
   }));
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as any;
     if (response.status === 409) {
-      throw conflictError(error.message || 'Room is full');
+      throw conflictError(String(error?.message) || 'Room is full');
     }
-    throw new Error(error.message || 'Failed to join room');
+    throw new Error(String(error?.message) || 'Failed to join room');
   }
 
-  const result = await response.json();
+  const result = await response.json() as any;
 
   return successResponse(c, {
-    ...result,
+    ...(result || {}),
     websocketUrl: `/api/v1/room/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(userName)}`
   });
 });
@@ -128,8 +129,8 @@ webrtcRoutes.post('/:roomId/leave', auth({ optional: true }), async (c) => {
   }));
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to leave room');
+    const error = await response.json() as any;
+    throw new Error(String(error?.message) || 'Failed to leave room');
   }
 
   return successResponse(c, await response.json());
@@ -176,8 +177,8 @@ webrtcRoutes.patch('/:roomId/settings', auth({ optional: true }), async (c) => {
   }));
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to update settings');
+    const error = await response.json() as any;
+    throw new Error(String(error?.message) || 'Failed to update settings');
   }
 
   // Update cache if room exists
@@ -213,8 +214,8 @@ webrtcRoutes.get('/:roomId/info', async (c) => {
     if (response.status === 404) {
       throw notFoundError('Room');
     }
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get room info');
+    const error = await response.json() as any;
+    throw new Error(String(error?.message) || 'Failed to get room info');
   }
 
   const data = await response.json();
@@ -239,8 +240,8 @@ webrtcRoutes.get('/:roomId/ice-servers', async (c) => {
   const response = await room.fetch(new Request('http://room/ice-servers'));
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get ICE servers');
+    const error = await response.json() as any;
+    throw new Error(String(error?.message) || 'Failed to get ICE servers');
   }
 
   return successResponse(c, await response.json());
@@ -259,20 +260,20 @@ webrtcRoutes.get('/:roomId/metrics', auth({ optional: true }), async (c) => {
     if (response.status === 404) {
       throw notFoundError('Room');
     }
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to get room metrics');
+    const error = await response.json() as any;
+    throw new Error(String(error?.message) || 'Failed to get room metrics');
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
 
   return successResponse(c, {
-    ...data,
+    ...(data || {}),
     analytics: {
-      uptimeHours: Math.floor(data.metrics.sessionDuration / 3600),
-      averageParticipants: data.metrics.totalParticipants > 0 ? 
-        data.metrics.peakParticipants / Math.max(1, data.currentParticipants) : 0,
-      messagesPerMinute: data.metrics.sessionDuration > 0 ? 
-        (data.metrics.messagesExchanged / (data.metrics.sessionDuration / 60)) : 0
+      uptimeHours: Math.floor((data?.metrics?.sessionDuration || 0) / 3600),
+      averageParticipants: (data?.metrics?.totalParticipants || 0) > 0 ? 
+        (data?.metrics?.peakParticipants || 0) / Math.max(1, data?.currentParticipants || 0) : 0,
+      messagesPerMinute: (data?.metrics?.sessionDuration || 0) > 0 ? 
+        ((data?.metrics?.messagesExchanged || 0) / ((data?.metrics?.sessionDuration || 0) / 60)) : 0
     }
   });
 });
@@ -282,7 +283,7 @@ webrtcRoutes.post('/:roomId/recording/upload', auth({ optional: true }), async (
   const roomId = c.req.param('roomId');
   const formData = await c.req.formData();
   
-  const file = formData.get('recording') as File;
+  const file = formData.get('recording') as File | null;
   const userId = formData.get('userId') as string;
   const filename = formData.get('filename') as string;
   

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { log } from '../utils/logger';
 import { cors } from 'hono/cors';
 import { Env } from '../index';
 
@@ -49,11 +50,11 @@ Language code:`;
       max_tokens: 10
     });
 
-    const detectedCode = response.response.trim().toLowerCase();
+    const detectedCode = (response as any).response.trim().toLowerCase();
     return LANGUAGE_CODES[detectedCode] ? detectedCode : 'en';
 
   } catch (error) {
-    console.error('Language detection error:', error);
+    log.error('Language detection error', error as Error, { component: 'TRANSLATE_SERVICE' });
     return 'en'; // 기본값
   }
 }
@@ -110,7 +111,7 @@ Translation:`;
       max_tokens: Math.min(body.text.length * 3, 2000) // 번역은 보통 원문보다 길어질 수 있음
     });
 
-    const translatedText = response.response.trim()
+    const translatedText = (response as any).response.trim()
       .replace(/^["']/, '') // 앞 따옴표 제거
       .replace(/["']$/, ''); // 뒤 따옴표 제거
 
@@ -124,7 +125,7 @@ Translation:`;
     });
 
   } catch (error: any) {
-    console.error('Translation error:', error);
+    log.error('Translation error', error as Error, { component: 'TRANSLATE_SERVICE' });
     return c.json({ error: error.message || 'Translation failed' }, 500);
   }
 });
@@ -174,7 +175,7 @@ app.post('/translate/batch', async (c) => {
 
           return {
             originalText: text,
-            translatedText: response.response.trim().replace(/^["']|["']$/g, ''),
+            translatedText: (response as any).response.trim().replace(/^["']|["']$/g, ''),
             sourceLanguage,
             targetLanguage: body.target
           };
@@ -198,7 +199,7 @@ app.post('/translate/batch', async (c) => {
     });
 
   } catch (error: any) {
-    console.error('Batch translation error:', error);
+    log.error('Batch translation error', error as Error, { component: 'TRANSLATE_SERVICE' });
     return c.json({ error: error.message || 'Batch translation failed' }, 500);
   }
 });
@@ -256,7 +257,7 @@ app.post('/translate/subtitle', async (c) => {
       max_tokens: 200
     });
 
-    const translatedText = response.response.trim().replace(/^["']|["']$/g, '');
+    const translatedText = (response as any).response.trim().replace(/^["']|["']$/g, '');
 
     return c.json({
       success: true,
@@ -270,7 +271,7 @@ app.post('/translate/subtitle', async (c) => {
     });
 
   } catch (error: any) {
-    console.error('Subtitle translation error:', error);
+    log.error('Subtitle translation error', error as Error, { component: 'TRANSLATE_SERVICE' });
     return c.json({ error: error.message || 'Subtitle translation failed' }, 500);
   }
 });

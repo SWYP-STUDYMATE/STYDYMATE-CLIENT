@@ -9,6 +9,16 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { 
+  getStudyStats, 
+  getSessionActivity, 
+  generateMockAnalyticsData,
+  connectToMetricsStream 
+} from '../../api/analytics';
+import { isMockMode } from '../../api/mockApi';
+import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
+import LevelTestHistoryChart from '../../components/analytics/LevelTestHistoryChart';
+import MatchingStatsChart from '../../components/analytics/MatchingStatsChart';
 
 const AnalyticsPage = () => {
   const navigate = useNavigate();
@@ -23,51 +33,65 @@ const AnalyticsPage = () => {
   const loadAnalyticsData = async () => {
     setLoading(true);
     
-    // Mock 데이터 - 실제로는 API에서 가져옴
-    const mockData = {
+    try {
+      let data;
+      
+      // Mock 모드인 경우 Mock 데이터 사용
+      if (isMockMode()) {
+        data = generateMockAnalyticsData();
+      } else {
+        // 실제 API에서 데이터 로드
+        const [studyStatsResponse, sessionActivityResponse] = await Promise.all([
+          getStudyStats(timeRange),
+          getSessionActivity(timeRange)
+        ]);
+        
+        // API 응답을 컴포넌트에서 사용하는 형태로 변환
+        data = transformApiDataToAnalyticsData(studyStatsResponse, sessionActivityResponse);
+      }
+      
+      setAnalyticsData(data);
+    } catch (error) {
+      console.error('Analytics data loading failed:', error);
+      
+      // 에러 시 Mock 데이터 사용
+      const fallbackData = generateMockAnalyticsData();
+      setAnalyticsData(fallbackData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * API 응답 데이터를 컴포넌트에서 사용하는 형태로 변환
+   */
+  const transformApiDataToAnalyticsData = (studyStats, sessionActivity) => {
+    // API 응답 구조에 따라 데이터 변환 로직 구현
+    const transformedData = {
       overview: {
-        totalSessions: 47,
-        totalMinutes: 1420,
-        weeklyGrowth: 12.5,
-        currentStreak: 7,
-        averageSessionTime: 30.2,
-        partnersCount: 12
+        totalSessions: studyStats?.metrics?.totalSessions || 0,
+        totalMinutes: studyStats?.metrics?.totalMinutes || 0,
+        weeklyGrowth: studyStats?.metrics?.weeklyGrowth || 0,
+        currentStreak: studyStats?.metrics?.currentStreak || 0,
+        averageSessionTime: studyStats?.metrics?.averageSessionTime || 0,
+        partnersCount: studyStats?.metrics?.partnersCount || 0
       },
-      sessionStats: [
-        { date: '2024-01-01', sessions: 3, minutes: 90 },
-        { date: '2024-01-02', sessions: 2, minutes: 60 },
-        { date: '2024-01-03', sessions: 4, minutes: 120 },
-        { date: '2024-01-04', sessions: 1, minutes: 30 },
-        { date: '2024-01-05', sessions: 5, minutes: 150 },
-        { date: '2024-01-06', sessions: 3, minutes: 75 },
-        { date: '2024-01-07', sessions: 2, minutes: 45 }
-      ],
-      languageProgress: [
-        { language: 'English', level: 'Intermediate', progress: 72, sessions: 25 },
-        { language: 'Japanese', level: 'Beginner', progress: 34, sessions: 15 },
-        { language: 'Chinese', level: 'Beginner', progress: 18, sessions: 7 }
-      ],
-      sessionTypes: [
+      sessionStats: sessionActivity?.metrics?.dailyStats || [],
+      languageProgress: studyStats?.metrics?.languageProgress || [],
+      sessionTypes: studyStats?.metrics?.sessionTypes || [
         { name: '1:1 대화', value: 65, color: '#00C471' },
         { name: '그룹 세션', value: 25, color: '#4285F4' },
         { name: '텍스트 채팅', value: 10, color: '#FFB800' }
       ],
-      weeklyGoals: {
-        current: 5,
+      weeklyGoals: studyStats?.metrics?.weeklyGoals || {
+        current: 0,
         target: 7,
-        streak: 3
+        streak: 0
       },
-      topPartners: [
-        { name: 'Sarah Kim', sessions: 8, rating: 4.9, flag: '🇺🇸' },
-        { name: 'Yuki Tanaka', sessions: 6, rating: 4.8, flag: '🇯🇵' },
-        { name: 'Li Wei', sessions: 4, rating: 4.7, flag: '🇨🇳' }
-      ]
+      topPartners: studyStats?.metrics?.topPartners || []
     };
-
-    setTimeout(() => {
-      setAnalyticsData(mockData);
-      setLoading(false);
-    }, 500);
+    
+    return transformedData;
   };
 
   const getTimeRangeLabel = (range) => {
@@ -248,6 +272,9 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
+        {/* Weekly Activity Chart */}
+        <WeeklyActivityChart data={analyticsData.sessionStats} />
+
         {/* Charts Row */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Session Activity Chart */}
@@ -322,6 +349,10 @@ const AnalyticsPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Advanced Analytics Charts */}
+        <LevelTestHistoryChart timeRange={timeRange} />
+        <MatchingStatsChart timeRange={timeRange} />
 
         {/* Language Progress */}
         <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">

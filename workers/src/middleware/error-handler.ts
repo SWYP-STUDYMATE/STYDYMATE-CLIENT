@@ -36,9 +36,7 @@ export async function errorHandler(c: Context, next: Next) {
                     timestamp: new Date().toISOString(),
                     requestId: c.get('requestId')
                 }
-            }, {
-                status: error.statusCode
-            });
+            }, error.statusCode as any);
         }
 
         // Hono HTTP 예외 처리

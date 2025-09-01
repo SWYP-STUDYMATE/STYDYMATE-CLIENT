@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { log } from '../utils/logger';
 
 const API_URL = import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev';
 
@@ -152,7 +153,7 @@ export function useRealtimeTranscription({
       // 녹음 시작
       recorder.start(250); // 250ms마다 데이터 수집
 
-      // 주기적으로 청크 처리
+      // 주기적으로 청크 처리 (더 빈번한 처리로 지연시간 감소)
       chunkIntervalRef.current = setInterval(() => {
         if (recorder.state === 'recording') {
           recorder.stop();
@@ -161,15 +162,17 @@ export function useRealtimeTranscription({
       }, chunkDuration);
 
       setIsTranscribing(true);
+      log.info('실시간 전사 시작', { language, chunkDuration }, 'TRANSCRIPTION');
 
     } catch (err) {
       const errorMessage = err.message || '전사를 시작할 수 없습니다.';
       setError(errorMessage);
+      log.error('전사 시작 실패', err, 'TRANSCRIPTION');
       if (onError) {
         onError(err);
       }
     }
-  }, [chunkDuration, initializeRecorder, onError]);
+  }, [chunkDuration, initializeRecorder, onError, language]);
 
   // 전사 중지
   const stopTranscription = useCallback(() => {

@@ -1,5 +1,7 @@
 // WebRTC Connection Manager
 import { webrtcAPI } from '../api/webrtc';
+import { log } from '../utils/logger';
+import { handleWebRTCError, withRetry, AppError, ERROR_TYPES } from '../utils/errorHandler';
 
 class WebRTCConnectionManager {
   constructor() {
@@ -22,13 +24,22 @@ class WebRTCConnectionManager {
       onChatMessage: null,
     };
 
-    // WebRTC configuration
+    // WebRTC configuration (will be updated from API)
     this.rtcConfiguration = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
       ],
     };
+
+    // State tracking
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 3;
+    this.reconnectDelay = 1000; // ms
+    this.connectionCheckInterval = null;
+    this.lastConnectionCheck = 0;
+    this.connectionQuality = 'unknown'; // good, fair, poor, unknown
+    this.reconnectTimeout = null;
   }
 
   /**
@@ -54,16 +65,31 @@ class WebRTCConnectionManager {
    * Connect to a room
    * @param {string} roomId - Room ID
    * @param {Object} userInfo - User information
+   * @param {Object} options - Connection options
    * @returns {Promise<void>}
    */
-  async connect(roomId, userInfo) {
+  async connect(roomId, userInfo, options = {}) {
     try {
       this.roomId = roomId;
       this.userId = userInfo.userId;
       this.userName = userInfo.userName || 'Anonymous';
 
+      log.info('WebRTC 룸 연결 시작', { roomId, userId: this.userId }, 'WEBRTC');
+
+      // Get ICE servers from API if room exists
+      try {
+        const iceServersConfig = await webrtcAPI.getIceServers(roomId);
+        if (iceServersConfig && iceServersConfig.iceServers) {
+          this.rtcConfiguration.iceServers = iceServersConfig.iceServers;
+          log.info('ICE 서버 설정 업데이트', this.rtcConfiguration, 'WEBRTC');
+        }
+      } catch (iceError) {
+        log.warn('ICE 서버 조회 실패, 기본 설정 사용', iceError, 'WEBRTC');
+      }
+
       // Join room via API
       const joinResult = await webrtcAPI.joinRoom(roomId, userInfo);
+      log.info('WebRTC 룸 입장 성공', joinResult, 'WEBRTC');
       
       // Connect to WebSocket
       const wsUrl = webrtcAPI.getWebSocketURL(roomId, this.userId, this.userName);
@@ -73,22 +99,48 @@ class WebRTCConnectionManager {
       
       // Wait for WebSocket connection
       await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('WebSocket connection timeout'));
+        }, options.connectionTimeout || 10000);
+
         this.ws.onopen = () => {
+          clearTimeout(timeout);
           this.isConnected = true;
+          this.reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+          
           if (this.callbacks.onConnectionStateChange) {
             this.callbacks.onConnectionStateChange('connected');
           }
+          
+          log.info('WebSocket 연결 성공', { roomId, userId: this.userId }, 'WEBRTC');
           resolve();
         };
-        this.ws.onerror = reject;
+        
+        this.ws.onerror = (error) => {
+          clearTimeout(timeout);
+          log.error('WebSocket 연결 실패', error, 'WEBRTC');
+          reject(error);
+        };
       });
 
       // Request existing participants
       this.sendMessage({ type: 'get-participants' });
+      
     } catch (error) {
-      console.error('Connection error:', error);
+      log.error('WebRTC 연결 실패', error, 'WEBRTC');
       this.handleError('Failed to connect to room', error);
-      throw error;
+      
+      // Attempt reconnection if configured
+      if (options.autoReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnectAttempts++;
+        log.info(`재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts}`, null, 'WEBRTC');
+        
+        setTimeout(() => {
+          this.connect(roomId, userInfo, options);
+        }, this.reconnectDelay * this.reconnectAttempts);
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -490,10 +542,383 @@ class WebRTCConnectionManager {
    * @param {Error} error - Error object
    */
   handleError(message, error) {
-    console.error(message, error);
+    log.error(message, error, 'WEBRTC');
+    handleWebRTCError(error);
     if (this.callbacks.onError) {
       this.callbacks.onError(message, error);
     }
+  }
+
+  /**
+   * Get connection statistics
+   * @returns {Promise<Object>} Connection statistics
+   */
+  async getConnectionStats() {
+    const stats = {
+      connectionState: this.isConnected ? 'connected' : 'disconnected',
+      participantCount: this.remoteStreams.size,
+      peerConnections: this.peerConnections.size,
+      localStream: !!this.localStream,
+      detailedStats: {}
+    };
+
+    // Get detailed stats for each peer connection
+    for (const [peerId, pc] of this.peerConnections) {
+      try {
+        const peerStats = await pc.getStats();
+        const statsObj = {};
+        
+        peerStats.forEach((report) => {
+          if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+            statsObj.rtt = report.currentRoundTripTime * 1000; // Convert to ms
+            statsObj.bytesReceived = report.bytesReceived;
+            statsObj.bytesSent = report.bytesSent;
+          } else if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+            statsObj.audioPacketsReceived = report.packetsReceived;
+            statsObj.audioPacketsLost = report.packetsLost;
+          } else if (report.type === 'inbound-rtp' && report.kind === 'video') {
+            statsObj.videoPacketsReceived = report.packetsReceived;
+            statsObj.videoPacketsLost = report.packetsLost;
+            statsObj.framesReceived = report.framesReceived;
+          }
+        });
+        
+        stats.detailedStats[peerId] = statsObj;
+      } catch (error) {
+        log.warn(`통계 조회 실패: ${peerId}`, error, 'WEBRTC');
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Create or join room
+   * @param {Object} options - Room options
+   * @returns {Promise<Object>} Room info
+   */
+  async createOrJoinRoom(options = {}) {
+    try {
+      let roomInfo;
+      
+      if (options.roomId) {
+        // Try to get existing room info
+        try {
+          roomInfo = await webrtcAPI.getRoomInfo(options.roomId);
+          log.info('기존 룸 정보 조회 성공', roomInfo, 'WEBRTC');
+        } catch (error) {
+          // Room doesn't exist, create it
+          roomInfo = await webrtcAPI.createRoom({
+            roomType: options.roomType || 'audio',
+            maxParticipants: options.maxParticipants || 4
+          });
+          log.info('새 룸 생성 완료', roomInfo, 'WEBRTC');
+        }
+      } else {
+        // Create new room
+        roomInfo = await webrtcAPI.createRoom({
+          roomType: options.roomType || 'audio',
+          maxParticipants: options.maxParticipants || 4
+        });
+        log.info('새 룸 생성 완료', roomInfo, 'WEBRTC');
+      }
+
+      return roomInfo;
+    } catch (error) {
+      log.error('룸 생성/입장 실패', error, 'WEBRTC');
+      throw error;
+    }
+  }
+
+  /**
+   * Start recording
+   * @param {Object} options - Recording options
+   * @returns {Promise<void>}
+   */
+  async startRecording(options = {}) {
+    try {
+      if (!this.localStream) {
+        throw new Error('Local stream not available for recording');
+      }
+
+      // Create MediaRecorder with the local stream
+      const mediaRecorder = new MediaRecorder(this.localStream, {
+        mimeType: options.mimeType || 'audio/webm;codecs=opus'
+      });
+
+      const chunks = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+          const filename = options.filename || `recording-${Date.now()}.webm`;
+          
+          // Upload recording if room and user info available
+          if (this.roomId && this.userId) {
+            await webrtcAPI.uploadRecording(
+              this.roomId,
+              this.userId,
+              blob,
+              filename,
+              options.duration || 0
+            );
+            log.info('녹음 파일 업로드 완료', { filename, size: blob.size }, 'WEBRTC');
+          }
+
+          if (options.onRecordingComplete) {
+            options.onRecordingComplete(blob, filename);
+          }
+        } catch (error) {
+          log.error('녹음 처리 실패', error, 'WEBRTC');
+          if (options.onError) {
+            options.onError(error);
+          }
+        }
+      };
+
+      this.mediaRecorder = mediaRecorder;
+      mediaRecorder.start(options.timeslice || 1000); // Collect data every second
+      
+      log.info('녹음 시작', options, 'WEBRTC');
+      
+    } catch (error) {
+      log.error('녹음 시작 실패', error, 'WEBRTC');
+      throw error;
+    }
+  }
+
+  /**
+   * Stop recording
+   * @returns {Promise<void>}
+   */
+  async stopRecording() {
+    try {
+      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+        this.mediaRecorder.stop();
+        log.info('녹음 중지', null, 'WEBRTC');
+      }
+    } catch (error) {
+      log.error('녹음 중지 실패', error, 'WEBRTC');
+      throw error;
+    }
+  }
+
+  /**
+   * Start connection monitoring
+   */
+  startConnectionMonitoring() {
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+    }
+
+    this.connectionCheckInterval = setInterval(async () => {
+      try {
+        await this.checkConnectionHealth();
+      } catch (error) {
+        log.error('연결 상태 모니터링 실패', error, 'WEBRTC');
+      }
+    }, 5000); // Check every 5 seconds
+
+    log.info('WebRTC 연결 모니터링 시작', null, 'WEBRTC');
+  }
+
+  /**
+   * Stop connection monitoring
+   */
+  stopConnectionMonitoring() {
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+      this.connectionCheckInterval = null;
+    }
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    log.info('WebRTC 연결 모니터링 중지', null, 'WEBRTC');
+  }
+
+  /**
+   * Check connection health and trigger recovery if needed
+   */
+  async checkConnectionHealth() {
+    const now = Date.now();
+    this.lastConnectionCheck = now;
+
+    if (!this.isConnected || this.peerConnections.size === 0) {
+      return;
+    }
+
+    let unhealthyConnections = 0;
+    let totalConnections = 0;
+
+    for (const [peerId, pc] of this.peerConnections) {
+      totalConnections++;
+      const connectionState = pc.connectionState;
+      const iceConnectionState = pc.iceConnectionState;
+
+      log.debug(`연결 상태 확인: ${peerId}`, {
+        connectionState,
+        iceConnectionState
+      }, 'WEBRTC');
+
+      // Check for unhealthy connection states
+      if (
+        connectionState === 'failed' ||
+        connectionState === 'disconnected' ||
+        iceConnectionState === 'failed' ||
+        iceConnectionState === 'disconnected'
+      ) {
+        unhealthyConnections++;
+        log.warn(`비정상 연결 감지: ${peerId}`, {
+          connectionState,
+          iceConnectionState
+        }, 'WEBRTC');
+
+        // Try to recover this specific connection
+        this.recoverPeerConnection(peerId);
+      }
+    }
+
+    // Update connection quality
+    const healthRatio = totalConnections > 0 ? 
+      (totalConnections - unhealthyConnections) / totalConnections : 0;
+    
+    if (healthRatio >= 0.8) {
+      this.connectionQuality = 'good';
+    } else if (healthRatio >= 0.5) {
+      this.connectionQuality = 'fair';
+    } else {
+      this.connectionQuality = 'poor';
+      log.warn('연결 품질 저하 감지', { 
+        healthyConnections: totalConnections - unhealthyConnections,
+        totalConnections 
+      }, 'WEBRTC');
+    }
+
+    // Trigger full reconnection if too many connections are unhealthy
+    if (unhealthyConnections > totalConnections * 0.5 && totalConnections > 0) {
+      log.error('다수 연결 실패 감지, 전체 재연결 시도', {
+        unhealthyConnections,
+        totalConnections
+      }, 'WEBRTC');
+      this.attemptReconnection();
+    }
+  }
+
+  /**
+   * Attempt to recover a specific peer connection
+   * @param {string} peerId - Peer ID to recover
+   */
+  async recoverPeerConnection(peerId) {
+    try {
+      log.info(`피어 연결 복구 시도: ${peerId}`, null, 'WEBRTC');
+
+      const pc = this.peerConnections.get(peerId);
+      if (!pc) {
+        log.warn(`피어 연결을 찾을 수 없음: ${peerId}`, null, 'WEBRTC');
+        return;
+      }
+
+      // Close the problematic connection
+      pc.close();
+      this.peerConnections.delete(peerId);
+
+      // Remove the remote stream
+      const stream = this.remoteStreams.get(peerId);
+      if (stream) {
+        this.remoteStreams.delete(peerId);
+        if (this.callbacks.onRemoteStreamRemoved) {
+          this.callbacks.onRemoteStreamRemoved(peerId, stream);
+        }
+      }
+
+      // Wait a bit before recreating
+      setTimeout(() => {
+        if (this.isConnected) {
+          this.createPeerConnection(peerId, true);
+        }
+      }, 1000);
+
+    } catch (error) {
+      log.error(`피어 연결 복구 실패: ${peerId}`, error, 'WEBRTC');
+    }
+  }
+
+  /**
+   * Attempt full reconnection
+   */
+  async attemptReconnection() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      log.error('최대 재연결 시도 횟수 초과', {
+        attempts: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts
+      }, 'WEBRTC');
+      
+      if (this.callbacks.onError) {
+        this.callbacks.onError('Connection failed after multiple attempts', 
+          new AppError('연결 실패', ERROR_TYPES.WEBRTC));
+      }
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+
+    log.info(`전체 재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts}`, {
+      delay
+    }, 'WEBRTC');
+
+    if (this.callbacks.onConnectionStateChange) {
+      this.callbacks.onConnectionStateChange('reconnecting');
+    }
+
+    // Clean up current connections
+    this.peerConnections.forEach(pc => pc.close());
+    this.peerConnections.clear();
+    this.remoteStreams.clear();
+
+    // Attempt reconnection after delay
+    this.reconnectTimeout = setTimeout(async () => {
+      try {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          // Request participants list again
+          this.sendMessage({ type: 'get-participants' });
+          
+          if (this.callbacks.onConnectionStateChange) {
+            this.callbacks.onConnectionStateChange('connected');
+          }
+          
+          this.reconnectAttempts = 0; // Reset on successful reconnection
+          log.info('재연결 성공', null, 'WEBRTC');
+        } else {
+          // WebSocket is also disconnected, need full reconnection
+          throw new Error('WebSocket connection lost');
+        }
+      } catch (error) {
+        log.error(`재연결 실패 시도 ${this.reconnectAttempts}`, error, 'WEBRTC');
+        // Retry again
+        setTimeout(() => this.attemptReconnection(), 2000);
+      }
+    }, delay);
+  }
+
+  /**
+   * Enhanced connect method with retry logic
+   */
+  async connectWithRetry(roomId, userInfo, options = {}) {
+    return withRetry(
+      () => this.connect(roomId, userInfo, options),
+      options.maxRetries || 3,
+      options.retryDelay || 2000
+    );
   }
 
   /**
