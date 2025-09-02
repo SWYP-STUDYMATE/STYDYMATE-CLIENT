@@ -4,10 +4,12 @@ import { handleApiError } from '../utils/errorHandler';
 import { toast } from '../components/Toast';
 
 const api = axios.create({
-  // 프로덕션: 프런트 도메인(languagemate.kr)에서 /api 리버스프록시 → api.languagemate.kr
+  // 프로덕션: 직접 api.languagemate.kr/api/v1 호출
   // 개발: vite.proxy('/api' → localhost:8080)
   // API v1 경로를 baseURL에 명시하여 백엔드와 일치시킴
-  baseURL: (import.meta.env.VITE_API_URL || "/api") + "/v1",
+  baseURL: import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL}/api/v1`
+    : "/api/v1",
 });
 
 // 요청 인터셉터: accessToken 자동 첨부 및 로깅
@@ -72,7 +74,13 @@ api.interceptors.response.use(
           if (!refreshToken) throw new Error("No refresh token");
           
           log.info("403 오류 발생! refreshToken으로 재발급 시도", null, 'AUTH');
-          const res = await api.post(
+          
+          // refresh 요청은 별도 axios 인스턴스로 무한 루프 방지
+          const refreshApi = axios.create({
+            baseURL: (import.meta.env.VITE_API_URL || "/api") + "/v1",
+          });
+          
+          const res = await refreshApi.post(
             "/auth/refresh",
             null,
             { headers: { Authorization: `Bearer ${refreshToken}` } }
@@ -129,8 +137,12 @@ api.interceptors.response.use(
         
         log.info("accessToken 만료! refreshToken으로 재발급 시도", null, 'AUTH');
         
-        // 명세서에 따라 헤더로 refreshToken 전송
-        const res = await api.post(
+        // refresh 요청은 별도 axios 인스턴스로 무한 루프 방지
+        const refreshApi = axios.create({
+          baseURL: (import.meta.env.VITE_API_URL || "/api") + "/v1",
+        });
+        
+        const res = await refreshApi.post(
           "/auth/refresh",
           null,
           { headers: { Authorization: `Bearer ${refreshToken}` } }

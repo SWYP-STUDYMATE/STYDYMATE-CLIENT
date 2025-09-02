@@ -39,7 +39,7 @@ class WebSocketService {
     
     const token = localStorage.getItem("accessToken");
     const baseUrl = import.meta.env.VITE_WS_URL || "https://api.languagemate.kr";
-    const socketUrl = `${baseUrl}${endpoint}?token=${token}`;
+    const socketUrl = `${baseUrl}${endpoint}`;
 
     return new Promise((resolve, reject) => {
       try {
