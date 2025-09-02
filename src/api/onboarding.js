@@ -62,7 +62,10 @@ export const skipOnboardingStep = async (stepNumber, reason = '') => {
 // 1단계: 개인정보 저장
 export const saveOnboardingStep1 = async (personalData) => {
   try {
-    const response = await api.post('/onboarding/steps/1/save', personalData);
+    // 영어 이름만 저장하는 API 호출
+    const response = await api.post('/user/english-name', {
+      englishName: personalData.englishName
+    });
     return response.data;
   } catch (error) {
     console.error('Save onboarding step1 error:', error);
