@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, AlertTriangle, Trash2, Eye, EyeOff } from 'lucide-react';
 import { deleteAccount } from '../../api/settings';
 import CommonButton from '../../components/CommonButton';
+import { useAlert } from '../../hooks/useAlert';
 
 const DeleteAccount = () => {
   const navigate = useNavigate();
+  const { showError, showSuccess, confirmAction } = useAlert();
   const [step, setStep] = useState(1); // 1: 확인, 2: 사유 선택, 3: 비밀번호
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +19,7 @@ const DeleteAccount = () => {
     immediate: false
   });
   const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
   const deleteReasons = [
     { id: 'not_useful', label: '더 이상 사용하지 않음' },
@@ -30,20 +33,19 @@ const DeleteAccount = () => {
 
   const handleDeleteAccount = async () => {
     if (!password.trim()) {
-      alert('비밀번호를 입력해주세요.');
+      showError('비밀번호를 입력해주세요.');
       return;
     }
 
     if (!Object.values(agreements).every(Boolean)) {
-      alert('모든 항목에 동의해주세요.');
+      showError('모든 항목에 동의해주세요.');
       return;
     }
 
-    const confirmText = 'STUDYMATE 계정을 영구적으로 삭제하시겠습니까?';
-    const userConfirm = window.prompt(`계속하려면 "${confirmText}"를 정확히 입력하세요:`);
-    
-    if (userConfirm !== confirmText) {
-      alert('입력이 일치하지 않습니다.');
+    // 확인 텍스트 검증
+    const requiredText = 'STUDYMATE 계정을 영구적으로 삭제하시겠습니까?';
+    if (confirmText !== requiredText) {
+      showError('확인 텍스트를 정확히 입력해주세요.');
       return;
     }
 
@@ -55,16 +57,19 @@ const DeleteAccount = () => {
       localStorage.clear();
       sessionStorage.clear();
       
-      alert('계정이 성공적으로 삭제되었습니다. 그동안 STUDYMATE를 이용해주셔서 감사했습니다.');
-      
-      // 메인 페이지로 이동
-      window.location.href = '/';
+      showSuccess(
+        '계정이 성공적으로 삭제되었습니다. 그동안 STUDYMATE를 이용해주셔서 감사했습니다.',
+        () => {
+          // 메인 페이지로 이동
+          window.location.href = '/';
+        }
+      );
     } catch (error) {
       console.error('Failed to delete account:', error);
       if (error.response?.status === 401) {
-        alert('비밀번호가 올바르지 않습니다.');
+        showError('비밀번호가 올바르지 않습니다.');
       } else {
-        alert('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        showError('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     } finally {
       setDeleting(false);
@@ -302,10 +307,35 @@ const DeleteAccount = () => {
               </div>
             </div>
 
+            {/* 최종 확인 텍스트 입력 */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-[#111111] mb-2">
+                최종 확인
+              </label>
+              <p className="text-sm text-[#929292] mb-3">
+                계정 삭제를 확인하기 위해 아래 텍스트를 정확히 입력해주세요:
+              </p>
+              <p className="text-sm font-medium text-red-600 mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                STUDYMATE 계정을 영구적으로 삭제하시겠습니까?
+              </p>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="위의 텍스트를 정확히 입력하세요"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+              />
+            </div>
+
             <div className="flex space-x-3">
               <CommonButton
                 onClick={handleDeleteAccount}
-                disabled={deleting || !Object.values(agreements).every(Boolean) || !password.trim()}
+                disabled={
+                  deleting || 
+                  !Object.values(agreements).every(Boolean) || 
+                  !password.trim() ||
+                  confirmText !== 'STUDYMATE 계정을 영구적으로 삭제하시겠습니까?'
+                }
                 variant="danger"
                 className="flex-1"
               >

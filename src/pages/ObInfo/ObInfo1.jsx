@@ -10,14 +10,20 @@ import { useAlert } from "../../hooks/useAlert.jsx";
 export default function OnboardingInfo() {
   const setEnglishName = useProfileStore((state) => state.setEnglishName);
   const [inputValue, setInputValue] = useState("");
+  const [hasInvalidInput, setHasInvalidInput] = useState(false);
   const navigate = useNavigate();
-  const { showError } = useAlert();
+  const { showError, confirmAction } = useAlert();
 
   // 영어만 입력 허용 (공백 포함)
   const handleChange = (e) => {
     const value = e.target.value;
     if (/^[a-zA-Z\s]*$/.test(value)) {
       setInputValue(value);
+      setHasInvalidInput(false);
+    } else {
+      // 유효하지 않은 문자 입력 시 경고 표시
+      setHasInvalidInput(true);
+      setTimeout(() => setHasInvalidInput(false), 2000); // 2초 후 자동 사라짐
     }
   };
 
@@ -26,23 +32,39 @@ export default function OnboardingInfo() {
 
   // 버튼 클릭 시만 저장
   const handleNext = async () => {
-    if (window.confirm(`입력한 이름이 "${inputValue}" 맞습니까?`)) {
-      try {
-        await saveOnboardingStep1({
-          englishName: inputValue,
-          residence: '',
-          profileImage: null,
-          intro: ''
-        });
-        setEnglishName(inputValue);
-        navigate("/onboarding-info/2");
-        console.log("온보딩 1단계 저장 완료:", inputValue);
-      } catch (e) {
-        showError("영어 이름 저장에 실패했습니다.");
-        console.error(e);
-      }
+    const trimmedName = inputValue.trim();
+    
+    // 추가 유효성 검사
+    if (trimmedName.length < 2) {
+      showError("이름은 최소 2글자 이상 입력해주세요.");
+      return;
     }
-    // 아니요를 누르면 아무 동작 없이 입력창으로 돌아감
+    
+    if (trimmedName.length > 50) {
+      showError("이름은 50글자를 초과할 수 없습니다.");
+      return;
+    }
+
+    confirmAction(
+      `입력한 이름이 "${trimmedName}" 맞습니까?`,
+      async () => {
+        try {
+          await saveOnboardingStep1({
+            englishName: trimmedName,
+            residence: '',
+            profileImage: null,
+            intro: ''
+          });
+          setEnglishName(trimmedName);
+          navigate("/onboarding-info/2");
+          console.log("온보딩 1단계 저장 완료:", trimmedName);
+        } catch (e) {
+          showError("영어 이름 저장에 실패했습니다.");
+          console.error(e);
+        }
+      },
+      "이름 확인"
+    );
   };
 
   return (
@@ -59,14 +81,55 @@ export default function OnboardingInfo() {
         <label className="block text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px]">
           영어 이름
         </label>
-        <input
-          type="text"
-          placeholder="닉네임을 입력해주세요"
-          value={inputValue}
-          onChange={handleChange}
-          className="w-full h-[56px] px-[16px] mb-[576px] border border-[#ced4da] rounded-[6px] bg-[#ffffff] text-[16px] font-medium text-[#111111] placeholder-[#929292] outline-none focus:border-[#111111] transition-colors duration-200"
-        />
-        <CommonButton text="다음" disabled={!isButtonEnabled} onClick={handleNext} />
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="예: John, Sarah, Alex"
+            value={inputValue}
+            onChange={handleChange}
+            maxLength={50}
+            className={`w-full h-[56px] px-[16px] border rounded-[6px] bg-[#ffffff] text-[16px] font-medium text-[#111111] placeholder-[#929292] outline-none transition-colors duration-200 ${
+              hasInvalidInput 
+                ? 'border-[#EA4335] focus:border-[#EA4335]' 
+                : 'border-[#ced4da] focus:border-[#111111]'
+            }`}
+          />
+          {/* 글자수 표시 */}
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[12px] text-[#929292]">
+            {inputValue.length}/50
+          </div>
+        </div>
+        
+        {/* 실시간 피드백 메시지 */}
+        {hasInvalidInput && (
+          <div className="flex items-center mt-2 text-[#EA4335] text-[14px]">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            영어 알파벳과 공백만 입력 가능합니다
+          </div>
+        )}
+        
+        {/* 입력 가이드 */}
+        <div className="mt-2 text-[12px] text-[#606060]">
+          • 영어 알파벳과 공백만 사용 가능
+          • 최소 2글자 이상, 최대 50글자
+          • 예시: John, Sarah Kim, Alex Johnson
+        </div>
+        
+        {/* 글자수 부족 경고 */}
+        {inputValue.trim().length > 0 && inputValue.trim().length < 2 && (
+          <div className="flex items-center mt-2 text-[#FFA500] text-[14px]">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            최소 2글자 이상 입력해주세요
+          </div>
+        )}
+        
+        <div className="mb-[500px]">
+          <CommonButton text="다음" disabled={!isButtonEnabled} onClick={handleNext} />
+        </div>
       </div>
     </div>
   );

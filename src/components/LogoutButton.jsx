@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import useProfileStore from "../store/profileStore";
+import { useAlert } from "../hooks/useAlert";
 
 export default function LogoutButton() {
   const navigate = useNavigate();
   const setEnglishName = useProfileStore((state) => state.setEnglishName);
   const setResidence = useProfileStore((state) => state.setResidence);
+  const { showSuccess } = useAlert();
 
   const handleLogout = async () => {
     try {
@@ -19,8 +21,9 @@ export default function LogoutButton() {
     localStorage.removeItem("refreshToken");
     setEnglishName("");
     setResidence("");
-    alert("로그아웃 되었습니다.");
-    navigate("/");
+    showSuccess("로그아웃 되었습니다.", () => {
+      navigate("/");
+    });
   };
 
   return (

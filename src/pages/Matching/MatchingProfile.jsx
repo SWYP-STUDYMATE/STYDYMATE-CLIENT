@@ -14,10 +14,12 @@ import {
 import CommonButton from '../../components/CommonButton';
 import useMatchingStore from '../../store/matchingStore';
 import useSessionStore from '../../store/sessionStore';
+import { useAlert } from '../../hooks/useAlert';
 
 export default function MatchingProfile() {
     const navigate = useNavigate();
     const { userId } = useParams();
+    const { showError } = useAlert();
 
     const [activeTab, setActiveTab] = useState('profile');
     const [isScheduling, setIsScheduling] = useState(false);
@@ -67,7 +69,7 @@ export default function MatchingProfile() {
             setIsScheduling(true);
         } catch (error) {
             console.error('Failed to accept match:', error);
-            alert('매칭 수락 중 오류가 발생했습니다.');
+            showError('매칭 수락 중 오류가 발생했습니다.');
         }
     };
 
@@ -78,7 +80,7 @@ export default function MatchingProfile() {
                 navigate('/matching');
             } catch (error) {
                 console.error('Failed to reject match:', error);
-                alert('매칭 거절 중 오류가 발생했습니다.');
+                showError('매칭 거절 중 오류가 발생했습니다.');
             }
         }
     };

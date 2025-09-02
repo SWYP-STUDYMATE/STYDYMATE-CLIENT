@@ -40,17 +40,20 @@ export default function OnboardingInfo2() {
   const isButtonEnabled = !!selected;
 
   const handleNext = async () => {
-    if (window.confirm(`선택한 거주지/시간대가 "${selected?.label}" 맞습니까?`)) {
-      try {
-        await api.post("/user/location", { locationId: selected.value });
-        setResidence(selected.value);
-        navigate("/onboarding-info/3");
-      } catch (e) {
-        alert("거주지 저장에 실패했습니다.");
-        console.error(e);
-      }
-    }
-    // 아니요를 누르면 아무 동작 없이 입력창으로 돌아감
+    confirmAction(
+      `선택한 거주지/시간대가 "${selected?.label}" 맞습니까?`,
+      async () => {
+        try {
+          await api.post("/user/location", { locationId: selected.value });
+          setResidence(selected.value);
+          navigate("/onboarding-info/3");
+        } catch (e) {
+          showError("거주지 저장에 실패했습니다.");
+          console.error(e);
+        }
+      },
+      "거주지 확인"
+    );
   };
 
   return (

@@ -17,30 +17,32 @@ import CommonButton from './CommonButton';
 import OptimizedImage from './OptimizedImage';
 import { DEFAULT_PROFILE_IMAGE } from '../utils/imageUtils';
 import useMatchingStore from '../store/matchingStore';
+import { useAlert } from '../hooks/useAlert';
 
 export default function ProfileDetailModal({ user, isOpen, onClose }) {
     const [activeTab, setActiveTab] = useState('profile');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const { sendMatchRequest } = useMatchingStore();
+    const { showError, showSuccess } = useAlert();
 
     if (!isOpen || !user) return null;
 
     const handleSendRequest = async () => {
         if (!message.trim()) {
-            alert('메시지를 입력해주세요.');
+            showError('메시지를 입력해주세요.');
             return;
         }
 
         setIsLoading(true);
         try {
             await sendMatchRequest(user.id, message);
-            alert('매칭 요청을 보냈습니다!');
+            showSuccess('매칭 요청을 보냈습니다!');
             setMessage('');
             onClose();
         } catch (error) {
             console.error('매칭 요청 실패:', error);
-            alert('매칭 요청을 보내는데 실패했습니다.');
+            showError('매칭 요청을 보내는데 실패했습니다.');
         } finally {
             setIsLoading(false);
         }

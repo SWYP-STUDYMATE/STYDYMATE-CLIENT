@@ -14,6 +14,7 @@ import ChatMessageList from "./ChatMessageList";
 import ChatInputArea from "./ChatInputArea";
 import TypingIndicator from "./TypingIndicator";
 import MessageSearch from "./MessageSearch";
+import { useAlert } from "../../hooks/useAlert";
 
 export default function ChatWindow({
   room,
@@ -23,6 +24,7 @@ export default function ChatWindow({
 }) {
   // Guard early return without affecting hooks order
   const isRoomMissing = !room;
+  const { showError } = useAlert();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -199,7 +201,7 @@ export default function ChatWindow({
       }
     } catch (error) {
       console.error("채팅방 나가기 실패:", error);
-      alert("채팅방 나가기에 실패했습니다.");
+      showError("채팅방 나가기에 실패했습니다.");
     }
   };
 
@@ -212,7 +214,7 @@ export default function ChatWindow({
       try {
         finalImageUrls = await uploadChatImages(room.roomId, images);
       } catch {
-        alert("이미지 업로드 실패");
+        showError("이미지 업로드 실패");
         return;
       }
     }

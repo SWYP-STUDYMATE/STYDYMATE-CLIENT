@@ -5,9 +5,11 @@ import { getAccountSettings, updateAccountSettings } from '../../api/settings';
 import { getUserProfile } from '../../api/user';
 import CommonButton from '../../components/CommonButton';
 import ProfileImageUpload from '../../components/ProfileImageUpload';
+import { useAlert } from '../../hooks/useAlert.jsx';
 
 const AccountSettings = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useAlert();
   const [settings, setSettings] = useState({
     email: '',
     phoneNumber: '',
@@ -20,6 +22,7 @@ const AccountSettings = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     loadAccountSettings();
@@ -62,14 +65,69 @@ const AccountSettings = () => {
     }
   };
 
+  // 유효성 검사 함수
+  const validateField = (field, value) => {
+    const errors = { ...validationErrors };
+    
+    switch (field) {
+      case 'englishName':
+        if (value && !/^[a-zA-Z\s]*$/.test(value)) {
+          errors[field] = '영어 알파벳과 공백만 입력 가능합니다';
+        } else if (value && value.trim().length < 2) {
+          errors[field] = '최소 2글자 이상 입력해주세요';
+        } else if (value && value.length > 50) {
+          errors[field] = '50글자를 초과할 수 없습니다';
+        } else {
+          delete errors[field];
+        }
+        break;
+      case 'email':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors[field] = '올바른 이메일 형식을 입력해주세요';
+        } else {
+          delete errors[field];
+        }
+        break;
+      case 'phoneNumber':
+        if (value && !/^[\d-+\s()]*$/.test(value)) {
+          errors[field] = '유효한 전화번호 형식을 입력해주세요';
+        } else {
+          delete errors[field];
+        }
+        break;
+      case 'bio':
+        if (value && value.length > 500) {
+          errors[field] = '500글자를 초과할 수 없습니다';
+        } else {
+          delete errors[field];
+        }
+        break;
+      default:
+        break;
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    // 전체 유효성 검사
+    const allValid = Object.keys(settings).every(field => 
+      validateField(field, settings[field])
+    );
+    
+    if (!allValid) {
+      showError('입력 정보를 확인해주세요.');
+      return;
+    }
+    
     try {
       setSaving(true);
       await updateAccountSettings(settings);
-      alert('계정 설정이 저장되었습니다.');
+      showSuccess('계정 설정이 저장되었습니다.');
     } catch (error) {
       console.error('Failed to save settings:', error);
-      alert('설정 저장에 실패했습니다.');
+      showError('설정 저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -80,6 +138,9 @@ const AccountSettings = () => {
       ...prev,
       [field]: value
     }));
+    
+    // 실시간 유효성 검사
+    validateField(field, value);
   };
 
   if (loading) {
@@ -135,13 +196,34 @@ const AccountSettings = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#111111] mb-2">영어 이름</label>
-              <input
-                type="text"
-                value={settings.englishName}
-                onChange={(e) => handleInputChange('englishName', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors"
-                placeholder="영어 이름을 입력하세요"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={settings.englishName}
+                  onChange={(e) => handleInputChange('englishName', e.target.value)}
+                  maxLength={50}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors ${
+                    validationErrors.englishName 
+                      ? 'border-[#EA4335] focus:ring-[#EA4335] focus:border-[#EA4335]'
+                      : 'border-gray-200 focus:ring-[#00C471] focus:border-[#00C471]'
+                  }`}
+                  placeholder="예: John Smith"
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[12px] text-[#929292]">
+                  {settings.englishName.length}/50
+                </div>
+              </div>
+              {validationErrors.englishName && (
+                <div className="flex items-center mt-1 text-[#EA4335] text-[12px]">
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.englishName}
+                </div>
+              )}
+              <div className="mt-1 text-[11px] text-[#606060]">
+                영어 알파벳과 공백만 사용 가능 (2-50글자)
+              </div>
             </div>
 
             <div>
@@ -163,12 +245,33 @@ const AccountSettings = () => {
               <textarea
                 value={settings.bio}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors resize-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors resize-none ${
+                  validationErrors.bio 
+                    ? 'border-[#EA4335] focus:ring-[#EA4335] focus:border-[#EA4335]'
+                    : 'border-gray-200 focus:ring-[#00C471] focus:border-[#00C471]'
+                }`}
                 rows="4"
                 placeholder="간단한 자기소개를 작성해주세요"
                 maxLength="500"
               />
-              <p className="text-xs text-[#929292] mt-1">{settings.bio.length}/500</p>
+              <div className="flex justify-between items-center mt-1">
+                <div className="text-[11px] text-[#606060]">
+                  학습 목표나 관심사를 포함하면 더 좋아요
+                </div>
+                <div className={`text-[12px] font-medium ${
+                  settings.bio.length > 450 ? 'text-[#FFA500]' : 'text-[#929292]'
+                }`}>
+                  {settings.bio.length}/500
+                </div>
+              </div>
+              {validationErrors.bio && (
+                <div className="flex items-center mt-1 text-[#EA4335] text-[12px]">
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.bio}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -189,10 +292,22 @@ const AccountSettings = () => {
                   type="email"
                   value={settings.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors"
-                  placeholder="이메일을 입력하세요"
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 transition-colors ${
+                    validationErrors.email 
+                      ? 'border-[#EA4335] focus:ring-[#EA4335] focus:border-[#EA4335]'
+                      : 'border-gray-200 focus:ring-[#00C471] focus:border-[#00C471]'
+                  }`}
+                  placeholder="example@email.com"
                 />
               </div>
+              {validationErrors.email && (
+                <div className="flex items-center mt-1 text-[#EA4335] text-[12px]">
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.email}
+                </div>
+              )}
             </div>
 
             <div>
@@ -203,9 +318,24 @@ const AccountSettings = () => {
                   type="tel"
                   value={settings.phoneNumber}
                   onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors"
-                  placeholder="전화번호를 입력하세요"
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:ring-2 transition-colors ${
+                    validationErrors.phoneNumber 
+                      ? 'border-[#EA4335] focus:ring-[#EA4335] focus:border-[#EA4335]'
+                      : 'border-gray-200 focus:ring-[#00C471] focus:border-[#00C471]'
+                  }`}
+                  placeholder="예: 010-1234-5678"
                 />
+              </div>
+              {validationErrors.phoneNumber && (
+                <div className="flex items-center mt-1 text-[#EA4335] text-[12px]">
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.phoneNumber}
+                </div>
+              )}
+              <div className="mt-1 text-[11px] text-[#606060]">
+                숫자, 하이픈(-), 공백, 괄호(), 플러스(+) 기호 사용 가능
               </div>
             </div>
           </div>
