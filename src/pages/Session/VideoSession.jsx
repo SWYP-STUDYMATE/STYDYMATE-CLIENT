@@ -7,6 +7,7 @@ import useProfileStore from '../../store/profileStore';
 import useWebRTC from '../../hooks/useWebRTC';
 import RealtimeSubtitles from '../../components/RealtimeSubtitles';
 import TranslatedSubtitles from '../../components/TranslatedSubtitles';
+import AIFeedback from '../../components/AIFeedback';
 
 export default function VideoSession() {
     const navigate = useNavigate();
@@ -21,6 +22,8 @@ export default function VideoSession() {
     const [showSubtitles, setShowSubtitles] = useState(true);
     const [showTranslation, setShowTranslation] = useState(true);
     const [currentTranscript, setCurrentTranscript] = useState(null);
+    const [showAIFeedback, setShowAIFeedback] = useState(true);
+    const [userLevel, setUserLevel] = useState('B1'); // 사용자 레벨 (프로필에서 가져오기)
 
     const timerRef = useRef(null);
     const localVideoRef = useRef(null);
@@ -313,6 +316,15 @@ export default function VideoSession() {
                             )}
                         </div>
                     </div>
+                )}
+
+                {/* AI Feedback Component */}
+                {showAIFeedback && connectionState === 'connected' && (
+                    <AIFeedback 
+                        transcript={currentTranscript}
+                        userLevel={userLevel}
+                        isEnabled={showAIFeedback}
+                    />
                 )}
             </div>
 

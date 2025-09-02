@@ -1,217 +1,58 @@
-import { handleLevelTestError, withRetry } from '../utils/errorHandler.js';
-
-const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
-const LEVEL_TEST_API = `${API_BASE_URL}/api/v1/level-test`;
-
-// 레벨 테스트 질문 조회
-export async function getLevelTestQuestions() {
-  return withRetry(async () => {
-    try {
-      const response = await fetch(`${LEVEL_TEST_API}/questions`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.message || `HTTP ${response.status}`);
-        error.response = { status: response.status, data: errorData };
-        throw error;
-      }
-
-      return await response.json();
-    } catch (error) {
-      handleLevelTestError(error, 'getLevelTestQuestions');
-      throw error;
-    }
-  }, 2);
-}
-
-// 개별 음성 파일 업로드
-export async function uploadAudioFile(audioBlob, questionId) {
-  try {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, `question_${questionId}.webm`);
-    formData.append('questionId', questionId.toString());
-    formData.append('userId', localStorage.getItem('userId') || crypto.randomUUID());
-
-    const response = await fetch(`${LEVEL_TEST_API}/audio`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Audio upload error:', error);
-    throw error;
-  }
-}
-
-// 개별 질문 답변 제출 (Workers API /submit 엔드포인트)
-export async function submitLevelTest(audioBlob, questionNumber) {
-  try {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, `question_${questionNumber}.webm`);
-    formData.append('questionNumber', questionNumber.toString());
-    formData.append('userId', localStorage.getItem('userId') || crypto.randomUUID());
-
-    const response = await fetch(`${LEVEL_TEST_API}/submit`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Level test submission error:', error);
-    throw error;
-  }
-}
-
-// AI 분석 요청
-export async function analyzeResponses(userId, responses) {
-  try {
-    const response = await fetch(`${LEVEL_TEST_API}/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: JSON.stringify({ userId, responses }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Analysis error:', error);
-    throw error;
-  }
-}
-
-// 레벨 테스트 완료 및 평가 요청
-export async function completeLevelTest(userId) {
-  try {
-    const response = await fetch(`${LEVEL_TEST_API}/complete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Level test completion error:', error);
-    throw error;
-  }
-}
-
-// 레벨 테스트 결과 조회
-export async function getLevelTestResult(userId) {
-  try {
-    const response = await fetch(`${LEVEL_TEST_API}/result/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Get level test result error:', error);
-    throw error;
-  }
-}
-
-// 레벨 테스트 진행 상태 조회
-export async function getLevelTestProgress(userId) {
-  try {
-    const response = await fetch(`${LEVEL_TEST_API}/progress/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Get level test progress error:', error);
-    throw error;
-  }
-}
-
-// ===== Spring Boot API 연동 함수들 =====
-
+import { API_CONFIG, API_ENDPOINTS, apiCall, APIError } from './config.js';
 import api from './index.js';
 
-// Spring Boot: 레벨 테스트 시작
-export const startSpringBootLevelTest = async (language = 'en') => {
+// ===== Spring Boot 서버 API 함수들 =====
+
+// 레벨 테스트 시작 (Spring Boot)
+export const startLevelTest = async (language = 'en') => {
   try {
-    const response = await api.post('/level-test/start', {
+    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.START, {
       targetLanguage: language
     });
     return response.data;
   } catch (error) {
-    console.error('Start spring boot level test error:', error);
+    console.error('Start level test error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 질문 조회
-export const getSpringBootLevelTestQuestions = async (testId, category = 'general') => {
+// 레벨 테스트 질문 조회 (Spring Boot)
+export const getLevelTestQuestions = async (testId, category = 'general') => {
   try {
-    const response = await api.get(`/level-test/${testId}/questions`, {
+    const response = await api.get(API_ENDPOINTS.LEVEL_TEST.GET(testId), {
       params: { category }
     });
     return response.data;
   } catch (error) {
-    console.error('Get spring boot level test questions error:', error);
+    console.error('Get level test questions error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 답변 제출
-export const submitSpringBootAnswer = async (testId, questionId, answer) => {
+// 음성 답변 제출 (Spring Boot)
+export const submitVoiceAnswer = async (testId, questionId, audioBlob) => {
   try {
-    const response = await api.post(`/level-test/${testId}/answers`, {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, `question_${questionId}.webm`);
+    formData.append('questionId', questionId.toString());
+    
+    const response = await api.post(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/${testId}/audio-answer`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Submit voice answer error:', error);
+    throw error;
+  }
+};
+
+// 답변 제출 (Spring Boot)
+export const submitAnswer = async (testId, questionId, answer) => {
+  try {
+    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.SUBMIT, {
+      testId,
       questionId,
       answer: answer.text || answer,
       audioUrl: answer.audioUrl,
@@ -220,107 +61,170 @@ export const submitSpringBootAnswer = async (testId, questionId, answer) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Submit spring boot answer error:', error);
+    console.error('Submit answer error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 오디오 답변 업로드
-export const uploadSpringBootAudioAnswer = async (testId, questionId, audioBlob) => {
+// 음성 테스트 시작 (Spring Boot)
+export const startVoiceTest = async (languageCode, currentLevel = null) => {
+  try {
+    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.VOICE.START, {
+      languageCode,
+      currentLevel
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Start voice test error:', error);
+    throw error;
+  }
+};
+
+// 음성 파일 업로드 (Spring Boot)
+export const uploadVoiceRecording = async (testId, audioBlob) => {
   try {
     const formData = new FormData();
-    formData.append('audio', audioBlob, `question_${questionId}.webm`);
-    formData.append('questionId', questionId);
+    formData.append('audio', audioBlob, 'recording.webm');
     
-    const response = await api.post(`/level-test/${testId}/audio-answer`, formData, {
+    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.VOICE.UPLOAD(testId), formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
     return response.data;
   } catch (error) {
-    console.error('Upload spring boot audio answer error:', error);
+    console.error('Upload voice recording error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 완료
-export const completeSpringBootLevelTest = async (testId) => {
+// 음성 테스트 분석 (Spring Boot)
+export const analyzeVoiceTest = async (testId) => {
   try {
-    const response = await api.post(`/level-test/${testId}/complete`);
+    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.VOICE.ANALYZE(testId));
     return response.data;
   } catch (error) {
-    console.error('Complete spring boot level test error:', error);
+    console.error('Analyze voice test error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 결과 조회
-export const getSpringBootLevelTestResult = async (testId) => {
+// 음성 테스트 결과 조회 (Spring Boot)
+export const getVoiceTestResult = async (testId) => {
   try {
-    const response = await api.get(`/level-test/${testId}/result`);
+    const response = await api.get(API_ENDPOINTS.LEVEL_TEST.VOICE.RESULT(testId));
     return response.data;
   } catch (error) {
-    console.error('Get spring boot level test result error:', error);
+    console.error('Get voice test result error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 사용자 레벨 테스트 히스토리 조회
-export const getSpringBootLevelTestHistory = async (page = 1, size = 10) => {
+// 레벨 테스트 완료 (Spring Boot)
+export const completeLevelTest = async (testId) => {
   try {
-    const response = await api.get('/level-test/history', {
+    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.COMPLETE(testId));
+    return response.data;
+  } catch (error) {
+    console.error('Complete level test error:', error);
+    throw error;
+  }
+};
+
+// 레벨 테스트 결과 조회 (Spring Boot)
+export const getLevelTestResult = async (testId) => {
+  try {
+    const response = await api.get(API_ENDPOINTS.LEVEL_TEST.GET(testId));
+    return response.data;
+  } catch (error) {
+    console.error('Get level test result error:', error);
+    throw error;
+  }
+};
+
+// 사용자의 레벨 테스트 목록 조회 (Spring Boot)
+export const getUserLevelTests = async (page = 0, size = 10) => {
+  try {
+    const response = await api.get(API_ENDPOINTS.LEVEL_TEST.MY_TESTS, {
       params: { page, size }
     });
     return response.data;
   } catch (error) {
-    console.error('Get spring boot level test history error:', error);
+    console.error('Get user level tests error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 진행 상태 조회
-export const getSpringBootLevelTestProgress = async (testId) => {
+// 레벨 테스트 요약 정보 조회 (Spring Boot)
+export const getLevelTestSummary = async () => {
   try {
-    const response = await api.get(`/level-test/${testId}/progress`);
+    const response = await api.get(API_ENDPOINTS.LEVEL_TEST.SUMMARY);
     return response.data;
   } catch (error) {
-    console.error('Get spring boot level test progress error:', error);
+    console.error('Get level test summary error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 재시작
-export const restartSpringBootLevelTest = async (language = 'en') => {
+// ===== 백워드 호환성을 위한 별칭 (Deprecated - 추후 제거 예정) =====
+
+// 기존 Workers API 호환성을 위한 함수들
+export const uploadAudioFile = submitVoiceAnswer;
+export const submitLevelTest = submitAnswer;
+export const analyzeResponses = analyzeVoiceTest;
+export const getLevelTestProgress = getUserLevelTests;
+
+// 추가 유틸리티 함수들
+export const restartLevelTest = async (language = 'en') => {
   try {
-    const response = await api.post('/level-test/restart', {
+    const response = await api.post(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/restart`, {
       targetLanguage: language
     });
     return response.data;
   } catch (error) {
-    console.error('Restart spring boot level test error:', error);
+    console.error('Restart level test error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 설정 조회
-export const getSpringBootLevelTestSettings = async () => {
+export const getLevelTestSettings = async () => {
   try {
-    const response = await api.get('/level-test/settings');
+    const response = await api.get(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/settings`);
     return response.data;
   } catch (error) {
-    console.error('Get spring boot level test settings error:', error);
+    console.error('Get level test settings error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 레벨 테스트 통계 조회
-export const getSpringBootLevelTestStats = async () => {
+export const getLevelTestStats = async () => {
   try {
-    const response = await api.get('/level-test/stats');
+    const response = await api.get(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/stats`);
     return response.data;
   } catch (error) {
-    console.error('Get spring boot level test stats error:', error);
+    console.error('Get level test stats error:', error);
     throw error;
   }
+};
+
+// 기본 내보내기
+export default {
+  // 주요 함수들
+  startLevelTest,
+  getLevelTestQuestions,
+  submitAnswer,
+  submitVoiceAnswer,
+  completeLevelTest,
+  getLevelTestResult,
+  getUserLevelTests,
+  getLevelTestSummary,
+  
+  // 음성 테스트
+  startVoiceTest,
+  analyzeVoiceTest,
+  
+  // 유틸리티
+  restartLevelTest,
+  getLevelTestSettings,
+  getLevelTestStats
 };

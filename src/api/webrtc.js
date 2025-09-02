@@ -1,13 +1,11 @@
 // WebRTC API Client
+import { API_CONFIG, API_ENDPOINTS } from './config.js';
 import { handleApiError, handleWebRTCError, withRetry } from '../utils/errorHandler.js';
 import { log } from '../utils/logger';
 
-const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
-const API_VERSION = 'v1';
-
 class WebRTCAPI {
   constructor() {
-    this.baseURL = `${API_BASE_URL}`;
+    this.baseURL = API_CONFIG.WORKERS_API;
   }
 
   /**
@@ -19,7 +17,7 @@ class WebRTCAPI {
    */
   async createRoom(options = {}) {
     try {
-      const response = await fetch(`${this.baseURL}/api/v1/room/create`, {
+      const response = await fetch(API_ENDPOINTS.WORKERS.WEBRTC.CREATE_ROOM, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +49,7 @@ class WebRTCAPI {
    */
   async joinRoom(roomId, userInfo) {
     try {
-      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/join`, {
+      const response = await fetch(API_ENDPOINTS.WORKERS.WEBRTC.JOIN_ROOM(roomId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

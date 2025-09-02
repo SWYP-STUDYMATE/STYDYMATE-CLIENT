@@ -2,37 +2,42 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import useLevelTestStore from '../../store/levelTestStore';
-import { getLevelTestQuestions } from '../../api/levelTest';
+import { useAlert } from '../../hooks/useAlert';
+import { getUserFriendlyMessage } from '../../utils/errorHandler';
 
 export default function LevelTestStart() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { resetTest, setCurrentStep, setQuestions } = useLevelTestStore();
+  const { resetTest, startNewTest, loadQuestions } = useLevelTestStore();
+  const { showError } = useAlert();
 
   const handleStart = async () => {
     try {
       setIsAnimating(true);
       setIsLoading(true);
       
-      // Workers API에서 질문 가져오기
-      const questionsData = await getLevelTestQuestions();
-      
-      resetTest(); // 테스트 초기화
-      setQuestions(questionsData.questions || []);
-      setCurrentStep('check');
-      
-      setTimeout(() => {
-        navigate('/level-test/check');
-      }, 300);
-    } catch (error) {
-      console.error('Failed to load test questions:', error);
-      // 에러 발생 시에도 기본 플로우 진행
+      // 테스트 초기화
       resetTest();
-      setCurrentStep('check');
-      setTimeout(() => {
-        navigate('/level-test/check');
-      }, 300);
+      
+      // Spring Boot API로 테스트 시작
+      const testData = await startNewTest('en');
+      
+      if (testData?.testId) {
+        // 질문 로드
+        await loadQuestions();
+        
+        setTimeout(() => {
+          navigate('/level-test/check');
+        }, 300);
+      } else {
+        throw new Error('테스트를 시작할 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to start test:', error);
+      const message = getUserFriendlyMessage(error);
+      showError(message);
+      setIsAnimating(false);
     } finally {
       setIsLoading(false);
     }

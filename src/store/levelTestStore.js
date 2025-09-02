@@ -1,7 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { submitLevelTest, getLevelTestResult, completeLevelTest } from "../api/levelTest";
+import { 
+  startLevelTest,
+  getLevelTestQuestions,
+  submitAnswer,
+  submitVoiceAnswer,
+  completeLevelTest,
+  getLevelTestResult,
+  getUserLevelTests
+} from "../api/levelTest";
 import { log } from '../utils/logger';
+import { handleLevelTestError } from '../utils/errorHandler';
 
 const useLevelTestStore = create(
   persist(
@@ -64,41 +73,76 @@ const useLevelTestStore = create(
       submitError: null,
       setIsSubmitting: (value) => set({ isSubmitting: value }),
       
+      // Spring Boot API 테스트 ID 및 상태
+      currentTestId: null,
+      testLanguage: 'en',
+      
       // API 메서드들
+      startNewTest: async (language = 'en') => {
+        try {
+          set({ testLanguage: language });
+          const testData = await startLevelTest(language);
+          
+          if (testData?.testId) {
+            set({ 
+              currentTestId: testData.testId,
+              testStatus: 'idle'
+            });
+            log('Level test started:', testData);
+            return testData;
+          }
+        } catch (error) {
+          handleLevelTestError(error, 'startNewTest');
+          throw error;
+        }
+      },
+      
       loadQuestions: async () => {
         try {
-          const { getLevelTestQuestions } = await import('../api/levelTest.js');
-          const response = await getLevelTestQuestions();
+          const state = get();
+          if (!state.currentTestId) {
+            // 테스트가 시작되지 않았으면 먼저 시작
+            const testData = await state.startNewTest(state.testLanguage);
+            if (!testData?.testId) {
+              throw new Error('Failed to start test');
+            }
+          }
+          
+          const response = await getLevelTestQuestions(state.currentTestId);
           
           if (response?.questions?.length > 0) {
             set({ 
               questions: response.questions,
               totalQuestions: response.questions.length
             });
-            log('Questions loaded from Workers API:', response.questions.length);
+            log('Questions loaded from Spring Boot:', response.questions.length);
           } else {
             console.log('Using default questions');
           }
         } catch (error) {
-          console.error('Failed to load questions from Workers API:', error);
-          // Use default questions on error
+          handleLevelTestError(error, 'loadQuestions');
           console.log('Using default questions as fallback');
         }
       },
       
-      // Workers API 개별 제출 방식
-      submitQuestionAudio: async (audioBlob, questionNumber) => {
+      // Spring Boot API 개별 제출 방식
+      submitQuestionAudio: async (audioBlob, questionId) => {
         try {
-          const result = await submitLevelTest(audioBlob, questionNumber);
-          log('Question audio submitted successfully:', { questionNumber, transcription: result.transcription });
+          const state = get();
+          if (!state.currentTestId) {
+            throw new Error('No active test');
+          }
+          
+          const result = await submitVoiceAnswer(state.currentTestId, questionId, audioBlob);
+          log('Question audio submitted successfully:', { questionId, result });
           return result;
         } catch (error) {
-          console.error('Failed to submit question audio:', error);
+          handleLevelTestError(error, 'submitQuestionAudio');
           throw error;
         }
       },
       
-      // Workers API 완전 새로운 제출 방식
+      // Spring Boot API 테스트 제출 방식
       submitTest: async () => {
         const state = get();
         if (state.recordings.length !== state.totalQuestions) {
@@ -106,59 +150,68 @@ const useLevelTestStore = create(
           return;
         }
         
+        if (!state.currentTestId) {
+          set({ submitError: 'No active test found. Please restart the test.' });
+          return;
+        }
+        
         set({ isSubmitting: true, submitError: null });
         
         try {
-          const userId = localStorage.getItem('userId') || crypto.randomUUID();
-          
-          // 1단계: 모든 오디오 파일을 Workers API에 개별 제출
+          // 1단계: 모든 음성 파일을 Spring Boot API에 제출
           const submissions = [];
           for (let i = 0; i < state.recordings.length; i++) {
             const recording = state.recordings[i];
+            const question = state.questions[i];
             try {
-              const result = await submitLevelTest(recording.blob, i + 1);
+              const result = await submitVoiceAnswer(
+                state.currentTestId, 
+                question?.id || (i + 1), 
+                recording.blob
+              );
               submissions.push({
-                questionId: i + 1,
-                transcription: result.transcription,
-                saved: result.saved
+                questionId: question?.id || (i + 1),
+                audioUrl: result.audioUrl,
+                saved: true
               });
               log('Audio submitted for question:', i + 1);
             } catch (error) {
               console.error(`Failed to submit audio for question ${i + 1}:`, error);
-              throw new Error(`Failed to submit question ${i + 1}`);
+              // 개별 제출 실패 시 계속 진행
             }
           }
           
-          // 2단계: Workers API에서 테스트 완료 및 결과 생성
-          const completeResult = await completeLevelTest(userId);
+          // 2단계: 테스트 완료 처리
+          const completeResult = await completeLevelTest(state.currentTestId);
           
           // 3단계: 결과 조회
-          const result = await getLevelTestResult(userId);
+          const result = await getLevelTestResult(state.currentTestId);
           
-          // Process result
+          // Process result (Spring Boot response format)
           const testResult = {
-            level: result.level || completeResult.level || 'B1',
-            overallScore: result.overallScore || completeResult.overallScore || 65,
-            scores: result.scores || completeResult.scores || {
-              pronunciation: 70,
-              fluency: 65,
-              grammar: 60,
-              vocabulary: 70,
-              coherence: 65,
-              interaction: 60
+            testId: state.currentTestId,
+            level: result.estimatedLevel || completeResult.estimatedLevel || 'B1',
+            overallScore: result.estimatedScore || completeResult.estimatedScore || 65,
+            scores: {
+              pronunciation: result.pronunciation || 70,
+              fluency: result.fluency || 65,
+              grammar: result.grammar || 60,
+              vocabulary: result.vocabulary || 70,
+              coherence: result.coherence || 65,
+              interaction: result.interaction || 60
             },
-            strengths: result.strengths || completeResult.strengths || [
+            strengths: result.strengths || [
               'Good pronunciation and intonation',
               'Natural speaking pace',
               'Clear communication'
             ],
-            improvements: result.improvements || completeResult.improvements || [
+            improvements: result.weaknesses || result.improvements || [
               'Expand vocabulary range',
               'Use more complex grammar structures',
               'Improve coherence in longer responses'
             ],
-            feedback: result.feedback || completeResult.feedback || 'Good overall performance. Continue practicing to improve fluency and expand vocabulary.',
-            date: new Date().toISOString(),
+            feedback: result.feedback || 'Good overall performance. Continue practicing to improve fluency and expand vocabulary.',
+            date: result.completedAt || new Date().toISOString(),
             submissions // API 호출 기록 포함
           };
           
@@ -170,12 +223,23 @@ const useLevelTestStore = create(
           
           return testResult;
         } catch (error) {
-          console.error('Test submission error:', error);
+          handleLevelTestError(error, 'submitTest');
           set({ 
             submitError: error.message || 'Failed to submit test. Please try again.',
             isSubmitting: false
           });
           throw error;
+        }
+      },
+      
+      // 사용자의 테스트 히스토리 조회
+      loadTestHistory: async () => {
+        try {
+          const history = await getUserLevelTests();
+          return history;
+        } catch (error) {
+          handleLevelTestError(error, 'loadTestHistory');
+          return [];
         }
       },
       
@@ -332,6 +396,7 @@ const useLevelTestStore = create(
         
         return {
           testStatus: "idle",
+          currentTestId: null,
           currentQuestionIndex: 0,
           connectionStatus: {
             microphone: false,
