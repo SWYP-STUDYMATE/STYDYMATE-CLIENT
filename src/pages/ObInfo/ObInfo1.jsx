@@ -5,11 +5,13 @@ import { saveOnboardingStep1 } from "../../api/onboarding";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
+import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo() {
   const setEnglishName = useProfileStore((state) => state.setEnglishName);
   const [inputValue, setInputValue] = useState("");
   const navigate = useNavigate();
+  const { showError } = useAlert();
 
   // 영어만 입력 허용 (공백 포함)
   const handleChange = (e) => {
@@ -36,7 +38,7 @@ export default function OnboardingInfo() {
         navigate("/onboarding-info/2");
         console.log("온보딩 1단계 저장 완료:", inputValue);
       } catch (e) {
-        alert("영어 이름 저장에 실패했습니다.");
+        showError("영어 이름 저장에 실패했습니다.");
         console.error(e);
       }
     }

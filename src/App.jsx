@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import { ToastManager } from './components/Toast';
 import NotificationToastManager from './components/NotificationToastManager';
 import ServerStatusIndicator from './components/ServerStatusIndicator';
+import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx';
 import { isMockMode, showMockModeBanner } from './api/mockApi';
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
@@ -66,13 +67,21 @@ const AchievementsPage = lazyLoad(() => import('./pages/Achievements/Achievement
 // Mates pages
 const MatesPage = lazyLoad(() => import('./pages/Mates/MatesPage'));
 
-export default function App() {
+// AlertProvider를 포함한 AppContent 컴포넌트
+function AppContent() {
+  const alertHook = useAlert();
+
   // Mock 모드 배너를 전역적으로 적용
   useEffect(() => {
     if (isMockMode()) {
       showMockModeBanner();
     }
   }, []);
+
+  // 전역 alert 함수 설정
+  useEffect(() => {
+    setupGlobalAlert(alertHook);
+  }, [alertHook]);
 
   // 알림 시스템 초기화
   useEffect(() => {
@@ -163,5 +172,14 @@ export default function App() {
         </Routes>
       </Layout>
     </ErrorBoundary>
-  )
+  );
+}
+
+// 메인 App 컴포넌트 - AlertProvider로 래핑
+export default function App() {
+  return (
+    <AlertProvider>
+      <AppContent />
+    </AlertProvider>
+  );
 }

@@ -5,6 +5,7 @@ import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo3() {
   const [image, setImage] = useState(null);
@@ -12,6 +13,7 @@ export default function OnboardingInfo3() {
   const fileInputRef = useRef();
   const { setProfileImage, saveProfileToServer } = useProfileStore();
   const navigate = useNavigate();
+  const { showError, showSuccess } = useAlert();
 
   // 파일 선택
   const handleFileChange = (e) => {
@@ -53,7 +55,7 @@ export default function OnboardingInfo3() {
   // 사진 저장 후 다음 단계로 이동
   const handleNext = async () => {
     if (!imageFile) {
-      alert("이미지 파일을 선택해주세요.");
+      showError("이미지 파일을 선택해주세요.");
       return;
     }
 
@@ -80,10 +82,10 @@ export default function OnboardingInfo3() {
         console.warn('⚠️ 서버 프로필 저장 실패, 로컬만 업데이트:', serverError);
       }
       
-      alert("사진이 저장되었습니다. 다음 단계로 이동합니다.");
+      showSuccess("사진이 저장되었습니다. 다음 단계로 이동합니다.");
       navigate("/onboarding-info/4");
     } catch (e) {
-      alert("프로필 이미지 저장에 실패했습니다.");
+      showError("프로필 이미지 저장에 실패했습니다.");
       console.error(e);
     }
   };

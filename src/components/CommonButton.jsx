@@ -31,6 +31,9 @@ export default function CommonButton({
     case "ghost":
       variantClass = "bg-transparent text-[var(--black-500)] hover:bg-[var(--neutral-100)] active:bg-[var(--neutral-200)]";
       break;
+    case "danger":
+      variantClass = "bg-[#EA4335] text-white hover:bg-[#D23F31] active:bg-[#B93025]";
+      break;
     case "primary":
     default:
       variantClass = "bg-[var(--black-500)] text-white hover:bg-[var(--black-400)] active:bg-[var(--black-600)] disabled:bg-[var(--neutral-100)] disabled:text-[var(--black-200)]";
