@@ -7,9 +7,11 @@ import { useNavigate } from "react-router-dom";
 import commonSelectStyles from "../../components/SelectStyles";
 import useLangInfoStore from "../../store/langInfoStore";
 import api from "../../api";
+import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function ObLang2() {
   const navigate = useNavigate();
+  const { showError } = useAlert();
   const setOtherLanguages = useLangInfoStore((state) => state.setOtherLanguages);
   const [pairs, setPairs] = useState([{ language: null, level: null }]);
   const [languageOptions, setLanguageOptions] = useState([]);
@@ -29,7 +31,7 @@ export default function ObLang2() {
         setLoadingLang(false);
       })
       .catch(err => {
-        alert("언어 리스트를 불러오지 못했습니다.");
+        showError("언어 리스트를 불러오지 못했습니다.");
         setLoadingLang(false);
         console.error(err);
       });
@@ -44,7 +46,7 @@ export default function ObLang2() {
         setLoadingLevel(false);
       })
       .catch(err => {
-        alert("레벨 리스트를 불러오지 못했습니다.");
+        showError("레벨 리스트를 불러오지 못했습니다.");
         setLoadingLevel(false);
         console.error(err);
       });
@@ -85,7 +87,7 @@ export default function ObLang2() {
       navigate("/onboarding-lang/3");
     } catch (error) {
       console.error("언어 레벨 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
+      showError("데이터 전송에 실패했습니다. 다시 시도해주세요.");
     }
   };
 

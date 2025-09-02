@@ -7,8 +7,10 @@ import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
 import commonSelectStyles from "../../components/SelectStyles";
 import api from "../../api";
+import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo2() {
+  const { showError, confirmAction } = useAlert();
   const [locations, setLocations] = useState([]);
   const [selected, setSelected] = useState(null);
   const setResidence = useProfileStore((state) => state.setResidence);
@@ -21,7 +23,7 @@ export default function OnboardingInfo2() {
         console.log(res.data);
       })
       .catch(err => {
-        alert("거주지 리스트를 불러오지 못했습니다.");
+        showError("거주지 리스트를 불러오지 못했습니다.");
         console.error(err);
       });
   }, []);
