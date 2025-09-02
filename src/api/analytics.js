@@ -1,4 +1,4 @@
-import api from './index';
+import axios from 'axios';
 import { log } from '../utils/logger';
 
 /**
@@ -9,6 +9,25 @@ import { log } from '../utils/logger';
 // Workers API 기본 URL 설정
 const WORKERS_API_BASE = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
 
+// Workers API 전용 axios 인스턴스 생성
+const workersApi = axios.create({
+  baseURL: import.meta.env.DEV 
+    ? '/workers'  // 개발환경: Vite proxy 사용
+    : WORKERS_API_BASE, // 프로덕션: 직접 접근
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Workers API 인터셉터 설정
+workersApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 /**
  * 대시보드 데이터 조회
  * @returns {Promise<Object>} 대시보드 통계 데이터
@@ -17,7 +36,7 @@ export const getDashboardData = async () => {
   try {
     log.info('대시보드 데이터 조회 시작', null, 'ANALYTICS');
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/dashboard`);
+    const response = await workersApi.get('/api/v1/analytics/dashboard');
     
     log.info('대시보드 데이터 조회 성공', response.data, 'ANALYTICS');
     return response.data;
@@ -67,7 +86,7 @@ export const getStudyStats = async (timeRange = 'week', userId = null) => {
       params.append('userId', userId);
     }
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/metrics?${params}`);
+    const response = await workersApi.get(`/api/v1/analytics/metrics?${params}`);
     
     log.info('학습 통계 조회 성공', response.data, 'ANALYTICS');
     return response.data;
@@ -113,7 +132,7 @@ export const getSessionActivity = async (timeRange = 'week') => {
       interval: timeRange === 'day' ? '1h' : timeRange === 'week' ? '1d' : '1d'
     });
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/metrics?${params}`);
+    const response = await workersApi.get(`/api/v1/analytics/metrics?${params}`);
     
     log.info('세션 활동 데이터 조회 성공', response.data, 'ANALYTICS');
     return response.data;
@@ -138,7 +157,7 @@ export const getLevelTestHistory = async () => {
       groupBy: 'path'
     });
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/events?${params}`);
+    const response = await workersApi.get(`/api/v1/analytics/events?${params}`);
     
     // 레벨 테스트 관련 이벤트만 필터링
     const levelTestData = response.data?.events?.filter(event => 
@@ -186,7 +205,7 @@ export const getMatchingStats = async (timeRange = 'month') => {
       groupBy: 'status'
     });
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/events?${params}`);
+    const response = await workersApi.get(`/api/v1/analytics/events?${params}`);
     
     // 매칭 관련 이벤트만 필터링
     const matchingData = response.data?.events?.filter(event => 
@@ -234,7 +253,7 @@ export const getAIUsageStats = async (timeRange = 'month') => {
       end: end.toISOString()
     });
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/ai-usage?${params}`);
+    const response = await workersApi.get(`/api/v1/analytics/ai-usage?${params}`);
     
     log.info('AI 사용량 통계 조회 성공', response.data, 'ANALYTICS');
     return response.data;
@@ -276,7 +295,7 @@ export const getPerformanceStats = async (timeRange = 'week') => {
       groupBy: 'path'
     });
     
-    const response = await api.get(`${WORKERS_API_BASE}/api/v1/analytics/performance?${params}`);
+    const response = await workersApi.get(`/api/v1/analytics/performance?${params}`);
     
     log.info('성능 통계 조회 성공', response.data, 'ANALYTICS');
     return response.data;
@@ -295,7 +314,7 @@ export const sendAnalyticsEvents = async (events) => {
   try {
     log.info('분석 이벤트 전송 시작', { count: events.length }, 'ANALYTICS');
     
-    const response = await api.post(`${WORKERS_API_BASE}/api/v1/analytics/events`, {
+    const response = await workersApi.post('/api/v1/analytics/events', {
       events
     });
     

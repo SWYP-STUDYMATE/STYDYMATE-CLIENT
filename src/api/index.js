@@ -5,11 +5,10 @@ import { toast } from '../components/Toast';
 
 const api = axios.create({
   // 프로덕션: 직접 api.languagemate.kr/api/v1 호출
-  // 개발: vite.proxy('/api' → localhost:8080)
-  // API v1 경로를 baseURL에 명시하여 백엔드와 일치시킴
-  baseURL: import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api/v1`
-    : "/api/v1",
+  // 개발: vite.proxy('/api' → localhost:8080)에서 /api 제거됨
+  baseURL: import.meta.env.DEV 
+    ? "/api/v1"  // 개발환경: Vite proxy가 /api를 제거하므로 /api/v1
+    : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
 });
 
 // 요청 인터셉터: accessToken 자동 첨부 및 로깅

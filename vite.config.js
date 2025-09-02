@@ -86,6 +86,8 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_WORKERS_API_URL || 'http://localhost:8787',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/workers/, ''),
+          secure: false,
+          ws: true,
         },
         '/login/oauth2/code/naver': {
           target: env.VITE_API_URL || 'http://localhost:8080',
