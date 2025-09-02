@@ -11,16 +11,16 @@ export default function OnboardingInfo() {
   const [inputValue, setInputValue] = useState("");
   const navigate = useNavigate();
 
-  // 영어만 입력 허용
+  // 영어만 입력 허용 (공백 포함)
   const handleChange = (e) => {
     const value = e.target.value;
-    if (/^[a-zA-Z]*$/.test(value)) {
+    if (/^[a-zA-Z\s]*$/.test(value)) {
       setInputValue(value);
     }
   };
 
-  // 영어 1자 이상 입력 시 버튼 활성화
-  const isButtonEnabled = inputValue.length > 0;
+  // 영어 1자 이상 입력 시 버튼 활성화 (공백 제거 후 체크)
+  const isButtonEnabled = inputValue.trim().length > 0;
 
   // 버튼 클릭 시만 저장
   const handleNext = async () => {

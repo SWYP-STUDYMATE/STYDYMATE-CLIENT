@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/Header";
 import { useNavigate } from "react-router-dom";
+import { getOnboardingStatus } from "../../api/user";
 
 const Agreement = () => {
   // 체크박스 상태 관리
@@ -211,9 +212,25 @@ const Agreement = () => {
               : "bg-gray-200 text-gray-400 cursor-default pointer-events-none"
           }`}
           disabled={!isRequiredChecked}
-          onClick={() => {
+          onClick={async () => {
             if (isRequiredChecked) {
-              navigate("/signup-complete");
+              try {
+                // 온보딩 상태 확인
+                const onboardingStatus = await getOnboardingStatus();
+                
+                if (!onboardingStatus.isCompleted) {
+                  // 온보딩 미완료 시 바로 온보딩 페이지로
+                  const nextStep = onboardingStatus.nextStep || 1;
+                  navigate(`/onboarding-info/${nextStep}`, { replace: true });
+                } else {
+                  // 온보딩 완료 시 메인 페이지로
+                  navigate("/main", { replace: true });
+                }
+              } catch (error) {
+                console.error("온보딩 상태 확인 실패:", error);
+                // 오류 시 기존 플로우 유지 (signup-complete로)
+                navigate("/signup-complete");
+              }
             }
           }}
         >

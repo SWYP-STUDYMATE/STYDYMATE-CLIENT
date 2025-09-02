@@ -9,7 +9,6 @@ import api from "../../api";
 export default function OnboardingInfo3() {
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null); // 실제 파일 저장용
-  const [capture, setCapture] = useState(null); // capture 상태 추가
   const fileInputRef = useRef();
   const { setProfileImage, saveProfileToServer } = useProfileStore();
   const navigate = useNavigate();
@@ -32,18 +31,18 @@ export default function OnboardingInfo3() {
 
   // 카메라 촬영
   const handleCameraClick = () => {
-    setCapture("environment"); // 카메라 실행
-    setTimeout(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.setAttribute('capture', 'environment');
       fileInputRef.current.click();
-    }, 0);
+    }
   };
 
   // 사진 선택
   const handleSelectPhoto = () => {
-    setCapture(null); // 갤러리에서 선택
-    setTimeout(() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.removeAttribute('capture');
       fileInputRef.current.click();
-    }, 0);
+    }
   };
 
   // 건너뛰기
@@ -119,7 +118,6 @@ export default function OnboardingInfo3() {
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileChange}
-            capture={capture ? capture : undefined} // capture 속성 동적 바인딩
           />
         </div>
         <div className="flex flex-col gap-[32px] w-full mt-8">

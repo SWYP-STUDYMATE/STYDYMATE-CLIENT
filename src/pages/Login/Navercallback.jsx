@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
+import { getOnboardingStatus } from "../../api/user";
 
 export default function Navercallback() {
   const [message, setMessage] = useState("네이버 로그인 처리 중...");
@@ -39,9 +40,26 @@ export default function Navercallback() {
           localStorage.setItem("userName", nameRes.data.name);
           console.log("유저 이름 저장 완료:", nameRes.data.name);
           
-          setMessage("네이버 로그인 성공! 메인 페이지로 이동합니다...");
-          setTimeout(() => {
-            navigate("/agreement", { replace: true });
+          setMessage("네이버 로그인 성공! 이동 중...");
+          setTimeout(async () => {
+            try {
+              // 신규 사용자인지 확인
+              if (localStorage.getItem('isNewUser') === 'true') {
+                navigate("/agreement", { replace: true });
+              } else {
+                // 기존 사용자라면 온보딩 상태 확인
+                const onboardingStatus = await getOnboardingStatus();
+                if (!onboardingStatus.isCompleted) {
+                  const nextStep = onboardingStatus.nextStep || 1;
+                  navigate(`/onboarding-info/${nextStep}`, { replace: true });
+                } else {
+                  navigate("/main", { replace: true });
+                }
+              }
+            } catch (error) {
+              console.error("사용자 상태 확인 실패:", error);
+              navigate("/agreement", { replace: true });
+            }
           }, 2000);
         } catch (e) {
           console.error("유저 정보 불러오기 실패:", e);
@@ -81,9 +99,26 @@ export default function Navercallback() {
             } catch (e) {
               console.error("유저 이름 불러오기 실패:", e);
             }
-            setMessage("네이버 로그인 성공! 메인 페이지로 이동합니다...");
-            setTimeout(() => {
-              navigate("/agreement", { replace: true });
+            setMessage("네이버 로그인 성공! 이동 중...");
+            setTimeout(async () => {
+              try {
+                // 신규 사용자인지 확인
+                if (localStorage.getItem('isNewUser') === 'true') {
+                  navigate("/agreement", { replace: true });
+                } else {
+                  // 기존 사용자라면 온보딩 상태 확인
+                  const onboardingStatus = await getOnboardingStatus();
+                  if (!onboardingStatus.isCompleted) {
+                    const nextStep = onboardingStatus.nextStep || 1;
+                    navigate(`/onboarding-info/${nextStep}`, { replace: true });
+                  } else {
+                    navigate("/main", { replace: true });
+                  }
+                }
+              } catch (error) {
+                console.error("사용자 상태 확인 실패:", error);
+                navigate("/agreement", { replace: true });
+              }
             }, 2000);
           } else {
             setMessage("토큰을 받아오지 못했습니다.");
