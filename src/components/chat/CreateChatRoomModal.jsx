@@ -65,7 +65,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center p-4"
         onClick={onClose}
         role="dialog"
         aria-modal="true"

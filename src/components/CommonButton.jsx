@@ -3,6 +3,7 @@ import { InlineSpinner } from "./ui/LoadingSpinner";
 
 export default function CommonButton({ 
   text, 
+  children, // children prop 추가
   variant = "primary", 
   className = "", 
   loading = false,
@@ -61,10 +62,12 @@ export default function CommonButton({
         className: `w-5 h-5 ${icon.props.className || ''}` 
       });
       
+      const buttonText = text || children;
+      
       if (iconPosition === "right") {
         return (
           <span className="flex items-center justify-center gap-2">
-            <span>{text}</span>
+            <span>{buttonText}</span>
             {iconElement}
           </span>
         );
@@ -73,12 +76,12 @@ export default function CommonButton({
       return (
         <span className="flex items-center justify-center gap-2">
           {iconElement}
-          <span>{text}</span>
+          <span>{buttonText}</span>
         </span>
       );
     }
 
-    return text;
+    return text || children; // text가 없으면 children 사용
   };
 
   return (
