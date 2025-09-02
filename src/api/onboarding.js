@@ -33,12 +33,36 @@ export const completeAllOnboarding = async (onboardingData) => {
   }
 };
 
-// 단계별 온보딩 저장 함수들 (기존 API와 호환성 유지)
+// 현재 온보딩 단계 조회 (새로운 API)
+export const getCurrentOnboardingStep = async () => {
+  try {
+    const response = await api.get('/onboarding/steps/current');
+    return response.data;
+  } catch (error) {
+    console.error('Get current onboarding step error:', error);
+    throw error;
+  }
+};
+
+// 온보딩 단계 건너뛰기
+export const skipOnboardingStep = async (stepNumber, reason = '') => {
+  try {
+    const response = await api.post(`/onboarding/steps/${stepNumber}/skip`, null, {
+      params: { reason }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Skip onboarding step ${stepNumber} error:`, error);
+    throw error;
+  }
+};
+
+// 단계별 온보딩 저장 함수들 (새로운 서버 API에 맞게 수정)
 
 // 1단계: 개인정보 저장
 export const saveOnboardingStep1 = async (personalData) => {
   try {
-    const response = await api.post('/onboarding/step1', personalData);
+    const response = await api.post('/onboarding/steps/1/save', personalData);
     return response.data;
   } catch (error) {
     console.error('Save onboarding step1 error:', error);
@@ -49,7 +73,7 @@ export const saveOnboardingStep1 = async (personalData) => {
 // 2단계: 프로필 정보 저장
 export const saveOnboardingStep2 = async (profileData) => {
   try {
-    const response = await api.post('/onboarding/step2', profileData);
+    const response = await api.post('/onboarding/steps/2/save', profileData);
     return response.data;
   } catch (error) {
     console.error('Save onboarding step2 error:', error);
@@ -60,7 +84,7 @@ export const saveOnboardingStep2 = async (profileData) => {
 // 3단계: 학습 정보 저장
 export const saveOnboardingStep3 = async (learningData) => {
   try {
-    const response = await api.post('/onboarding/step3', learningData);
+    const response = await api.post('/onboarding/steps/3/save', learningData);
     return response.data;
   } catch (error) {
     console.error('Save onboarding step3 error:', error);
@@ -71,7 +95,7 @@ export const saveOnboardingStep3 = async (learningData) => {
 // 4단계: 선호도 저장
 export const saveOnboardingStep4 = async (preferenceData) => {
   try {
-    const response = await api.post('/onboarding/step4', preferenceData);
+    const response = await api.post('/onboarding/steps/4/save', preferenceData);
     return response.data;
   } catch (error) {
     console.error('Save onboarding step4 error:', error);
