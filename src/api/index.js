@@ -6,7 +6,8 @@ import { toast } from '../components/Toast';
 const api = axios.create({
   // 프로덕션: 프런트 도메인(languagemate.kr)에서 /api 리버스프록시 → api.languagemate.kr
   // 개발: vite.proxy('/api' → localhost:8080)
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  // API v1 경로를 baseURL에 명시하여 백엔드와 일치시킴
+  baseURL: (import.meta.env.VITE_API_URL || "/api") + "/v1",
 });
 
 // 요청 인터셉터: accessToken 자동 첨부 및 로깅
