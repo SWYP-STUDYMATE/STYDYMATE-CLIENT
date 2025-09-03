@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Shield, Eye, Users, MapPin, Calendar, Lock } from 'lucide-react';
 import { getPrivacySettings, updatePrivacySettings } from '../../api/settings';
 import CommonButton from '../../components/CommonButton';
+import { useAlert } from '../../hooks/useAlert';
 
 const PrivacySettings = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useAlert();
   const [settings, setSettings] = useState({
     // 프로필 공개 설정
     profileVisibility: 'public', // public, friends, private
@@ -60,10 +62,10 @@ const PrivacySettings = () => {
     try {
       setSaving(true);
       await updatePrivacySettings(settings);
-      alert('개인정보 설정이 저장되었습니다.');
+      showSuccess('개인정보 설정이 저장되었습니다.');
     } catch (error) {
       console.error('Failed to save privacy settings:', error);
-      alert('설정 저장에 실패했습니다.');
+      showError('설정 저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }

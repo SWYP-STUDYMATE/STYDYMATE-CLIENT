@@ -6,8 +6,10 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import Select from "react-select";
 import commonSelectStyles from "../../components/SelectStyles";
+import { useAlert } from "../../hooks/useAlert";
 
 export default function ObSchadule4() {
+  const { showError } = useAlert();
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedTimes, setSelectedTimes] = useState({});
   const [loading, setLoading] = useState(false);
@@ -98,14 +100,14 @@ export default function ObSchadule4() {
 
   const handleNext = async () => {
     if (selectedDays.length === 0) {
-      alert("최소 하나의 요일을 선택해주세요.");
+      showError("최소 하나의 요일을 선택해주세요.");
       return;
     }
 
     // 모든 선택된 요일에 시간이 설정되었는지 확인
     const hasAllTimes = selectedDays.every(day => selectedTimes[day]);
     if (!hasAllTimes) {
-      alert("선택된 모든 요일에 시간을 설정해주세요.");
+      showError("선택된 모든 요일에 시간을 설정해주세요.");
       return;
     }
 
@@ -122,7 +124,7 @@ export default function ObSchadule4() {
       navigate("/onboarding-schedule/complete");
     } catch (error) {
       console.error("스케줄 선택 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
+      showError("데이터 전송에 실패했습니다. 다시 시도해주세요.");
     }
   };
 

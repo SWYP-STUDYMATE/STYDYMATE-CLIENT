@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { X, Users, Globe, Lock, MessageCircle, Plus } from 'lucide-react';
 import CommonButton from '../CommonButton';
 import { createChatRoom } from '../../api/chat';
+import { useAlert } from '../../hooks/useAlert';
 
 const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
+  const { showError } = useAlert();
   const [formData, setFormData] = useState({
     roomName: '',
     roomType: 'GROUP',
@@ -24,7 +26,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
     e.preventDefault();
     
     if (!formData.roomName.trim()) {
-      alert('채팅방 이름을 입력해주세요.');
+      showError('채팅방 이름을 입력해주세요.');
       return;
     }
 
@@ -53,7 +55,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
       onClose();
     } catch (error) {
       console.error('채팅방 생성 실패:', error);
-      alert('채팅방 생성에 실패했습니다. 다시 시도해주세요.');
+      showError('채팅방 생성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +67,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black bg-opacity-20 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
         onClick={onClose}
         role="dialog"
         aria-modal="true"

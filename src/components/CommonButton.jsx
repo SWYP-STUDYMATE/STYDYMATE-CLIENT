@@ -18,26 +18,26 @@ export default function CommonButton({
   let variantClass = "";
   switch (variant) {
     case "success":
-      variantClass = "bg-[var(--green-50)] text-[var(--green-500)] hover:bg-[var(--green-600)] hover:text-white active:bg-[var(--green-700)]";
+      variantClass = "bg-[#00C471] text-white hover:bg-[#00B267] active:bg-[#008B50]";
       break;
     case "secondary":
-      variantClass = "bg-[var(--neutral-100)] text-[var(--black-300)] hover:bg-[var(--black-400)] hover:text-white active:bg-[var(--black-500)]";
+      variantClass = "bg-[#F1F3F5] text-[#111111] hover:bg-[#111111] hover:text-white active:bg-[#414141]";
       break;
     case "complete":
-      variantClass = "bg-[var(--green-500)] text-white hover:bg-[var(--green-600)] active:bg-[var(--green-700)]";
+      variantClass = "bg-[#00C471] text-white hover:bg-[#00B267] active:bg-[#008B50]";
       break;
     case "outline":
-      variantClass = "bg-transparent border-2 border-[var(--black-500)] text-[var(--black-500)] hover:bg-[var(--black-500)] hover:text-white active:bg-[var(--black-600)]";
+      variantClass = "bg-transparent border-2 border-[#111111] text-[#111111] hover:bg-[#111111] hover:text-white active:bg-[#414141]";
       break;
     case "ghost":
-      variantClass = "bg-transparent text-[var(--black-500)] hover:bg-[var(--neutral-100)] active:bg-[var(--neutral-200)]";
+      variantClass = "bg-transparent text-[#111111] hover:bg-[#F1F3F5] active:bg-[#E7E7E7]";
       break;
     case "danger":
       variantClass = "bg-[#EA4335] text-white hover:bg-[#D23F31] active:bg-[#B93025]";
       break;
     case "primary":
     default:
-      variantClass = "bg-[var(--black-500)] text-white hover:bg-[var(--black-400)] active:bg-[var(--black-600)] disabled:bg-[var(--neutral-100)] disabled:text-[var(--black-200)]";
+      variantClass = "bg-[#111111] text-white hover:bg-[#414141] active:bg-[#606060] disabled:bg-[#F1F3F5] disabled:text-[#929292]";
       break;
   }
 

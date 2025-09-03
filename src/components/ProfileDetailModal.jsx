@@ -62,7 +62,7 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
 
     return (
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20 p-4 backdrop-blur-sm"
             onClick={handleBackdropClick}
         >
             <div className="bg-white rounded-[20px] w-full max-w-md max-h-[90vh] overflow-hidden">

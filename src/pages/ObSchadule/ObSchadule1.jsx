@@ -5,8 +5,10 @@ import CommonChecklistItem from "../../components/CommonChecklist";
 import CommonButton from "../../components/CommonButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { useAlert } from "../../hooks/useAlert";
 
 export default function ObSchadule1() {
+  const { showError } = useAlert();
   const [selected, setSelected] = useState(null); // 단일 선택으로 변경
   const [communicationMethods, setCommunicationMethods] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function ObSchadule1() {
         setLoading(false);
       } catch (error) {
         console.error("소통 방식 데이터를 불러오지 못했습니다:", error);
-        alert("소통 방식 데이터를 불러오지 못했습니다.");
+        showError("소통 방식 데이터를 불러오지 못했습니다.");
         setLoading(false);
       }
     };
@@ -46,7 +48,7 @@ export default function ObSchadule1() {
       navigate("/onboarding-schedule/2");
     } catch (error) {
       console.error("소통 방식 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
+      showError("데이터 전송에 실패했습니다. 다시 시도해주세요.");
     }
   };
 

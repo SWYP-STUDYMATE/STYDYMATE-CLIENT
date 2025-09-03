@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Globe, BookOpen, Volume2 } from 'lucide-react';
 import { getLanguageSettings, updateLanguageSettings } from '../../api/settings';
 import CommonButton from '../../components/CommonButton';
+import { useAlert } from '../../hooks/useAlert';
 
 const LanguageSettings = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useAlert();
   const [settings, setSettings] = useState({
     // 앱 언어
     appLanguage: 'ko',
@@ -75,10 +77,10 @@ const LanguageSettings = () => {
     try {
       setSaving(true);
       await updateLanguageSettings(settings);
-      alert('언어 설정이 저장되었습니다.');
+      showSuccess('언어 설정이 저장되었습니다.');
     } catch (error) {
       console.error('Failed to save language settings:', error);
-      alert('설정 저장에 실패했습니다.');
+      showError('설정 저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }

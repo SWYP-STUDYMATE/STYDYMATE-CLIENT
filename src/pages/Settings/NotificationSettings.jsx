@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Bell, Mail, MessageSquare, Video, Calendar, Award } from 'lucide-react';
 import { getNotificationSettings, updateNotificationSettings } from '../../api/settings';
 import CommonButton from '../../components/CommonButton';
+import { useAlert } from '../../hooks/useAlert';
 
 const NotificationSettings = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useAlert();
   const [settings, setSettings] = useState({
     // 푸시 알림
     pushEnabled: true,
@@ -55,10 +57,10 @@ const NotificationSettings = () => {
     try {
       setSaving(true);
       await updateNotificationSettings(settings);
-      alert('알림 설정이 저장되었습니다.');
+      showSuccess('알림 설정이 저장되었습니다.');
     } catch (error) {
       console.error('Failed to save notification settings:', error);
-      alert('설정 저장에 실패했습니다.');
+      showError('설정 저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }

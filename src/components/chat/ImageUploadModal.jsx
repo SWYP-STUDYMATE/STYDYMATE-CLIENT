@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { X, UploadCloud } from "lucide-react";
 import { uploadChatImages } from "../../api/chat";
+import { useAlert } from "../../hooks/useAlert";
 
 export default function ImageUploadModal({
   isOpen,
@@ -8,6 +9,7 @@ export default function ImageUploadModal({
   roomId,
   onImageUploadSuccess,
 }) {
+  const { showError } = useAlert();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const fileInputRef = useRef(null);
@@ -34,7 +36,7 @@ export default function ImageUploadModal({
       handleClose();
     } catch (error) {
       console.error("이미지 업로드 실패:", error);
-      alert("이미지 업로드에 실패했습니다.");
+      showError("이미지 업로드에 실패했습니다.");
     } finally {
       setIsUploading(false);
     }
@@ -51,7 +53,7 @@ export default function ImageUploadModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"

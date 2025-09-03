@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Key, Shield, Smartphone, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { getTwoFactorSettings, enableTwoFactor, disableTwoFactor, changePassword } from '../../api/settings';
 import CommonButton from '../../components/CommonButton';
+import { useAlert } from '../../hooks/useAlert';
 
 const SecuritySettings = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useAlert();
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,19 +49,19 @@ const SecuritySettings = () => {
 
   const handlePasswordChange = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('새 비밀번호가 일치하지 않습니다.');
+      showError('새 비밀번호가 일치하지 않습니다.');
       return;
     }
     
     if (passwordForm.newPassword.length < 8) {
-      alert('비밀번호는 8자 이상이어야 합니다.');
+      showError('비밀번호는 8자 이상이어야 합니다.');
       return;
     }
 
     try {
       setSaving(true);
       await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      alert('비밀번호가 성공적으로 변경되었습니다.');
+      showSuccess('비밀번호가 성공적으로 변경되었습니다.');
       setShowPasswordForm(false);
       setPasswordForm({
         currentPassword: '',
@@ -68,7 +70,7 @@ const SecuritySettings = () => {
       });
     } catch (error) {
       console.error('Failed to change password:', error);
-      alert('비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.');
+      showError('비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.');
     } finally {
       setSaving(false);
     }
@@ -82,7 +84,7 @@ const SecuritySettings = () => {
       setShow2FAForm(true);
     } catch (error) {
       console.error('Failed to enable 2FA:', error);
-      alert('2단계 인증 활성화에 실패했습니다.');
+      showError('2단계 인증 활성화에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -90,7 +92,7 @@ const SecuritySettings = () => {
 
   const handleDisable2FA = async () => {
     if (!verificationCode) {
-      alert('인증 코드를 입력해주세요.');
+      showError('인증 코드를 입력해주세요.');
       return;
     }
 
@@ -100,10 +102,10 @@ const SecuritySettings = () => {
       setTwoFactorEnabled(false);
       setShow2FAForm(false);
       setVerificationCode('');
-      alert('2단계 인증이 비활성화되었습니다.');
+      showSuccess('2단계 인증이 비활성화되었습니다.');
     } catch (error) {
       console.error('Failed to disable 2FA:', error);
-      alert('인증 코드가 올바르지 않습니다.');
+      showError('인증 코드가 올바르지 않습니다.');
     } finally {
       setSaving(false);
     }
@@ -111,7 +113,7 @@ const SecuritySettings = () => {
 
   const handleVerify2FA = async () => {
     if (!verificationCode) {
-      alert('인증 코드를 입력해주세요.');
+      showError('인증 코드를 입력해주세요.');
       return;
     }
 
@@ -121,10 +123,10 @@ const SecuritySettings = () => {
       setTwoFactorEnabled(true);
       setShow2FAForm(false);
       setVerificationCode('');
-      alert('2단계 인증이 활성화되었습니다.');
+      showSuccess('2단계 인증이 활성화되었습니다.');
     } catch (error) {
       console.error('Failed to verify 2FA:', error);
-      alert('인증 코드가 올바르지 않습니다.');
+      showError('인증 코드가 올바르지 않습니다.');
     } finally {
       setSaving(false);
     }

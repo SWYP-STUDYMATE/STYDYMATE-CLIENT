@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { joinChatRoom } from "../../api/chat";
 import { MessageCircle, Search, Plus } from "lucide-react";
 import CreateChatRoomModal from "./CreateChatRoomModal";
+import { useAlert } from "../../hooks/useAlert";
 
 export default function ChatRoomList({
   rooms,
@@ -9,6 +10,7 @@ export default function ChatRoomList({
   onNewRoomCreated,
   onJoinRoom,
 }) {
+  const { showError } = useAlert();
   const [query, setQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -32,7 +34,7 @@ export default function ChatRoomList({
       onSelectRoom(room);
     } catch (error) {
       console.error("채팅방 참여 실패:", error);
-      alert("채팅방 참여에 실패했습니다.");
+      showError("채팅방 참여에 실패했습니다.");
     }
   };
 
