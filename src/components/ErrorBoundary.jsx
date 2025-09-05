@@ -8,7 +8,7 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error) {
     return { hasError: true };
   }
 
@@ -111,35 +111,35 @@ class ErrorBoundary extends React.Component {
 }
 
 // 함수형 컴포넌트용 HOC
-export const withErrorBoundary = (Component, fallback) => {
-  return function WithErrorBoundaryComponent(props) {
-    return (
-      <ErrorBoundary fallback={fallback}>
-        <Component {...props} />
-      </ErrorBoundary>
-    );
-  };
-};
+// export const withErrorBoundary = (Component, fallback) => {
+//   return function WithErrorBoundaryComponent(props) {
+//     return (
+//       <ErrorBoundary fallback={fallback}>
+//         <Component {...props} />
+//       </ErrorBoundary>
+//     );
+//   };
+// };
 
 // 특정 에러 타입용 경계
-export function ApiErrorBoundary({ children, onError }) {
-  return (
-    <ErrorBoundary
-    onError={onError} 
-      fallback={({ error, retry }) => (
-        <div className="p-6 text-center">
-          <p className="text-[#EA4335] mb-4">
-            {getUserFriendlyMessage(error)}
-          </p>
-          <CommonButton onClick={retry} variant="primary">
-            다시 시도
-          </CommonButton>
-        </div>
-      )}
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
+// export function ApiErrorBoundary({ children, onError }) {
+//   return (
+//     <ErrorBoundary
+//     onError={onError} 
+//       fallback={({ error, retry }) => (
+//         <div className="p-6 text-center">
+//           <p className="text-[#EA4335] mb-4">
+//             {getUserFriendlyMessage(error)}
+//           </p>
+//           <CommonButton onClick={retry} variant="primary">
+//             다시 시도
+//           </CommonButton>
+//         </div>
+//       )}
+//     >
+//       {children}
+//     </ErrorBoundary>
+//   );
+// }
 
 export default ErrorBoundary;
