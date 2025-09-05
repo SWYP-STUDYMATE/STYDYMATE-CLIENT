@@ -78,24 +78,6 @@ function AppContent() {
   //   }
   // }, []);
 
-  // Mock 모드 배너: 개발 환경에서만 동적 import (prod 빌드 안전)
-useEffect(() => {
-  if (!import.meta.env.DEV) return;
-  let mounted = true;
-  (async () => {
-  try {
-    const mod = await import('./api/mockApi');
-    if (!mounted) return;
-    const isMockMode = mod?.isMockMode ?? (() => false);
-    const showMockModeBanner = mod?.showMockModeBanner ?? (() => {});
-    if (isMockMode()) showMockModeBanner();
-  } catch (e) {
-    if (import.meta.env.DEV) console.warn('mockApi not found, skipping mock mode', e);
-  }
-})();
-
-  return () => { mounted = false; };
-}, []);
 
   // 전역 alert 함수 설정
   useEffect(() => {
