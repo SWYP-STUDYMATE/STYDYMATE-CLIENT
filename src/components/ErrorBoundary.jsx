@@ -12,15 +12,14 @@ class ErrorBoundary extends React.Component {
     return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
-    this.setState({
-      error,
-      errorInfo
-    });
+  componentDidCatch(error, info) {
+      if (typeof this.props.onError === "function") {
+    this.props.onError(error, info);
+  }
 
     // 에러 리포팅
     reportError(error, {
-      componentStack: errorInfo.componentStack,
+      componentStack: info.componentStack,
       props: this.props,
       timestamp: new Date().toISOString()
     });
@@ -126,6 +125,7 @@ export const withErrorBoundary = (Component, fallback) => {
 export function ApiErrorBoundary({ children, onError }) {
   return (
     <ErrorBoundary
+    onError={onError} 
       fallback={({ error, retry }) => (
         <div className="p-6 text-center">
           <p className="text-[#EA4335] mb-4">
