@@ -6,7 +6,7 @@ import { ToastManager } from './components/Toast';
 import NotificationToastManager from './components/NotificationToastManager';
 import ServerStatusIndicator from './components/ServerStatusIndicator';
 import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx';
-import { isMockMode, showMockModeBanner } from './api/mockApi';
+// import { isMockMode, showMockModeBanner } from './api/mockApi';
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect } from 'react';
@@ -72,11 +72,29 @@ function AppContent() {
   const alertHook = useAlert();
 
   // Mock 모드 배너를 전역적으로 적용
-  useEffect(() => {
-    if (isMockMode()) {
-      showMockModeBanner();
+  // useEffect(() => {
+  //   if (isMockMode()) {
+  //     showMockModeBanner();
+  //   }
+  // }, []);
+
+  // Mock 모드 배너: 개발 환경에서만 동적 import (prod 빌드 안전)
+useEffect(() => {
+  if (!import.meta.env.DEV) return;
+  let mounted = true;
+  (async () => {
+    try {
+      const mod = await import('./api/mockApi'); 
+      if (!mounted) return;
+      const isMockMode = mod?.isMockMode ?? (() => false);
+      const showMockModeBanner = mod?.showMockModeBanner ?? (() => {});
+      if (isMockMode()) showMockModeBanner();
+    } catch (_) {
+      
     }
-  }, []);
+  })();
+  return () => { mounted = false; };
+}, []);
 
   // 전역 alert 함수 설정
   useEffect(() => {
