@@ -38,11 +38,9 @@ export default function ObLang1() {
   const handleNext = async () => {
     if (window.confirm(`선택한 언어가 "${selected?.label}" 맞습니까?`)) {
       try {
-        await saveOnboardingStep2({
-          nativeLanguage: selected.value,
-          targetLanguage: '',
-          proficiencyLevel: '',
-          hasLevelTest: false
+        await saveLanguageInfo({
+          nativeLanguageId: selected.value,
+          
         });
         setNativeLanguage(selected?.label || ""); // zustand에 모국어 저장
         navigate("/onboarding-lang/2"); // 다음 단계로 이동 (라우팅 구조에 맞게 수정)
