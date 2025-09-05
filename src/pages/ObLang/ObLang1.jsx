@@ -7,6 +7,8 @@ import useLangInfoStore from "../../store/langInfoStore";
 import { useNavigate } from "react-router-dom";
 import commonSelectStyles from "../../components/SelectStyles";
 import { saveOnboardingStep2 } from "../../api/onboarding";
+import { saveLanguageInfo } from "../../api/onboarding";
+
 import api from "../../api";
 
 export default function ObLang1() {
