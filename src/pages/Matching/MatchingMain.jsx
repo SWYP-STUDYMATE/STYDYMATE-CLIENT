@@ -15,7 +15,7 @@ import CommonButton from '../../components/CommonButton';
 import MatchingProfileCard from '../../components/MatchingProfileCard';
 import FilterPanel from '../../components/FilterPanel';
 import useMatchingStore from '../../store/matchingStore';
-import { useToast } from '../../components/ErrorToast';
+import { useToast } from '../../hooks/useToast';
 
 export default function MatchingMain() {
     const navigate = useNavigate();

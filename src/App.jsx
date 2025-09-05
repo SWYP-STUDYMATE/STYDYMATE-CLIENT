@@ -83,16 +83,17 @@ useEffect(() => {
   if (!import.meta.env.DEV) return;
   let mounted = true;
   (async () => {
-    try {
-      const mod = await import('./api/mockApi'); 
-      if (!mounted) return;
-      const isMockMode = mod?.isMockMode ?? (() => false);
-      const showMockModeBanner = mod?.showMockModeBanner ?? (() => {});
-      if (isMockMode()) showMockModeBanner();
-    } catch (_) {
-      
-    }
-  })();
+  try {
+    const mod = await import('./api/mockApi');
+    if (!mounted) return;
+    const isMockMode = mod?.isMockMode ?? (() => false);
+    const showMockModeBanner = mod?.showMockModeBanner ?? (() => {});
+    if (isMockMode()) showMockModeBanner();
+  } catch (e) {
+    if (import.meta.env.DEV) console.warn('mockApi not found, skipping mock mode', e);
+  }
+})();
+
   return () => { mounted = false; };
 }, []);
 
