@@ -38,49 +38,88 @@ export default function OnboardingInfo3() {
   // 카메라 열기
   const handleCameraClick = async () => {
     try {
+      console.log('카메라 접근 시도...');
+      // 더 호환성 좋은 설정으로 시작
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { min: 320, ideal: 640, max: 1280 },
+          height: { min: 240, ideal: 480, max: 720 },
           facingMode: 'user' // 전면 카메라 사용
-        }
+        },
+        audio: false
       });
+      
+      console.log('카메라 스트림 획득 성공:', mediaStream);
       setStream(mediaStream);
       setIsCameraOpen(true);
       
-      // 비디오 요소에 스트림 연결
+      // 비디오 요소에 스트림 연결 및 재생 시작
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // 메타데이터 로드 후 재생 시작
+        videoRef.current.onloadedmetadata = () => {
+          console.log('비디오 메타데이터 로드 완료');
+          videoRef.current.play().then(() => {
+            console.log('비디오 재생 시작');
+          }).catch(err => {
+            console.error('비디오 재생 오류:', err);
+            showError('비디오 재생에 실패했습니다.');
+          });
+        };
       }
     } catch (error) {
       console.error('카메라 접근 실패:', error);
       if (error.name === 'NotAllowedError') {
-        showError('카메라 권한을 허용해주세요.');
+        showError('카메라 권한을 허용해주세요. 브라우저 설정에서 카메라 접근을 허용해야 합니다.');
       } else if (error.name === 'NotFoundError') {
-        showError('카메라를 찾을 수 없습니다.');
+        showError('카메라를 찾을 수 없습니다. 카메라가 연결되어 있는지 확인해주세요.');
+      } else if (error.name === 'NotReadableError') {
+        showError('카메라가 다른 앱에서 사용 중입니다.');
       } else {
-        showError('카메라를 열 수 없습니다.');
+        showError('카메라를 열 수 없습니다: ' + error.message);
       }
     }
   };
 
   // 사진 캡처
   const handleCapture = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      const context = canvas.getContext('2d');
-      
-      // 캔버스 크기를 비디오와 동일하게 설정
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      // 비디오 프레임을 캔버스에 그리기
+    console.log('캡처 버튼 클릭됨');
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('비디오 또는 캔버스 요소를 찾을 수 없음');
+      showError('카메라 화면을 찾을 수 없습니다.');
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    
+    // 비디오가 재생 중인지 확인
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      console.error('비디오가 준비되지 않음, readyState:', video.readyState);
+      showError('카메라가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    const context = canvas.getContext('2d');
+    
+    // 캔버스 크기를 비디오와 동일하게 설정
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    
+    console.log('캔버스 크기:', canvas.width, 'x', canvas.height);
+    console.log('비디오 크기:', video.videoWidth, 'x', video.videoHeight);
+    
+    // 비디오 프레임을 캔버스에 그리기
+    try {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      console.log('비디오 프레임 캔버스에 그리기 성공');
       
       // 캔버스를 Blob으로 변환
       canvas.toBlob((blob) => {
         if (blob) {
+          console.log('Blob 생성 성공, 크기:', blob.size);
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const file = new File([blob], `camera-photo-${timestamp}.jpg`, { type: 'image/jpeg' });
           setImageFile(file);
@@ -92,8 +131,14 @@ export default function OnboardingInfo3() {
           // 카메라 스트림 정리
           handleCameraClose();
           showSuccess('사진이 캡처되었습니다!');
+        } else {
+          console.error('Blob 생성 실패');
+          showError('사진 캡처에 실패했습니다.');
         }
       }, 'image/jpeg', 0.9);
+    } catch (error) {
+      console.error('캔버스 그리기 오류:', error);
+      showError('사진 캡처 중 오류가 발생했습니다.');
     }
   };
 
