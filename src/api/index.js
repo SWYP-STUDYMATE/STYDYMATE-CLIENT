@@ -76,7 +76,9 @@ api.interceptors.response.use(
           
           // refresh 요청은 별도 axios 인스턴스로 무한 루프 방지
           const refreshApi = axios.create({
-            baseURL: (import.meta.env.VITE_API_URL || "/api") + "/v1",
+            baseURL: import.meta.env.DEV 
+              ? "/api/v1"  // 개발환경: Vite proxy 사용
+              : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
           });
           
           const res = await refreshApi.post(
@@ -138,7 +140,9 @@ api.interceptors.response.use(
         
         // refresh 요청은 별도 axios 인스턴스로 무한 루프 방지
         const refreshApi = axios.create({
-          baseURL: (import.meta.env.VITE_API_URL || "/api") + "/v1",
+          baseURL: import.meta.env.DEV 
+            ? "/api/v1"  // 개발환경: Vite proxy 사용
+            : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
         });
         
         const res = await refreshApi.post(
