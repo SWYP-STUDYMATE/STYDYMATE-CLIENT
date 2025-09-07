@@ -10,7 +10,11 @@ import { useAlert } from "../../hooks/useAlert.jsx";
 export default function OnboardingInfo3() {
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null); // 실제 파일 저장용
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState(null);
   const fileInputRef = useRef();
+  const videoRef = useRef();
+  const canvasRef = useRef();
   const { setProfileImage, saveProfileToServer } = useProfileStore();
   const navigate = useNavigate();
   const { showError, showSuccess } = useAlert();
@@ -31,13 +35,84 @@ export default function OnboardingInfo3() {
     }
   };
 
-  // 카메라 촬영
-  const handleCameraClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.setAttribute('capture', 'environment');
-      fileInputRef.current.click();
+  // 카메라 열기
+  const handleCameraClick = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user' // 전면 카메라 사용
+        }
+      });
+      setStream(mediaStream);
+      setIsCameraOpen(true);
+      
+      // 비디오 요소에 스트림 연결
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      console.error('카메라 접근 실패:', error);
+      if (error.name === 'NotAllowedError') {
+        showError('카메라 권한을 허용해주세요.');
+      } else if (error.name === 'NotFoundError') {
+        showError('카메라를 찾을 수 없습니다.');
+      } else {
+        showError('카메라를 열 수 없습니다.');
+      }
     }
   };
+
+  // 사진 캡처
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const context = canvas.getContext('2d');
+      
+      // 캔버스 크기를 비디오와 동일하게 설정
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // 비디오 프레임을 캔버스에 그리기
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // 캔버스를 Blob으로 변환
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+          setImageFile(file);
+          
+          // 미리보기용 URL 생성
+          const imageUrl = URL.createObjectURL(blob);
+          setImage(imageUrl);
+          
+          // 카메라 스트림 정리
+          handleCameraClose();
+          showSuccess('사진이 캡처되었습니다!');
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  };
+
+  // 카메라 닫기
+  const handleCameraClose = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraOpen(false);
+  };
+
+  // 컴포넌트 언마운트 시 스트림 정리
+  React.useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   // 사진 선택
   const handleSelectPhoto = () => {
@@ -141,6 +216,56 @@ export default function OnboardingInfo3() {
           />
         </div>
       </div>
+
+      {/* 카메라 모달 */}
+      {isCameraOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[20px] w-full max-w-md mx-4 shadow-xl overflow-hidden">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between p-4 border-b border-[#E7E7E7]">
+              <h3 className="text-[18px] font-bold text-[#111111]">사진 촬영</h3>
+              <button
+                onClick={handleCameraClose}
+                className="p-2 hover:bg-[#F1F3F5] rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-[#929292]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 카메라 뷰 */}
+            <div className="relative">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-64 object-cover bg-black"
+              />
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+
+            {/* 촬영 버튼 */}
+            <div className="p-4">
+              <div className="flex justify-center space-x-4">
+                <CommonButton
+                  text="취소"
+                  variant="secondary"
+                  onClick={handleCameraClose}
+                  className="flex-1"
+                />
+                <CommonButton
+                  text="촬영"
+                  variant="primary"
+                  onClick={handleCapture}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
