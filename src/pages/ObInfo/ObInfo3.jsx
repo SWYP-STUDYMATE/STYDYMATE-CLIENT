@@ -81,7 +81,8 @@ export default function OnboardingInfo3() {
       // 캔버스를 Blob으로 변환
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const file = new File([blob], `camera-photo-${timestamp}.jpg`, { type: 'image/jpeg' });
           setImageFile(file);
           
           // 미리보기용 URL 생성

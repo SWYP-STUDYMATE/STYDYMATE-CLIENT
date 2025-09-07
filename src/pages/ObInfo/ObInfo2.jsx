@@ -10,7 +10,7 @@ import api from "../../api";
 import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo2() {
-  const { showError, confirmAction } = useAlert();
+  const { showError } = useAlert();
   const [locations, setLocations] = useState([]);
   const [selected, setSelected] = useState(null);
   const setResidence = useProfileStore((state) => state.setResidence);
@@ -40,20 +40,14 @@ export default function OnboardingInfo2() {
   const isButtonEnabled = !!selected;
 
   const handleNext = async () => {
-    confirmAction(
-      `선택한 거주지/시간대가 "${selected?.label}" 맞습니까?`,
-      async () => {
-        try {
-          await api.post("/user/location", { locationId: selected.value });
-          setResidence(selected.value);
-          navigate("/onboarding-info/3");
-        } catch (e) {
-          showError("거주지 저장에 실패했습니다.");
-          console.error(e);
-        }
-      },
-      "거주지 확인"
-    );
+    try {
+      await api.post("/user/location", { locationId: selected.value });
+      setResidence(selected.value);
+      navigate("/onboarding-info/3");
+    } catch (e) {
+      showError("거주지 저장에 실패했습니다.");
+      console.error(e);
+    }
   };
 
   return (

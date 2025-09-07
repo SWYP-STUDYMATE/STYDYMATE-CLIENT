@@ -1,0 +1,160 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { splitVendorChunkPlugin } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    splitVendorChunkPlugin(),
+    
+    // 번들 분석기 (빌드 시에만 활성화)
+    process.env.ANALYZE === 'true' && visualizer({
+      filename: 'dist/bundle-analysis.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ].filter(Boolean),
+
+  build: {
+    // 소스맵 생성 (프로덕션에서는 false로 설정)
+    sourcemap: process.env.NODE_ENV !== 'production',
+    
+    // 청크 크기 제한 (KB 단위)
+    chunkSizeWarningLimit: 1000,
+    
+    rollupOptions: {
+      output: {
+        // 청크 분할 최적화
+        manualChunks: {
+          // 벤더 라이브러리들을 별도 청크로 분리
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['lucide-react', '@headlessui/react'],
+          'vendor-utils': ['axios', 'zustand', 'jwt-decode'],
+          'vendor-socket': ['sockjs-client', '@stomp/stompjs'],
+          
+          // 큰 라이브러리들을 개별 청크로 분리
+          'emoji-picker': ['emoji-picker-react'],
+          'charts': ['recharts'],
+          'date-utils': ['date-fns'],
+          
+          // 페이지별 청크 (필요시 활성화)
+          // 'pages-main': ['./src/pages/Main.jsx'],
+          // 'pages-chat': ['./src/pages/Chat/ChatPage.jsx'],
+          // 'pages-analytics': ['./src/pages/Analytics/AnalyticsPage.jsx'],
+        },
+        
+        // 청크 파일명 최적화
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop().replace('.jsx', '').replace('.js', '')
+            : 'chunk';
+          
+          return `js/${facadeModuleId}-[hash].js`;
+        },
+        
+        // 에셋 파일명 최적화
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
+            return `images/[name]-[hash].${ext}`;
+          }
+          
+          if (/\.(css)$/i.test(assetInfo.name)) {
+            return `css/[name]-[hash].${ext}`;
+          }
+          
+          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
+            return `fonts/[name]-[hash].${ext}`;
+          }
+          
+          return `assets/[name]-[hash].${ext}`;
+        },
+        
+        // 엔트리 파일명
+        entryFileNames: 'js/[name]-[hash].js',
+      },
+    },
+    
+    // 압축 최적화
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: process.env.NODE_ENV === 'production',
+        drop_debugger: true,
+        pure_funcs: process.env.NODE_ENV === 'production' ? ['console.log', 'console.info'] : [],
+      },
+    },
+    
+    // CSS 코드 분할
+    cssCodeSplit: true,
+  },
+
+  // 개발 서버 최적화
+  server: {
+    // HMR 최적화
+    hmr: {
+      overlay: true,
+    },
+    // 미들웨어 모드에서 파일 시스템 캐시 최적화
+    fs: {
+      cachedChecks: false,
+    },
+  },
+
+  // 의존성 최적화
+  optimizeDeps: {
+    // 사전 번들링할 의존성들
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'axios',
+      'zustand',
+      'jwt-decode',
+    ],
+    
+    // 사전 번들링에서 제외할 의존성들
+    exclude: [
+      // 큰 라이브러리들은 동적 import로 처리
+      'emoji-picker-react',
+      'recharts',
+    ],
+  },
+
+  // 환경변수 정의
+  define: {
+    // 빌드 시점에 교체될 전역 상수들
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+  },
+
+  // 에일리어스 설정
+  resolve: {
+    alias: {
+      '@': '/src',
+      '@components': '/src/components',
+      '@pages': '/src/pages',
+      '@hooks': '/src/hooks',
+      '@utils': '/src/utils',
+      '@services': '/src/services',
+      '@store': '/src/store',
+      '@api': '/src/api',
+      '@styles': '/src/styles',
+    },
+  },
+});
+
+// 개발 환경에서의 추가 최적화
+if (process.env.NODE_ENV === 'development') {
+  // 개발 환경 전용 설정
+}
+
+// 프로덕션 환경에서의 추가 최적화
+if (process.env.NODE_ENV === 'production') {
+  // 프로덕션 환경 전용 설정
+}

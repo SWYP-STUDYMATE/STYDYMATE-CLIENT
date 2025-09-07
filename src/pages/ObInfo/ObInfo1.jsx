@@ -12,7 +12,7 @@ export default function OnboardingInfo() {
   const [inputValue, setInputValue] = useState("");
   const [hasInvalidInput, setHasInvalidInput] = useState(false);
   const navigate = useNavigate();
-  const { showError, confirmAction } = useAlert();
+  const { showError } = useAlert();
 
   // 영어만 입력 허용 (공백 포함)
   const handleChange = (e) => {
@@ -45,26 +45,20 @@ export default function OnboardingInfo() {
       return;
     }
 
-    confirmAction(
-      `입력한 이름이 "${trimmedName}" 맞습니까?`,
-      async () => {
-        try {
-          await saveOnboardingStep1({
-            englishName: trimmedName,
-            residence: '',
-            profileImage: null,
-            intro: ''
-          });
-          setEnglishName(trimmedName);
-          navigate("/onboarding-info/2");
-          console.log("온보딩 1단계 저장 완료:", trimmedName);
-        } catch (e) {
-          showError("영어 이름 저장에 실패했습니다.");
-          console.error(e);
-        }
-      },
-      "이름 확인"
-    );
+    try {
+      await saveOnboardingStep1({
+        englishName: trimmedName,
+        residence: '',
+        profileImage: null,
+        intro: ''
+      });
+      setEnglishName(trimmedName);
+      navigate("/onboarding-info/2");
+      console.log("온보딩 1단계 저장 완료:", trimmedName);
+    } catch (e) {
+      showError("영어 이름 저장에 실패했습니다.");
+      console.error(e);
+    }
   };
 
   return (

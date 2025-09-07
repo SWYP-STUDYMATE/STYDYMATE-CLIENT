@@ -6,7 +6,6 @@ import { ToastManager } from './components/Toast';
 import NotificationToastManager from './components/NotificationToastManager';
 import ServerStatusIndicator from './components/ServerStatusIndicator';
 import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx';
-import { isMockMode, showMockModeBanner } from './api/mockApi';
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect } from 'react';
@@ -71,12 +70,6 @@ const MatesPage = lazyLoad(() => import('./pages/Mates/MatesPage'));
 function AppContent() {
   const alertHook = useAlert();
 
-  // Mock 모드 배너를 전역적으로 적용
-  useEffect(() => {
-    if (isMockMode()) {
-      showMockModeBanner();
-    }
-  }, []);
 
   // 전역 alert 함수 설정
   useEffect(() => {

@@ -5,7 +5,6 @@ import {
 } from 'recharts';
 import { Users, Heart, TrendingUp, Clock, Target, UserCheck } from 'lucide-react';
 import { getMatchingStats, generateMockAnalyticsData } from '../../api/analytics';
-import { isMockMode } from '../../api/mockApi';
 
 const MatchingStatsChart = ({ timeRange = 'month' }) => {
   const [matchingData, setMatchingData] = useState(null);
@@ -22,12 +21,8 @@ const MatchingStatsChart = ({ timeRange = 'month' }) => {
     try {
       let data;
       
-      if (isMockMode()) {
-        data = generateMockMatchingStats();
-      } else {
-        const response = await getMatchingStats(timeRange);
-        data = transformMatchingData(response);
-      }
+      const response = await getMatchingStats(timeRange);
+      data = transformMatchingData(response);
       
       setMatchingData(data);
     } catch (error) {

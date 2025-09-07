@@ -5,7 +5,6 @@ import {
 } from 'recharts';
 import { Calendar, TrendingUp, Award, Target } from 'lucide-react';
 import { getLevelTestHistory, generateMockAnalyticsData } from '../../api/analytics';
-import { isMockMode } from '../../api/mockApi';
 
 const LevelTestHistoryChart = ({ timeRange = 'year' }) => {
   const [historyData, setHistoryData] = useState(null);
@@ -22,12 +21,8 @@ const LevelTestHistoryChart = ({ timeRange = 'year' }) => {
     try {
       let data;
       
-      if (isMockMode()) {
-        data = generateMockLevelTestHistory();
-      } else {
-        const response = await getLevelTestHistory();
-        data = transformLevelTestData(response);
-      }
+      const response = await getLevelTestHistory();
+      data = transformLevelTestData(response);
       
       setHistoryData(data);
     } catch (error) {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getStudyStats, generateMockAnalyticsData } from '../api/analytics';
-import { isMockMode } from '../api/mockApi';
 
 const StudyStats = ({ data = null, loading = false }) => {
   const [statsData, setStatsData] = useState(null);
@@ -25,12 +24,8 @@ const StudyStats = ({ data = null, loading = false }) => {
     try {
       let analyticsData;
       
-      if (isMockMode()) {
-        analyticsData = generateMockAnalyticsData();
-      } else {
-        const response = await getStudyStats('month'); // 월간 통계 조회
-        analyticsData = transformStatsData(response);
-      }
+      const response = await getStudyStats('month'); // 월간 통계 조회
+      analyticsData = transformStatsData(response);
       
       setStatsData(analyticsData);
     } catch (error) {

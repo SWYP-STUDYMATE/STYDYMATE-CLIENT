@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { getSessionActivity, generateMockAnalyticsData } from '../../api/analytics';
-import { isMockMode } from '../../api/mockApi';
 
 export default function WeeklyActivityChart({ data = null, loading = false }) {
     const [chartData, setChartData] = useState(null);
@@ -26,13 +25,8 @@ export default function WeeklyActivityChart({ data = null, loading = false }) {
         try {
             let weeklyData;
             
-            if (isMockMode()) {
-                const mockData = generateMockAnalyticsData();
-                weeklyData = transformWeeklyData(mockData.sessionStats);
-            } else {
-                const response = await getSessionActivity('week');
-                weeklyData = transformWeeklyData(response?.metrics?.dailyStats || []);
-            }
+            const response = await getSessionActivity('week');
+            weeklyData = transformWeeklyData(response?.metrics?.dailyStats || []);
             
             setChartData(weeklyData);
         } catch (error) {

@@ -1,14 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Login from '../../pages/Login/Login';
-import * as mockApi from '../../api/mockApi';
 import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest';
 
-// Mock modules
-vi.mock('../../api/mockApi', () => ({
-  isMockMode: vi.fn(),
-  showMockModeBanner: vi.fn()
-}));
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -49,7 +43,6 @@ describe('Login Component', () => {
     vi.clearAllMocks();
     mockLocation.href = '';
     mockLocalStorage.getItem.mockReturnValue(null);
-    mockApi.isMockMode.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -179,23 +172,6 @@ describe('Login Component', () => {
     expect(googleButton).toHaveClass('bg-[#F1F3F5]', 'text-[#929292]', 'cursor-not-allowed');
   });
 
-  test('Mock 모드일 때 자동으로 메인 페이지로 이동한다', async () => {
-    mockApi.isMockMode.mockReturnValue(true);
-
-    render(
-      <TestWrapper>
-        <Login />
-      </TestWrapper>
-    );
-
-    await waitFor(() => {
-      expect(mockApi.showMockModeBanner).toHaveBeenCalled();
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('accessToken', expect.stringContaining('mock-access-token-'));
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('refreshToken', expect.stringContaining('mock-refresh-token-'));
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('mockCurrentUser', '0');
-      expect(mockNavigate).toHaveBeenCalledWith('/main', { replace: true });
-    });
-  });
 
   test('기존 토큰이 있을 때 메인 페이지로 자동 이동한다', async () => {
     mockLocalStorage.getItem.mockReturnValue('existing-token');

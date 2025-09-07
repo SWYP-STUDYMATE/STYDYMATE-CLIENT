@@ -15,7 +15,6 @@ import {
   generateMockAnalyticsData,
   connectToMetricsStream 
 } from '../../api/analytics';
-import { isMockMode } from '../../api/mockApi';
 import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
 import LevelTestHistoryChart from '../../components/analytics/LevelTestHistoryChart';
 import MatchingStatsChart from '../../components/analytics/MatchingStatsChart';
@@ -36,19 +35,14 @@ const AnalyticsPage = () => {
     try {
       let data;
       
-      // Mock 모드인 경우 Mock 데이터 사용
-      if (isMockMode()) {
-        data = generateMockAnalyticsData();
-      } else {
-        // 실제 API에서 데이터 로드
-        const [studyStatsResponse, sessionActivityResponse] = await Promise.all([
-          getStudyStats(timeRange),
-          getSessionActivity(timeRange)
-        ]);
-        
-        // API 응답을 컴포넌트에서 사용하는 형태로 변환
-        data = transformApiDataToAnalyticsData(studyStatsResponse, sessionActivityResponse);
-      }
+      // 실제 API에서 데이터 로드
+      const [studyStatsResponse, sessionActivityResponse] = await Promise.all([
+        getStudyStats(timeRange),
+        getSessionActivity(timeRange)
+      ]);
+      
+      // API 응답을 컴포넌트에서 사용하는 형태로 변환
+      data = transformApiDataToAnalyticsData(studyStatsResponse, sessionActivityResponse);
       
       setAnalyticsData(data);
     } catch (error) {
