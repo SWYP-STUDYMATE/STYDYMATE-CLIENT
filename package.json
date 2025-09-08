@@ -60,7 +60,7 @@
     "postcss": "^8.5.6",
     "rollup-plugin-visualizer": "^6.0.3",
     "terser": "^5.43.1",
-    "vite": "^7.0.4",
+    "vite": "^7.1.4",
     "vite-plugin-pwa": "^1.0.2",
     "vitest": "^3.2.4",
     "web-vitals": "^5.1.0"
