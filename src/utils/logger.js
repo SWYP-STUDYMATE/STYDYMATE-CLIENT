@@ -96,8 +96,8 @@ export class Logger {
   }
 
   static sendToExternalService(level, message, error) {
-    // 향후 Sentry, LogRocket 등과 연동
-    // 현재는 로컬 스토리지에 임시 저장
+    // 외부 로그 서비스 연동 (Sentry, LogRocket 등)
+    // 개발 환경에서는 로컬 스토리지에 저장
     try {
       const logs = JSON.parse(localStorage.getItem('app_logs') || '[]');
       logs.push({

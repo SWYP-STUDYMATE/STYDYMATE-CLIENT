@@ -203,7 +203,7 @@ export function useFileUpload(options = {}) {
  */
 export function useImageUpload(options = {}) {
   const uploadHook = useFileUpload(options);
-  const WORKERS_API_URL = import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev';
+  const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
 
   const uploadImage = useCallback(async (file, type = 'general', metadata = {}) => {
     const formData = new FormData();
@@ -228,7 +228,7 @@ export function useImageUpload(options = {}) {
  */
 export function useAudioUpload(options = {}) {
   const uploadHook = useFileUpload(options);
-  const WORKERS_API_URL = import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev';
+  const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
 
   const uploadAudio = useCallback(async (file, folder = 'general', metadata = {}) => {
     const formData = new FormData();

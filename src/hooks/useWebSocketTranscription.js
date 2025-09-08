@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { log } from '../utils/logger';
 
-const WS_URL = import.meta.env.VITE_WORKERS_WS_URL || 'wss://studymate-api.wjstks3474.workers.dev';
+const WS_URL = import.meta.env.VITE_WORKERS_WS_URL || 'wss://workers.languagemate.kr/ws';
 
 export function useWebSocketTranscription({
   language = 'auto',

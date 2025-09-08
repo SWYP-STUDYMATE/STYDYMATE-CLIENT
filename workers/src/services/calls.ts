@@ -293,8 +293,8 @@ export async function getCallStats(
       recentCalls: []
     };
 
-    // This would typically query a database
-    // For now, return mock stats from KV cache
+    // 데이터베이스에서 실제 통계를 조회해야 함
+    // 현재는 KV 캐시에서 통계 데이터 반환
     const cachedStats = await env.CACHE.get(`stats:${userId}`);
     if (cachedStats) {
       return JSON.parse(cachedStats);

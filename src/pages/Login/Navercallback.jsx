@@ -9,6 +9,9 @@ export default function Navercallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("🔍 네이버 콜백 페이지 로드됨");
+    console.log("🔍 현재 URL:", window.location.href);
+    
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get("accessToken");
     const refreshToken = params.get("refreshToken");
@@ -18,15 +21,16 @@ export default function Navercallback() {
     const errorDescription = params.get("error_description");
 
     // 콘솔로 토큰과 기타 파라미터들 찍기
-    console.log("네이버 콜백 accessToken:", accessToken);
-    console.log("네이버 콜백 refreshToken:", refreshToken);
-    console.log("네이버 콜백 code:", code);
-    console.log("네이버 콜백 state:", state);
+    console.log("🔍 네이버 콜백 accessToken:", accessToken);
+    console.log("🔍 네이버 콜백 refreshToken:", refreshToken);
+    console.log("🔍 네이버 콜백 code:", code);
+    console.log("🔍 네이버 콜백 state:", state);
     
     if (error) {
-      console.log("네이버 콜백 error:", error, errorDescription);
+      console.log("🔍 네이버 콜백 error:", error, errorDescription);
       setMessage("네이버 로그인 실패: " + (errorDescription || error));
     } else if (accessToken && refreshToken) {
+      console.log("🔍 토큰이 URL 파라미터로 전달됨, 처리 시작");
       // 백엔드에서 토큰을 직접 전달받은 경우
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
@@ -62,7 +66,8 @@ export default function Navercallback() {
             }
           }, 2000);
         } catch (e) {
-          console.error("유저 정보 불러오기 실패:", e);
+          console.error("🔍 유저 정보 불러오기 실패:", e);
+          console.error("🔍 에러 상세:", e.response?.data, e.message);
           setMessage("로그인 완료되었지만 사용자 정보를 가져오지 못했습니다.");
           setTimeout(() => {
             navigate("/agreement", { replace: true });
@@ -133,6 +138,16 @@ export default function Navercallback() {
         }
       };
       fetchTokens();
+    } else {
+      console.log("🔍 어떤 조건도 만족하지 않음");
+      console.log("🔍 조건 체크:");
+      console.log("  error:", !!error);
+      console.log("  accessToken && refreshToken:", !!(accessToken && refreshToken));
+      console.log("  code && state:", !!(code && state));
+      setMessage("오류가 발생했습니다. 다시 시도해주세요.");
+      setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 3000);
     }
   }, [navigate]);
 

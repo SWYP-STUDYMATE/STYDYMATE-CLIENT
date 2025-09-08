@@ -44,7 +44,7 @@ const useProfileStore = create(
           return profileData;
         } catch (error) {
           log.warn('서버 프로필 로드 실패', error, 'PROFILE_STORE');
-          // Mock 모드나 서버 오류 시 기본값 유지
+          // 서버 오류 시 기본값 유지
           return null;
         }
       },

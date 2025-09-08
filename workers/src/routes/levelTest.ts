@@ -288,20 +288,32 @@ levelTestRoutes.post('/submit', async (c) => {
       initial_prompt: TEST_QUESTIONS[qNum - 1].text
     });
 
-    // 임시 저장
+    // 레벨 테스트 진행상황 저장
     const progressKey = `level-test-progress:${userId}`;
     const progress = await c.env.CACHE.get(progressKey);
-    const progressData = progress ? JSON.parse(progress) : { answers: [] };
+    const progressData = progress ? JSON.parse(progress) : { 
+      userId,
+      startedAt: new Date().toISOString(),
+      answers: [],
+      totalQuestions: TEST_QUESTIONS.length
+    };
 
     progressData.answers[qNum - 1] = {
       questionNumber: qNum,
       audioKey,
       transcription: transcription.text,
-      timestamp: new Date().toISOString()
+      confidence: (transcription as any).confidence || 0,
+      answeredAt: new Date().toISOString()
     };
 
+    // 진행률 계산
+    const answeredCount = progressData.answers.filter((a: any) => a).length;
+    progressData.progress = (answeredCount / TEST_QUESTIONS.length) * 100;
+    progressData.lastUpdated = new Date().toISOString();
+
+    // 캐시에 저장 (24시간 유지)
     await c.env.CACHE.put(progressKey, JSON.stringify(progressData), {
-      expirationTtl: 86400 // 24시간
+      expirationTtl: 86400
     });
 
     return successResponse(c, {

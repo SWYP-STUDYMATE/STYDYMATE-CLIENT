@@ -71,19 +71,25 @@ export default function ObLang2() {
   };
 
   const handleNext = async () => {
-    setOtherLanguages(validPairs);
-    
     // API 호출을 위한 데이터 준비
     const requestData = {
       languages: validPairs.map(pair => ({
         languageId: pair.language.value,
-        langLevelTypeId: pair.level.value
+        currentLevelId: pair.level.value,
+        targetLevelId: pair.level.value // 현재 레벨과 동일하게 설정
       }))
     };
 
+
     try {
-      await api.post("/onboard/language/language-level", requestData);
-      console.log("언어 레벨 데이터 전송 성공");
+      const response = await api.post("/onboard/language/language-level", requestData);
+      // 로컬 상태만 업데이트 (서버 호출 없이)
+      setOtherLanguages(validPairs.map(pair => ({
+        id: pair.language.value,
+        name: pair.language.label,
+        level: pair.level.label
+      })));
+      
       navigate("/onboarding-lang/3");
     } catch (error) {
       console.error("언어 레벨 데이터 전송 실패:", error);

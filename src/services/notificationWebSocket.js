@@ -76,10 +76,10 @@ class NotificationWebSocketService {
     this.subscribe('/user/queue/notifications', this.handlePersonalNotification.bind(this));
     
     // 시스템 알림 구독
-    this.subscribe('/topic/system-notifications', this.handleSystemNotification.bind(this));
+    this.subscribe('/sub/system-notifications', this.handleSystemNotification.bind(this));
     
     // 긴급 알림 구독
-    this.subscribe('/topic/urgent-notifications', this.handleUrgentNotification.bind(this));
+    this.subscribe('/sub/urgent-notifications', this.handleUrgentNotification.bind(this));
     
     // 매칭 관련 알림 구독
     this.subscribe('/user/queue/matching-notifications', this.handleMatchingNotification.bind(this));
@@ -290,7 +290,7 @@ class NotificationWebSocketService {
     }
 
     this.client.publish({
-      destination: '/app/notifications/mark-read',
+      destination: '/pub/notifications/mark-read',
       body: JSON.stringify({ notificationId })
     });
   }
@@ -303,7 +303,7 @@ class NotificationWebSocketService {
     }
 
     this.client.publish({
-      destination: '/app/notifications/update-settings',
+      destination: '/pub/notifications/update-settings',
       body: JSON.stringify(settings)
     });
   }

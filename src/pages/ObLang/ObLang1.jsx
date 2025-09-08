@@ -22,11 +22,13 @@ export default function ObLang1() {
   useEffect(() => {
     api.get("/onboard/language/languages")
       .then(res => {
+        console.log("🔍 언어 API 응답:", res.data);
         // [{ languageId, languageName }, ...] -> [{ value, label }, ...]
         const options = (res.data || []).map(lang => ({
           value: lang.languageId,
           label: lang.languageName
         }));
+        console.log("🔍 변환된 언어 옵션:", options);
         setLanguageOptions(options);
       })
       .catch(err => {
@@ -38,16 +40,31 @@ export default function ObLang1() {
   const isButtonEnabled = !!selected;
 
   const handleNext = async () => {
+    console.log("🔍 handleNext 호출됨");
+    console.log("🔍 선택된 언어:", selected);
+    console.log("🔍 selected.value:", selected?.value);
+    console.log("🔍 selected.value 타입:", typeof selected?.value);
+    
+    if (!selected || !selected.value || selected.value <= 0) {
+      alert("유효한 언어를 선택해주세요.");
+      return;
+    }
+    
     try {
+      console.log("🔍 saveLanguageInfo 호출 - nativeLanguageId:", selected.value);
       await saveLanguageInfo({
         nativeLanguageId: selected.value,
         
       });
-      setNativeLanguage(selected?.label || ""); // zustand에 모국어 저장
+      // zustand에 언어 ID와 라벨 모두 저장 (서버 호출 없이)
+      setNativeLanguage({
+        id: selected.value,
+        name: selected.label
+      });
       navigate("/onboarding-lang/2"); // 다음 단계로 이동 (라우팅 구조에 맞게 수정)
     } catch (e) {
+      console.error("🔍 모국어 저장 실패:", e);
       alert("모국어 저장에 실패했습니다.");
-      console.error(e);
     }
   };
      

@@ -299,17 +299,29 @@ uploadRoutes.post('/presigned-url', auth(), async (c) => {
   const user = getCurrentUser(c)!;
   const key = generateFileKey(type, user.id, fileName);
 
-  // In production, generate a presigned URL for direct upload to R2
-  // This is a placeholder response
-  return successResponse(c, {
-    uploadUrl: `/api/v1/upload/${type}`,
-    key,
-    method: 'POST',
-    fields: {
+  // R2를 위한 presigned URL 생성 - R2는 presigned URL을 직접 지원하지 않으므로 Worker 업로드 URL 반환
+  try {
+    // R2는 AWS S3와 달리 presigned URL을 직접 제공하지 않음
+    // 대신 Worker를 통한 업로드 엔드포인트 제공
+    const uploadUrl = `/api/v1/upload/${type}`;
+    
+    return successResponse(c, {
+      uploadUrl,
       key,
-      fileName,
-      fileType
-    },
-    expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
-  });
+      method: 'POST', // Worker 엔드포인트는 POST 메서드 사용
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      fields: {
+        key,
+        fileName,
+        fileType,
+        type
+      },
+      expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+    });
+  } catch (error) {
+    console.error('Upload URL generation failed:', error);
+    throw validationError('Failed to generate upload URL');
+  }
 });

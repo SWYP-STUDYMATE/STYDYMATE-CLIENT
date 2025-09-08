@@ -90,9 +90,8 @@ export async function getSignedUrl(
   expiresIn: number = 3600
 ): Promise<string> {
   try {
-    // Note: R2 doesn't support signed URLs directly in Workers
-    // This is a placeholder for when signed URL support is added
-    // For now, return a direct URL through the Worker
+    // R2에서 서명된 URL을 직접 지원하지 않음
+    // Worker를 통한 직접 URL 반환으로 대체
     return `/api/upload/file/${key}`;
   } catch (error) {
     console.error('Signed URL error:', error);

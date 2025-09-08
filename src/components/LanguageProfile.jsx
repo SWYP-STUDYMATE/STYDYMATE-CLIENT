@@ -44,8 +44,8 @@ const LanguageProfile = ({ showEditButton = true }) => {
   );
 
   const handleEdit = () => {
-    // 임시: 온보딩인포 1페이지로 이동
-    navigate('/onboarding-info/1');
+    // 프로필 편집 페이지로 이동
+    navigate('/profile');
   };
 
   return (

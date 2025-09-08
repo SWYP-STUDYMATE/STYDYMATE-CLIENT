@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const WHISPER_API_URL = import.meta.env.VITE_WORKERS_URL || 'https://studymate-api.wjstks3474.workers.dev';
+const WHISPER_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
 
 export function useWhisper() {
   const [loading, setLoading] = useState(false);

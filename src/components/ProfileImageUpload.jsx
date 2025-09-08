@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, Camera, X, Loader2 } from 'lucide-react';
-import { uploadProfileImage, deleteProfileImage, validateFile, getFileUrl } from '../api/profile';
+import { uploadProfileImage } from '../api/user';
+import { deleteProfileImage, validateFile, getFileUrl } from '../api/profile';
 import useProfileStore from '../store/profileStore';
 
 export default function ProfileImageUpload({ isOpen, onClose }) {
@@ -99,29 +100,21 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
         });
       }, 200);
 
-      // Workers API를 통한 이미지 업로드
-      const result = await uploadProfileImage(selectedFile, {
-        uploadedAt: new Date().toISOString(),
-        source: 'profile-upload'
-      });
+      // Spring Boot API로 직접 파일 업로드
+      const result = await uploadProfileImage(selectedFile);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      // 완전한 이미지 URL 생성
-      const imageUrl = getFileUrl(result.key);
-      console.log('✅ 업로드 완료, 이미지 URL:', imageUrl);
+      console.log('✅ 프로필 이미지 업로드 완료:', result);
 
-      // 로컬 스토어에 이미지 URL 저장
-      setProfileImage(imageUrl);
-
-      try {
-        // 서버에 프로필 이미지 저장 (Spring Boot API)
-        await saveProfileToServer({ profileImage: imageUrl });
-        console.log('✅ 프로필 이미지 서버 저장 성공');
-      } catch (serverError) {
-        console.warn('⚠️ 서버 프로필 저장 실패, 로컬만 업데이트:', serverError);
-        // 로컬 상태는 이미 업데이트되었으므로 사용자에게는 성공으로 보임
+      // 서버에서 반환된 이미지 URL 사용 (ProfileImageUrlResponse.url)
+      const imageUrl = result.url || result.data?.url;
+      if (imageUrl) {
+        setProfileImage(imageUrl);
+        console.log('✅ 프로필 이미지 URL 저장 성공:', imageUrl);
+      } else {
+        console.warn('⚠️ 서버 응답에 이미지 URL이 없습니다:', result);
       }
 
       // 성공 후 모달 닫기

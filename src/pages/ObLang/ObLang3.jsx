@@ -69,32 +69,31 @@ export default function ObLang3() {
   };
 
   const handleNext = async () => {
-    setWantedLanguages && setWantedLanguages(validPairs);
-    
-    // ObLang2에서 저장된 데이터와 함께 전체 데이터 전송
-    const otherLanguages = useLangInfoStore.getState().otherLanguages;
-    
+    // 목표 언어 저장 (배우고 싶은 언어) - API 호출
     const requestData = {
-      languages: [
-        // 할 줄 아는 언어들
-        ...otherLanguages.map(pair => ({
-          languageId: pair.language.value,
-          langLevelTypeId: pair.level.value
-        })),
-        // 배우고 싶은 언어들
-        ...validPairs.map(pair => ({
-          languageId: pair.language.value,
-          langLevelTypeId: pair.level.value
-        }))
-      ]
+      languages: validPairs.map(pair => ({
+        languageId: pair.language.value,
+        currentLevelId: 1, // 초급 레벨로 설정 (배우고 싶은 언어이므로)
+        targetLevelId: pair.level.value // 원하는 파트너 레벨
+      }))
     };
 
     try {
       await api.post("/onboard/language/language-level", requestData);
-      console.log("언어 레벨 데이터 전송 성공");
+      console.log("목표 언어 데이터 전송 성공");
+      
+      // 로컬 상태만 업데이트 (서버 호출 없이)
+      if (setWantedLanguages) {
+        setWantedLanguages(validPairs.map(pair => ({
+          id: pair.language.value,
+          name: pair.language.label,
+          level: pair.level.label
+        })));
+      }
+      
       navigate("/onboarding-lang/complete");
     } catch (error) {
-      console.error("언어 레벨 데이터 전송 실패:", error);
+      console.error("목표 언어 데이터 전송 실패:", error);
       alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
     }
   };

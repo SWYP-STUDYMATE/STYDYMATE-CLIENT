@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
 const useLangInfoStore = create(
   persist(
     (set, get) => ({
-      nativeLanguage: "", // 모국어
+      nativeLanguage: null, // { id, name } 형태로 저장
       otherLanguages: [], // [{ language, level }]
       wantedLanguages: [], // [{ language, level }]
       
@@ -27,44 +27,22 @@ const useLangInfoStore = create(
         }
       },
       
-      // 모국어 설정 (서버 동기화)
-      setNativeLanguage: async (language) => {
-        try {
-          const { saveLanguageInfo } = await import('../api/onboarding.js');
-          await saveLanguageInfo({ 
-            nativeLanguageId: language,
-            targetLanguages: get().wantedLanguages 
-          });
-          set({ nativeLanguage: language });
-        } catch (error) {
-          console.error('Failed to save native language:', error);
-          // 로컬에만 저장 (fallback)
-          set({ nativeLanguage: language });
-        }
+      // 모국어 설정 (로컬 상태만 업데이트, 서버 호출은 컴포넌트에서 처리)
+      setNativeLanguage: (language) => {
+        set({ nativeLanguage: language });
       },
       
       // 기타 언어 설정
       setOtherLanguages: (languages) => set({ otherLanguages: languages }),
       
-      // 목표 언어 설정 (서버 동기화)
-      setWantedLanguages: async (languages) => {
-        try {
-          const { saveLanguageInfo } = await import('../api/onboarding.js');
-          await saveLanguageInfo({
-            nativeLanguageId: get().nativeLanguage,
-            targetLanguages: languages
-          });
-          set({ wantedLanguages: languages });
-        } catch (error) {
-          console.error('Failed to save wanted languages:', error);
-          // 로컬에만 저장 (fallback)
-          set({ wantedLanguages: languages });
-        }
+      // 목표 언어 설정 (로컬 상태만 업데이트, 서버 호출은 컴포넌트에서 처리)
+      setWantedLanguages: (languages) => {
+        set({ wantedLanguages: languages });
       },
       
       // 언어 정보 초기화
       clearLanguageInfo: () => set({
-        nativeLanguage: "",
+        nativeLanguage: null,
         otherLanguages: [],
         wantedLanguages: []
       }),

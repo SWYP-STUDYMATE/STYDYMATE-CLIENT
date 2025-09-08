@@ -36,7 +36,7 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
       icon: MessageSquare,
       path: '/chat',
       description: '실시간 채팅',
-      badge: '2' // 임시 알림 배지
+      badge: null // 실제 알림 수는 API에서 가져와야 함
     },
     {
       id: 'matching',

@@ -1,31 +1,34 @@
 import api from './index.js';
 
-// 네이버 OAuth 로그인
-export const naverLogin = async (code, state) => {
-  try {
-    const response = await api.post('/auth/oauth/naver', {
-      code,
-      state
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Naver login error:', error);
-    throw error;
-  }
-};
+// OAuth 로그인 함수들은 실제로 사용되지 않음 - window.location.href로 직접 리다이렉트
+// 아래 함수들은 향후 필요시 활용할 수 있도록 주석 처리
 
-// Google OAuth 로그인
-export const googleLogin = async (code) => {
-  try {
-    const response = await api.post('/auth/oauth/google', {
-      code
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Google login error:', error);
-    throw error;
-  }
-};
+// // 네이버 OAuth 로그인 (현재 미사용)
+// export const naverLogin = async (code, state) => {
+//   try {
+//     const response = await api.post('/auth/oauth/naver', {
+//       code,
+//       state
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error('Naver login error:', error);
+//     throw error;
+//   }
+// };
+
+// // Google OAuth 로그인 (현재 미사용)
+// export const googleLogin = async (code) => {
+//   try {
+//     const response = await api.post('/auth/oauth/google', {
+//       code
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error('Google login error:', error);
+//     throw error;
+//   }
+// };
 
 // 토큰 새로고침
 export const refreshAccessToken = async (refreshToken) => {

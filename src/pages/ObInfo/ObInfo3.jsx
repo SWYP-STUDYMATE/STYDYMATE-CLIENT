@@ -52,22 +52,6 @@ export default function OnboardingInfo3() {
       console.log('카메라 스트림 획득 성공:', mediaStream);
       setStream(mediaStream);
       setIsCameraOpen(true);
-      
-      // 비디오 요소에 스트림 연결 및 재생 시작
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        
-        // 메타데이터 로드 후 재생 시작
-        videoRef.current.onloadedmetadata = () => {
-          console.log('비디오 메타데이터 로드 완료');
-          videoRef.current.play().then(() => {
-            console.log('비디오 재생 시작');
-          }).catch(err => {
-            console.error('비디오 재생 오류:', err);
-            showError('비디오 재생에 실패했습니다.');
-          });
-        };
-      }
     } catch (error) {
       console.error('카메라 접근 실패:', error);
       if (error.name === 'NotAllowedError') {
@@ -84,10 +68,10 @@ export default function OnboardingInfo3() {
 
   // 사진 캡처
   const handleCapture = () => {
-    console.log('캡처 버튼 클릭됨');
+    console.log('📸 캡처 버튼 클릭됨');
     
     if (!videoRef.current || !canvasRef.current) {
-      console.error('비디오 또는 캔버스 요소를 찾을 수 없음');
+      console.error('❌ 비디오 또는 캔버스 요소를 찾을 수 없음');
       showError('카메라 화면을 찾을 수 없습니다.');
       return;
     }
@@ -95,10 +79,27 @@ export default function OnboardingInfo3() {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     
-    // 비디오가 재생 중인지 확인
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-      console.error('비디오가 준비되지 않음, readyState:', video.readyState);
-      showError('카메라가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+    console.log('🔍 비디오 상태 체크:', {
+      readyState: video.readyState,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      paused: video.paused,
+      ended: video.ended
+    });
+    
+    // 더 관대한 조건으로 변경 - 최소한의 데이터만 있으면 캡처 시도
+    if (video.readyState < 2) { // HAVE_CURRENT_DATA (2) 이상이면 캡처 가능
+      console.warn('⚠️ 비디오가 아직 준비되지 않음, readyState:', video.readyState);
+      
+      // 짧은 시간 후 재시도
+      setTimeout(() => {
+        if (video.readyState >= 2) {
+          console.log('🔄 재시도로 캡처 진행');
+          handleCapture();
+        } else {
+          showError('카메라가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        }
+      }, 500);
       return;
     }
 
@@ -151,6 +152,63 @@ export default function OnboardingInfo3() {
     setIsCameraOpen(false);
   };
 
+  // 스트림이 설정되면 비디오 요소에 연결
+  React.useEffect(() => {
+    if (stream && videoRef.current && isCameraOpen) {
+      console.log('🔍 useEffect에서 비디오 스트림 연결 시작');
+      console.log('🔍 비디오 요소 존재:', !!videoRef.current);
+      console.log('🔍 비디오 요소 크기:', videoRef.current.clientWidth, 'x', videoRef.current.clientHeight);
+      
+      videoRef.current.srcObject = stream;
+      console.log('🔍 스트림 할당 완료, srcObject:', videoRef.current.srcObject);
+      
+      // 즉시 재생 시도
+      const attemptPlay = async () => {
+        try {
+          console.log('🔍 즉시 재생 시도');
+          await videoRef.current.play();
+          console.log('🔍 즉시 재생 성공');
+        } catch (err) {
+          console.log('🔍 즉시 재생 실패, 메타데이터 로드 대기:', err.message);
+        }
+      };
+      
+      attemptPlay();
+      
+      // 메타데이터 로드 후 재생 시작
+      videoRef.current.onloadedmetadata = () => {
+        console.log('🔍 비디오 메타데이터 로드 완료');
+        console.log('🔍 비디오 크기:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+        console.log('🔍 비디오 readyState:', videoRef.current.readyState);
+        
+        if (videoRef.current.paused) {
+          videoRef.current.play().then(() => {
+            console.log('🔍 메타데이터 로드 후 비디오 재생 시작');
+            console.log('🔍 비디오 paused:', videoRef.current.paused);
+            console.log('🔍 비디오 muted:', videoRef.current.muted);
+          }).catch(err => {
+            console.error('🔍 비디오 재생 오류:', err);
+            showError('비디오 재생에 실패했습니다.');
+          });
+        }
+      };
+      
+      // loadstart 이벤트도 추가
+      videoRef.current.onloadstart = () => {
+        console.log('🔍 비디오 로드 시작 (loadstart)');
+      };
+      
+      // 추가 이벤트 리스너들
+      videoRef.current.oncanplay = () => {
+        console.log('🔍 비디오 재생 준비 완료 (canplay)');
+      };
+      
+      videoRef.current.onplaying = () => {
+        console.log('🔍 비디오 재생 중 (playing)');
+      };
+    }
+  }, [stream, isCameraOpen]);
+
   // 컴포넌트 언마운트 시 스트림 정리
   React.useEffect(() => {
     return () => {
@@ -181,6 +239,12 @@ export default function OnboardingInfo3() {
     }
 
     try {
+      console.log('📤 프로필 이미지 업로드 시작, 파일 정보:', {
+        name: imageFile.name,
+        size: imageFile.size,
+        type: imageFile.type
+      });
+
       // FormData를 사용하여 파일 업로드
       const formData = new FormData();
       formData.append('file', imageFile);
@@ -191,23 +255,25 @@ export default function OnboardingInfo3() {
         },
       });
       
-      // 로컬 스토어 업데이트
-      setProfileImage(image); // zustand 저장 (미리보기용 Base64)
+      console.log('📥 서버 응답:', response.data);
       
-      try {
-        // 서버에 프로필 전체 정보 저장
-        const profileImageUrl = response.data?.imageUrl || image;
-        await saveProfileToServer({ profileImage: profileImageUrl });
-        console.log('✅ 온보딩 프로필 이미지 서버 저장 성공');
-      } catch (serverError) {
-        console.warn('⚠️ 서버 프로필 저장 실패, 로컬만 업데이트:', serverError);
+      // 서버에서 반환된 URL 사용
+      const profileImageUrl = response.data?.url || response.data;
+      
+      if (profileImageUrl) {
+        // 로컬 스토어 업데이트 (서버에서 받은 URL 사용)
+        setProfileImage(profileImageUrl);
+        console.log('✅ 프로필 이미지 업로드 및 로컬 저장 성공:', profileImageUrl);
+        
+        showSuccess("사진이 저장되었습니다. 다음 단계로 이동합니다.");
+        navigate("/onboarding-info/4");
+      } else {
+        console.error('❌ 서버 응답에서 이미지 URL을 찾을 수 없음:', response.data);
+        showError("이미지 업로드는 성공했지만 URL을 받지 못했습니다.");
       }
-      
-      showSuccess("사진이 저장되었습니다. 다음 단계로 이동합니다.");
-      navigate("/onboarding-info/4");
     } catch (e) {
-      showError("프로필 이미지 저장에 실패했습니다.");
-      console.error(e);
+      console.error('❌ 프로필 이미지 업로드 실패:', e);
+      showError("프로필 이미지 저장에 실패했습니다: " + (e.response?.data?.message || e.message));
     }
   };
 
@@ -287,6 +353,7 @@ export default function OnboardingInfo3() {
                 autoPlay
                 playsInline
                 muted
+                style={{ width: '100%', height: '256px', objectFit: 'cover', backgroundColor: 'black' }}
                 className="w-full h-64 object-cover bg-black"
               />
               <canvas ref={canvasRef} className="hidden" />
