@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { io } from 'socket.io-client';
 
 const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
 
