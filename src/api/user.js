@@ -1,30 +1,10 @@
 // @ts-check
 import api from './index';
-import type { 
-  ApiResponse,
-  UserNameResponse,
-  UserProfileResponse,
-  UserCompleteProfileResponse,
-  ProfileImageUrlResponse,
-  LocationResponse,
-  UserGenderTypeResponse,
-  OnboardingStatusResponse,
-  UserSettingsResponse,
-  EnglishNameRequest,
-  BirthyearRequest,
-  BirthdayRequest,
-  UserGenderTypeRequest,
-  SelfBioRequest,
-  LocationRequest,
-  CompleteOnboardingRequest,
-  UserCompleteProfileRequest,
-  UserSettingsRequest
-} from '../types/api';
 
 // 완전한 사용자 프로필 조회 (Spring Boot API 연동)
-export const getUserCompleteProfile = async (): Promise<UserCompleteProfileResponse> => {
+export const getUserCompleteProfile = async () => {
   try {
-    const response = await api.get<UserCompleteProfileResponse>('/user/complete-profile');
+    const response = await api.get('/user/complete-profile');
     return response.data;
   } catch (error) {
     console.error('Get user complete profile error:', error);
@@ -36,9 +16,9 @@ export const getUserCompleteProfile = async (): Promise<UserCompleteProfileRespo
 export const getCompleteProfile = getUserCompleteProfile;
 
 // 완전한 사용자 프로필 업데이트 (Spring Boot API 연동)
-export const updateUserCompleteProfile = async (profileData: UserCompleteProfileRequest): Promise<void> => {
+export const updateUserCompleteProfile = async (profileData) => {
   try {
-    await api.put<ApiResponse<void>>('/user/complete-profile', profileData);
+    await api.put('/user/complete-profile', profileData);
   } catch (error) {
     console.error('Update user complete profile error:', error);
     throw error;
@@ -49,9 +29,9 @@ export const updateUserCompleteProfile = async (profileData: UserCompleteProfile
 export const updateCompleteProfile = updateUserCompleteProfile;
 
 // 레거시 프로필 조회
-export const getUserProfile = async (): Promise<UserProfileResponse> => {
+export const getUserProfile = async () => {
   try {
-    const response = await api.get<UserProfileResponse>('/user/profile');
+    const response = await api.get('/user/profile');
     return response.data;
   } catch (error) {
     console.error('Get user profile error:', error);
@@ -60,7 +40,7 @@ export const getUserProfile = async (): Promise<UserProfileResponse> => {
 };
 
 // 레거시 프로필 업데이트 (기존 유지)
-export const updateUserProfile = async (profileData: any): Promise<any> => {
+export const updateUserProfile = async (profileData) => {
   try {
     const response = await api.patch('/user/profile', profileData);
     return response.data;
@@ -71,7 +51,7 @@ export const updateUserProfile = async (profileData: any): Promise<any> => {
 };
 
 // 사용자 기본 정보 조회
-export const getUserInfo = async (): Promise<any> => {
+export const getUserInfo = async () => {
   try {
     const response = await api.get('/user/info');
     return response.data;
@@ -82,9 +62,9 @@ export const getUserInfo = async (): Promise<any> => {
 };
 
 // 사용자 이름 조회
-export const getUserName = async (): Promise<UserNameResponse> => {
+export const getUserName = async () => {
   try {
-    const response = await api.get<UserNameResponse>('/user/name');
+    const response = await api.get('/user/name');
     return response.data;
   } catch (error) {
     console.error('Get user name error:', error);
@@ -93,7 +73,7 @@ export const getUserName = async (): Promise<UserNameResponse> => {
 };
 
 // 사용자 언어 정보 조회
-export const getUserLanguageInfo = async (): Promise<any> => {
+export const getUserLanguageInfo = async () => {
   try {
     const response = await api.get('/user/language-info');
     return response.data;
@@ -104,7 +84,7 @@ export const getUserLanguageInfo = async (): Promise<any> => {
 };
 
 // 사용자 언어 정보 업데이트
-export const updateUserLanguageInfo = async (languageData: any): Promise<any> => {
+export const updateUserLanguageInfo = async (languageData) => {
   try {
     const response = await api.patch('/user/language-info', languageData);
     return response.data;
@@ -115,7 +95,7 @@ export const updateUserLanguageInfo = async (languageData: any): Promise<any> =>
 };
 
 // 사용자 동기/목표 정보 조회
-export const getUserMotivationInfo = async (): Promise<any> => {
+export const getUserMotivationInfo = async () => {
   try {
     const response = await api.get('/user/motivation-info');
     return response.data;
@@ -126,7 +106,7 @@ export const getUserMotivationInfo = async (): Promise<any> => {
 };
 
 // 사용자 동기/목표 정보 업데이트
-export const updateUserMotivationInfo = async (motivationData: any): Promise<any> => {
+export const updateUserMotivationInfo = async (motivationData) => {
   try {
     const response = await api.patch('/user/motivation-info', motivationData);
     return response.data;
@@ -137,7 +117,7 @@ export const updateUserMotivationInfo = async (motivationData: any): Promise<any
 };
 
 // 사용자 파트너 선호도 정보 조회
-export const getUserPartnerInfo = async (): Promise<any> => {
+export const getUserPartnerInfo = async () => {
   try {
     const response = await api.get('/user/partner-info');
     return response.data;
@@ -148,7 +128,7 @@ export const getUserPartnerInfo = async (): Promise<any> => {
 };
 
 // 사용자 파트너 선호도 정보 업데이트
-export const updateUserPartnerInfo = async (partnerData: any): Promise<any> => {
+export const updateUserPartnerInfo = async (partnerData) => {
   try {
     const response = await api.patch('/user/partner-info', partnerData);
     return response.data;
@@ -159,7 +139,7 @@ export const updateUserPartnerInfo = async (partnerData: any): Promise<any> => {
 };
 
 // 사용자 스케줄 정보 조회
-export const getUserScheduleInfo = async (): Promise<any> => {
+export const getUserScheduleInfo = async () => {
   try {
     const response = await api.get('/user/schedule-info');
     return response.data;
@@ -170,7 +150,7 @@ export const getUserScheduleInfo = async (): Promise<any> => {
 };
 
 // 사용자 스케줄 정보 업데이트
-export const updateUserScheduleInfo = async (scheduleData: any): Promise<any> => {
+export const updateUserScheduleInfo = async (scheduleData) => {
   try {
     const response = await api.patch('/user/schedule-info', scheduleData);
     return response.data;
@@ -181,9 +161,9 @@ export const updateUserScheduleInfo = async (scheduleData: any): Promise<any> =>
 };
 
 // 온보딩 상태 조회 (Spring Boot API 연동)
-export const getOnboardingStatus = async (): Promise<OnboardingStatusResponse> => {
+export const getOnboardingStatus = async () => {
   try {
-    const response = await api.get<OnboardingStatusResponse>('/user/onboarding-status');
+    const response = await api.get('/user/onboarding-status');
     return response.data;
   } catch (error) {
     console.error('Get onboarding status error:', error);
@@ -192,9 +172,9 @@ export const getOnboardingStatus = async (): Promise<OnboardingStatusResponse> =
 };
 
 // 온보딩 완료 처리 (Spring Boot API 연동)
-export const completeOnboarding = async (onboardingData?: CompleteOnboardingRequest): Promise<void> => {
+export const completeOnboarding = async (onboardingData) => {
   try {
-    await api.post<ApiResponse<void>>('/user/complete-onboarding', onboardingData || {});
+    await api.post('/user/complete-onboarding', onboardingData || {});
   } catch (error) {
     console.error('Complete onboarding error:', error);
     throw error;
@@ -202,7 +182,7 @@ export const completeOnboarding = async (onboardingData?: CompleteOnboardingRequ
 };
 
 // 사용자 통계 조회
-export const getUserStats = async (): Promise<any> => {
+export const getUserStats = async () => {
   try {
     const response = await api.get('/user/stats');
     return response.data;
@@ -213,9 +193,9 @@ export const getUserStats = async (): Promise<any> => {
 };
 
 // 사용자 설정 조회 (Spring Boot API 연동)
-export const getUserSettings = async (): Promise<UserSettingsResponse> => {
+export const getUserSettings = async () => {
   try {
-    const response = await api.get<UserSettingsResponse>('/user/settings');
+    const response = await api.get('/user/settings');
     return response.data;
   } catch (error) {
     console.error('Get user settings error:', error);
@@ -224,9 +204,9 @@ export const getUserSettings = async (): Promise<UserSettingsResponse> => {
 };
 
 // 사용자 설정 업데이트 (Spring Boot API 연동)
-export const updateUserSettings = async (settings: UserSettingsRequest): Promise<void> => {
+export const updateUserSettings = async (settings) => {
   try {
-    await api.put<ApiResponse<void>>('/user/settings', settings);
+    await api.put('/user/settings', settings);
   } catch (error) {
     console.error('Update user settings error:', error);
     throw error;
@@ -234,12 +214,12 @@ export const updateUserSettings = async (settings: UserSettingsRequest): Promise
 };
 
 // 프로필 이미지 업로드 (Spring Boot API 연동)
-export const uploadProfileImage = async (imageFile: File): Promise<ProfileImageUrlResponse> => {
+export const uploadProfileImage = async (imageFile) => {
   try {
     const formData = new FormData();
     formData.append('file', imageFile);
 
-    const response = await api.post<ProfileImageUrlResponse>('/user/profile-image', formData, {
+    const response = await api.post('/user/profile-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -255,9 +235,9 @@ export const uploadProfileImage = async (imageFile: File): Promise<ProfileImageU
 export const saveProfileImage = uploadProfileImage;
 
 // 프로필 이미지 URL 조회
-export const getProfileImageUrl = async (): Promise<ProfileImageUrlResponse> => {
+export const getProfileImageUrl = async () => {
   try {
-    const response = await api.get<ProfileImageUrlResponse>('/user/profile-image');
+    const response = await api.get('/user/profile-image');
     return response.data;
   } catch (error) {
     console.error('Get profile image URL error:', error);
@@ -266,7 +246,7 @@ export const getProfileImageUrl = async (): Promise<ProfileImageUrlResponse> => 
 };
 
 // 계정 삭제
-export const deleteAccount = async (): Promise<any> => {
+export const deleteAccount = async () => {
   try {
     const response = await api.delete('/user/account');
     return response.data;
@@ -277,60 +257,60 @@ export const deleteAccount = async (): Promise<any> => {
 };
 
 // 사용자 기본 정보 저장 함수들
-export const saveEnglishName = async (englishName: string): Promise<void> => {
+export const saveEnglishName = async (englishName) => {
   try {
-    const requestData: EnglishNameRequest = { englishName };
-    await api.post<ApiResponse<void>>('/user/english-name', requestData);
+    const requestData = { englishName };
+    await api.post('/user/english-name', requestData);
   } catch (error) {
     console.error('Save english name error:', error);
     throw error;
   }
 };
 
-export const saveBirthYear = async (birthYear: number): Promise<void> => {
+export const saveBirthYear = async (birthYear) => {
   try {
-    const requestData: BirthyearRequest = { birthYear };
-    await api.post<ApiResponse<void>>('/user/birthyear', requestData);
+    const requestData = { birthYear };
+    await api.post('/user/birthyear', requestData);
   } catch (error) {
     console.error('Save birth year error:', error);
     throw error;
   }
 };
 
-export const saveBirthDay = async (birthday: string): Promise<void> => {
+export const saveBirthDay = async (birthday) => {
   try {
-    const requestData: BirthdayRequest = { birthday };
-    await api.post<ApiResponse<void>>('/user/birthday', requestData);
+    const requestData = { birthday };
+    await api.post('/user/birthday', requestData);
   } catch (error) {
     console.error('Save birthday error:', error);
     throw error;
   }
 };
 
-export const saveUserGender = async (genderTypeId: number): Promise<void> => {
+export const saveUserGender = async (genderTypeId) => {
   try {
-    const requestData: UserGenderTypeRequest = { genderTypeId };
-    await api.post<ApiResponse<void>>('/user/gender', requestData);
+    const requestData = { genderTypeId };
+    await api.post('/user/gender', requestData);
   } catch (error) {
     console.error('Save user gender error:', error);
     throw error;
   }
 };
 
-export const saveSelfBio = async (selfBio: string): Promise<void> => {
+export const saveSelfBio = async (selfBio) => {
   try {
-    const requestData: SelfBioRequest = { selfBio };
-    await api.post<ApiResponse<void>>('/user/self-bio', requestData);
+    const requestData = { selfBio };
+    await api.post('/user/self-bio', requestData);
   } catch (error) {
     console.error('Save self bio error:', error);
     throw error;
   }
 };
 
-export const saveLocation = async (locationId: number): Promise<void> => {
+export const saveLocation = async (locationId) => {
   try {
-    const requestData: LocationRequest = { locationId };
-    await api.post<ApiResponse<void>>('/user/location', requestData);
+    const requestData = { locationId };
+    await api.post('/user/location', requestData);
   } catch (error) {
     console.error('Save location error:', error);
     throw error;
@@ -338,9 +318,9 @@ export const saveLocation = async (locationId: number): Promise<void> => {
 };
 
 // 옵션 조회 함수들
-export const getAllLocation = async (): Promise<LocationResponse[]> => {
+export const getAllLocation = async () => {
   try {
-    const response = await api.get<LocationResponse[]>('/user/locations');
+    const response = await api.get('/user/locations');
     return response.data;
   } catch (error) {
     console.error('Get all location error:', error);
@@ -348,9 +328,9 @@ export const getAllLocation = async (): Promise<LocationResponse[]> => {
   }
 };
 
-export const getAllUserGender = async (): Promise<UserGenderTypeResponse[]> => {
+export const getAllUserGender = async () => {
   try {
-    const response = await api.get<UserGenderTypeResponse[]>('/user/gender-type');
+    const response = await api.get('/user/gender-type');
     return response.data;
   } catch (error) {
     console.error('Get all user gender error:', error);

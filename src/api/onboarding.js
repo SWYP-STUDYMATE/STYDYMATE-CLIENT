@@ -1,20 +1,11 @@
 // @ts-check
 import api from './index';
-import type { 
-  ApiResponse,
-  OnboardingDataResponse,
-  OnboardingProgressResponse,
-  LanguageResponse,
-  LangLevelTypeResponse,
-  NativeLanguageRequest,
-  LanguageLevelRequest 
-} from '../types/api';
 
 // 온보딩 데이터 조회 (Spring Boot API 연동)
-export const getOnboardingData = async (): Promise<OnboardingDataResponse> => {
+export const getOnboardingData = async () => {
   try {
-    const response = await api.get<ApiResponse<OnboardingDataResponse>>('/onboarding/data');
-    return response.data.data!;
+    const response = await api.get('/onboarding/data');
+    return response.data.data;
   } catch (error) {
     console.error('Get onboarding data error:', error);
     throw error;
@@ -22,10 +13,10 @@ export const getOnboardingData = async (): Promise<OnboardingDataResponse> => {
 };
 
 // 온보딩 진행 상태 조회 (Spring Boot API 연동)
-export const getOnboardingProgress = async (): Promise<OnboardingProgressResponse> => {
+export const getOnboardingProgress = async () => {
   try {
-    const response = await api.get<ApiResponse<OnboardingProgressResponse>>('/onboarding/progress');
-    return response.data.data!;
+    const response = await api.get('/onboarding/progress');
+    return response.data.data;
   } catch (error) {
     console.error('Get onboarding progress error:', error);
     throw error;
@@ -33,7 +24,7 @@ export const getOnboardingProgress = async (): Promise<OnboardingProgressRespons
 };
 
 // 전체 온보딩 완료 처리 (Spring Boot API 연동)
-export const completeAllOnboarding = async (onboardingData: any): Promise<any> => {
+export const completeAllOnboarding = async (onboardingData) => {
   try {
     const response = await api.post('/onboarding/complete', onboardingData);
     return response.data;
@@ -44,7 +35,7 @@ export const completeAllOnboarding = async (onboardingData: any): Promise<any> =
 };
 
 // 현재 온보딩 단계 조회
-export const getCurrentOnboardingStep = async (): Promise<any> => {
+export const getCurrentOnboardingStep = async () => {
   try {
     const response = await api.get('/onboarding/current-step');
     return response.data;
@@ -55,7 +46,7 @@ export const getCurrentOnboardingStep = async (): Promise<any> => {
 };
 
 // 온보딩 단계 건너뛰기
-export const skipOnboardingStep = async (step: number): Promise<any> => {
+export const skipOnboardingStep = async (step) => {
   try {
     const response = await api.post(`/onboarding/steps/${step}/skip`);
     return response.data;
@@ -66,7 +57,7 @@ export const skipOnboardingStep = async (step: number): Promise<any> => {
 };
 
 // 1단계: 기본 정보 저장 (이름 변경: saveOnboardingStep1 -> saveStep1)
-export const saveOnboardingStep1 = async (userData: any): Promise<any> => {
+export const saveOnboardingStep1 = async (userData) => {
   try {
     const response = await api.post('/onboarding/steps/1/save', userData);
     return response.data;
@@ -80,7 +71,7 @@ export const saveOnboardingStep1 = async (userData: any): Promise<any> => {
 export const saveStep1 = saveOnboardingStep1;
 
 // 2단계: 언어 정보 저장 (이름 변경: saveOnboardingStep2 -> saveStep2)
-export const saveOnboardingStep2 = async (languageData: any): Promise<any> => {
+export const saveOnboardingStep2 = async (languageData) => {
   try {
     const response = await api.post('/onboarding/steps/2/save', languageData);
     return response.data;
@@ -94,7 +85,7 @@ export const saveOnboardingStep2 = async (languageData: any): Promise<any> => {
 export const saveStep2 = saveOnboardingStep2;
 
 // 3단계: 학습 정보 저장 (이름 변경: saveOnboardingStep3 -> saveStep3)
-export const saveOnboardingStep3 = async (learningData: any): Promise<any> => {
+export const saveOnboardingStep3 = async (learningData) => {
   try {
     const response = await api.post('/onboarding/steps/3/save', learningData);
     return response.data;
@@ -108,7 +99,7 @@ export const saveOnboardingStep3 = async (learningData: any): Promise<any> => {
 export const saveStep3 = saveOnboardingStep3;
 
 // 4단계: 선호도 저장 (이름 변경: saveOnboardingStep4 -> saveStep4)
-export const saveOnboardingStep4 = async (preferenceData: any): Promise<any> => {
+export const saveOnboardingStep4 = async (preferenceData) => {
   try {
     const response = await api.post('/onboarding/steps/4/save', preferenceData);
     return response.data;
@@ -122,7 +113,7 @@ export const saveOnboardingStep4 = async (preferenceData: any): Promise<any> => 
 export const saveStep4 = saveOnboardingStep4;
 
 // 언어 정보 저장
-export const saveLanguageInfo = async (languageData: any): Promise<any> => {
+export const saveLanguageInfo = async (languageData) => {
   try {
     console.log("🔍 saveLanguageInfo 호출됨, 입력 데이터:", languageData);
     console.log("🔍 nativeLanguageId:", languageData.nativeLanguageId);
@@ -138,7 +129,7 @@ export const saveLanguageInfo = async (languageData: any): Promise<any> => {
     // 목표 언어들 저장 (배치로 처리)
     if (languageData.targetLanguages && languageData.targetLanguages.length > 0) {
       await api.post('/onboard/language/language-level', {
-        languages: languageData.targetLanguages.map((targetLang: any) => ({
+        languages: languageData.targetLanguages.map((targetLang) => ({
           languageId: targetLang.languageId,
           currentLevelId: targetLang.currentLevelId,
           targetLevelId: targetLang.targetLevelId
@@ -147,7 +138,7 @@ export const saveLanguageInfo = async (languageData: any): Promise<any> => {
     }
     
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error('🔍 Save language info error:', error);
     console.error('🔍 Error response:', error.response);
     console.error('🔍 Error data:', error.response?.data);
@@ -156,7 +147,7 @@ export const saveLanguageInfo = async (languageData: any): Promise<any> => {
 };
 
 // 관심사 정보 저장
-export const saveInterestInfo = async (interestData: any): Promise<any> => {
+export const saveInterestInfo = async (interestData) => {
   try {
     const requests = [];
     
@@ -205,7 +196,7 @@ export const saveInterestInfo = async (interestData: any): Promise<any> => {
 };
 
 // 파트너 선호도 저장
-export const savePartnerInfo = async (partnerData: any): Promise<any> => {
+export const savePartnerInfo = async (partnerData) => {
   try {
     const requests = [];
     
@@ -229,7 +220,7 @@ export const savePartnerInfo = async (partnerData: any): Promise<any> => {
 };
 
 // 스케줄 정보 저장
-export const saveScheduleInfo = async (scheduleData: any): Promise<any> => {
+export const saveScheduleInfo = async (scheduleData) => {
   try {
     // 스케줄 데이터가 있는 경우 서버로 전송
     if (scheduleData.schedules && scheduleData.schedules.length > 0) {
@@ -250,10 +241,10 @@ export const saveScheduleInfo = async (scheduleData: any): Promise<any> => {
 // 온보딩 옵션 조회 함수들 (기존 API 활용)
 
 // 언어 목록 조회
-export const getLanguages = async (): Promise<LanguageResponse[]> => {
+export const getLanguages = async () => {
   try {
-    const response = await api.get<ApiResponse<LanguageResponse[]>>('/onboard/language/languages');
-    return response.data.data!;
+    const response = await api.get('/onboard/language/languages');
+    return response.data.data;
   } catch (error) {
     console.error('Get languages error:', error);
     throw error;
@@ -261,10 +252,10 @@ export const getLanguages = async (): Promise<LanguageResponse[]> => {
 };
 
 // 언어 레벨 타입 조회
-export const getLanguageLevelTypes = async (): Promise<LangLevelTypeResponse[]> => {
+export const getLanguageLevelTypes = async () => {
   try {
-    const response = await api.get<ApiResponse<LangLevelTypeResponse[]>>('/onboard/language/level-types-language');
-    return response.data.data!;
+    const response = await api.get('/onboard/language/level-types-language');
+    return response.data.data;
   } catch (error) {
     console.error('Get language level types error:', error);
     throw error;
@@ -272,10 +263,10 @@ export const getLanguageLevelTypes = async (): Promise<LangLevelTypeResponse[]> 
 };
 
 // 파트너 레벨 타입 조회
-export const getPartnerLevelTypes = async (): Promise<LangLevelTypeResponse[]> => {
+export const getPartnerLevelTypes = async () => {
   try {
-    const response = await api.get<ApiResponse<LangLevelTypeResponse[]>>('/onboard/language/level-types-partner');
-    return response.data.data!;
+    const response = await api.get('/onboard/language/level-types-partner');
+    return response.data.data;
   } catch (error) {
     console.error('Get partner level types error:', error);
     throw error;
@@ -283,7 +274,7 @@ export const getPartnerLevelTypes = async (): Promise<LangLevelTypeResponse[]> =
 };
 
 // 동기 목록 조회
-export const getMotivations = async (): Promise<any> => {
+export const getMotivations = async () => {
   try {
     const response = await api.get('/onboard/interest/motivations');
     return response.data;
@@ -294,7 +285,7 @@ export const getMotivations = async (): Promise<any> => {
 };
 
 // 주제 목록 조회
-export const getTopics = async (): Promise<any> => {
+export const getTopics = async () => {
   try {
     const response = await api.get('/onboard/interest/topics');
     return response.data;
@@ -305,7 +296,7 @@ export const getTopics = async (): Promise<any> => {
 };
 
 // 학습 스타일 목록 조회
-export const getLearningStyles = async (): Promise<any> => {
+export const getLearningStyles = async () => {
   try {
     const response = await api.get('/onboard/interest/learning-styles');
     return response.data;
@@ -316,7 +307,7 @@ export const getLearningStyles = async (): Promise<any> => {
 };
 
 // 학습 기대 목록 조회
-export const getLearningExpectations = async (): Promise<any> => {
+export const getLearningExpectations = async () => {
   try {
     const response = await api.get('/onboard/interest/learning-expectations');
     return response.data;
