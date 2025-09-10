@@ -813,5 +813,72 @@
       "updated": "2025-08-31T16:15:42.561Z",
       "description": "STUDYMATE-SERVER 백엔드 API 개발 태스크"
     }
+  },
+  "codebase-integrity": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "API 파일 중복 해결",
+        "description": "src/api 폴더에 JS와 TS 파일이 중복으로 존재 (onboarding, user, index)",
+        "details": "현재 상황:\n- onboarding.js (312줄) vs onboarding.ts (188줄)\n- user.js vs user.ts  \n- index.js vs index.ts\n- .backup 파일들도 존재\n\n해결 방안:\n1. TypeScript 버전으로 통일 (권장)\n2. 백업 파일 모두 삭제\n3. import 경로 업데이트",
+        "testStrategy": "1. 모든 API 호출 테스트\n2. TypeScript 컴파일 에러 확인\n3. 런타임 에러 체크",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "백업 파일 삭제",
+        "description": "소스 코드에 포함된 모든 .backup 파일 제거",
+        "details": "삭제 대상 파일:\n- src/api/onboarding.js.backup\n- src/api/user.js.backup  \n- src/api/index.js.backup\n\n작업 내용:\n1. 모든 .backup 파일 삭제\n2. .gitignore에 *.backup 패턴 추가\n3. 버전 관리 정리",
+        "testStrategy": "1. backup 파일 삭제 확인\n2. 빌드 정상 작동 확인\n3. Git 상태 확인",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "TypeScript 일관성 확보",
+        "description": "프로젝트 전체의 TypeScript 사용 일관성 확보",
+        "details": "현재 상황:\n- API 레이어만 부분적으로 TypeScript 사용\n- 나머지는 JavaScript 유지\n\n해결 방안:\n1. 전체 TypeScript 마이그레이션 계획 수립\n2. 또는 JavaScript로 통일\n3. tsconfig.json 설정 최적화\n\n작업 범위:\n- src/api/* 파일들의 언어 통일\n- 타입 정의 파일 생성\n- import/export 경로 정리",
+        "testStrategy": "1. TypeScript 컴파일 에러 체크\n2. 타입 정의 검증\n3. IDE 자동완성 작동 확인",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Vite 설정 파일 통합",
+        "description": "중복된 Vite 설정 파일들을 하나로 통합",
+        "details": "현재 상황:\n- vite.config.js (메인 설정)\n- vite.config.optimization.js (최적화 설정)\n- vite.config.js.optimization (중복 파일)\n\n작업 내용:\n1. 모든 설정을 vite.config.js로 통합\n2. 최적화 설정 병합\n3. 불필요한 파일 삭제\n\n최적화 포함 사항:\n- 번들 크기 최적화\n- 코드 스플리팅\n- 청크 분리 전략",
+        "testStrategy": "1. 빌드 성공 확인\n2. 번들 크기 비교\n3. 개발 서버 정상 작동 확인",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "WebSocket 라이브러리 통합",
+        "description": "3개의 WebSocket 라이브러리를 하나로 통합",
+        "details": "현재 상황:\n- sockjs-client: STOMP 전송 레이어\n- @stomp/stompjs: STOMP 프로토콜\n- socket.io-client: 별도 WebSocket 구현\n\n분석 필요:\n1. 각 라이브러리 사용처 파악\n2. 기능 요구사항 분석\n3. 통합 가능성 검토\n\n권장 방안:\n- STOMP over SockJS 유지 (Spring Boot와 호환)\n- Socket.io 제거 또는 별도 기능으로 분리\n\n영향 범위:\n- src/services/websocketService.js\n- src/services/notificationWebSocket.js\n- 채팅 관련 컴포넌트",
+        "testStrategy": "1. WebSocket 연결 테스트\n2. 실시간 메시지 전송 테스트\n3. 재연결 로직 확인\n4. 번들 크기 감소 확인",
+        "status": "pending",
+        "dependencies": [
+          1,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-10T03:21:18.544Z",
+      "updated": "2025-09-10T03:47:30.996Z",
+      "description": "코드베이스 무결성 및 정리 작업"
+    }
   }
 }

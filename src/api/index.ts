@@ -208,7 +208,7 @@ export const getUserName = async () => {
   return res.data;
 };
 
-// Note: 사용자 관련 API 함수들은 src/api/user.ts에서 구현됨
+// Note: 사용자 관련 API 함수들은 src/api/user에서 구현됨
 
 export default api;
 

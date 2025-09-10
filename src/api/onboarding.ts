@@ -1,5 +1,5 @@
 // @ts-check
-import api from './index.js';
+import api from './index';
 import type { 
   ApiResponse,
   OnboardingDataResponse,
@@ -33,54 +33,216 @@ export const getOnboardingProgress = async (): Promise<OnboardingProgressRespons
 };
 
 // 전체 온보딩 완료 처리 (Spring Boot API 연동)
-export const completeAllOnboarding = async (onboardingData: any): Promise<void> => {
+export const completeAllOnboarding = async (onboardingData: any): Promise<any> => {
   try {
-    const response = await api.post<ApiResponse<void>>('/onboarding/complete', onboardingData);
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Onboarding completion failed');
-    }
+    const response = await api.post('/onboarding/complete', onboardingData);
+    return response.data;
   } catch (error) {
-    console.error('Complete onboarding error:', error);
+    console.error('Complete all onboarding error:', error);
     throw error;
   }
 };
 
-// 언어 정보 저장 (모국어 + 목표 언어들)
-export const saveLanguageInfo = async (languageData: {
-  nativeLanguageId: number;
-  targetLanguages: Array<{
-    languageId: number;
-    currentLevelId: number;
-    targetLevelId: number;
-  }>;
-}): Promise<void> => {
+// 현재 온보딩 단계 조회
+export const getCurrentOnboardingStep = async (): Promise<any> => {
   try {
-    console.log("🔍 언어 정보 저장 시작:", languageData);
+    const response = await api.get('/onboarding/current-step');
+    return response.data;
+  } catch (error) {
+    console.error('Get current onboarding step error:', error);
+    throw error;
+  }
+};
+
+// 온보딩 단계 건너뛰기
+export const skipOnboardingStep = async (step: number): Promise<any> => {
+  try {
+    const response = await api.post(`/onboarding/steps/${step}/skip`);
+    return response.data;
+  } catch (error) {
+    console.error('Skip onboarding step error:', error);
+    throw error;
+  }
+};
+
+// 1단계: 기본 정보 저장 (이름 변경: saveOnboardingStep1 -> saveStep1)
+export const saveOnboardingStep1 = async (userData: any): Promise<any> => {
+  try {
+    const response = await api.post('/onboarding/steps/1/save', userData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step1 error:', error);
+    throw error;
+  }
+};
+
+// saveStep1 별칭
+export const saveStep1 = saveOnboardingStep1;
+
+// 2단계: 언어 정보 저장 (이름 변경: saveOnboardingStep2 -> saveStep2)
+export const saveOnboardingStep2 = async (languageData: any): Promise<any> => {
+  try {
+    const response = await api.post('/onboarding/steps/2/save', languageData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step2 error:', error);
+    throw error;
+  }
+};
+
+// saveStep2 별칭
+export const saveStep2 = saveOnboardingStep2;
+
+// 3단계: 학습 정보 저장 (이름 변경: saveOnboardingStep3 -> saveStep3)
+export const saveOnboardingStep3 = async (learningData: any): Promise<any> => {
+  try {
+    const response = await api.post('/onboarding/steps/3/save', learningData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step3 error:', error);
+    throw error;
+  }
+};
+
+// saveStep3 별칭
+export const saveStep3 = saveOnboardingStep3;
+
+// 4단계: 선호도 저장 (이름 변경: saveOnboardingStep4 -> saveStep4)
+export const saveOnboardingStep4 = async (preferenceData: any): Promise<any> => {
+  try {
+    const response = await api.post('/onboarding/steps/4/save', preferenceData);
+    return response.data;
+  } catch (error) {
+    console.error('Save onboarding step4 error:', error);
+    throw error;
+  }
+};
+
+// saveStep4 별칭
+export const saveStep4 = saveOnboardingStep4;
+
+// 언어 정보 저장
+export const saveLanguageInfo = async (languageData: any): Promise<any> => {
+  try {
+    console.log("🔍 saveLanguageInfo 호출됨, 입력 데이터:", languageData);
+    console.log("🔍 nativeLanguageId:", languageData.nativeLanguageId);
+    console.log("🔍 nativeLanguageId 타입:", typeof languageData.nativeLanguageId);
     
-    // 모국어 저장
-    const requestBody: NativeLanguageRequest = {
+    const requestBody = {
       languageId: languageData.nativeLanguageId
     };
     console.log("🔍 API 요청 본문:", requestBody);
     
-    const response = await api.post<ApiResponse<void>>('/onboard/language/native-language', requestBody);
+    const response = await api.post('/onboard/language/native-language', requestBody);
     
     // 목표 언어들 저장 (배치로 처리)
     if (languageData.targetLanguages && languageData.targetLanguages.length > 0) {
-      const levelRequest: LanguageLevelRequest = {
-        languages: languageData.targetLanguages.map(targetLang => ({
+      await api.post('/onboard/language/language-level', {
+        languages: languageData.targetLanguages.map((targetLang: any) => ({
           languageId: targetLang.languageId,
           currentLevelId: targetLang.currentLevelId,
           targetLevelId: targetLang.targetLevelId
         }))
-      };
-
-      await api.post<ApiResponse<void>>('/onboard/language/language-level', levelRequest);
+      });
     }
     
-    console.log("✅ 언어 정보 저장 완료");
+    return response.data;
+  } catch (error: any) {
+    console.error('🔍 Save language info error:', error);
+    console.error('🔍 Error response:', error.response);
+    console.error('🔍 Error data:', error.response?.data);
+    throw error;
+  }
+};
+
+// 관심사 정보 저장
+export const saveInterestInfo = async (interestData: any): Promise<any> => {
+  try {
+    const requests = [];
+    
+    // 동기 저장 (배치로 처리)
+    if (interestData.motivationIds && interestData.motivationIds.length > 0) {
+      requests.push(
+        api.post('/onboard/interest/motivation', { 
+          motivationIds: interestData.motivationIds 
+        })
+      );
+    }
+    
+    // 주제 저장 (배치로 처리)
+    if (interestData.topicIds && interestData.topicIds.length > 0) {
+      requests.push(
+        api.post('/onboard/interest/topic', { 
+          topicIds: interestData.topicIds 
+        })
+      );
+    }
+    
+    // 학습 스타일 저장 (배치로 처리)
+    if (interestData.learningStyleIds && interestData.learningStyleIds.length > 0) {
+      requests.push(
+        api.post('/onboard/interest/learning-style', { 
+          learningStyleIds: interestData.learningStyleIds 
+        })
+      );
+    }
+    
+    // 학습 기대 저장 (배치로 처리)
+    if (interestData.learningExpectationIds && interestData.learningExpectationIds.length > 0) {
+      requests.push(
+        api.post('/onboard/interest/learning-expectation', { 
+          learningExpectationIds: interestData.learningExpectationIds 
+        })
+      );
+    }
+    
+    await Promise.all(requests);
+    return { success: true };
   } catch (error) {
-    console.error('Save language info error:', error);
+    console.error('Save interest info error:', error);
+    throw error;
+  }
+};
+
+// 파트너 선호도 저장
+export const savePartnerInfo = async (partnerData: any): Promise<any> => {
+  try {
+    const requests = [];
+    
+    // 파트너 성격 저장 (배치로 처리)
+    if (partnerData.partnerPersonalityIds && partnerData.partnerPersonalityIds.length > 0) {
+      requests.push(
+        api.post('/onboard/partner/personality', { 
+          personalPartnerIds: partnerData.partnerPersonalityIds 
+        })
+      );
+    }
+    
+    // 그룹 크기는 스케줄 API에서 처리됩니다
+    
+    await Promise.all(requests);
+    return { success: true };
+  } catch (error) {
+    console.error('Save partner info error:', error);
+    throw error;
+  }
+};
+
+// 스케줄 정보 저장
+export const saveScheduleInfo = async (scheduleData: any): Promise<any> => {
+  try {
+    // 스케줄 데이터가 있는 경우 서버로 전송
+    if (scheduleData.schedules && scheduleData.schedules.length > 0) {
+      const response = await api.post('/onboard/schedule', { 
+        schedules: scheduleData.schedules 
+      });
+      return response.data;
+    }
+    
+    // 스케줄이 없는 경우에도 성공으로 처리 (사용자가 스케줄을 선택하지 않을 수 있음)
+    return { success: true };
+  } catch (error) {
+    console.error('Save schedule info error:', error);
     throw error;
   }
 };
@@ -90,8 +252,8 @@ export const saveLanguageInfo = async (languageData: {
 // 언어 목록 조회
 export const getLanguages = async (): Promise<LanguageResponse[]> => {
   try {
-    const response = await api.get<LanguageResponse[]>('/onboard/language/languages');
-    return response.data;
+    const response = await api.get<ApiResponse<LanguageResponse[]>>('/onboard/language/languages');
+    return response.data.data!;
   } catch (error) {
     console.error('Get languages error:', error);
     throw error;
@@ -101,8 +263,8 @@ export const getLanguages = async (): Promise<LanguageResponse[]> => {
 // 언어 레벨 타입 조회
 export const getLanguageLevelTypes = async (): Promise<LangLevelTypeResponse[]> => {
   try {
-    const response = await api.get<LangLevelTypeResponse[]>('/onboard/language/level-types-language');
-    return response.data;
+    const response = await api.get<ApiResponse<LangLevelTypeResponse[]>>('/onboard/language/level-types-language');
+    return response.data.data!;
   } catch (error) {
     console.error('Get language level types error:', error);
     throw error;
@@ -112,76 +274,54 @@ export const getLanguageLevelTypes = async (): Promise<LangLevelTypeResponse[]> 
 // 파트너 레벨 타입 조회
 export const getPartnerLevelTypes = async (): Promise<LangLevelTypeResponse[]> => {
   try {
-    const response = await api.get<LangLevelTypeResponse[]>('/onboard/language/level-types-partner');
-    return response.data;
+    const response = await api.get<ApiResponse<LangLevelTypeResponse[]>>('/onboard/language/level-types-partner');
+    return response.data.data!;
   } catch (error) {
     console.error('Get partner level types error:', error);
     throw error;
   }
 };
 
-// 온보딩 단계별 저장 함수들 (기존 기능 유지)
-export const saveStep1 = async (step1Data: { englishName: string; locationId: number }): Promise<void> => {
+// 동기 목록 조회
+export const getMotivations = async (): Promise<any> => {
   try {
-    console.log('🔍 Step1 데이터 저장:', step1Data);
-    
-    // 영어 이름 저장
-    await api.post<ApiResponse<void>>('/user/english-name', { englishName: step1Data.englishName });
-    
-    // 거주지 저장
-    await api.post<ApiResponse<void>>('/user/location', { locationId: step1Data.locationId });
-    
-    console.log('✅ Step1 데이터 저장 완료');
+    const response = await api.get('/onboard/interest/motivations');
+    return response.data;
   } catch (error) {
-    console.error('Save step1 error:', error);
+    console.error('Get motivations error:', error);
     throw error;
   }
 };
 
-export const saveStep2 = async (step2Data: { profileImage?: File }): Promise<void> => {
+// 주제 목록 조회
+export const getTopics = async (): Promise<any> => {
   try {
-    console.log('🔍 Step2 데이터 저장:', step2Data);
-    
-    if (step2Data.profileImage) {
-      const formData = new FormData();
-      formData.append('file', step2Data.profileImage);
-      
-      await api.post<ApiResponse<any>>('/user/profile-image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    }
-    
-    console.log('✅ Step2 데이터 저장 완료');
+    const response = await api.get('/onboard/interest/topics');
+    return response.data;
   } catch (error) {
-    console.error('Save step2 error:', error);
+    console.error('Get topics error:', error);
     throw error;
   }
 };
 
-export const saveStep3 = async (step3Data: { selfBio: string }): Promise<void> => {
+// 학습 스타일 목록 조회
+export const getLearningStyles = async (): Promise<any> => {
   try {
-    console.log('🔍 Step3 데이터 저장:', step3Data);
-    
-    await api.post<ApiResponse<void>>('/user/self-bio', { selfBio: step3Data.selfBio });
-    
-    console.log('✅ Step3 데이터 저장 완료');
+    const response = await api.get('/onboard/interest/learning-styles');
+    return response.data;
   } catch (error) {
-    console.error('Save step3 error:', error);
+    console.error('Get learning styles error:', error);
     throw error;
   }
 };
 
-export const saveStep4 = async (step4Data: any): Promise<void> => {
+// 학습 기대 목록 조회
+export const getLearningExpectations = async (): Promise<any> => {
   try {
-    console.log('🔍 Step4 데이터 저장 (언어 정보):', step4Data);
-    
-    await saveLanguageInfo(step4Data);
-    
-    console.log('✅ Step4 데이터 저장 완료');
+    const response = await api.get('/onboard/interest/learning-expectations');
+    return response.data;
   } catch (error) {
-    console.error('Save step4 error:', error);
+    console.error('Get learning expectations error:', error);
     throw error;
   }
 };

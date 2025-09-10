@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-01-09T15:00:00",
+  "project_type": "web_app",
+  "tech_stack": {
+    "languages": ["JavaScript", "JSX"],
+    "frameworks": ["React 19.1.0", "Vite 7.0.4", "Tailwind CSS 4.1.11"],
+    "state_management": ["Zustand 5.0.6"],
+    "routing": ["React Router DOM 7.6.3"],
+    "databases": [],
+    "infrastructure": ["Cloudflare Pages", "Wrangler CLI"],
+    "testing": ["Vitest", "Playwright", "Testing Library"],
+    "communication": ["WebSocket (STOMP)", "Axios"]
+  },
+  "architecture_layers": {
+    "frontend": {
+      "frameworks": ["React"],
+      "components": ["150+ JSX components"],
+      "entry_points": ["main.jsx", "App.jsx"],
+      "pages": ["30+ page components"],
+      "stores": ["9 Zustand stores"]
+    },
+    "backend": {
+      "type": "external",
+      "api_server": "STUDYMATE-SERVER (Spring Boot)",
+      "workers": "Cloudflare Workers (AI services)"
+    },
+    "infrastructure": {
+      "deployment": "Cloudflare Pages",
+      "cdn": "Cloudflare CDN",
+      "analytics": "Cloudflare Analytics"
+    }
+  },
+  "patterns": {
+    "design_patterns": ["Container/Presentational", "Custom Hooks", "Lazy Loading"],
+    "architectural_patterns": ["SPA", "Component-based", "Store-based state"],
+    "api_patterns": ["REST", "WebSocket"]
+  },
+  "dependency_graph": {
+    "internal_dependencies": {
+      "components": "stores, services, utils",
+      "pages": "components, stores, services",
+      "services": "utils, config"
+    },
+    "external_dependencies": {
+      "api_server": "https://api.languagemate.kr",
+      "workers": "https://workers.languagemate.kr"
+    }
+  }
+}
