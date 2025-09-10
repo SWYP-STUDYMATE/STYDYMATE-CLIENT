@@ -326,19 +326,25 @@ const useProfileStore = create(
 - [ ] Hover 효과는 transition 적용
 - [ ] 텍스트는 Pretendard 폰트 사용
 
-## 🌐 배포 아키텍처 (Cloudflare Pages)
+## 🌐 배포 아키텍처 (Cloudflare Pages & Workers)
+
+### 배포된 서비스
+- **Frontend (Pages)**: https://75931264.studymate-client.pages.dev
+- **Backend (Workers)**: https://workers.languagemate.kr
+- **메인 도메인**: languagemate.kr (예정)
 
 ### 도메인 설정 (Cloudflare DNS)
 ```
 languagemate.kr → Cloudflare Pages (프로덕션)
+workers.languagemate.kr → Cloudflare Workers (API)
 preview.languagemate.kr → Cloudflare Pages (프리뷰/스테이징)
 ```
 
 ### 환경 변수 설정
 ```bash
 # Production (.env.production)
-VITE_API_URL=https://api.languagemate.kr
-VITE_WS_URL=wss://api.languagemate.kr/ws
+VITE_API_URL=https://workers.languagemate.kr
+VITE_WS_URL=wss://workers.languagemate.kr/ws
 
 # Preview/Staging (.env.staging)
 VITE_API_URL=https://api-staging.languagemate.kr
