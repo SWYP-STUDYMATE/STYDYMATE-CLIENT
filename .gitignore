@@ -23,6 +23,9 @@ dev-debug.log
 # OS specific
 .DS_Store
 
+# Backup files
+*.backup
+
 # Playwright
 test-results/
 playwright-report/
