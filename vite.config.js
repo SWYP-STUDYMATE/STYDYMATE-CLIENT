@@ -7,14 +7,15 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const isProduction = mode === 'production'
   
   return {
     plugins: [
       react(),
       tailwindcss(),
-      // 번들 분석 플러그인
-      visualizer({
-        open: false,
+      // 번들 분석 플러그인 (환경변수로 제어)
+      process.env.ANALYZE === 'true' && visualizer({
+        open: true,
         filename: 'dist/stats.html',
         gzipSize: true,
         brotliSize: true
@@ -22,21 +23,18 @@ export default defineConfig(({ mode }) => {
       // PWA 플러그인
       VitePWA({
         registerType: 'autoUpdate',
-        // 중복 프리캐시 방지: 정적 에셋은 workbox.globPatterns로 처리하므로 favicon만 별도 포함
         includeAssets: ['favicon.ico'],
         manifest: {
           name: 'STUDYMATE',
           short_name: 'STUDYMATE',
           description: '언어 교환 학습 플랫폼',
-          theme_color: '#3B82F6',
+          theme_color: '#00C471',
           background_color: '#ffffff',
           display: 'standalone',
-           // 아이콘은 실제 해상도 파일 준비 이후 추가합니다 (ex. 192x192, 512x512)
-           icons: []
+          icons: []
         },
         workbox: {
-          // png/svg 등 정적 파일은 여기서 자동 포함됨
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/api\./i,
@@ -59,23 +57,56 @@ export default defineConfig(({ mode }) => {
                   maxAgeSeconds: 30 * 24 * 60 * 60 // 30일
                 }
               }
+            },
+            {
+              urlPattern: /\.(woff|woff2|eot|ttf|otf)$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'font-cache',
+                expiration: {
+                  maxEntries: 20,
+                  maxAgeSeconds: 365 * 24 * 60 * 60 // 1년
+                }
+              }
             }
           ]
         }
       })
-    ],
+    ].filter(Boolean),
+    
+    // 경로 별칭 설정
     resolve: {
+      alias: {
+        '@': '/src',
+        '@components': '/src/components',
+        '@pages': '/src/pages',
+        '@hooks': '/src/hooks',
+        '@utils': '/src/utils',
+        '@services': '/src/services',
+        '@store': '/src/store',
+        '@api': '/src/api',
+        '@styles': '/src/styles',
+        '@assets': '/src/assets'
+      },
       dedupe: ['react', 'react-dom']
     },
-    // PostCSS 단계에서 발생하는 환경별 충돌을 회피하기 위해 명시적으로 비활성화합니다.
-    // Tailwind v4 + Vite7 조합에서는 Lightning CSS가 기본적으로 벤더 프리픽스를 처리합니다.
+    
+    // CSS 설정
     css: {
       postcss: {
         plugins: []
+      },
+      modules: {
+        localsConvention: 'camelCase'
       }
     },
+    
+    // 개발 서버 설정
     server: {
       port: 3000,
+      hmr: {
+        overlay: true
+      },
       proxy: {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:8080',
@@ -96,43 +127,112 @@ export default defineConfig(({ mode }) => {
       },
       historyApiFallback: true,
     },
-    // global 치환은 일부 UMD/CJS 번들(react scheduler 등)과 충돌 가능성이 있어 제거
+    
+    // 의존성 최적화
     optimizeDeps: {
-      include: ['sockjs-client', '@stomp/stompjs', 'scheduler', 'react', 'react-dom']
+      include: [
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'axios',
+        'zustand',
+        'jwt-decode',
+        'sockjs-client',
+        '@stomp/stompjs',
+        'scheduler',
+        'lucide-react'
+      ],
+      exclude: [
+        // 큰 라이브러리들은 동적 import로 처리
+        'emoji-picker-react',
+        'recharts'
+      ]
     },
+    
+    // 빌드 설정
     build: {
       outDir: 'dist',
-      sourcemap: mode !== 'production',
-      // 프로덕션 최적화를 위한 압축 비활성화 (디버깅용)
-      minify: false,
+      sourcemap: !isProduction,
+      minify: isProduction ? 'terser' : false,
       target: 'es2019',
+      
+      // Terser 옵션 (프로덕션만)
+      terserOptions: isProduction ? {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        },
+        format: {
+          comments: false
+        }
+      } : undefined,
+      
       commonjsOptions: {
         include: [/node_modules/],
         transformMixedEsModules: true,
         requireReturnsDefault: 'auto'
       },
+      
       rollupOptions: {
         output: {
-          // 청킹 전략 최적화
-          assetFileNames: 'assets/[name]-[hash][extname]',
+          // 에셋 파일명 최적화
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split('.');
+            const ext = info[info.length - 1];
+            
+            if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) {
+              return `images/[name]-[hash].${ext}`;
+            }
+            if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
+              return `fonts/[name]-[hash].${ext}`;
+            }
+            if (/\.(css)$/i.test(assetInfo.name)) {
+              return `css/[name]-[hash].${ext}`;
+            }
+            return `assets/[name]-[hash].${ext}`;
+          },
+          
           chunkFileNames: 'js/[name]-[hash].js',
           entryFileNames: 'js/[name]-[hash].js',
+          
+          // 청킹 전략 최적화
           manualChunks: {
-            vendor: ['react', 'react-dom'],
-            router: ['react-router-dom'],
-            store: ['zustand'],
-            ui: ['lucide-react', 'emoji-picker-react'],
-            api: ['axios', 'sockjs-client', '@stomp/stompjs']
+            // React 코어
+            'vendor-react': ['react', 'react-dom'],
+            // 라우팅
+            'vendor-router': ['react-router-dom'],
+            // 상태 관리
+            'vendor-state': ['zustand'],
+            // UI 라이브러리
+            'vendor-ui': ['lucide-react'],
+            // API & 네트워킹
+            'vendor-api': ['axios', 'jwt-decode'],
+            // 실시간 통신
+            'vendor-socket': ['sockjs-client', '@stomp/stompjs'],
+            // 큰 라이브러리들을 개별 청크로 분리
+            'vendor-emoji': ['emoji-picker-react'],
+            'vendor-charts': ['recharts'],
+            'vendor-select': ['react-select']
           }
         }
       },
-      // 압축 및 트리쉐이킹 최적화
+      
+      // CSS 코드 분할
       cssCodeSplit: true,
       chunkSizeWarningLimit: 1000,
+      
       // Preload 지시어 삽입
       modulePreload: {
         polyfill: true
       }
+    },
+    
+    // 환경변수 정의
+    define: {
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+      __VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+      __DEV__: !isProduction
     }
   }
 })
