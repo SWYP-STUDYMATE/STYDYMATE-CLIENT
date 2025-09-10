@@ -19,23 +19,33 @@ export default function OnboardingInfo2() {
   useEffect(() => {
     api.get("/user/locations")
       .then(res => {
-        setLocations(res.data);
-        console.log(res.data);
+        // API 응답이 배열인지 확인하고 안전하게 설정
+        const locationData = Array.isArray(res.data) ? res.data : [];
+        setLocations(locationData);
+        console.log("API Response:", res.data);
+        console.log("Processed locations:", locationData);
       })
       .catch(err => {
         showError("거주지 리스트를 불러오지 못했습니다.");
-        console.error(err);
+        console.error("API Error:", err);
+        // 에러 발생 시 빈 배열로 설정하여 안전성 보장
+        setLocations([]);
       });
   }, []);
 
   // API 데이터를 react-select 옵션으로 변환
-  const residenceOptions = useMemo(() =>
-    locations.map(loc => ({
+  const residenceOptions = useMemo(() => {
+    // locations가 배열인지 다시 한번 확인
+    if (!Array.isArray(locations)) {
+      console.warn("Locations is not an array:", locations);
+      return [];
+    }
+    
+    return locations.map(loc => ({
       value: loc.locationId,
       label: `${loc.city}, ${loc.country} (${loc.timezone})`
-    })),
-    [locations]
-  );
+    }));
+  }, [locations]);
 
   const isButtonEnabled = !!selected;
 

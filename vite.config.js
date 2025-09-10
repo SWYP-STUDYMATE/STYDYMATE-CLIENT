@@ -193,8 +193,15 @@ export default defineConfig(({ mode }) => {
             return `assets/[name]-[hash].${ext}`;
           },
           
-          chunkFileNames: 'js/[name]-[hash].js',
-          entryFileNames: 'js/[name]-[hash].js',
+          chunkFileNames: (chunkInfo) => {
+            // 타임스탬프를 포함하여 캐시 버스팅 강화
+            const timestamp = Date.now().toString(36);
+            return `js/[name]-[hash]-${timestamp}.js`;
+          },
+          entryFileNames: (chunkInfo) => {
+            const timestamp = Date.now().toString(36);
+            return `js/[name]-[hash]-${timestamp}.js`;
+          },
           
           // 청킹 전략 최적화
           manualChunks: {
