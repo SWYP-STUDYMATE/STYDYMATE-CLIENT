@@ -16,19 +16,26 @@ export default function Login() {
     }
   }, [navigate]);
 
-  const handleNaverLogin = useCallback(() => {
-    setIsLoading(true);
-    setError(null);
-    // Cloudflare 프록시 우회하여 직접 API 서버로 리다이렉트
-    window.location.href = "https://api.languagemate.kr/api/v1/login/naver";
-  }, []);
+  const API_BASE = import.meta.env.DEV ? "" : "https://api.languagemate.kr";
+  const FRONT_ORIGIN = window.location.origin
 
-  const handleGoogleLogin = useCallback(() => {
+   const startLogin = useCallback((provider) => {
     setIsLoading(true);
     setError(null);
-    // Cloudflare 프록시 우회하여 직접 API 서버로 리다이렉트
-    window.location.href = "https://api.languagemate.kr/api/v1/login/google";
-  }, []);
+    
+    const url = import.meta.env.DEV
+  // dev: Vite 프록시를 타는 시작 엔드포인트로 이동
+  ? `/api/v1/login/${provider}?target=${encodeURIComponent(FRONT_ORIGIN)}`
+  // prod: 운영 API의 시작 엔드포인트로 이동
+  : `${API_BASE}/api/v1/login/${provider}?target=${encodeURIComponent(FRONT_ORIGIN)}`;
+
+
+    window.location.href = url;
+  }, [API_BASE, FRONT_ORIGIN]);
+
+  const handleNaverLogin = useCallback(() => startLogin("naver"), [startLogin]);
+  const handleGoogleLogin = useCallback(() => startLogin("google"), [startLogin]);
+
 
   return (
     <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">

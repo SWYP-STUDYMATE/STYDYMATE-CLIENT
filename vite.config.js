@@ -108,6 +108,11 @@ export default defineConfig(({ mode }) => {
         overlay: true
       },
       proxy: {
+        '/api/v1/login': {
+          target: env.VITE_API_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          rewrite: (p) => p,
+        },
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:8080',
           changeOrigin: true,
@@ -123,7 +128,7 @@ export default defineConfig(({ mode }) => {
         '/login/oauth2/code/naver': {
           target: env.VITE_API_URL || 'http://localhost:8080',
           changeOrigin: true,
-        },
+        }
       },
       historyApiFallback: true,
     },
@@ -237,6 +242,7 @@ export default defineConfig(({ mode }) => {
     
     // 환경변수 정의
     define: {
+      global: 'window', // sockjs-client 등 global 참조 패치
       __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
       __VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
       __DEV__: !isProduction
