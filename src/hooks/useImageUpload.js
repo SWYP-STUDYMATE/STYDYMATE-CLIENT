@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr'';
+const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
 
 export function useImageUpload() {
   const [loading, setLoading] = useState(false);
