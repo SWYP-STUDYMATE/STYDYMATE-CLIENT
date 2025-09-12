@@ -52,7 +52,7 @@ const KeyboardNavigableList = ({
   // 키보드 이벤트 처리
   const handleKeyDown = (e) => {
     switch (e.key) {
-      case 'ArrowDown':
+      case 'ArrowDown': {
         e.preventDefault();
         const nextIndex = loop 
           ? (activeIndex + 1) % items.length
@@ -61,8 +61,9 @@ const KeyboardNavigableList = ({
         focusNext();
         onItemSelect?.(items[nextIndex], nextIndex);
         break;
+      }
         
-      case 'ArrowUp':
+      case 'ArrowUp': {
         e.preventDefault();
         const prevIndex = loop 
           ? (activeIndex - 1 + items.length) % items.length
@@ -71,27 +72,31 @@ const KeyboardNavigableList = ({
         focusPrevious();
         onItemSelect?.(items[prevIndex], prevIndex);
         break;
+      }
         
-      case 'Home':
+      case 'Home': {
         e.preventDefault();
         setActiveIndex(0);
         focusFirst();
         onItemSelect?.(items[0], 0);
         break;
+      }
         
-      case 'End':
+      case 'End': {
         e.preventDefault();
         const lastIndex = items.length - 1;
         setActiveIndex(lastIndex);
         focusLast();
         onItemSelect?.(items[lastIndex], lastIndex);
         break;
+      }
         
-      case 'Enter':
-      case ' ':
+      case 'Enter': 
+      case ' ': {
         e.preventDefault();
         onItemActivate?.(items[activeIndex], activeIndex);
         break;
+      }
     }
   };
 

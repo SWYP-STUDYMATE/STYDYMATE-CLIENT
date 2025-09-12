@@ -58,7 +58,7 @@ export default function GroupSessionPage() {
       let data;
       
       switch (activeTab) {
-        case 'PUBLIC':
+        case 'PUBLIC': {
           const publicResponse = await getPublicGroupSessions({
             language: filters.language,
             level: filters.level,
@@ -66,24 +66,29 @@ export default function GroupSessionPage() {
           });
           data = publicResponse.data?.content || publicResponse.data || [];
           break;
+        }
           
-        case 'MY':
+        case 'MY': {
           const myResponse = await getMyGroupSessions();
           data = myResponse.data || [];
           break;
+        }
           
-        case 'UPCOMING':
+        case 'UPCOMING': {
           const upcomingResponse = await getUpcomingGroupSessions();
           data = upcomingResponse.data?.content || upcomingResponse.data || [];
           break;
+        }
           
-        case 'ONGOING':
+        case 'ONGOING': {
           const ongoingResponse = await getOngoingGroupSessions();
           data = ongoingResponse.data || [];
           break;
+        }
           
-        default:
+        default: {
           data = [];
+        }
       }
       
       setSessions(Array.isArray(data) ? data : []);
