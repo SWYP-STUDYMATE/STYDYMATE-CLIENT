@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api";
 
 export default function ObInt4() {
-  const [selected, setSelected] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
   const [learningExpectations, setLearningExpectations] = useState([]);
   const [loading, setLoading] = useState(true);
   const setSelectedGoal = useMotivationStore((state) => state.setSelectedGoal);
@@ -31,20 +31,20 @@ export default function ObInt4() {
     fetchLearningExpectations();
   }, []);
 
-  const handleSelect = (name) => {
-    setSelected(name);
+  const handleSelect = (id) => {
+    setSelectedId(id);
   };
 
   const handleNext = async () => {
-    setSelectedGoal(selected);
+    setSelectedGoal(selectedId);
     
     // API 호출을 위한 데이터 준비
     const requestData = {
-      learningExpectionType: selected
+      learningExpectationIds: [selectedId],
     };
 
     try {
-      await api.post("/onboard/interest//learning-expectation", requestData);
+      await api.post("/onboard/interest/learning-expectation", requestData);
       console.log("학습 기대 데이터 전송 성공");
       navigate("/onboarding-int/complete");
     } catch (error) {
@@ -70,16 +70,16 @@ export default function ObInt4() {
           <div className="flex flex-col gap-[12px]">
             {learningExpectations.map((item) => (
               <CommonChecklistItem
-                key={item.name}
-                label={item.description}
-                checked={selected === item.name}
-                onChange={() => handleSelect(item.name)}
+                key={item.learningExpectationId}
+                label={item.learningExpectationName}
+                checked={selectedId === item.learningExpectationId}
+                onChange={() => handleSelect(item.learningExpectationId)}
                 type="radio"
               />
             ))}
           </div>
         )}
-        <CommonButton text="다음" className="w-full mt-[372px]" disabled={!selected || loading} onClick={handleNext} />
+        <CommonButton text="다음" className="w-full mt-[372px]" disabled={!selectedId || loading} onClick={handleNext} />
       </div>
     </div>
   );

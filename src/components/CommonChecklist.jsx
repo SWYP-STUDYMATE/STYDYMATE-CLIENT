@@ -33,7 +33,7 @@ export default function CommonChecklistItem({ label, checked, onChange, disabled
         onChange={onChange}
         disabled={disabled}
         className="sr-only"
-        aria-describedby={`${type}-${label.replace(/\s+/g, '-').toLowerCase()}`}
+        aria-describedby={`${type}-${(label ?? "").toString().replace(/\s+/g, '-').toLowerCase()}`}
       />
       <span className="text-[16px] font-medium text-[var(--black-500)] leading-[24px] select-none">
         {label}
