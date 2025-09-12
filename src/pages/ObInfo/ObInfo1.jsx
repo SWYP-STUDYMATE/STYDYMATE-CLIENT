@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Header from "../../components/Header";
 import ProgressBar from "../../components/PrograssBar";
-import { saveOnboardingStep1 } from "../../api/onboarding";
+import { saveEnglishName} from "../../api/onboarding";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
@@ -46,11 +46,8 @@ export default function OnboardingInfo() {
     }
 
     try {
-      await saveOnboardingStep1({
-        englishName: trimmedName,
-        residence: '',
-        profileImage: null,
-        intro: ''
+      await saveEnglishName({
+        englishName: trimmedName
       });
       setEnglishName(trimmedName);
       navigate("/onboarding-info/2");
