@@ -43,7 +43,7 @@ export default function OnboardingInfo2() {
     
     return locations.map(loc => ({
       value: loc.locationId,
-      label: `${loc.city}, ${loc.country} (${loc.timeZone})`
+      label: `${loc.city}, ${loc.country} (${loc.timezone})`
     }));
   }, [locations]);
 
