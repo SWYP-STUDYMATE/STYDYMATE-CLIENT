@@ -4,7 +4,7 @@ import ProgressBar from "../../components/PrograssBar";
 import CommonButton from "../../components/CommonButton";
 import Select from "react-select";
 import useProfileStore from "../../store/profileStore";
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import commonSelectStyles from "../../components/SelectStyles";
 import api from "../../api";
 import { useAlert } from "../../hooks/useAlert.jsx";
@@ -20,7 +20,7 @@ export default function OnboardingInfo2() {
     api.get("/user/locations")
       .then(res => {
         // API 응답이 배열인지 확인하고 안전하게 설정
-        const locationData = Array.isArray(res.data) ? res.data : [];
+        const locationData = Array.isArray(res.data?.data) ? res.data.data : [];
         setLocations(locationData);
         console.log("API Response:", res.data);
         console.log("Processed locations:", locationData);
@@ -43,7 +43,7 @@ export default function OnboardingInfo2() {
     
     return locations.map(loc => ({
       value: loc.locationId,
-      label: `${loc.city}, ${loc.country} (${loc.timezone})`
+      label: `${loc.city}, ${loc.country} (${loc.timeZone})`
     }));
   }, [locations]);
 
