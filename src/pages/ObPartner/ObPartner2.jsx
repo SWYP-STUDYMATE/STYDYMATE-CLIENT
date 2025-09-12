@@ -39,15 +39,16 @@ export default function ObPartner2() {
 
   const handleNext = async () => {
     // id 배열을 personality 객체 배열로 변환하여 저장
-    const selectedStyles = partnerPersonalities.filter(item => selected.includes(item.partnerPersonalityId));
+    const selectedStyles = partnerPersonalities.filter((item) => selected.includes(item.partnerPersonalityId));
     setSelectedPartnerStyles(selectedStyles);
     
     // API 호출을 위한 데이터 준비
     const requestData = {
-      personalPartnerIds: selected.sort((a, b) => a - b)
+      personalPartnerIds:  [...selected].sort((a, b) => a - b)
     };
 
     try {
+      console.log('/onboard/partner/personality', requestData);
       await api.post("/onboard/partner/personality", requestData);
       console.log("파트너 성격 데이터 전송 성공");
       navigate("/onboarding-partner/complete");
