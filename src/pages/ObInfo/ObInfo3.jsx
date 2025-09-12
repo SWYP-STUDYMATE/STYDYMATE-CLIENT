@@ -249,16 +249,15 @@ export default function OnboardingInfo3() {
       const formData = new FormData();
       formData.append('file', imageFile);
 
-      const response = await api.post("/user/profile-image", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await api.post("/user/profile-image", formData);
       
       console.log('📥 서버 응답:', response.data);
       
       // 서버에서 반환된 URL 사용
-      const profileImageUrl = response.data?.url || response.data;
+      const profileImageUrl = 
+      response?.data?.data?.url ??
+      response?.data?.url ??
+      response?.url;
       
       if (profileImageUrl) {
         // 로컬 스토어 업데이트 (서버에서 받은 URL 사용)

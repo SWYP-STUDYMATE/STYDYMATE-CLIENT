@@ -73,7 +73,7 @@ export default function ObLang3() {
     const requestData = {
       languages: validPairs.map(pair => ({
         languageId: pair.language.value,
-        currentLevelId: 1, // 초급 레벨로 설정 (배우고 싶은 언어이므로)
+        currentLevelId: 201, // 초급 레벨로 설정 (배우고 싶은 언어이므로)
         targetLevelId: pair.level.value // 원하는 파트너 레벨
       }))
     };
