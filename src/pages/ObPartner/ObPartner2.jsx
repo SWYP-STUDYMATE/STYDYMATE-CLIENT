@@ -32,20 +32,21 @@ export default function ObPartner2() {
   }, []);
 
   const handleSelect = (id) => {
+    const num = Number(id);
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
+      prev.includes(num) ? prev.filter((s) => s !== num) : [...prev, num]
+ );
   };
 
   const handleNext = async () => {
     // id 배열을 personality 객체 배열로 변환하여 저장
     const selectedStyles = partnerPersonalities.filter((item) => selected.includes(item.partnerPersonalityId));
     setSelectedPartnerStyles(selectedStyles);
-    
-    // API 호출을 위한 데이터 준비
-    const requestData = {
-      personalPartnerIds:  [...selected].sort((a, b) => a - b)
-    };
+  const ids = [...selected]
+    .map((item) => Number(item.partnerPersonalityId))
+    .filter(Number.isInteger)
+    .sort((a, b) => a - b);
+  const requestData = { personalPartnerIds: ids };
 
     try {
       console.log('/onboard/partner/personality', requestData);
