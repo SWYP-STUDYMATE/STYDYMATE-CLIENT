@@ -18,9 +18,9 @@ import api from './index.js';
 
 export const levelTestStart = async ({
   languageCode = 'en',
-  testType = 'VOICE',
-  testLevel = 'AUTO',
-  totalQuestions = 10,
+  testType = 'SPEAKING',
+  testLevel = 'INTERMEDIATE',
+  totalQuestions = 5,
 } = {}) => {
   const res = await api.post('/level-test/start', {
     testType, languageCode, testLevel, totalQuestions,
