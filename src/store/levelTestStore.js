@@ -82,15 +82,12 @@ const useLevelTestStore = create(
         try {
           set({ testLanguage: language });
           const testData = await startLevelTest(language);
+          const testId = testData?.testId ?? testData?.id;
+          if (!testId) throw new Error('NO_TEST_ID_FROM_API');
+          set({ currentTestId: testId, testStatus: 'idle' });
+          return { ...testData, testId };
           
-          if (testData?.testId) {
-            set({ 
-              currentTestId: testData.testId,
-              testStatus: 'idle'
-            });
-            log('Level test started:', testData);
-            return testData;
-          }
+          
         } catch (error) {
           handleLevelTestError(error, 'startNewTest');
           throw error;
@@ -99,17 +96,15 @@ const useLevelTestStore = create(
       
       loadQuestions: async () => {
         try {
-          const state = get();
-          if (!state.currentTestId) {
-            // 테스트가 시작되지 않았으면 먼저 시작
-            const testData = await state.startNewTest(state.testLanguage);
-            if (!testData?.testId) {
-              throw new Error('Failed to start test');
+             let activeId = get().currentTestId;
+             if (!activeId) {
+              const started = await get().startNewTest(get().testLanguage);
+              activeId = started?.testId ?? started?.id;
+              if (!activeId) throw new Error('Failed to start test');
             }
-          }
-          
-          const response = await getLevelTestQuestions(state.currentTestId);
-          
+            
+            const response = await getLevelTestQuestions(activeId);
+
           if (response?.questions?.length > 0) {
             set({ 
               questions: response.questions,

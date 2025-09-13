@@ -1,54 +1,31 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { levelTestStart } from '../api/levelTest';
 
-// 서버 API와 동기화된 언어 정보 상태 관리
-const useLangInfoStore = create(
+const useLevelTestStore = create(
   persist(
     (set, get) => ({
-      nativeLanguage: null, // { id, name } 형태로 저장
-      otherLanguages: [], // [{ language, level }]
-      wantedLanguages: [], // [{ language, level }]
-      
-      // 서버에서 언어 정보 로드
-      loadLanguageInfo: async () => {
-        try {
-          const { getUserInfo } = await import('../api/user.js');
-          const userInfo = await getUserInfo();
-          
-          if (userInfo.languageInfo) {
-            set({
-              nativeLanguage: userInfo.languageInfo.nativeLanguage || "",
-              otherLanguages: userInfo.languageInfo.otherLanguages || [],
-              wantedLanguages: userInfo.languageInfo.wantedLanguages || []
-            });
-          }
-        } catch (error) {
-          console.error('Failed to load language info:', error);
-        }
+      currentTest: null,
+      questions: [],
+      resetTest: () => set({ currentTest: null, questions: [] }),
+      startNewTest: async (lang = 'en') => {
+        const test = await levelTestStart({
+          languageCode: lang,
+          testType: 'AI',
+          testLevel: 'AUTO',
+          totalQuestions: 10,
+        });
+        set({ currentTest: test });
+        return test;
       },
-      
-      // 모국어 설정 (로컬 상태만 업데이트, 서버 호출은 컴포넌트에서 처리)
-      setNativeLanguage: (language) => {
-        set({ nativeLanguage: language });
+      loadQuestions: async () => {
+        // TODO: 실제 질문 로딩 API로 교체
+        // const qs = await getLevelTestQuestions();
+        // set({ questions: qs });
       },
-      
-      // 기타 언어 설정
-      setOtherLanguages: (languages) => set({ otherLanguages: languages }),
-      
-      // 목표 언어 설정 (로컬 상태만 업데이트, 서버 호출은 컴포넌트에서 처리)
-      setWantedLanguages: (languages) => {
-        set({ wantedLanguages: languages });
-      },
-      
-      // 언어 정보 초기화
-      clearLanguageInfo: () => set({
-        nativeLanguage: null,
-        otherLanguages: [],
-        wantedLanguages: []
-      }),
     }),
-    { name: "lang-info-storage" }
+    { name: 'level-test-storage' }
   )
 );
 
-export default useLangInfoStore; 
+export default useLevelTestStore;

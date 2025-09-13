@@ -87,7 +87,9 @@ api.interceptors.response.use(
             { headers: { Authorization: `Bearer ${refreshToken}` } }
           );
           
-          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+          // const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+          const payload = res.data?.data ?? res.data; // ApiResponse 호환
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = payload;
           if (newAccessToken) {
             localStorage.setItem("accessToken", newAccessToken);
             if (newRefreshToken) {
@@ -153,7 +155,9 @@ api.interceptors.response.use(
         
         log.debug("토큰 재발급 응답 수신", res.data, 'AUTH');
         
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+        // const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+        const payload = res.data?.data ?? res.data; // ApiResponse 호환
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = payload;
         if (newAccessToken) {
           localStorage.setItem("accessToken", newAccessToken);
           // refreshToken이 응답에 있으면 갱신, 없으면 기존 값 유지

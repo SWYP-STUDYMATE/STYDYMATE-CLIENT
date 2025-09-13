@@ -4,17 +4,51 @@ import api from './index.js';
 // ===== Spring Boot 서버 API 함수들 =====
 
 // 레벨 테스트 시작 (Spring Boot)
-export const startLevelTest = async (language = 'en') => {
-  try {
-    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.START, {
-      targetLanguage: language
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Start level test error:', error);
-    throw error;
+// export const startLevelTest = async (language = 'en') => {
+//   try {
+//     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.START, {
+//       targetLanguage: language
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error('Start level test error:', error);
+//     throw error;
+//   }
+// };
+
+export const levelTestStart = async ({
+  languageCode = 'en',
+  testType = 'VOICE',
+  testLevel = 'AUTO',
+  totalQuestions = 10,
+} = {}) => {
+  const res = await api.post('/level-test/start', {
+    testType, languageCode, testLevel, totalQuestions,
+  });
+
+  const outer = res?.data ?? res;
+  const inner = outer?.data ?? outer;
+  const testId =
+    inner?.testId ??
+    inner?.id ??
+    outer?.testId ??
+    outer?.id;
+
+  if (!testId) {
+    console.error('[start] unexpected response shape:', res?.data);
+    throw new Error('NO_TEST_ID_FROM_API');
   }
+
+  // 항상 testId 키를 포함해 반환
+  return { ...inner, testId };
 };
+
+
+export const startLevelTest = (language = 'en') =>
+  levelTestStart({ languageCode: language });
+
+
+
 
 // 레벨 테스트 질문 조회 (Spring Boot)
 export const getLevelTestQuestions = async (testId, category = 'general') => {
