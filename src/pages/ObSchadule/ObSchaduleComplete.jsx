@@ -35,8 +35,8 @@ export default function ObSchaduleComplete() {
       });
       console.log("✅ 온보딩 완료 상태 서버 저장 성공");
       
-      // 레벨 테스트 또는 메인 페이지로 이동
-      navigate("/level-test/check ");
+      
+      navigate("/level-test");
     } catch (error) {
       console.error("온보딩 완료 저장 실패:", error);
       // 저장 실패해도 메인 페이지로 이동
