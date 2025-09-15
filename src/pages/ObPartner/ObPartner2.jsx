@@ -40,10 +40,11 @@ export default function ObPartner2() {
 
   const handleNext = async () => {
     // id 배열을 personality 객체 배열로 변환하여 저장
-    const selectedStyles = partnerPersonalities.filter((item) => selected.includes(item.partnerPersonalityId));
+    const selectedStyles = partnerPersonalities.filter((item) => 
+      selected.includes(item.partnerPersonalityId));
     setSelectedPartnerStyles(selectedStyles);
-  const ids = [...selected]
-    .map((item) => Number(item.partnerPersonalityId))
+    const ids = [...selected]
+    .map(Number)
     .filter(Number.isInteger)
     .sort((a, b) => a - b);
   const requestData = { personalPartnerIds: ids };
