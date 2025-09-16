@@ -21,7 +21,7 @@ export default function ObLang2() {
 
   useEffect(() => {
     setLoadingLang(true);
-    api.get("/onboard/language/languages")
+    api.get("/onboarding/language/languages")
       .then(res => {
         const options = (res.data || []).map(lang => ({
           value: lang.languageId,
@@ -36,7 +36,7 @@ export default function ObLang2() {
         console.error(err);
       });
     setLoadingLevel(true);
-    api.get("/onboard/language/level-types-language")
+    api.get("/onboarding/language/level-types-language")
       .then(res => {
         const options = (res.data || []).map(level => ({
           value: level.langLevelId,
@@ -80,20 +80,45 @@ export default function ObLang2() {
       }))
     };
 
+    console.log("🔍 [ObLang2] API 요청 데이터:", requestData);
+    console.log("🔍 [ObLang2] 유효한 페어:", validPairs);
 
     try {
-      const response = await api.post("/onboard/language/language-level", requestData);
+      console.log("🔍 [ObLang2] 언어 레벨 API 호출 시작");
+      const response = await api.post("/onboarding/language/language-level", requestData);
+      console.log("🔍 [ObLang2] API 응답 성공:", response.data);
+
       // 로컬 상태만 업데이트 (서버 호출 없이)
       setOtherLanguages(validPairs.map(pair => ({
         id: pair.language.value,
         name: pair.language.label,
         level: pair.level.label
       })));
-      
+
       navigate("/onboarding-lang/3");
     } catch (error) {
-      console.error("언어 레벨 데이터 전송 실패:", error);
-      showError("데이터 전송에 실패했습니다. 다시 시도해주세요.");
+      console.error("🔍 [ObLang2] ❌ 언어 레벨 데이터 전송 실패:", error);
+      console.error("🔍 [ObLang2] Error status:", error.response?.status);
+      console.error("🔍 [ObLang2] Error data:", error.response?.data);
+      console.error("🔍 [ObLang2] Request config:", error.config);
+
+      let errorMessage = "데이터 전송에 실패했습니다. 다시 시도해주세요.";
+      if (error.response?.status === 400) {
+        const serverError = error.response?.data;
+        if (serverError?.message) {
+          errorMessage = `입력 오류: ${serverError.message}`;
+        } else {
+          errorMessage = "입력한 데이터를 확인해주세요. (400 Bad Request)";
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = "로그인이 필요합니다.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "권한이 없습니다.";
+      } else if (error.response?.status >= 500) {
+        errorMessage = "서버 오류입니다. 잠시 후 다시 시도해주세요.";
+      }
+
+      showError(errorMessage);
     }
   };
 

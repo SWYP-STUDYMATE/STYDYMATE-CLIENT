@@ -16,7 +16,7 @@ export default function ObSchadule3() {
     const fetchDailyMethods = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/schedule/daily-methods");
+        const response = await api.get("/onboarding/schedule/daily-methods");
         setDailyMethods(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -41,7 +41,7 @@ export default function ObSchadule3() {
     };
 
     try {
-      await api.post("/onboard/schedule/daily-minute", requestData);
+      await api.post("/onboarding/schedule/daily-minute", requestData);
       console.log("하루 공부 시간 데이터 전송 성공");
       navigate("/onboarding-schedule/4");
     } catch (error) {

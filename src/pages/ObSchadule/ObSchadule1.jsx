@@ -18,7 +18,7 @@ export default function ObSchadule1() {
     const fetchCommunicationMethods = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/schedule/communication-methods");
+        const response = await api.get("/onboarding/schedule/communication-methods");
         setCommunicationMethods(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -43,7 +43,7 @@ export default function ObSchadule1() {
     };
 
     try {
-      await api.post("/onboard/schedule/communication-method", requestData);
+      await api.post("/onboarding/schedule/communication-method", requestData);
       console.log("소통 방식 데이터 전송 성공");
       navigate("/onboarding-schedule/2");
     } catch (error) {

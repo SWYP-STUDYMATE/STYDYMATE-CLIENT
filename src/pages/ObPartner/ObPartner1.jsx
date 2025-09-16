@@ -18,7 +18,7 @@ export default function ObPartner1() {
     const fetchGenders = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/partner/gender-type");
+        const response = await api.get("/onboarding/partner/gender-type");
         setGenders(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -44,7 +44,7 @@ export default function ObPartner1() {
     };
 
     try {
-      await api.post("/onboard/partner/gender", requestData);
+      await api.post("/onboarding/partner/gender", requestData);
       console.log("파트너 성별 데이터 전송 성공");
       navigate("/onboarding-partner/2");
     } catch (error) {

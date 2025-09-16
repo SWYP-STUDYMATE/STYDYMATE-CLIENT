@@ -18,7 +18,7 @@ export default function ObPartner2() {
     const fetchPartnerPersonalities = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/partner/personalities");
+        const response = await api.get("/onboarding/partner/personalities");
         setPartnerPersonalities(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -50,8 +50,8 @@ export default function ObPartner2() {
   const requestData = { personalPartnerIds: ids };
 
     try {
-      console.log('/onboard/partner/personality', requestData);
-      await api.post("/onboard/partner/personality", requestData);
+      console.log('/onboarding/partner/personality', requestData);
+      await api.post("/onboarding/partner/personality", requestData);
       console.log("파트너 성격 데이터 전송 성공");
       navigate("/onboarding-partner/complete");
     } catch (error) {
