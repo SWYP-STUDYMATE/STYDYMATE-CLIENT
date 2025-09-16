@@ -59,10 +59,25 @@ export const skipOnboardingStep = async (step) => {
 // 1단계: 기본 정보 저장 (이름 변경: saveOnboardingStep1 -> saveStep1)
 export const saveOnboardingStep1 = async (userData) => {
   try {
-    const response = await api.post('/onboarding/steps/1/save', userData);
+    console.log("🔍 saveOnboardingStep1 호출, 입력 데이터:", userData);
+
+    // 서버가 기대하는 형식으로 변환
+    const requestBody = {
+      stepNumber: 1,
+      stepData: {
+        englishName: userData.englishName,
+        residence: userData.residence || '',
+        profileImage: userData.profileImage || null,
+        intro: userData.intro || ''
+      }
+    };
+
+    console.log("🔍 서버로 전송할 데이터:", requestBody);
+
+    const response = await api.post('/onboarding/steps/1/save', requestBody);
     return response.data;
   } catch (error) {
-    console.error('Save onboarding step1 error:', error);
+    console.error('🔍 Save onboarding step1 error:', error);
     throw error;
   }
 };
@@ -73,10 +88,20 @@ export const saveStep1 = saveOnboardingStep1;
 // 2단계: 언어 정보 저장 (이름 변경: saveOnboardingStep2 -> saveStep2)
 export const saveOnboardingStep2 = async (languageData) => {
   try {
-    const response = await api.post('/onboarding/steps/2/save', languageData);
+    console.log("🔍 saveOnboardingStep2 호출, 입력 데이터:", languageData);
+
+    // 서버가 기대하는 형식으로 변환
+    const requestBody = {
+      stepNumber: 2,
+      stepData: languageData
+    };
+
+    console.log("🔍 서버로 전송할 데이터:", requestBody);
+
+    const response = await api.post('/onboarding/steps/2/save', requestBody);
     return response.data;
   } catch (error) {
-    console.error('Save onboarding step2 error:', error);
+    console.error('🔍 Save onboarding step2 error:', error);
     throw error;
   }
 };
@@ -87,10 +112,20 @@ export const saveStep2 = saveOnboardingStep2;
 // 3단계: 학습 정보 저장 (이름 변경: saveOnboardingStep3 -> saveStep3)
 export const saveOnboardingStep3 = async (learningData) => {
   try {
-    const response = await api.post('/onboarding/steps/3/save', learningData);
+    console.log("🔍 saveOnboardingStep3 호출, 입력 데이터:", learningData);
+
+    // 서버가 기대하는 형식으로 변환
+    const requestBody = {
+      stepNumber: 3,
+      stepData: learningData
+    };
+
+    console.log("🔍 서버로 전송할 데이터:", requestBody);
+
+    const response = await api.post('/onboarding/steps/3/save', requestBody);
     return response.data;
   } catch (error) {
-    console.error('Save onboarding step3 error:', error);
+    console.error('🔍 Save onboarding step3 error:', error);
     throw error;
   }
 };
@@ -101,10 +136,20 @@ export const saveStep3 = saveOnboardingStep3;
 // 4단계: 선호도 저장 (이름 변경: saveOnboardingStep4 -> saveStep4)
 export const saveOnboardingStep4 = async (preferenceData) => {
   try {
-    const response = await api.post('/onboarding/steps/4/save', preferenceData);
+    console.log("🔍 saveOnboardingStep4 호출, 입력 데이터:", preferenceData);
+
+    // 서버가 기대하는 형식으로 변환
+    const requestBody = {
+      stepNumber: 4,
+      stepData: preferenceData
+    };
+
+    console.log("🔍 서버로 전송할 데이터:", requestBody);
+
+    const response = await api.post('/onboarding/steps/4/save', requestBody);
     return response.data;
   } catch (error) {
-    console.error('Save onboarding step4 error:', error);
+    console.error('🔍 Save onboarding step4 error:', error);
     throw error;
   }
 };
@@ -128,13 +173,28 @@ export const saveLanguageInfo = async (languageData) => {
     
     // 목표 언어들 저장 (배치로 처리)
     if (languageData.targetLanguages && languageData.targetLanguages.length > 0) {
-      await api.post('/onboard/language/language-level', {
+      console.log("🔍 [saveLanguageInfo] 목표 언어 저장 시작");
+      console.log("🔍 [saveLanguageInfo] targetLanguages:", languageData.targetLanguages);
+
+      const languageLevelRequest = {
         languages: languageData.targetLanguages.map((targetLang) => ({
           languageId: targetLang.languageId,
           currentLevelId: targetLang.currentLevelId,
           targetLevelId: targetLang.targetLevelId
         }))
-      });
+      };
+
+      console.log("🔍 [saveLanguageInfo] language-level API 요청:", languageLevelRequest);
+
+      try {
+        const levelResponse = await api.post('/onboard/language/language-level', languageLevelRequest);
+        console.log("🔍 [saveLanguageInfo] language-level API 응답:", levelResponse.data);
+      } catch (levelError) {
+        console.error("🔍 [saveLanguageInfo] ❌ language-level API 실패:", levelError);
+        console.error("🔍 [saveLanguageInfo] Error status:", levelError.response?.status);
+        console.error("🔍 [saveLanguageInfo] Error data:", levelError.response?.data);
+        throw levelError;
+      }
     }
     
     return response.data;

@@ -33,26 +33,42 @@ export default function OnboardingInfo() {
   // 버튼 클릭 시만 저장
   const handleNext = async () => {
     const trimmedName = inputValue.trim();
-    
+
+    // 🔍 디버깅 로그 추가
+    console.log("🔍 [OnboardingInfo1] handleNext 시작");
+    console.log("🔍 입력된 이름:", trimmedName);
+    console.log("🔍 LocalStorage 토큰 확인:");
+    console.log("🔍 - accessToken:", localStorage.getItem("accessToken") ? "존재" : "없음");
+    console.log("🔍 - refreshToken:", localStorage.getItem("refreshToken") ? "존재" : "없음");
+
     // 추가 유효성 검사
     if (trimmedName.length < 2) {
       showError("이름은 최소 2글자 이상 입력해주세요.");
       return;
     }
-    
+
     if (trimmedName.length > 50) {
       showError("이름은 50글자를 초과할 수 없습니다.");
       return;
     }
 
     try {
-      await saveEnglishName({
-        englishName: trimmedName
+      console.log("🔍 saveOnboardingStep1 호출 시작");
+      await saveOnboardingStep1({
+        englishName: trimmedName,
+        residence: '',
+        profileImage: null,
+        intro: ''
       });
+      console.log("🔍 saveOnboardingStep1 성공");
       setEnglishName(trimmedName);
       navigate("/onboarding-info/2");
-      console.log("온보딩 1단계 저장 완료:", trimmedName);
+      console.log("🔍 온보딩 1단계 저장 완료:", trimmedName);
     } catch (e) {
+      console.log("🔍 ❌ saveOnboardingStep1 실패:", e);
+      console.log("🔍 ❌ Error response:", e.response);
+      console.log("🔍 ❌ Error status:", e.response?.status);
+      console.log("🔍 ❌ Error data:", e.response?.data);
       showError("영어 이름 저장에 실패했습니다.");
       console.error(e);
     }

@@ -4,6 +4,13 @@ import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
 import { getOnboardingStatus } from "../../api/user";
 
+// JWT 토큰 형식 검증 함수
+const isValidJWT = (token) => {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  return parts.length === 3 && parts.every(part => part.length > 0);
+};
+
 export default function Navercallback() {
   const [message, setMessage] = useState("네이버 로그인 처리 중...");
   const navigate = useNavigate();
@@ -31,6 +38,22 @@ export default function Navercallback() {
       setMessage("네이버 로그인 실패: " + (errorDescription || error));
     } else if (accessToken && refreshToken) {
       console.log("🔍 토큰이 URL 파라미터로 전달됨, 처리 시작");
+
+      // 토큰 형식 검증
+      if (!isValidJWT(accessToken)) {
+        console.error("🔍 ❌ Invalid accessToken format from URL params");
+        setMessage("토큰 형식 오류: 다시 로그인해주세요.");
+        setTimeout(() => navigate("/", { replace: true }), 3000);
+        return;
+      }
+
+      if (!isValidJWT(refreshToken)) {
+        console.error("🔍 ❌ Invalid refreshToken format from URL params");
+        setMessage("토큰 형식 오류: 다시 로그인해주세요.");
+        setTimeout(() => navigate("/", { replace: true }), 3000);
+        return;
+      }
+
       // 백엔드에서 토큰을 직접 전달받은 경우
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
@@ -87,6 +110,21 @@ export default function Navercallback() {
           console.log("백엔드 응답:", res.data);
 
           if (res.data && res.data.accessToken && res.data.refreshToken) {
+            // 서버 응답 토큰 형식 검증
+            if (!isValidJWT(res.data.accessToken)) {
+              console.error("🔍 ❌ Invalid accessToken format from server response");
+              setMessage("토큰 형식 오류: 다시 로그인해주세요.");
+              setTimeout(() => navigate("/", { replace: true }), 3000);
+              return;
+            }
+
+            if (!isValidJWT(res.data.refreshToken)) {
+              console.error("🔍 ❌ Invalid refreshToken format from server response");
+              setMessage("토큰 형식 오류: 다시 로그인해주세요.");
+              setTimeout(() => navigate("/", { replace: true }), 3000);
+              return;
+            }
+
             localStorage.setItem("accessToken", res.data.accessToken);
             localStorage.setItem("refreshToken", res.data.refreshToken);
             if (res.data.name) {
