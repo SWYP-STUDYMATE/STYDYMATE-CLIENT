@@ -18,7 +18,7 @@ export default function ObInt3() {
     const fetchLearningStyles = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/interest/learning-styles");
+        const response = await api.get("/onboarding/interest/learning-styles");
         setLearningStyles(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -50,7 +50,7 @@ export default function ObInt3() {
     };
 
     try {
-      await api.post("/onboard/interest/learning-style", requestData);
+      await api.post("/onboarding/interest/learning-style", requestData);
       console.log("학습 스타일 데이터 전송 성공");
       navigate("/onboarding-int/4");
     } catch (error) {

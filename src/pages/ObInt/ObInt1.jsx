@@ -18,7 +18,7 @@ export default function ObInt1() {
     const fetchMotivations = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/interest/motivations");
+        const response = await api.get("/onboarding/interest/motivations");
         setMotivations(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -49,7 +49,7 @@ export default function ObInt1() {
     };
 
     try {
-      await api.post("/onboard/interest/motivation", requestData);
+      await api.post("/onboarding/interest/motivation", requestData);
       console.log("동기 데이터 전송 성공");
       navigate("/onboarding-int/2");
     } catch (error) {

@@ -119,7 +119,7 @@ export default function ObSchadule4() {
         }))
       };
 
-      await api.post("/onboard/schedule", requestData);
+      await api.post("/onboarding/schedule", requestData);
       console.log("스케줄 선택 데이터 전송 성공");
       navigate("/onboarding-schedule/complete");
     } catch (error) {

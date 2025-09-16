@@ -18,7 +18,7 @@ export default function ObInt2() {
     const fetchTopics = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/interest/topics");
+        const response = await api.get("/onboarding/interest/topics");
         setTopics(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -49,7 +49,7 @@ export default function ObInt2() {
     };
 
     try {
-      await api.post("/onboard/interest/topic", requestData);
+      await api.post("/onboarding/interest/topic", requestData);
       console.log("주제 데이터 전송 성공");
       navigate("/onboarding-int/3");
     } catch (error) {

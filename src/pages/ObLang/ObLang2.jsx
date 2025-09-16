@@ -21,7 +21,7 @@ export default function ObLang2() {
 
   useEffect(() => {
     setLoadingLang(true);
-    api.get("/onboard/language/languages")
+    api.get("/onboarding/language/languages")
       .then(res => {
         const options = (res.data || []).map(lang => ({
           value: lang.languageId,
@@ -36,7 +36,7 @@ export default function ObLang2() {
         console.error(err);
       });
     setLoadingLevel(true);
-    api.get("/onboard/language/level-types-language")
+    api.get("/onboarding/language/level-types-language")
       .then(res => {
         const options = (res.data || []).map(level => ({
           value: level.langLevelId,
@@ -85,7 +85,7 @@ export default function ObLang2() {
 
     try {
       console.log("🔍 [ObLang2] 언어 레벨 API 호출 시작");
-      const response = await api.post("/onboard/language/language-level", requestData);
+      const response = await api.post("/onboarding/language/language-level", requestData);
       console.log("🔍 [ObLang2] API 응답 성공:", response.data);
 
       // 로컬 상태만 업데이트 (서버 호출 없이)

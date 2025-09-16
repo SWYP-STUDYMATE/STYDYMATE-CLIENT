@@ -80,66 +80,66 @@ Response: {
 
 ### 언어 설정
 ```http
-GET /onboard/language/languages
+GET /onboarding/language/languages
 Response: [{
   "languageId": number,
   "name": "string",
   "code": "string"
 }]
 
-POST /onboard/language/native-language
+POST /onboarding/language/native-language
 Body: {
   "nativeLanguageId": number
 }
 
-POST /onboard/language/language-level
+POST /onboarding/language/language-level
 Body: {
   "languageId": number,
   "currentLevelId": number,
   "targetLevelId": number
 }
 
-GET /onboard/language/level-types-language
-GET /onboard/language/level-types-partner
+GET /onboarding/language/level-types-language
+GET /onboarding/language/level-types-partner
 ```
 
 ### 관심사 설정
 ```http
-GET /onboard/interest/motivations
-GET /onboard/interest/topics
-GET /onboard/interest/learning-styles
-GET /onboard/interest/learning-expectations
+GET /onboarding/interest/motivations
+GET /onboarding/interest/topics
+GET /onboarding/interest/learning-styles
+GET /onboarding/interest/learning-expectations
 
-POST /onboard/interest/motivation
+POST /onboarding/interest/motivation
 Body: { "motivationId": number }
 
-POST /onboard/interest/topic
+POST /onboarding/interest/topic
 Body: { "topicId": number }
 
-POST /onboard/interest/learning-style
+POST /onboarding/interest/learning-style
 Body: { "learningStyleId": number }
 
-POST /onboard/interest/learning-expectation
+POST /onboarding/interest/learning-expectation
 Body: { "learningExpectationId": number }
 ```
 
 ### 파트너 선호도
 ```http
-GET /onboard/partner/personalities
-GET /onboard/partner/group-sizes
+GET /onboarding/partner/personalities
+GET /onboarding/partner/group-sizes
 
-POST /onboard/partner/personality
+POST /onboarding/partner/personality
 Body: { "partnerPersonalityId": number }
 
-POST /onboard/partner/group-size
+POST /onboarding/partner/group-size
 Body: { "groupSizeId": number }
 ```
 
 ### 스케줄 설정
 ```http
-GET /onboard/schedule/schedules
+GET /onboarding/schedule/schedules
 
-POST /onboard/schedule/schedule
+POST /onboarding/schedule/schedule
 Body: { "scheduleId": number }
 ```
 

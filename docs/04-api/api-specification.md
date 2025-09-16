@@ -91,39 +91,39 @@ POST /api/v1/auth/refresh
 
 | 엔드포인트 | 메서드 | 설명 | Frontend | 상태 |
 |-----------|-------|------|----------|------|
-| `/api/v1/onboard/language/languages` | GET | 언어 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/language/levels` | GET | 레벨 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/language/native-language` | GET/POST | 모국어 관리 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/language/learning-language` | GET/POST | 학습 언어 관리 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/language/language-level` | POST | 언어 레벨 설정 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/language/languages` | GET | 언어 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/language/levels` | GET | 레벨 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/language/native-language` | GET/POST | 모국어 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/language/learning-language` | GET/POST | 학습 언어 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/language/language-level` | POST | 언어 레벨 설정 | `onboarding.js` | ✅ |
 
 #### 관심사 설정 (OnboardIntController.java)
 
 | 엔드포인트 | 메서드 | 설명 | Frontend | 상태 |
 |-----------|-------|------|----------|------|
-| `/api/v1/onboard/interest/motivations` | GET | 동기 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/interest/topics` | GET | 주제 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/interest/learning-styles` | GET | 학습 스타일 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/interest/communication-methods` | GET | 소통 방법 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/interest/motivation` | POST | 동기 저장 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/interest/topic` | POST | 주제 저장 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/interest/learning-style` | POST | 학습 스타일 저장 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/motivations` | GET | 동기 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/topics` | GET | 주제 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/learning-styles` | GET | 학습 스타일 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/communication-methods` | GET | 소통 방법 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/motivation` | POST | 동기 저장 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/topic` | POST | 주제 저장 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/interest/learning-style` | POST | 학습 스타일 저장 | `onboarding.js` | ✅ |
 
 #### 파트너 선호도 (OnboardPartnerController.java)
 
 | 엔드포인트 | 메서드 | 설명 | Frontend | 상태 |
 |-----------|-------|------|----------|------|
-| `/api/v1/onboard/partner/personality` | GET/POST | 성격 유형 관리 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/partner/gender` | GET/POST | 선호 성별 관리 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/partner/group-size` | GET/POST | 그룹 크기 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/partner/personality` | GET/POST | 성격 유형 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/partner/gender` | GET/POST | 선호 성별 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/partner/group-size` | GET/POST | 그룹 크기 관리 | `onboarding.js` | ✅ |
 
 #### 스케줄 설정 (OnboardScheduleController.java)
 
 | 엔드포인트 | 메서드 | 설명 | Frontend | 상태 |
 |-----------|-------|------|----------|------|
-| `/api/v1/onboard/schedule/day-of-week` | GET | 요일 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/schedule/time-zones` | GET | 시간대 목록 | `onboarding.js` | ✅ |
-| `/api/v1/onboard/schedule/schedule` | GET/POST/DELETE | 스케줄 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/schedule/day-of-week` | GET | 요일 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/schedule/time-zones` | GET | 시간대 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/schedule/schedule` | GET/POST/DELETE | 스케줄 관리 | `onboarding.js` | ✅ |
 
 ### 4. 매칭 (Matching)
 

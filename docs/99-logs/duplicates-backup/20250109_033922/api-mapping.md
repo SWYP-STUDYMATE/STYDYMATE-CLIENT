@@ -29,16 +29,16 @@ graph LR
 | 자기소개 저장 | `onboarding.js` | `/api/v1/user/self-bio` | - | ✅ |
 | 성별 저장 | `user.js` | `/api/v1/user/gender` | - | ✅ |
 | **온보딩** |
-| 언어 목록 | `onboarding.js` | `/api/v1/onboard/language/languages` | - | ✅ |
-| 모국어 설정 | `onboarding.js` | `/api/v1/onboard/language/native-language` | - | ✅ |
-| 언어 레벨 설정 | `onboarding.js` | `/api/v1/onboard/language/language-level` | - | ✅ |
-| 동기 목록 | `onboarding.js` | `/api/v1/onboard/interest/motivations` | - | ✅ |
-| 주제 목록 | `onboarding.js` | `/api/v1/onboard/interest/topics` | - | ✅ |
-| 학습 스타일 | `onboarding.js` | `/api/v1/onboard/interest/learning-styles` | - | ✅ |
-| 학습 기대 | `onboarding.js` | `/api/v1/onboard/interest/learning-expectations` | - | ✅ |
-| 파트너 성격 | `onboarding.js` | `/api/v1/onboard/partner/personality` | - | ✅ |
-| 그룹 크기 | `onboarding.js` | `/api/v1/onboard/partner/group-size` | - | ✅ |
-| 스케줄 설정 | `onboarding.js` | `/api/v1/onboard/schedule/schedule` | - | ✅ |
+| 언어 목록 | `onboarding.js` | `/api/v1/onboarding/language/languages` | - | ✅ |
+| 모국어 설정 | `onboarding.js` | `/api/v1/onboarding/language/native-language` | - | ✅ |
+| 언어 레벨 설정 | `onboarding.js` | `/api/v1/onboarding/language/language-level` | - | ✅ |
+| 동기 목록 | `onboarding.js` | `/api/v1/onboarding/interest/motivations` | - | ✅ |
+| 주제 목록 | `onboarding.js` | `/api/v1/onboarding/interest/topics` | - | ✅ |
+| 학습 스타일 | `onboarding.js` | `/api/v1/onboarding/interest/learning-styles` | - | ✅ |
+| 학습 기대 | `onboarding.js` | `/api/v1/onboarding/interest/learning-expectations` | - | ✅ |
+| 파트너 성격 | `onboarding.js` | `/api/v1/onboarding/partner/personality` | - | ✅ |
+| 그룹 크기 | `onboarding.js` | `/api/v1/onboarding/partner/group-size` | - | ✅ |
+| 스케줄 설정 | `onboarding.js` | `/api/v1/onboarding/schedule/schedule` | - | ✅ |
 | **레벨 테스트 (AI)** |
 | 음성 인식 | `levelTest.js` | - | `/api/v1/leveltest/voice/transcribe` | ✅ |
 | 레벨 평가 | `levelTest.js` | - | `/api/v1/leveltest/evaluate` | ✅ |

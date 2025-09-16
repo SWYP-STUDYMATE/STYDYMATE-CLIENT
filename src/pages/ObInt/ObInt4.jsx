@@ -18,7 +18,7 @@ export default function ObInt4() {
     const fetchLearningExpectations = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/onboard/interest/learning-expectations");
+        const response = await api.get("/onboarding/interest/learning-expectations");
         setLearningExpectations(response.data || []);
         setLoading(false);
       } catch (error) {
@@ -44,7 +44,7 @@ export default function ObInt4() {
     };
 
     try {
-      await api.post("/onboard/interest/learning-expectation", requestData);
+      await api.post("/onboarding/interest/learning-expectation", requestData);
       console.log("학습 기대 데이터 전송 성공");
       navigate("/onboarding-int/complete");
     } catch (error) {

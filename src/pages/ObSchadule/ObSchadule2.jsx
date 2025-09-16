@@ -18,7 +18,7 @@ export default function ObSchadule2() {
         setLoading(true);
         
         // 실제 API 호출
-        const response = await api.get("/onboard/schedule/group-sizes");
+        const response = await api.get("/onboarding/schedule/group-sizes");
         console.log("그룹 크기 데이터 응답:", response.data);
         
         // API 응답 데이터 구조에 맞게 설정
@@ -48,7 +48,7 @@ export default function ObSchadule2() {
 
     try {
       // 실제 API 호출
-      await api.post("/onboard/schedule/group-size", requestData);
+      await api.post("/onboarding/schedule/group-size", requestData);
       console.log("그룹 규모 데이터 전송 성공:", requestData);
       navigate("/onboarding-schedule/3");
     } catch (error) {

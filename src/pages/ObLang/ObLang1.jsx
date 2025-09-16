@@ -20,7 +20,7 @@ export default function ObLang1() {
 
   // 언어 리스트 불러오기 (API)
   useEffect(() => {
-    api.get("/onboard/language/languages")
+    api.get("/onboarding/language/languages")
       .then(res => {
         console.log("🔍 언어 API 응답:", res.data);
         // [{ languageId, languageName }, ...] -> [{ value, label }, ...]

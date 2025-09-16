@@ -112,19 +112,19 @@ POST /api/v1/onboarding/extend-session             // 세션 연장
 ✅ saveOnboardingStep4()        → POST /onboarding/steps/4/save
 
 // 세부 정보 저장
-✅ saveLanguageInfo()           → POST /onboard/language/*
-✅ saveInterestInfo()           → POST /onboard/interest/*
-✅ savePartnerInfo()            → POST /onboard/partner/*
-✅ saveScheduleInfo()           → POST /onboard/schedule/*
+✅ saveLanguageInfo()           → POST /onboarding/language/*
+✅ saveInterestInfo()           → POST /onboarding/interest/*
+✅ savePartnerInfo()            → POST /onboarding/partner/*
+✅ saveScheduleInfo()           → POST /onboarding/schedule/*
 
 // 옵션 조회
-✅ getLanguages()               → GET /onboard/language/languages
-✅ getLanguageLevelTypes()      → GET /onboard/language/level-types-language
-✅ getPartnerLevelTypes()       → GET /onboard/language/level-types-partner
-✅ getMotivations()             → GET /onboard/interest/motivations
-✅ getTopics()                  → GET /onboard/interest/topics
-✅ getLearningStyles()          → GET /onboard/interest/learning-styles
-✅ getLearningExpectations()    → GET /onboard/interest/learning-expectations
+✅ getLanguages()               → GET /onboarding/language/languages
+✅ getLanguageLevelTypes()      → GET /onboarding/language/level-types-language
+✅ getPartnerLevelTypes()       → GET /onboarding/language/level-types-partner
+✅ getMotivations()             → GET /onboarding/interest/motivations
+✅ getTopics()                  → GET /onboarding/interest/topics
+✅ getLearningStyles()          → GET /onboarding/interest/learning-styles
+✅ getLearningExpectations()    → GET /onboarding/interest/learning-expectations
 ```
 
 **매칭 상태**: ✅ **완전 일치** (10개 핵심 엔드포인트 + 온보딩 세부 API들)
