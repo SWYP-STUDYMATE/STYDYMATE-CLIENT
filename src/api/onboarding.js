@@ -173,13 +173,28 @@ export const saveLanguageInfo = async (languageData) => {
     
     // 목표 언어들 저장 (배치로 처리)
     if (languageData.targetLanguages && languageData.targetLanguages.length > 0) {
-      await api.post('/onboard/language/language-level', {
+      console.log("🔍 [saveLanguageInfo] 목표 언어 저장 시작");
+      console.log("🔍 [saveLanguageInfo] targetLanguages:", languageData.targetLanguages);
+
+      const languageLevelRequest = {
         languages: languageData.targetLanguages.map((targetLang) => ({
           languageId: targetLang.languageId,
           currentLevelId: targetLang.currentLevelId,
           targetLevelId: targetLang.targetLevelId
         }))
-      });
+      };
+
+      console.log("🔍 [saveLanguageInfo] language-level API 요청:", languageLevelRequest);
+
+      try {
+        const levelResponse = await api.post('/onboard/language/language-level', languageLevelRequest);
+        console.log("🔍 [saveLanguageInfo] language-level API 응답:", levelResponse.data);
+      } catch (levelError) {
+        console.error("🔍 [saveLanguageInfo] ❌ language-level API 실패:", levelError);
+        console.error("🔍 [saveLanguageInfo] Error status:", levelError.response?.status);
+        console.error("🔍 [saveLanguageInfo] Error data:", levelError.response?.data);
+        throw levelError;
+      }
     }
     
     return response.data;
