@@ -11,6 +11,7 @@ import transcribeRoutes from './routes/transcribe';
 import cacheRoutes from './routes/cache';
 import translateRoutes from './routes/translate';
 import { analyticsRoutes } from './routes/analytics';
+import internalRoutes from './routes/internal';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { setupMiddleware, notFoundHandler } from './middleware';
 import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';
@@ -129,6 +130,9 @@ v1.route('/cache', cacheRoutes);
 v1.route('/transcribe', transcribeRoutes);
 v1.route('/translate', translateRoutes);
 v1.route('/analytics', analyticsRoutes);
+
+// 내부 서비스 API (Spring Boot 전용)
+v1.route('/internal', internalRoutes);
 
 // API 버전 라우팅
 app.route(`/api/${API_VERSION}`, v1);

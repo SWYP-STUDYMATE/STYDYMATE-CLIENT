@@ -17,21 +17,78 @@ export default function OnboardingInfo2() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get("/user/locations")
-      .then(res => {
-        // API 응답이 배열인지 확인하고 안전하게 설정
-        const locationData = Array.isArray(res.data) ? res.data : [];
+    // 거주지 데이터를 로드하는 함수
+    const loadLocations = async () => {
+      try {
+        console.log("🔍 [ObInfo2] Loading locations...");
+        console.log("🔍 [ObInfo2] API Base URL:", api.defaults.baseURL);
+        console.log("🔍 [ObInfo2] Environment:", import.meta.env.MODE);
+        console.log("🔍 [ObInfo2] VITE_API_URL:", import.meta.env.VITE_API_URL);
+
+        const response = await api.get("/user/locations");
+        console.log("🔍 [ObInfo2] Raw API Response:", response);
+        console.log("🔍 [ObInfo2] Response status:", response.status);
+        console.log("🔍 [ObInfo2] Response headers:", response.headers);
+        console.log("🔍 [ObInfo2] Response data:", response.data);
+
+        // 서버 응답 구조 확인
+        let locationData = [];
+
+        // 응답이 HTML 형태인지 확인 (에러 페이지일 수 있음)
+        if (typeof response.data === 'string' && response.data.includes('<html>')) {
+          console.error("🔍 [ObInfo2] ❌ Received HTML instead of JSON - likely server error");
+          throw new Error("서버에서 HTML 응답을 받았습니다. API 엔드포인트를 확인하세요.");
+        }
+
+        // 정상적인 JSON 응답 처리
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          // 새로운 응답 구조: { success: true, data: [...], message: null }
+          locationData = response.data.data;
+          console.log("🔍 [ObInfo2] ✅ Using nested response structure");
+        } else if (Array.isArray(response.data)) {
+          // 기존 응답 구조: [...]
+          locationData = response.data;
+          console.log("🔍 [ObInfo2] ✅ Using direct array structure");
+        } else {
+          console.warn("🔍 [ObInfo2] ⚠️ Unexpected response structure:", response.data);
+          locationData = [];
+        }
+
         setLocations(locationData);
-        console.log("API Response:", res.data);
-        console.log("Processed locations:", locationData);
-      })
-      .catch(err => {
-        showError("거주지 리스트를 불러오지 못했습니다.");
-        console.error("API Error:", err);
-        // 에러 발생 시 빈 배열로 설정하여 안전성 보장
+        console.log("🔍 [ObInfo2] ✅ Processed locations:", locationData.length, "items");
+
+        // 첫 번째 아이템 로그 (디버깅용)
+        if (locationData.length > 0) {
+          console.log("🔍 [ObInfo2] Sample location:", locationData[0]);
+        }
+
+      } catch (err) {
+        console.error("🔍 [ObInfo2] ❌ API Error:", err);
+        console.error("🔍 [ObInfo2] Error message:", err.message);
+        console.error("🔍 [ObInfo2] Error response status:", err.response?.status);
+        console.error("🔍 [ObInfo2] Error response data:", err.response?.data);
+        console.error("🔍 [ObInfo2] Request URL:", err.config?.url);
+        console.error("🔍 [ObInfo2] Full request config:", err.config);
+
+        // 더 상세한 에러 메시지 제공
+        let errorMessage = "거주지 리스트를 불러오지 못했습니다.";
+        if (err.response?.status === 404) {
+          errorMessage = "거주지 API를 찾을 수 없습니다. (404)";
+        } else if (err.response?.status === 500) {
+          errorMessage = "서버 내부 오류입니다. (500)";
+        } else if (err.message.includes('Network Error')) {
+          errorMessage = "네트워크 연결을 확인해주세요.";
+        } else if (err.message.includes('HTML')) {
+          errorMessage = "서버 설정 오류입니다. 관리자에게 문의하세요.";
+        }
+
+        showError(errorMessage);
         setLocations([]);
-      });
-  }, []);
+      }
+    };
+
+    loadLocations();
+  }, [showError]);
 
   // API 데이터를 react-select 옵션으로 변환
   const residenceOptions = useMemo(() => {

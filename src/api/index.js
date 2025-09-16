@@ -11,25 +11,62 @@ const api = axios.create({
     : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
 });
 
+// JWT 토큰 형식 검증 함수
+const isValidJWT = (token) => {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  return parts.length === 3 && parts.every(part => part.length > 0);
+};
+
 // 요청 인터셉터: accessToken 자동 첨부 및 로깅
 api.interceptors.request.use(
   (config) => {
     // 시작 시간 기록
     config.startTime = Date.now();
-    
+
     const token = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    // 🔍 디버깅 로그 추가
+    console.log("🔍 [API Request Interceptor]");
+    console.log("🔍 Request URL:", config.url);
+    console.log("🔍 Request Method:", config.method?.toUpperCase());
+    console.log("🔍 AccessToken exists:", !!token);
+    console.log("🔍 RefreshToken exists:", !!refreshToken);
+
+    // JWT 토큰 형식 검증
     if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+      const isValid = isValidJWT(token);
+      console.log("🔍 AccessToken preview:", token.substring(0, 20) + "...");
+      console.log("🔍 AccessToken is valid JWT:", isValid);
+
+      if (!isValid) {
+        console.warn("🔍 ⚠️ Invalid JWT format detected, removing token");
+        localStorage.removeItem("accessToken");
+        // 잘못된 토큰이면 Authorization 헤더를 설정하지 않음
+      } else {
+        config.headers["Authorization"] = `Bearer ${token}`;
+        console.log("🔍 Authorization header set");
+      }
+    } else {
+      console.log("🔍 ❌ No access token found in localStorage");
     }
-    
+
+    // RefreshToken도 검증
+    if (refreshToken && !isValidJWT(refreshToken)) {
+      console.warn("🔍 ⚠️ Invalid refresh token format detected, removing token");
+      localStorage.removeItem("refreshToken");
+    }
+
     log.debug(`API 요청 시작: ${config.method?.toUpperCase()} ${config.url}`, {
       headers: config.headers,
       data: config.data
     }, 'API');
-    
+
     return config;
   },
   (error) => {
+    console.log("🔍 ❌ API 요청 설정 실패:", error);
     log.error('API 요청 설정 실패', error, 'API');
     return Promise.reject(error);
   }
@@ -49,12 +86,19 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    
+
+    // 🔍 디버깅 로그 추가
+    console.log("🔍 [API Response Error Interceptor]");
+    console.log("🔍 Error occurred for:", originalRequest?.method?.toUpperCase(), originalRequest?.url);
+    console.log("🔍 Error status:", error.response?.status);
+    console.log("🔍 Error data:", error.response?.data);
+    console.log("🔍 Error headers:", error.response?.headers);
+
     // 에러 로깅
     const duration = originalRequest.startTime ? Date.now() - originalRequest.startTime : 0;
     const method = originalRequest.method?.toUpperCase() || 'UNKNOWN';
     const url = originalRequest.url || 'unknown';
-    
+
     if (error.response) {
       log.api(method, url, error.response.status, duration);
     } else {
@@ -71,6 +115,12 @@ api.interceptors.response.use(
         try {
           const refreshToken = localStorage.getItem("refreshToken");
           if (!refreshToken) throw new Error("No refresh token");
+
+          // RefreshToken 형식 검증
+          if (!isValidJWT(refreshToken)) {
+            console.warn("🔍 ⚠️ Invalid refresh token format for 403 error");
+            throw new Error("Invalid refresh token format");
+          }
           
           log.info("403 오류 발생! refreshToken으로 재발급 시도", null, 'AUTH');
           
@@ -89,12 +139,25 @@ api.interceptors.response.use(
           
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
           if (newAccessToken) {
+            // 새로 받은 토큰 형식 검증
+            if (!isValidJWT(newAccessToken)) {
+              console.error("🔍 ❌ Invalid JWT format received from server (403 handling)");
+              throw new Error("Invalid JWT format received");
+            }
+
             localStorage.setItem("accessToken", newAccessToken);
+            console.log("🔍 ✅ New accessToken saved (403 handling)");
+
             if (newRefreshToken) {
+              if (!isValidJWT(newRefreshToken)) {
+                console.error("🔍 ❌ Invalid refresh token format received from server (403 handling)");
+                throw new Error("Invalid refresh token format received");
+              }
               localStorage.setItem("refreshToken", newRefreshToken);
+              console.log("🔍 ✅ New refreshToken saved (403 handling)");
             }
             originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
-            
+
             // mock 테스트일 때는 재요청하지 않음
             if (originalRequest._mock) {
               return Promise.resolve();
@@ -134,7 +197,35 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) throw new Error("No refresh token");
+        if (!refreshToken) {
+          console.log("🔍 RefreshToken이 없음 - 로그인 페이지로 리다이렉트");
+          // 토큰이 없으면 즉시 로그인 페이지로 이동
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+
+          toast.error("로그인 필요", "로그인이 필요한 서비스입니다.");
+
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1000);
+
+          throw new Error("No refresh token");
+        }
+
+        // RefreshToken 형식 검증
+        if (!isValidJWT(refreshToken)) {
+          console.warn("🔍 ⚠️ Invalid refresh token format - 로그인 페이지로 리다이렉트");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+
+          toast.error("토큰 오류", "토큰 형식이 올바르지 않습니다. 다시 로그인해주세요.");
+
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1000);
+
+          throw new Error("Invalid refresh token format");
+        }
         
         log.info("accessToken 만료! refreshToken으로 재발급 시도", null, 'AUTH');
         
@@ -152,13 +243,26 @@ api.interceptors.response.use(
         );
         
         log.debug("토큰 재발급 응답 수신", res.data, 'AUTH');
-        
+
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
         if (newAccessToken) {
+          // 새로 받은 토큰 형식 검증
+          if (!isValidJWT(newAccessToken)) {
+            console.error("🔍 ❌ Invalid JWT format received from server");
+            throw new Error("Invalid JWT format received");
+          }
+
           localStorage.setItem("accessToken", newAccessToken);
+          console.log("🔍 ✅ New accessToken saved");
+
           // refreshToken이 응답에 있으면 갱신, 없으면 기존 값 유지
           if (newRefreshToken) {
+            if (!isValidJWT(newRefreshToken)) {
+              console.error("🔍 ❌ Invalid refresh token format received from server");
+              throw new Error("Invalid refresh token format received");
+            }
             localStorage.setItem("refreshToken", newRefreshToken);
+            console.log("🔍 ✅ New refreshToken saved");
           }
           // 원래 요청 헤더에 새 토큰 적용
           originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
