@@ -1,4 +1,4 @@
-import { create } from "zustand";
+  import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { 
   startLevelTest,
@@ -74,8 +74,10 @@ const useLevelTestStore = create(
       setIsSubmitting: (value) => set({ isSubmitting: value }),
       
       // Spring Boot API 테스트 ID 및 상태
-      currentTestId: null,
+      testId: null,
       testLanguage: 'en',
+      setTestId: (id) => set({ testId: id }),
+
       
       // API 메서드들
       startNewTest: async (language = 'en') => {
@@ -84,7 +86,8 @@ const useLevelTestStore = create(
           const testData = await startLevelTest(language);
           const testId = testData?.testId ?? testData?.id;
           if (!testId) throw new Error('NO_TEST_ID_FROM_API');
-          set({ currentTestId: testId, testStatus: 'idle' });
+          set({ testId, testStatus: 'idle' });
+
           return { ...testData, testId };
           
           
@@ -96,7 +99,7 @@ const useLevelTestStore = create(
       
       loadQuestions: async () => {
         try {
-             let activeId = get().currentTestId;
+            let activeId = get().testId;
              if (!activeId) {
               const started = await get().startNewTest(get().testLanguage);
               activeId = started?.testId ?? started?.id;
@@ -124,11 +127,12 @@ const useLevelTestStore = create(
       submitQuestionAudio: async (audioBlob, questionId) => {
         try {
           const state = get();
-          if (!state.currentTestId) {
+          if (!state.testId) {
+
             throw new Error('No active test');
           }
-          
-          const result = await submitVoiceAnswer(state.currentTestId, questionId, audioBlob);
+          const result = await submitVoiceAnswer(state.testId, questionId, audioBlob);
+
           log('Question audio submitted successfully:', { questionId, result });
           return result;
         } catch (error) {
@@ -145,7 +149,8 @@ const useLevelTestStore = create(
           return;
         }
         
-        if (!state.currentTestId) {
+        if (!state.testId) {
+
           set({ submitError: 'No active test found. Please restart the test.' });
           return;
         }
@@ -160,7 +165,7 @@ const useLevelTestStore = create(
             const question = state.questions[i];
             try {
               const result = await submitVoiceAnswer(
-                state.currentTestId, 
+                state.testId,
                 question?.id || (i + 1), 
                 recording.blob
               );
@@ -177,14 +182,15 @@ const useLevelTestStore = create(
           }
           
           // 2단계: 테스트 완료 처리
-          const completeResult = await completeLevelTest(state.currentTestId);
+          const completeResult = await completeLevelTest(state.testId);
+
           
           // 3단계: 결과 조회
-          const result = await getLevelTestResult(state.currentTestId);
+          const result = await getLevelTestResult(state.testId);
           
           // Process result (Spring Boot response format)
           const testResult = {
-            testId: state.currentTestId,
+            testId: state.testId,
             level: result.estimatedLevel || completeResult.estimatedLevel || 'B1',
             overallScore: result.estimatedScore || completeResult.estimatedScore || 65,
             scores: {
@@ -289,6 +295,7 @@ const useLevelTestStore = create(
         questions: questions || [],
         totalQuestions: questions?.length || 4
       }),
+       setTestId: (id) => set({ testId: id }),
 
       // 질문 네비게이션
       nextQuestion: () => set((state) => {
@@ -391,7 +398,7 @@ const useLevelTestStore = create(
         
         return {
           testStatus: "idle",
-          currentTestId: null,
+          testId: null,
           currentQuestionIndex: 0,
           connectionStatus: {
             microphone: false,

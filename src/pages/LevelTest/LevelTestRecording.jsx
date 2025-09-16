@@ -4,7 +4,7 @@ import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
 import useLevelTestStore from '../../store/levelTestStore';
-import { submitLevelTest, completeLevelTest } from '../../api/levelTest';
+import { uploadVoiceRecording,submitLevelTest, completeLevelTest, analyzeVoiceTest } from '../../api/levelTest';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function LevelTestRecording() {
@@ -12,6 +12,7 @@ export default function LevelTestRecording() {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   const {
+    testId,
     currentQuestionIndex,
     totalQuestions,
     questions,
@@ -85,7 +86,16 @@ export default function LevelTestRecording() {
         // Submit current recording to Workers API
         const recordingBlob = recordingForCurrentQuestion?.blob || currentRecording?.blob;
         if (recordingBlob) {
-          await submitLevelTest(recordingBlob, currentQuestionIndex + 1);
+          
+          //업로드
+          await uploadVoiceRecording(testId, recordingBlob);
+
+          //분석
+          const analysis = await analyzeVoiceTest(testId);
+
+          //결과
+          setTestResult(analysis);
+
         }
 
         if (currentQuestionIndex < totalQuestions - 1) {
@@ -158,10 +168,7 @@ export default function LevelTestRecording() {
         {/* Question Card */}
         <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[var(--black-50)]">
           <p className="text-[20px] font-bold text-[var(--black-500)] mb-3">
-            {currentQuestion?.text || currentQuestion?.question || ''}
-          </p>
-          <p className="text-[16px] text-[var(--black-300)]">
-            {currentQuestion?.korean || ''}
+            {currentQuestion?.questionText || ''}
           </p>
         </div>
 

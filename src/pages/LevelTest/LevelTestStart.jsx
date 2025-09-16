@@ -4,12 +4,14 @@ import CommonButton from '../../components/CommonButton';
 import useLevelTestStore from '../../store/levelTestStore';
 import { useAlert } from '../../hooks/useAlert';
 import { getUserFriendlyMessage } from '../../utils/errorHandler';
+import { startVoiceTest } from '../../api/levelTest';
 
 export default function LevelTestStart() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { resetTest, startNewTest, loadQuestions } = useLevelTestStore();
+  const { resetTest, setQuestions, setTestId, setTestStatus } = useLevelTestStore();
+
   const { showError } = useAlert();
 
   const handleStart = async () => {
@@ -20,19 +22,23 @@ export default function LevelTestStart() {
       // 테스트 초기화
       resetTest();
       
-      // Spring Boot API로 테스트 시작
-      const testData = await startNewTest('en');
-      
-      if (testData?.testId) {
-        // 질문 로드
-        await loadQuestions();
-        
-        setTimeout(() => {
-          navigate('/level-test/check');
-        }, 300);
-      } else {
-        throw new Error('테스트를 시작할 수 없습니다.');
-      }
+     const res = await startVoiceTest('English', 'Intermediate'); 
+     const voice = res ?? {};
+     const vid = voice?.testId ?? voice?.id;
+     if (!vid) throw new Error('VOICE_TEST_ID_MISSING');
+
+     setTestId(String(vid));
+     sessionStorage.setItem('levelTest.testId', String(vid));
+
+     // 질문 1개 구성: 백엔드 instructions를 그대로 표시
+     const prompt = voice?.instructions || 'Please read the following text aloud clearly.';
+     const duration = (voice?.estimatedDurationMinutes ?? 10) * 60;
+     setQuestions([
+       { id: 1, questionText: prompt, duration: duration, difficulty: 'VOICE' }
+     ]);
+     setTestStatus('connection-check');
+
+     setTimeout(() => { navigate('/level-test/check'); }, 300);
     } catch (error) {
       console.error('Failed to start test:', error);
       const message = getUserFriendlyMessage(error);

@@ -22,7 +22,7 @@ export const levelTestStart = async ({
   testLevel = 'INTERMEDIATE',
   totalQuestions = 5,
 } = {}) => {
-  const res = await api.post('/level-test/start', {
+  const res = await api.post(API_ENDPOINTS.LEVEL_TEST.START, {
     testType, languageCode, testLevel, totalQuestions,
   });
 
@@ -82,24 +82,24 @@ export const submitVoiceAnswer = async (testId, questionId, audioBlob) => {
   }
 };
 
-// 답변 제출 (Spring Boot)
-export const submitAnswer = async (testId, questionId, answer) => {
-  try {
-    const response = await api.post(API_ENDPOINTS.LEVEL_TEST.SUBMIT, {
-      testId,
-      questionId,
-      answer: answer.text || answer,
-      audioUrl: answer.audioUrl,
-      answerTime: answer.answerTime,
-      confidence: answer.confidence
-    });
+ export const submitAnswer = async ({
+   testId,
+   questionNumber,
+   userAnswer,
+   userAudioUrl,
+   responseTimeSeconds,
+ }) => {
+   const response = await api.post(API_ENDPOINTS.LEVEL_TEST.SUBMIT, {
+     testId,
+     questionNumber,
+     userAnswer,
+     userAudioUrl,
+     responseTimeSeconds,
+   });
     return response.data;
-  } catch (error) {
-    console.error('Submit answer error:', error);
-    throw error;
-  }
-};
+ };
 
+const unwrap = (resp) => (resp?.data?.data ?? resp?.data ?? resp);
 // 음성 테스트 시작 (Spring Boot)
 export const startVoiceTest = async (languageCode, currentLevel = null) => {
   try {
@@ -107,7 +107,7 @@ export const startVoiceTest = async (languageCode, currentLevel = null) => {
       languageCode,
       currentLevel
     });
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Start voice test error:', error);
     throw error;
@@ -125,7 +125,8 @@ export const uploadVoiceRecording = async (testId, audioBlob) => {
         'Content-Type': 'multipart/form-data'
       }
     });
-    return response.data;
+    return unwrap(response);
+
   } catch (error) {
     console.error('Upload voice recording error:', error);
     throw error;
@@ -136,7 +137,8 @@ export const uploadVoiceRecording = async (testId, audioBlob) => {
 export const analyzeVoiceTest = async (testId) => {
   try {
     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.VOICE.ANALYZE(testId));
-    return response.data;
+    return unwrap(response);
+
   } catch (error) {
     console.error('Analyze voice test error:', error);
     throw error;
