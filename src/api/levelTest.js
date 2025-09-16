@@ -28,11 +28,12 @@ export const levelTestStart = async ({
 
   const outer = res?.data ?? res;
   const inner = outer?.data ?? outer;
-  const testId =
+  const testId = Number(
     inner?.testId ??
     inner?.id ??
     outer?.testId ??
-    outer?.id;
+    outer?.id
+  );
 
   if (!testId) {
     console.error('[start] unexpected response shape:', res?.data);

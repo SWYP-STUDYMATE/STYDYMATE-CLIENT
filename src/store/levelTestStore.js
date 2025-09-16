@@ -84,7 +84,7 @@ const useLevelTestStore = create(
         try {
           set({ testLanguage: language });
           const testData = await startLevelTest(language);
-          const testId = testData?.testId ?? testData?.id;
+          const testId = Number(testData?.testId);
           if (!testId) throw new Error('NO_TEST_ID_FROM_API');
           set({ testId, testStatus: 'idle' });
 
