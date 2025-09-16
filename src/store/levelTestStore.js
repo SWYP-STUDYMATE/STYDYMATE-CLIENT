@@ -295,7 +295,6 @@ const useLevelTestStore = create(
         questions: questions || [],
         totalQuestions: questions?.length || 4
       }),
-       setTestId: (id) => set({ testId: id }),
 
       // 질문 네비게이션
       nextQuestion: () => set((state) => {

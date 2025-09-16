@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Header from "../../components/Header";
 import ProgressBar from "../../components/PrograssBar";
-import { saveEnglishName} from "../../api/onboarding";
+import { saveEnglishName,saveOnboardingStep1} from "../../api/onboarding";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
