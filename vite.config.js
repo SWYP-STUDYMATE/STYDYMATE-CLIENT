@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -13,14 +14,12 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      // 번들 분석 플러그인 (환경변수로 제어)
       process.env.ANALYZE === 'true' && visualizer({
         open: true,
         filename: 'dist/stats.html',
         gzipSize: true,
         brotliSize: true
       }),
-      // PWA 플러그인
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico'],
@@ -41,10 +40,7 @@ export default defineConfig(({ mode }) => {
               handler: 'NetworkFirst',
               options: {
                 cacheName: 'api-cache',
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 5 * 60 // 5분
-                }
+                expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 }
               }
             },
             {
@@ -52,10 +48,7 @@ export default defineConfig(({ mode }) => {
               handler: 'CacheFirst',
               options: {
                 cacheName: 'image-cache',
-                expiration: {
-                  maxEntries: 100,
-                  maxAgeSeconds: 30 * 24 * 60 * 60 // 30일
-                }
+                expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }
               }
             },
             {
@@ -63,10 +56,7 @@ export default defineConfig(({ mode }) => {
               handler: 'CacheFirst',
               options: {
                 cacheName: 'font-cache',
-                expiration: {
-                  maxEntries: 20,
-                  maxAgeSeconds: 365 * 24 * 60 * 60 // 1년
-                }
+                expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }
               }
             }
           ]
@@ -74,39 +64,48 @@ export default defineConfig(({ mode }) => {
       })
     ].filter(Boolean),
     
-    // 경로 별칭 설정
     resolve: {
-      alias: {
-        '@': '/src',
-        '@components': '/src/components',
-        '@pages': '/src/pages',
-        '@hooks': '/src/hooks',
-        '@utils': '/src/utils',
-        '@services': '/src/services',
-        '@store': '/src/store',
-        '@api': '/src/api',
-        '@styles': '/src/styles',
-        '@assets': '/src/assets'
-      },
-      dedupe: ['react', 'react-dom']
+      // react-is도 중복 방지
+      dedupe: ['react', 'react-dom', 'react-is'],
+      alias: [
+        // ✅ react-is 전 경로(딥 임포트 포함) → shim 강제 치환
+        {
+          find: /^react-is(\/.*)?$/,
+          replacement: path.resolve(process.cwd(), 'src/shims/react-is.js'),
+        },
+
+        // ✅ eventemitter3 CJS 호환성 강제
+        {
+          find: 'eventemitter3',
+          replacement: 'eventemitter3/index.js',
+        },
+
+        // ✅ lodash CJS → lodash-es 매핑
+        { find: /^lodash\/([^/]+)\.js$/, replacement: 'lodash-es/$1.js' },
+        { find: /^lodash\/([^/]+)$/,    replacement: 'lodash-es/$1.js' },
+
+        // 기존 별칭 유지
+        { find: '@', replacement: '/src' },
+        { find: '@components', replacement: '/src/components' },
+        { find: '@pages', replacement: '/src/pages' },
+        { find: '@hooks', replacement: '/src/hooks' },
+        { find: '@utils', replacement: '/src/utils' },
+        { find: '@services', replacement: '/src/services' },
+        { find: '@store', replacement: '/src/store' },
+        { find: '@api', replacement: '/src/api' },
+        { find: '@styles', replacement: '/src/styles' },
+        { find: '@assets', replacement: '/src/assets' }
+      ],
     },
-    
-    // CSS 설정
+
     css: {
-      postcss: {
-        plugins: []
-      },
-      modules: {
-        localsConvention: 'camelCase'
-      }
+      postcss: { plugins: [] },
+      modules: { localsConvention: 'camelCase' }
     },
     
-    // 개발 서버 설정
     server: {
       port: 3000,
-      hmr: {
-        overlay: true
-      },
+      hmr: { overlay: true },
       proxy: {
         '/api/v1/login': {
           target: env.VITE_API_URL || 'http://localhost:8080',
@@ -116,7 +115,6 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:8080',
           changeOrigin: true,
-          // rewrite: (path) => path.replace(/^\/api/, ''),
         },
         '/workers': {
           target: env.VITE_WORKERS_API_URL || 'http://localhost:8787',
@@ -133,7 +131,6 @@ export default defineConfig(({ mode }) => {
       historyApiFallback: true,
     },
     
-    // 의존성 최적화
     optimizeDeps: {
       include: [
         'react',
@@ -145,104 +142,87 @@ export default defineConfig(({ mode }) => {
         'sockjs-client',
         '@stomp/stompjs',
         'scheduler',
-        'lucide-react'
+        'lucide-react',
+        'lodash-es/get',
+        'lodash-es/set',
+        'lodash-es/pick',
+        'lodash-es/isNaN',
+        'lodash-es/isNil',
+        'lodash-es/isNumber',
+        'lodash-es/isFinite',
+        'lodash-es/toNumber',
+        'lodash-es/clamp',
+        'lodash-es/isString',
+        // ✅ CJS → ESM interop 강제
+    'prop-types',
+     'react-smooth',
+     'react-transition-group',
       ],
+      
       exclude: [
-        // 큰 라이브러리들은 동적 import로 처리
+        // 🔴 프리번들 제외: alias가 반드시 적용되도록
+        // 'react-is',
         'emoji-picker-react',
-        'recharts'
+        'eventemitter3'
       ]
     },
     
-    // 빌드 설정
     build: {
       outDir: 'dist',
       sourcemap: !isProduction,
       minify: isProduction ? 'terser' : false,
       target: 'es2019',
-      
-      // Terser 옵션 (프로덕션만)
       terserOptions: isProduction ? {
         compress: {
           drop_console: true,
           drop_debugger: true,
           pure_funcs: ['console.log', 'console.info', 'console.debug'],
         },
-        format: {
-          comments: false
-        }
+        format: { comments: false }
       } : undefined,
-      
       commonjsOptions: {
         include: [/node_modules/],
         transformMixedEsModules: true,
         requireReturnsDefault: 'auto'
       },
-      
       rollupOptions: {
         output: {
-          // 에셋 파일명 최적화
           assetFileNames: (assetInfo) => {
             const info = assetInfo.name.split('.');
             const ext = info[info.length - 1];
-            
             if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) {
               return `images/[name]-[hash].${ext}`;
             }
             if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
               return `fonts/[name]-[hash].${ext}`;
             }
-            if (/\.(css)$/i.test(assetInfo.name)) {
+            if (/\.css$/i.test(assetInfo.name)) {
               return `css/[name]-[hash].${ext}`;
             }
             return `assets/[name]-[hash].${ext}`;
           },
-          
-          chunkFileNames: (chunkInfo) => {
-            // 타임스탬프를 포함하여 캐시 버스팅 강화
-            const timestamp = Date.now().toString(36);
-            return `js/[name]-[hash]-${timestamp}.js`;
-          },
-          entryFileNames: (chunkInfo) => {
-            const timestamp = Date.now().toString(36);
-            return `js/[name]-[hash]-${timestamp}.js`;
-          },
-          
-          // 청킹 전략 최적화
+          chunkFileNames: () => `js/[name]-[hash]-${Date.now().toString(36)}.js`,
+          entryFileNames: () => `js/[name]-[hash]-${Date.now().toString(36)}.js`,
           manualChunks: {
-            // React 코어
             'vendor-react': ['react', 'react-dom'],
-            // 라우팅
             'vendor-router': ['react-router-dom'],
-            // 상태 관리
             'vendor-state': ['zustand'],
-            // UI 라이브러리
             'vendor-ui': ['lucide-react'],
-            // API & 네트워킹
             'vendor-api': ['axios', 'jwt-decode'],
-            // 실시간 통신
             'vendor-socket': ['sockjs-client', '@stomp/stompjs'],
-            // 큰 라이브러리들을 개별 청크로 분리
             'vendor-emoji': ['emoji-picker-react'],
             'vendor-charts': ['recharts'],
             'vendor-select': ['react-select']
           }
         }
       },
-      
-      // CSS 코드 분할
       cssCodeSplit: true,
       chunkSizeWarningLimit: 1000,
-      
-      // Preload 지시어 삽입
-      modulePreload: {
-        polyfill: true
-      }
+      modulePreload: { polyfill: true }
     },
     
-    // 환경변수 정의
     define: {
-      global: 'window', // sockjs-client 등 global 참조 패치
+      global: 'window',
       __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
       __VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
       __DEV__: !isProduction

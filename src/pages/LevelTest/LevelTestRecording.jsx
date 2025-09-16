@@ -7,6 +7,7 @@ import useLevelTestStore from '../../store/levelTestStore';
 import { uploadVoiceRecording,submitLevelTest, completeLevelTest, analyzeVoiceTest } from '../../api/levelTest';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
+
 export default function LevelTestRecording() {
   const navigate = useNavigate();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -116,7 +117,7 @@ export default function LevelTestRecording() {
       if (currentQuestionIndex < totalQuestions - 1) {
         nextQuestion();
       } else {
-        navigate('/level-test/complete');
+        navigate('/level-test');
       }
     }
   };

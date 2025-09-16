@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useLevelTestStore from '../../store/levelTestStore';
 import RadarChart from '../../components/RadarChart';
 import CommonButton from '../../components/CommonButton';
-import { getLevelTestResult } from '../../api/levelTest';
+import { getLevelTestResult ,getVoiceTestResult} from '../../api/levelTest';
 import { Trophy, Target, BookOpen, Users, Calendar, ChevronRight } from 'lucide-react';
 
 const LEVEL_DESCRIPTIONS = {
@@ -46,7 +46,7 @@ export default function LevelTestResult() {
   const testResult = useLevelTestStore(state => state.testResult);
   const resetTest = useLevelTestStore(state => state.resetTest);
   
-  const userId = localStorage.getItem('userId');
+  const testId = useLevelTestStore(state => state.testId);
 
   useEffect(() => {
     // 테스트 결과가 스토어에 있으면 사용
@@ -56,20 +56,21 @@ export default function LevelTestResult() {
       return;
     }
 
-    // 없으면 API에서 가져오기
-    if (!userId) {
+    if (!testId) {
       navigate('/level-test');
       return;
     }
 
     fetchResult();
-  }, [testResult, userId]);
+
+  }, [testResult, testId]);
 
   const fetchResult = async () => {
     try {
-      const data = await getLevelTestResult(userId);
-      setResult(data);
-      useLevelTestStore.getState().setTestResult(data);
+      const data = await getVoiceTestResult(Number(testId));
+      const payload = data?.data ?? data; 
+      setResult(payload);
+      useLevelTestStore.getState().setTestResult(payload);
     } catch (error) {
       console.error('Failed to fetch result:', error);
       navigate('/level-test');
@@ -103,8 +104,33 @@ export default function LevelTestResult() {
     return null;
   }
 
-  const levelInfo = LEVEL_DESCRIPTIONS[result.level] || LEVEL_DESCRIPTIONS.B1;
-  const scores = result.scores || result.analysis?.scores || {};
+
+const level = result.estimatedLevel ?? result.level ?? 'B1';
+
+ const RAW = result.analysis?.scores ?? {
+   pronunciation: result.pronunciationScore,
+   fluency:       result.fluencyScore,
+   grammar:       result.grammarScore,
+   vocabulary:    result.vocabularyScore,
+   coherence:     result.coherenceScore,
+   interaction:   result.interactionScore,
+ };
+ const KEYS = ['pronunciation','fluency','grammar','vocabulary','coherence','interaction'];
+ const toPct = (v) => {
+   const n = Number(v);
+   if (!Number.isFinite(n)) return 0;
+   return Math.max(0, Math.min(100, n));
+ };
+ const scores = Object.fromEntries(KEYS.map(k => [k, toPct(RAW?.[k])]));
+ const hasAnyScore = KEYS.some(k => scores[k] > 0);
+
+  const feedback = result.feedback ?? result.analysis?.feedback ?? '';
+  const toArray = (v) =>
+    Array.isArray(v) ? v : (typeof v === 'string' ? v.split(/[;,\n]/).map(s=>s.trim()).filter(Boolean) : []);
+  const strengthsArr    = toArray(result.strengths);
+  const improvementsArr = toArray(result.improvements ?? result.weaknesses);
+
+  const levelInfo = LEVEL_DESCRIPTIONS[level] || LEVEL_DESCRIPTIONS.B1;
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
@@ -123,7 +149,7 @@ export default function LevelTestResult() {
             <Trophy className="w-12 h-12" />
           </div>
           <h2 className="text-[32px] font-bold text-[#111111] mb-2">
-            {result.level}
+            {level}
           </h2>
           <p className="text-[18px] font-semibold text-[#666666] mb-2">
             {levelInfo.title}
@@ -139,7 +165,10 @@ export default function LevelTestResult() {
             상세 분석 결과
           </h3>
           <div className="h-[300px]">
-            <RadarChart scores={scores} animate={true} />
+            {hasAnyScore
+            ? <RadarChart scores={scores} animate={true} />
+            : <div className="text-sm text-[#929292] text-center pt-16">표시할 점수가 없습니다.</div>}
+
           </div>
         </div>
 
@@ -177,28 +206,30 @@ export default function LevelTestResult() {
           </div>
         </div>
 
-        {/* Feedback */}
-        {(result.feedback || result.analysis?.feedback) && (
+        
+        {feedback && (
           <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
             <h3 className="text-[18px] font-bold text-[#111111] mb-4">
               AI 피드백
             </h3>
             <p className="text-[14px] text-[#666666] leading-relaxed">
-              {result.feedback || result.analysis.feedback}
+              
+              {feedback}
             </p>
           </div>
         )}
         
-        {/* Strengths & Improvements */}
-        {(result.strengths || result.improvements) && (
+       
+        {(Boolean(strengthsArr.length || improvementsArr.length)) && (
+
           <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
-            {result.strengths && result.strengths.length > 0 && (
+            {strengthsArr.length > 0 && (
               <div className="mb-4">
                 <h4 className="text-[16px] font-semibold text-[#111111] mb-2">
                   🌟 강점
                 </h4>
                 <ul className="space-y-1">
-                  {result.strengths.map((strength, index) => (
+                   {strengthsArr.map((strength, index) => (
                     <li key={index} className="text-[14px] text-[#666666] flex items-start">
                       <span className="text-[#00C471] mr-2">•</span>
                       {strength}
@@ -208,13 +239,13 @@ export default function LevelTestResult() {
               </div>
             )}
             
-            {result.improvements && result.improvements.length > 0 && (
+            {improvementsArr.length > 0 && (
               <div>
                 <h4 className="text-[16px] font-semibold text-[#111111] mb-2">
                   💪 개선점
                 </h4>
                 <ul className="space-y-1">
-                  {result.improvements.map((improvement, index) => (
+                   {improvementsArr.map((improvement, index) => (
                     <li key={index} className="text-[14px] text-[#666666] flex items-start">
                       <span className="text-[#FF6B6B] mr-2">•</span>
                       {improvement}
@@ -239,7 +270,8 @@ export default function LevelTestResult() {
                   목표 설정
                 </p>
                 <p className="text-[14px] text-[#666666]">
-                  현재 {result.level} 레벨에서 다음 레벨로 향상을 위한 구체적인 목표를 설정하세요.
+                  현재 {level} 레벨에서 다음 레벨로 향상을 위한 구체적인 목표를 설정하세요.
+
                 </p>
               </div>
             </div>

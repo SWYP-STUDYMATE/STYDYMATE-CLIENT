@@ -147,15 +147,21 @@ export const analyzeVoiceTest = async (testId) => {
 };
 
 // 음성 테스트 결과 조회 (Spring Boot)
+
+// export const getVoiceTestResult = async (testId) => {
+//   try {
+//     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.VOICE.RESULT(testId));
+//     return response.data;
+//   } catch (error) {
+//     console.error('Get voice test result error:', error);
+//     throw error;
+//   }
+// };
 export const getVoiceTestResult = async (testId) => {
-  try {
-    const response = await api.get(API_ENDPOINTS.LEVEL_TEST.VOICE.RESULT(testId));
-    return response.data;
-  } catch (error) {
-    console.error('Get voice test result error:', error);
-    throw error;
-  }
-};
+   const resp = await api.get(API_ENDPOINTS.LEVEL_TEST.VOICE.RESULT(testId));
+   return unwrap(resp);
+ };
+
 
 // 레벨 테스트 완료 (Spring Boot)
 export const completeLevelTest = async (testId) => {

@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
 import {
-  Radar,
-  RadarChart as RechartsRadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-  Tooltip
-} from 'recharts';
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Radar } from 'react-chartjs-2';
+
+// Chart.js Radar 차트 등록
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 const SKILL_CATEGORIES = [
   { name: 'Grammar', fullName: '문법' },
@@ -20,34 +31,19 @@ const SKILL_CATEGORIES = [
 
 export default function RadarChart({ scores = {}, animate = true }) {
   const [animatedScores, setAnimatedScores] = useState(
-    SKILL_CATEGORIES.map(skill => ({
-      skill: skill.name,
-      skillKr: skill.fullName,
-      score: 0,
-      fullMark: 100
-    }))
+    SKILL_CATEGORIES.map(skill => scores[skill.name.toLowerCase()] || 0)
   );
 
   useEffect(() => {
     if (!animate) {
       setAnimatedScores(
-        SKILL_CATEGORIES.map(skill => ({
-          skill: skill.name,
-          skillKr: skill.fullName,
-          score: scores[skill.name.toLowerCase()] || 0,
-          fullMark: 100
-        }))
+        SKILL_CATEGORIES.map(skill => scores[skill.name.toLowerCase()] || 0)
       );
       return;
     }
 
     // 애니메이션 효과
-    const targetScores = SKILL_CATEGORIES.map(skill => ({
-      skill: skill.name,
-      skillKr: skill.fullName,
-      score: scores[skill.name.toLowerCase()] || 0,
-      fullMark: 100
-    }));
+    const targetScores = SKILL_CATEGORIES.map(skill => scores[skill.name.toLowerCase()] || 0);
 
     const animationDuration = 1500; // 1.5초
     const frameInterval = 16; // 약 60fps
@@ -60,10 +56,7 @@ export default function RadarChart({ scores = {}, animate = true }) {
       const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
 
       setAnimatedScores(
-        targetScores.map((target, index) => ({
-          ...target,
-          score: Math.round(target.score * easeProgress)
-        }))
+        targetScores.map(score => Math.round(score * easeProgress))
       );
 
       if (currentFrame >= totalFrames) {
@@ -74,72 +67,82 @@ export default function RadarChart({ scores = {}, animate = true }) {
     return () => clearInterval(animationTimer);
   }, [scores, animate]);
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload[0]) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white px-4 py-2 rounded-lg shadow-lg border border-[#E7E7E7]">
-          <p className="text-[14px] font-semibold text-[#111111]">
-            {data.skillKr} ({data.skill})
-          </p>
-          <p className="text-[14px] text-[#00C471]">
-            점수: {data.score}점
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   // 평균 점수 계산
   const averageScore = Math.round(
-    Object.values(scores).reduce((sum, score) => sum + (score || 0), 0) / 
+    Object.values(scores).reduce((sum, score) => sum + (score || 0), 0) /
     Object.values(scores).filter(score => score !== undefined).length || 0
   );
 
+  // Chart.js 데이터 구조
+  const data = {
+    labels: SKILL_CATEGORIES.map(skill => skill.fullName),
+    datasets: [
+      {
+        label: '점수',
+        data: animatedScores,
+        backgroundColor: 'rgba(0, 196, 113, 0.3)',
+        borderColor: '#00C471',
+        borderWidth: 2,
+        pointBackgroundColor: '#00C471',
+        pointBorderColor: '#00C471',
+        pointHoverBackgroundColor: '#00C471',
+        pointHoverBorderColor: '#00C471',
+      },
+    ],
+  };
+
+  // Chart.js 옵션
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: animate ? 1500 : 0,
+      easing: 'easeOutCubic',
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const skill = SKILL_CATEGORIES[context.dataIndex];
+            return `${skill.fullName}: ${context.parsed.r}점`;
+          }
+        }
+      }
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          stepSize: 20,
+          callback: function(value) {
+            return value;
+          }
+        },
+        grid: {
+          color: '#E7E7E7'
+        },
+        angleLines: {
+          color: '#E7E7E7'
+        },
+        pointLabels: {
+          color: '#666666',
+          font: {
+            size: 14,
+            weight: 500
+          }
+        }
+      }
+    }
+  };
+
   return (
     <div className="relative w-full h-full min-h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <RechartsRadarChart data={animatedScores}>
-          <PolarGrid 
-            gridType="polygon"
-            radialLines={false}
-            stroke="#E7E7E7"
-            strokeWidth={1}
-          />
-          <PolarAngleAxis
-            dataKey="skill"
-            tick={{ 
-              fill: '#666666', 
-              fontSize: 14,
-              fontWeight: 500
-            }}
-            className="select-none"
-          />
-          <PolarRadiusAxis
-            angle={90}
-            domain={[0, 100]}
-            tickCount={6}
-            tick={{ 
-              fill: '#929292', 
-              fontSize: 12 
-            }}
-            axisLine={false}
-          />
-          <Radar
-            name="Skills"
-            dataKey="score"
-            stroke="#00C471"
-            strokeWidth={2}
-            fill="#00C471"
-            fillOpacity={0.3}
-            animationDuration={animate ? 1500 : 0}
-            animationEasing="ease-out"
-          />
-          <Tooltip content={<CustomTooltip />} />
-        </RechartsRadarChart>
-      </ResponsiveContainer>
-      
+      <Radar data={data} options={options} />
+
       {/* 중앙 평균 점수 표시 */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
         <div className="bg-white/90 rounded-full px-4 py-2">

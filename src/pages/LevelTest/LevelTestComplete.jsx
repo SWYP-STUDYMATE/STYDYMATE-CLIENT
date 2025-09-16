@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useLevelTestStore from '../../store/levelTestStore';
-import { completeLevelTest, getLevelTestResult } from '../../api/levelTest';
+import { analyzeVoiceTest,completeLevelTest, getLevelTestResult,getVoiceTestResult } from '../../api/levelTest';
 
 export default function LevelTestComplete() {
   const navigate = useNavigate();
@@ -14,10 +14,11 @@ export default function LevelTestComplete() {
   const setTestStatus = useLevelTestStore(state => state.setTestStatus);
   const setTestResult = useLevelTestStore(state => state.setTestResult);
   const recordings = useLevelTestStore(state => state.recordings);
+  const testId     = useLevelTestStore(state => state.testId); 
 
   useEffect(() => {
     // 테스트 상태가 'processing'이 아니면 리디렉션
-    if (testStatus !== 'processing') {
+    if (testStatus !== 'processing' && isProcessing) {
       navigate('/level-test');
       return;
     }
@@ -26,24 +27,48 @@ export default function LevelTestComplete() {
     const processTest = async () => {
       try {
         setIsProcessing(true);
-        const userId = localStorage.getItem('userId') || crypto.randomUUID();
-        
+        if (!testId || Number.isNaN(Number(testId))) {
+          throw new Error('유효하지 않은 테스트 ID 입니다.');
+        }        
         // 최소 2초 대기 (UX를 위해)
         await new Promise(resolve => setTimeout(resolve, 2000));
+
         
-        // 테스트 완료 및 평가 요청
-        const completeResult = await completeLevelTest(userId);
+     
+     // 1) 서버에 분석 요청
+     await analyzeVoiceTest(Number(testId));
+
+
+     // 2) 분석 완료될 때까지 result 폴링 (최대 6초, 500ms 간격)
+     const MAX_TRIES = 12;
+     const SLEEP_MS = 500;
+     let result = null;
+     for (let i = 0; i < MAX_TRIES; i++) {
+       try {
+        result = await getVoiceTestResult(Number(testId));
+         // 성공적으로 데이터가 오면 탈출
+         if (result) break;
+       } catch (e) {
+         // 서버가 아직 TEST_NOT_COMPLETED 이라면 잠깐 대기 후 재시도
+           const code = e?.response?.data?.error?.code;
+           if (code !== 'TEST_NOT_COMPLETED') {
+            throw e; // 다른 에러는 즉시 중단
+            }
+       }
+       await new Promise(r => setTimeout(r, SLEEP_MS));
+     }
+     if (!result) {
+       throw new Error('분석 결과를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
+     }
         
-        // 결과 조회 (평가 완료 후)
-        const result = await getLevelTestResult(userId);
-        
-        // 테스트 결과를 Store에 저장
-        setTestResult(result);
+       
+         setTestResult(result?.data ?? result); 
         
         // 상태 업데이트 및 결과 페이지로 이동
+       
         setTestStatus('completed');
         setIsProcessing(false);
-        navigate('/level-test/result');
+        Promise.resolve().then(() => navigate('/level-test/result'));
       } catch (err) {
         console.error('Test processing error:', err);
         setError(err.message || '테스트 분석 중 오류가 발생했습니다.');
@@ -58,7 +83,8 @@ export default function LevelTestComplete() {
       setError('녹음된 데이터가 없습니다.');
       setIsProcessing(false);
     }
-  }, [testStatus, navigate, setTestStatus, setTestResult, recordings.length]);
+   }, [testStatus, isProcessing, testId, navigate, setTestStatus, setTestResult, recordings.length]);
+
 
   return (
     <div className="min-h-screen page-bg flex items-center justify-center px-6">
