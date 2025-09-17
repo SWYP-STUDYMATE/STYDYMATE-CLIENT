@@ -173,9 +173,7 @@ export default defineConfig(({ mode }) => {
       target: 'es2019',
       terserOptions: isProduction ? {
         compress: {
-          drop_console: true,
           drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug'],
         },
         format: { comments: false }
       } : undefined,

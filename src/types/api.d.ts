@@ -92,10 +92,18 @@ export interface UserCompleteProfileResponse extends UserProfileResponse {
 }
 
 export interface OnboardingStatusResponse {
-  isCompleted: boolean;
+  basicInfoCompleted: boolean;
+  languageInfoCompleted: boolean;
+  interestInfoCompleted: boolean;
+  partnerInfoCompleted: boolean;
+  scheduleInfoCompleted: boolean;
+  onboardingCompleted: boolean;
   currentStep: number;
-  completedSteps: string[];
-  nextStepUrl?: string;
+  totalSteps: number;
+  progressPercentage: number;
+  isCompleted: boolean;
+  completedSteps?: number[];
+  nextStep?: number;
 }
 
 export interface UserSettingsResponse {
