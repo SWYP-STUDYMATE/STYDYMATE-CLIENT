@@ -116,11 +116,11 @@ function AppContent() {
         <Route path='/signup-complete' element={<SignupComplete />} />
 
         {/* 보호된 라우트 - 온보딩 관련 (로그인만 필요) */}
-        <Route path='/onboarding-info/:step' element={<ProtectedRoute><OnboardingInfoRouter /></ProtectedRoute>} />
-        <Route path='/onboarding-lang/:step' element={<ProtectedRoute><ObLangRouter /></ProtectedRoute>} />
-        <Route path='/onboarding-int/:step' element={<ProtectedRoute><ObIntRouter /></ProtectedRoute>} />
-        <Route path='/onboarding-partner/:step' element={<ProtectedRoute><ObPartnerRouter /></ProtectedRoute>} />
-        <Route path='/onboarding-schedule/:step' element={<ProtectedRoute><ObScheduleRouter /></ProtectedRoute>} />
+        <Route path='/onboarding-info/:step' element={<OnboardingInfoRouter />} />
+        <Route path='/onboarding-lang/:step' element={<ObLangRouter />} />
+        <Route path='/onboarding-int/:step' element={<ObIntRouter />} />
+        <Route path='/onboarding-partner/:step' element={<ObPartnerRouter />} />
+        <Route path='/onboarding-schedule/:step' element={<ObScheduleRouter />} />
 
         {/* 보호된 라우트 - 온보딩 완료 필요 */}
         <Route path='/main' element={<OnboardingProtectedRoute><Main /></OnboardingProtectedRoute>} />
