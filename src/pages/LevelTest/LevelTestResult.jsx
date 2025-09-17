@@ -185,10 +185,6 @@ const level = result.estimatedLevel ?? result.level ?? 'B1';
                   {skill === 'vocabulary' && '어휘 (Vocabulary)'}
                   {skill === 'pronunciation' && '발음 (Pronunciation)'}
                   {skill === 'fluency' && '유창성 (Fluency)'}
-                  {skill === 'coherence' && '일관성 (Coherence)'}
-                  {skill === 'interaction' && '상호작용 (Interaction)'}
-                  {skill === 'comprehension' && '이해력 (Comprehension)'}
-                  {skill === 'confidence' && '자신감 (Confidence)'}
                 </span>
                 <div className="flex items-center">
                   <div className="w-32 h-2 bg-[#E7E7E7] rounded-full mr-3">
