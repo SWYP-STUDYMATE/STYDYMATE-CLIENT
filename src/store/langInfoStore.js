@@ -1,31 +1,30 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { levelTestStart } from '../api/levelTest';
 
-const useLevelTestStore = create(
+const initialState = {
+  nativeLanguage: null,
+  otherLanguages: [],
+  wantedLanguages: [],
+};
+
+const useLangInfoStore = create(
   persist(
-    (set, get) => ({
-      currentTest: null,
-      questions: [],
-      resetTest: () => set({ currentTest: null, questions: [] }),
-      startNewTest: async (lang = 'en') => {
-        const test = await levelTestStart({
-          languageCode: lang,
-          testType: 'AI',
-          testLevel: 'AUTO',
-          totalQuestions: 10,
-        });
-        set({ currentTest: test });
-        return test;
-      },
-      loadQuestions: async () => {
-        // TODO: 실제 질문 로딩 API로 교체
-        // const qs = await getLevelTestQuestions();
-        // set({ questions: qs });
-      },
+    (set) => ({
+      ...initialState,
+      setNativeLanguage: (language) => set({ nativeLanguage: language ?? null }),
+      setOtherLanguages: (languages) => set({ otherLanguages: Array.isArray(languages) ? languages : [] }),
+      setWantedLanguages: (languages) => set({ wantedLanguages: Array.isArray(languages) ? languages : [] }),
+      resetLangInfo: () => set({ ...initialState }),
     }),
-    { name: 'level-test-storage' }
+    {
+      name: 'lang-info-storage',
+      partialize: (state) => ({
+        nativeLanguage: state.nativeLanguage,
+        otherLanguages: state.otherLanguages,
+        wantedLanguages: state.wantedLanguages,
+      }),
+    }
   )
 );
 
-export default useLevelTestStore;
+export default useLangInfoStore;
