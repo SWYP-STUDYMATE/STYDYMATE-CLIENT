@@ -1,5 +1,5 @@
 // // src/shims/react-is.js
-import * as Real from 'react-is';
+import * as Real from '../../node_modules/react-is/index.js';
 
 // react-is가 원래 내보내는 것들 재노출
 export const {
