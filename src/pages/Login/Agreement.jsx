@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/Header";
 import { useNavigate } from "react-router-dom";
 import { getOnboardingStatus } from "../../api/user";
+import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
 
 const Agreement = () => {
   // 체크박스 상태 관리
@@ -220,7 +221,7 @@ const Agreement = () => {
                 
                 if (!onboardingStatus.isCompleted) {
                   // 온보딩 미완료 시 바로 온보딩 페이지로
-                  const nextStep = onboardingStatus.nextStep || 1;
+                  const nextStep = resolveNextOnboardingStep(onboardingStatus);
                   navigate(`/onboarding-info/${nextStep}`, { replace: true });
                 } else {
                   // 온보딩 완료 시 메인 페이지로

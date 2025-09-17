@@ -9,6 +9,8 @@ import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx'
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect } from 'react';
+import ProtectedRoute from './components/ProtectedRoute';
+import OnboardingProtectedRoute from './components/OnboardingProtectedRoute';
 
 // 즉시 로드가 필요한 컴포넌트들 (로그인, 메인)
 import Login from './pages/Login/Login';
@@ -106,62 +108,67 @@ function AppContent() {
       <NotificationToastManager />
       <Layout>
         <Routes>
+        {/* 공개 라우트 (로그인 불필요) */}
         <Route path='/' element={<Login />} />
         <Route path='/login/oauth2/code/naver' element={<Navercallback />} />
         <Route path='/login/oauth2/code/google' element={<GoogleCallback />} />
         <Route path='/agreement' element={<Agreement />} />
         <Route path='/signup-complete' element={<SignupComplete />} />
-        <Route path='/main' element={<Main />} />
-        <Route path='/onboarding-info/:step' element={<OnboardingInfoRouter />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path='/onboarding-lang/:step' element={<ObLangRouter />} />
-        <Route path='/onboarding-int/:step' element={<ObIntRouter />} />
-        <Route path='/onboarding-partner/:step' element={<ObPartnerRouter />} />
-        <Route path='/onboarding-schedule/:step' element={<ObScheduleRouter />} />
-        <Route path='/level-test' element={<LevelTestStart />} />
-        <Route path='/level-test/check' element={<LevelTestCheck />} />
-        <Route path='/level-test/recording' element={<LevelTestRecording />} />
+
+        {/* 보호된 라우트 - 온보딩 관련 (로그인만 필요) */}
+        <Route path='/onboarding-info/:step' element={<ProtectedRoute><OnboardingInfoRouter /></ProtectedRoute>} />
+        <Route path='/onboarding-lang/:step' element={<ProtectedRoute><ObLangRouter /></ProtectedRoute>} />
+        <Route path='/onboarding-int/:step' element={<ProtectedRoute><ObIntRouter /></ProtectedRoute>} />
+        <Route path='/onboarding-partner/:step' element={<ProtectedRoute><ObPartnerRouter /></ProtectedRoute>} />
+        <Route path='/onboarding-schedule/:step' element={<ProtectedRoute><ObScheduleRouter /></ProtectedRoute>} />
+
+        {/* 보호된 라우트 - 온보딩 완료 필요 */}
+        <Route path='/main' element={<OnboardingProtectedRoute><Main /></OnboardingProtectedRoute>} />
+        <Route path="/chat" element={<OnboardingProtectedRoute><ChatPage /></OnboardingProtectedRoute>} />
+        <Route path='/level-test' element={<OnboardingProtectedRoute><LevelTestStart /></OnboardingProtectedRoute>} />
+        <Route path='/level-test/check' element={<OnboardingProtectedRoute><LevelTestCheck /></OnboardingProtectedRoute>} />
+        <Route path='/level-test/recording' element={<OnboardingProtectedRoute><LevelTestRecording /></OnboardingProtectedRoute>} />
         {/* Alias routes for documentation compatibility */}
-        <Route path='/level-test/connection' element={<LevelTestCheck />} />
-        <Route path='/level-test/question/:id' element={<LevelTestRecording />} />
-        <Route path='/level-test/complete' element={<LevelTestComplete />} />
-        <Route path='/level-test/result' element={<LevelTestResult />} />
-        <Route path='/schedule' element={<Schedule />} />
-        <Route path='/session' element={<SessionList />} />
-        <Route path='/session/audio-check' element={<AudioConnectionCheck />} />
-        <Route path='/session/video/:roomId' element={<VideoSessionRoom />} />
-        <Route path='/session/video-check' element={<VideoConnectionCheck />} />
-        <Route path='/session/audio/:roomId' element={<AudioSessionRoom />} />
-        <Route path='/session/video-controls-demo' element={<VideoControlsDemo />} />
-        <Route path='/profile' element={<ProfilePage />} />
-        <Route path='/sessions' element={<SessionList />} />
-        <Route path='/sessions/create' element={<SessionCreate />} />
-        <Route path='/sessions/calendar' element={<SessionCalendar />} />
-        <Route path='/session/schedule/new' element={<SessionScheduleNew />} />
-        <Route path='/matching' element={<MatchingMain />} />
-        <Route path='/matching/profile/:userId' element={<MatchingProfile />} />
-        <Route path='/analytics' element={<AnalyticsPage />} />
-        
-        {/* Settings Routes */}
-        <Route path='/settings' element={<SettingsMain />} />
-        <Route path='/settings/account' element={<AccountSettings />} />
-        <Route path='/settings/notifications' element={<NotificationSettings />} />
-        <Route path='/settings/privacy' element={<PrivacySettings />} />
-        <Route path='/settings/security' element={<SecuritySettings />} />
-        <Route path='/settings/language' element={<LanguageSettings />} />
-        <Route path='/settings/data' element={<DataSettings />} />
-        <Route path='/settings/login-history' element={<LoginHistory />} />
-        <Route path='/settings/delete-account' element={<DeleteAccount />} />
-        
-        {/* Notification Routes */}
-        <Route path='/notifications' element={<NotificationList />} />
-        <Route path='/notifications/center' element={<NotificationCenter />} />
-        
-        {/* Achievement Routes */}
-        <Route path='/achievements' element={<AchievementsPage />} />
-        
-        {/* Mates Routes */}
-        <Route path='/mates' element={<MatesPage />} />
+        <Route path='/level-test/connection' element={<OnboardingProtectedRoute><LevelTestCheck /></OnboardingProtectedRoute>} />
+        <Route path='/level-test/question/:id' element={<OnboardingProtectedRoute><LevelTestRecording /></OnboardingProtectedRoute>} />
+        <Route path='/level-test/complete' element={<OnboardingProtectedRoute><LevelTestComplete /></OnboardingProtectedRoute>} />
+        <Route path='/level-test/result' element={<OnboardingProtectedRoute><LevelTestResult /></OnboardingProtectedRoute>} />
+        <Route path='/schedule' element={<OnboardingProtectedRoute><Schedule /></OnboardingProtectedRoute>} />
+        <Route path='/session' element={<OnboardingProtectedRoute><SessionList /></OnboardingProtectedRoute>} />
+        <Route path='/session/audio-check' element={<OnboardingProtectedRoute><AudioConnectionCheck /></OnboardingProtectedRoute>} />
+        <Route path='/session/video/:roomId' element={<OnboardingProtectedRoute><VideoSessionRoom /></OnboardingProtectedRoute>} />
+        <Route path='/session/video-check' element={<OnboardingProtectedRoute><VideoConnectionCheck /></OnboardingProtectedRoute>} />
+        <Route path='/session/audio/:roomId' element={<OnboardingProtectedRoute><AudioSessionRoom /></OnboardingProtectedRoute>} />
+        <Route path='/session/video-controls-demo' element={<OnboardingProtectedRoute><VideoControlsDemo /></OnboardingProtectedRoute>} />
+        <Route path='/profile' element={<OnboardingProtectedRoute><ProfilePage /></OnboardingProtectedRoute>} />
+        <Route path='/sessions' element={<OnboardingProtectedRoute><SessionList /></OnboardingProtectedRoute>} />
+        <Route path='/sessions/create' element={<OnboardingProtectedRoute><SessionCreate /></OnboardingProtectedRoute>} />
+        <Route path='/sessions/calendar' element={<OnboardingProtectedRoute><SessionCalendar /></OnboardingProtectedRoute>} />
+        <Route path='/session/schedule/new' element={<OnboardingProtectedRoute><SessionScheduleNew /></OnboardingProtectedRoute>} />
+        <Route path='/matching' element={<OnboardingProtectedRoute><MatchingMain /></OnboardingProtectedRoute>} />
+        <Route path='/matching/profile/:userId' element={<OnboardingProtectedRoute><MatchingProfile /></OnboardingProtectedRoute>} />
+        <Route path='/analytics' element={<OnboardingProtectedRoute><AnalyticsPage /></OnboardingProtectedRoute>} />
+
+        {/* Settings Routes - 온보딩 완료 필요 */}
+        <Route path='/settings' element={<OnboardingProtectedRoute><SettingsMain /></OnboardingProtectedRoute>} />
+        <Route path='/settings/account' element={<OnboardingProtectedRoute><AccountSettings /></OnboardingProtectedRoute>} />
+        <Route path='/settings/notifications' element={<OnboardingProtectedRoute><NotificationSettings /></OnboardingProtectedRoute>} />
+        <Route path='/settings/privacy' element={<OnboardingProtectedRoute><PrivacySettings /></OnboardingProtectedRoute>} />
+        <Route path='/settings/security' element={<OnboardingProtectedRoute><SecuritySettings /></OnboardingProtectedRoute>} />
+        <Route path='/settings/language' element={<OnboardingProtectedRoute><LanguageSettings /></OnboardingProtectedRoute>} />
+        <Route path='/settings/data' element={<OnboardingProtectedRoute><DataSettings /></OnboardingProtectedRoute>} />
+        <Route path='/settings/login-history' element={<OnboardingProtectedRoute><LoginHistory /></OnboardingProtectedRoute>} />
+        <Route path='/settings/delete-account' element={<OnboardingProtectedRoute><DeleteAccount /></OnboardingProtectedRoute>} />
+
+        {/* Notification Routes - 온보딩 완료 필요 */}
+        <Route path='/notifications' element={<OnboardingProtectedRoute><NotificationList /></OnboardingProtectedRoute>} />
+        <Route path='/notifications/center' element={<OnboardingProtectedRoute><NotificationCenter /></OnboardingProtectedRoute>} />
+
+        {/* Achievement Routes - 온보딩 완료 필요 */}
+        <Route path='/achievements' element={<OnboardingProtectedRoute><AchievementsPage /></OnboardingProtectedRoute>} />
+
+        {/* Mates Routes - 온보딩 완료 필요 */}
+        <Route path='/mates' element={<OnboardingProtectedRoute><MatesPage /></OnboardingProtectedRoute>} />
         </Routes>
       </Layout>
     </ErrorBoundary>

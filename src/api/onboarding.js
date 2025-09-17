@@ -5,7 +5,7 @@ import api from "./index";
 export const getOnboardingData = async () => {
   try {
     const response = await api.get("/onboarding/data");
-    return response.data.data;
+    return response.data;
   } catch (error) {
     console.error("Get onboarding data error:", error);
     throw error;
@@ -16,7 +16,7 @@ export const getOnboardingData = async () => {
 export const getOnboardingProgress = async () => {
   try {
     const response = await api.get("/onboarding/progress");
-    return response.data.data;
+    return response.data;
   } catch (error) {
     console.error("Get onboarding progress error:", error);
     throw error;
@@ -37,8 +37,8 @@ export const completeAllOnboarding = async (onboardingData) => {
 // 현재 온보딩 단계 조회
 export const getCurrentOnboardingStep = async () => {
   try {
-    const response = await api.get("/onboarding/current-step");
-    return response.data;
+    const response = await api.get("/onboarding/steps/current");
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error("Get current onboarding step error:", error);
     throw error;
@@ -49,7 +49,7 @@ export const getCurrentOnboardingStep = async () => {
 export const skipOnboardingStep = async (step) => {
   try {
     const response = await api.post(`/onboarding/steps/${step}/skip`);
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error("Skip onboarding step error:", error);
     throw error;

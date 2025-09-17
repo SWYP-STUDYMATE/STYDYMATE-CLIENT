@@ -12,7 +12,14 @@ export default function Login() {
     // 기존 토큰 확인
     const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
-      navigate("/main", { replace: true });
+      // 저장된 리다이렉트 경로가 있으면 그곳으로, 없으면 메인으로
+      const redirectPath = sessionStorage.getItem("redirectPath");
+      if (redirectPath) {
+        sessionStorage.removeItem("redirectPath");
+        navigate(redirectPath, { replace: true });
+      } else {
+        navigate("/main", { replace: true });
+      }
     }
   }, [navigate]);
 

@@ -246,7 +246,8 @@ api.interceptors.response.use(
         
         log.debug("토큰 재발급 응답 수신", res.data, 'AUTH');
 
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data;
+        const payload = res.data?.data ?? res.data;
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = payload;
         if (newAccessToken) {
           // 새로 받은 토큰 형식 검증
           if (!isValidJWT(newAccessToken)) {
@@ -317,4 +318,3 @@ export const getUserName = async () => {
 // Note: 사용자 관련 API 함수들은 src/api/user에서 구현됨
 
 export default api;
-

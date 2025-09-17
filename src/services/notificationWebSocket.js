@@ -27,10 +27,10 @@ class NotificationWebSocketService {
         return;
       }
 
-      const socketUrl = `${this.wsBase}/ws/notifications?token=${token}`;
+      const socketUrl = this.buildSocketUrl(token);
 
       this.client = new Client({
-        webSocketFactory: () => new SockJS(socketUrl),
+        webSocketFactory: () => this.createTransport(socketUrl),
         connectHeaders: {
           Authorization: `Bearer ${token}`
         },
@@ -63,6 +63,24 @@ class NotificationWebSocketService {
 
       this.client.activate();
     });
+  }
+
+  buildSocketUrl(token) {
+    const base = (this.wsBase || '').replace(/\/?$/, '');
+    const url = `${base}/ws/notifications`;
+    return url.includes('?') ? `${url}&token=${token}` : `${url}?token=${token}`;
+  }
+
+  createTransport(url) {
+    try {
+      if (url.startsWith('ws://') || url.startsWith('wss://')) {
+        return new WebSocket(url);
+      }
+      return new SockJS(url);
+    } catch (error) {
+      console.error('Failed to create WebSocket transport:', error);
+      throw error;
+    }
   }
 
   // 기본 구독 설정

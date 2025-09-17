@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
-import { getUserProfile, getUserInfo, getOnboardingStatus } from "../api/user";
+import { getUserProfile, getUserInfo } from "../api/user";
 import ProgressBar from "../components/PrograssBar";
 import TokenTest from "../components/TokenTest";
 import CommonButton from "../components/CommonButton";
@@ -25,29 +25,24 @@ export default function Main() {
     const accessToken = params.get("accessToken");
     const userId = params.get("userId");
 
-    // Mock 모드 배너는 App.jsx에서 전역으로 처리
+    // OAuth 콜백에서 토큰을 URL 파라미터로 받은 경우 저장
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+      if (userId) {
+        localStorage.setItem("userId", userId);
+      }
+      // URL에서 토큰 파라미터 제거
+      navigate("/main", { replace: true });
+      return;
+    }
 
-    const checkOnboardingAndLoadProfile = async () => {
+    // OnboardingProtectedRoute에서 이미 로그인 & 온보딩 체크를 했으므로, 여기서는 프로필만 로드
+    const loadProfile = async () => {
       try {
-        // 1. 온보딩 상태 확인
-        console.log("🔄 온보딩 상태 확인 중...");
-        const onboardingStatus = await getOnboardingStatus();
-        console.log("온보딩 상태:", onboardingStatus);
-        
-        // 온보딩이 완료되지 않았으면 온보딩 페이지로 리다이렉트
-        if (!onboardingStatus.isCompleted) {
-          console.log("⚠️ 온보딩 미완료, 온보딩 페이지로 이동");
-          // 현재 완료된 단계에 따라 적절한 온보딩 페이지로 이동
-          const nextStep = onboardingStatus.nextStep || 1;
-          navigate(`/onboarding-info/${nextStep}`, { replace: true });
-          return;
-        }
-        
-        // 2. 온보딩 완료 시 프로필 로드
-        console.log("✅ 온보딩 완료, 프로필 로드 시작");
-        console.log("🔄 서버에서 프로필 로드 시도...");
+        // 프로필 로드
+        console.log("🔄 프로필 로드 시작");
         const profileData = await loadProfileFromServer();
-        
+
         if (profileData) {
           console.log("✅ 서버 프로필 로드 성공");
         } else {
@@ -61,57 +56,30 @@ export default function Main() {
           setResidence(profileResponse.residence);
         }
       } catch (error) {
-        console.error("온보딩 확인 또는 프로필 로드 실패:", error);
-        
-        // 네트워크 오류 (서버 연결 불가)
+        console.error("프로필 로드 실패:", error);
+
+        // 네트워크 오류 - 기본 프로필로 설정
         if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-          console.error("🔌 네트워크 연결 오류: 서버에 연결할 수 없습니다.");
-          // 서버 연결 문제시 기본 프로필로 설정 (UI는 계속 표시)
+          console.error("🔌 네트워크 연결 오류");
           setEnglishName("사용자");
           setProfileImage("/assets/basicProfilePic.png");
           setResidence("위치 정보 없음");
           return;
         }
-        
-        // 토큰이 유효하지 않으면 로그인 페이지로
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          console.log("🔐 인증 오류: 로그인 페이지로 이동");
-          localStorage.clear();
-          navigate("/", { replace: true });
-          return;
-        }
-        
+
         // 서버 오류 (5xx) 시 기본 프로필로 설정
         if (error.response?.status >= 500) {
-          console.error("🚨 서버 내부 오류: 기본 프로필로 설정");
+          console.error("🚨 서버 내부 오류");
           setEnglishName("사용자");
           setProfileImage("/assets/basicProfilePic.png");
           setResidence("위치 정보 없음");
-          return;
-        }
-        
-        // 온보딩 API 오류 시 기본 온보딩 페이지로
-        if (error.response?.status === 404 || error.message.includes('onboarding')) {
-          console.log("⚠️ 온보딩 API 오류, 기본 온보딩 페이지로 이동");
-          navigate("/onboarding-info/1", { replace: true });
           return;
         }
       }
     };
 
-    if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
-      if (userId) {
-        localStorage.setItem("userId", userId);
-      }
-      // URL에서 토큰 파라미터 제거
-      navigate("/main", { replace: true });
-      checkOnboardingAndLoadProfile(); // 토큰 저장 후 온보딩 확인 및 프로필 요청
-    } else if (localStorage.getItem("accessToken")) {
-      checkOnboardingAndLoadProfile(); // 페이지 새로고침 시 온보딩 확인 및 프로필 요청
-    } else {
-      navigate("/", { replace: true });
-    }
+    // 프로필 로드 실행
+    loadProfile();
   }, [search, navigate, setProfileImage, setEnglishName, loadProfileFromServer]);
 
   const englishName = useProfileStore((state) => state.englishName);

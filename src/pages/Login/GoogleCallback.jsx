@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
+import { getOnboardingStatus } from "../../api/user";
+import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
 
 // JWT 토큰 형식 검증 함수
 const isValidJWT = (token) => {
@@ -13,6 +15,33 @@ const isValidJWT = (token) => {
 export default function GoogleCallback() {
   const [message, setMessage] = useState("Google 로그인 처리 중...");
   const navigate = useNavigate();
+
+  const navigateAfterLogin = useCallback(async () => {
+    try {
+      if (localStorage.getItem('isNewUser') === 'true') {
+        navigate("/agreement", { replace: true });
+        return;
+      }
+
+      const onboardingStatus = await getOnboardingStatus();
+      if (!onboardingStatus.isCompleted) {
+        const nextStep = resolveNextOnboardingStep(onboardingStatus);
+        navigate(`/onboarding-info/${nextStep}`, { replace: true });
+        return;
+      }
+
+      const redirectPath = sessionStorage.getItem("redirectPath");
+      if (redirectPath) {
+        sessionStorage.removeItem("redirectPath");
+        navigate(redirectPath, { replace: true });
+      } else {
+        navigate("/main", { replace: true });
+      }
+    } catch (error) {
+      console.error("사용자 상태 확인 실패:", error);
+      navigate("/agreement", { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,9 +90,9 @@ export default function GoogleCallback() {
           localStorage.setItem("userName", nameRes.data.name);
           console.log("유저 이름 저장 완료:", nameRes.data.name);
           
-          setMessage("Google 로그인 성공! 메인 페이지로 이동합니다...");
+          setMessage("Google 로그인 성공! 이동 중...");
           setTimeout(() => {
-            navigate("/agreement", { replace: true });
+            void navigateAfterLogin();
           }, 2000);
         } catch (e) {
           console.error("유저 정보 불러오기 실패:", e);
@@ -117,10 +146,10 @@ export default function GoogleCallback() {
             } catch (e) {
               console.error("유저 이름 불러오기 실패:", e);
             }
-            
-            setMessage("Google 로그인 성공! 메인 페이지로 이동합니다...");
+
+            setMessage("Google 로그인 성공! 이동 중...");
             setTimeout(() => {
-              navigate("/agreement", { replace: true });
+              void navigateAfterLogin();
             }, 2000);
           } else {
             setMessage("토큰을 받아오지 못했습니다.");

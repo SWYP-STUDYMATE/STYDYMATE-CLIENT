@@ -22,8 +22,8 @@ export default function ObLang3() {
     api.get("/onboarding/language/languages")
       .then(res => {
         const options = (res.data || []).map(lang => ({
-          value: lang.languageId,
-          label: lang.languageName
+          value: lang.id ?? lang.languageId,
+          label: lang.name ?? lang.languageName
         }));
         setLanguageOptions(options);
         setLoadingLang(false);

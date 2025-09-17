@@ -23,10 +23,10 @@ export default function ObLang1() {
     api.get("/onboarding/language/languages")
       .then(res => {
         console.log("🔍 언어 API 응답:", res.data);
-        // [{ languageId, languageName }, ...] -> [{ value, label }, ...]
+        // [{ id, name }, ...] 또는 [{ languageId, languageName }, ...] -> [{ value, label }, ...]
         const options = (res.data || []).map(lang => ({
-          value: lang.languageId,
-          label: lang.languageName
+          value: lang.id ?? lang.languageId,
+          label: lang.name ?? lang.languageName
         }));
         console.log("🔍 변환된 언어 옵션:", options);
         setLanguageOptions(options);
@@ -57,16 +57,19 @@ export default function ObLang1() {
 
     try {
       console.log("🔍 saveLanguageInfo 호출 시작 - nativeLanguageId:", selected.value);
-      await saveLanguageInfo({
+      const result = await saveLanguageInfo({
         nativeLanguageId: selected.value,
-
       });
+      console.log("🔍 saveLanguageInfo 응답:", result);
       console.log("🔍 saveLanguageInfo 성공");
+
       // zustand에 언어 ID와 라벨 모두 저장 (서버 호출 없이)
       setNativeLanguage({
         id: selected.value,
         name: selected.label
       });
+
+      console.log("🔍 페이지 이동 시도: /onboarding-lang/2");
       navigate("/onboarding-lang/2"); // 다음 단계로 이동 (라우팅 구조에 맞게 수정)
     } catch (e) {
       console.log("🔍 ❌ saveLanguageInfo 실패:", e);
@@ -74,7 +77,24 @@ export default function ObLang1() {
       console.log("🔍 ❌ Error status:", e.response?.status);
       console.log("🔍 ❌ Error data:", e.response?.data);
       console.error("🔍 모국어 저장 실패:", e);
-      alert("모국어 저장에 실패했습니다.");
+
+      // 더 자세한 에러 메시지 표시
+      let errorMessage = "모국어 저장에 실패했습니다.";
+      if (e.response) {
+        if (e.response.status === 401) {
+          errorMessage = "로그인이 필요합니다. 다시 로그인해주세요.";
+        } else if (e.response.status === 403) {
+          errorMessage = "권한이 없습니다. 다시 로그인해주세요.";
+        } else if (e.response.status === 400) {
+          errorMessage = e.response.data?.message || "잘못된 요청입니다.";
+        } else if (e.response.status === 500) {
+          errorMessage = "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
+      } else if (e.request) {
+        errorMessage = "서버에 연결할 수 없습니다. 네트워크를 확인해주세요.";
+      }
+
+      alert(errorMessage);
     }
   };
      

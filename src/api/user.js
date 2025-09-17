@@ -164,7 +164,7 @@ export const updateUserScheduleInfo = async (scheduleData) => {
 export const getOnboardingStatus = async () => {
   try {
     const response = await api.get('/user/onboarding-status');
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Get onboarding status error:', error);
     throw error;
