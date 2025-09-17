@@ -16,16 +16,6 @@ export default function OnboardingProtectedRoute({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const storedAccessToken = localStorage.getItem('accessToken');
-    const storedRefreshToken = localStorage.getItem('refreshToken');
-
-    if (!storedAccessToken && !storedRefreshToken) {
-      console.log('🔍 온보딩 보호 라우트: 저장된 토큰 없음 - 인증 단계로 이동');
-      setError('AUTH_ERROR');
-      setIsLoading(false);
-      return;
-    }
-
     const checkOnboarding = async () => {
       try {
         console.log('🔍 온보딩 상태 확인 중...');
