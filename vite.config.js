@@ -33,6 +33,7 @@ export default defineConfig(({ mode }) => {
           icons: []
         },
         workbox: {
+          // 필요 시 실제 산출물 확장자만 남겨서 경고 제거 가능
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
           runtimeCaching: [
             {
@@ -74,10 +75,10 @@ export default defineConfig(({ mode }) => {
           replacement: path.resolve(process.cwd(), 'src/shims/react-is.js'),
         },
 
-        // ✅ eventemitter3 CJS 호환성 강제
+        // ✅ eventemitter3: v4는 index.js(CJS)만 있으므로 CJS 진입점으로 고정
         {
           find: 'eventemitter3',
-          replacement: 'eventemitter3/index.js',
+          replacement: path.resolve(process.cwd(), 'node_modules/eventemitter3/index.js'),
         },
 
         // ✅ lodash CJS → lodash-es 매핑
@@ -153,17 +154,15 @@ export default defineConfig(({ mode }) => {
         'lodash-es/toNumber',
         'lodash-es/clamp',
         'lodash-es/isString',
-        // ✅ CJS → ESM interop 강제
-    'prop-types',
-     'react-smooth',
-     'react-transition-group',
+        'prop-types',
+        'react-smooth',
+        'react-transition-group',
+        // ✅ eventemitter3도 사전 번들링
+        'eventemitter3',
       ],
-      
+      // ⛔ eventemitter3는 exclude에서 제거
       exclude: [
-        // 🔴 프리번들 제외: alias가 반드시 적용되도록
-        // 'react-is',
         'emoji-picker-react',
-        'eventemitter3'
       ]
     },
     
@@ -181,7 +180,7 @@ export default defineConfig(({ mode }) => {
         format: { comments: false }
       } : undefined,
       commonjsOptions: {
-        include: [/node_modules/],
+        include: [/node_modules/, /eventemitter3/], // ✅ eventemitter3 명시 포함
         transformMixedEsModules: true,
         requireReturnsDefault: 'auto'
       },
