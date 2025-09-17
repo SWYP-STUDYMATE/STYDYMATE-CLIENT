@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import OnboardingProtectedRoute from "../../components/OnboardingProtectedRoute";
+import ProtectedRoute from "../../components/ProtectedRoute";
 import OnboardingInfo1 from "./ObInfo1";
 import OnboardingInfo2 from "./ObInfo2";
 import OnboardingInfo3 from "./ObInfo3";
@@ -22,8 +22,8 @@ export default function OnboardingInfoRouter() {
   };
 
   return (
-    <OnboardingProtectedRoute>
+    <ProtectedRoute>
       {renderStep()}
-    </OnboardingProtectedRoute>
+    </ProtectedRoute>
   );
 } 

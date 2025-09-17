@@ -82,8 +82,36 @@ export default function OnboardingProtectedRoute({ children }) {
       ) : error === 'AUTH_ERROR' ? (
         <Navigate to="/" replace />
       ) : error === 'API_ERROR' ? (
-        // API 에러시 기본 온보딩 페이지로
-        <Navigate to="/onboarding-info/1" replace />
+        // API 에러시 에러 메시지 표시
+        <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4">
+          <div className="text-center max-w-md">
+            <img
+              src="/images/error-icon.svg"
+              alt="Error"
+              className="w-20 h-20 mx-auto mb-4"
+            />
+            <h2 className="text-2xl font-bold text-[#111111] mb-2">
+              문제가 발생했습니다
+            </h2>
+            <p className="text-[#929292] mb-6">
+              오류가 발생했습니다. 다시 시도해주세요.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full py-3 px-6 bg-[#111111] text-white rounded-lg hover:bg-[#414141] transition-colors"
+              >
+                다시 시도
+              </button>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="w-full py-3 px-6 bg-[#E7E7E7] text-[#111111] rounded-lg hover:bg-[#B5B5B5] transition-colors"
+              >
+                홈으로 이동
+              </button>
+            </div>
+          </div>
+        </div>
       ) : onboardingStatus && !onboardingStatus.isCompleted ? (
         // 온보딩이 완료되지 않았으면 해당 단계로 이동
         <Navigate
