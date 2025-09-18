@@ -118,7 +118,7 @@ export default function ProfileTestPage() {
     }]);
   };
 
-  const handleFileDelete = (deletedFile) => {
+  const handleFileDelete = async (deletedFile) => {
     setUploadedFiles(prev => prev.filter(file => file.key !== deletedFile.key));
   };
 

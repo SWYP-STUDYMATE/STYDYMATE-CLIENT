@@ -7,6 +7,7 @@ import RealtimeSubtitlePanel from '../../components/RealtimeSubtitlePanel';
 import TranslatedSubtitles from '../../components/TranslatedSubtitles';
 import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor } from 'lucide-react';
 import { webrtcManager } from '../../services/webrtc';
+import { webrtcAPI } from '../../api/webrtc';
 import { log } from '../../utils/logger';
 
 export default function VideoSessionRoom() {
@@ -52,7 +53,7 @@ export default function VideoSessionRoom() {
     setPipSupported('pictureInPictureEnabled' in document);
 
     initializeCall();
-    loadPartnerInfo();
+    loadRoomInfo();
 
     return () => {
       cleanup();
@@ -119,46 +120,24 @@ export default function VideoSessionRoom() {
   };
 
   // 파트너 정보 로드
-  const loadPartnerInfo = async () => {
+  const loadRoomInfo = async () => {
     try {
-      // 세션 정보에서 파트너 정보를 가져옴
-      const response = await fetch(`/api/v1/sessions/${roomId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const sessionData = await response.json();
+      const info = await webrtcAPI.getRoomInfo(roomId);
+      if (info) {
+        const metadata = info.metadata || {};
+        const currentUserId = localStorage.getItem('userId');
+        const remoteParticipant = (info.participants || []).find((participant) => participant.id !== currentUserId);
+
         setPartnerInfo({
-          name: sessionData.partnerName || 'Unknown Partner',
-          avatar: sessionData.partnerImage || '/assets/basicProfilePic.png',
-          level: sessionData.partnerLevel || 'Unknown',
-          nativeLanguage: sessionData.partnerNativeLanguage || 'Unknown',
-          learningLanguage: sessionData.partnerLearningLanguage || 'Unknown'
-        });
-      } else {
-        console.error('Failed to load partner info:', response.status);
-        // 기본 파트너 정보 설정
-        setPartnerInfo({
-          name: 'Partner',
-          avatar: '/assets/basicProfilePic.png',
-          level: 'Unknown',
-          nativeLanguage: 'Unknown',
-          learningLanguage: 'Unknown'
+          name: metadata.partnerName || remoteParticipant?.name || 'Partner',
+          avatar: metadata.partnerAvatar || '/assets/basicProfilePic.png',
+          level: metadata.partnerLevel || 'Unknown',
+          nativeLanguage: metadata.partnerNativeLanguage || 'Unknown',
+          learningLanguage: metadata.partnerLearningLanguage || 'Unknown'
         });
       }
     } catch (error) {
-      console.error('Error loading partner info:', error);
-      // 에러 시 기본 파트너 정보 설정
-      setPartnerInfo({
-        name: 'Partner',
-        avatar: '/assets/basicProfilePic.png',
-        level: 'Unknown',
-        nativeLanguage: 'Unknown', 
-        learningLanguage: 'Unknown'
-      });
+      log.warn('룸 정보 로드 실패', error, 'VIDEO_SESSION');
     }
   };
 
@@ -224,6 +203,17 @@ export default function VideoSessionRoom() {
     webrtcManager.on('onParticipantJoined', (participant) => {
       log.info('참가자 입장', participant, 'VIDEO_SESSION');
       setParticipants(prev => new Map(prev).set(participant.userId, participant));
+
+      const currentUserId = localStorage.getItem('userId') || 'guest';
+      if (participant.userId !== currentUserId) {
+        setPartnerInfo((prev) => ({
+          name: participant.userName || prev?.name || 'Partner',
+          avatar: prev?.avatar || '/assets/basicProfilePic.png',
+          level: prev?.level || 'Unknown',
+          nativeLanguage: prev?.nativeLanguage || 'Unknown',
+          learningLanguage: prev?.learningLanguage || 'Unknown'
+        }));
+      }
     });
 
     // Participant left callback
@@ -234,6 +224,11 @@ export default function VideoSessionRoom() {
         updated.delete(participant.userId);
         return updated;
       });
+
+      const currentUserId = localStorage.getItem('userId') || 'guest';
+      if (participant.userId !== currentUserId) {
+        setPartnerInfo(null);
+      }
     });
 
     // Connection state change callback
@@ -474,6 +469,8 @@ export default function VideoSessionRoom() {
     } catch (error) {
       log.error('WebRTC 연결 정리 실패', error, 'VIDEO_SESSION');
     }
+
+    setPartnerInfo(null);
 
     // Clear callbacks
     webrtcManager.off('onLocalStream');

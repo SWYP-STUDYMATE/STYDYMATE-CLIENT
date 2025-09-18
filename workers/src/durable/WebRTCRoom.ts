@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { log } from '../utils/logger';
+import { upsertActiveRoom, removeActiveRoom } from '../utils/activeRooms';
+import { ActiveRoomInfo } from '../types';
 
 // Durable Object for WebRTC Room Management with Hibernation Support
 export class WebRTCRoom extends DurableObject {
@@ -21,6 +23,7 @@ export class WebRTCRoom extends DurableObject {
       maxParticipants: 4,
       createdAt: new Date().toISOString(),
       type: 'audio',
+      metadata: {},
       settings: {
         allowScreenShare: true,
         allowRecording: false,
@@ -90,6 +93,8 @@ export class WebRTCRoom extends DurableObject {
         return this.handleInfo();
       case '/settings':
         return this.handleSettings(request);
+      case '/metadata':
+        return this.handleMetadata(request);
       case '/ice-servers':
         return this.handleIceServers();
       case '/metrics':
@@ -147,6 +152,7 @@ export class WebRTCRoom extends DurableObject {
     // Update metrics for participant join
     this.updateMetrics('join');
     await this.saveRoomData();
+    await this.syncActiveRoomCache();
     
     // Send analytics
     await this.sendAnalytics('participant_joined', {
@@ -184,9 +190,11 @@ export class WebRTCRoom extends DurableObject {
       this.roomData.type = roomType;
       this.roomData.maxParticipants = maxParticipants;
       this.roomData.createdAt = new Date().toISOString();
+      this.roomData.metadata = metadata || {};
       
       // Save room data to storage
       await this.saveRoomData();
+      await this.syncActiveRoomCache();
 
       return new Response(JSON.stringify({
         success: true,
@@ -465,6 +473,7 @@ export class WebRTCRoom extends DurableObject {
     // Update metrics
     this.updateMetrics('leave');
     await this.saveRoomData();
+    await this.syncActiveRoomCache();
     
     // Send analytics
     await this.sendAnalytics('participant_left', {
@@ -493,6 +502,7 @@ export class WebRTCRoom extends DurableObject {
     const activeParticipants = this.getActiveParticipants();
     if (activeParticipants.length === 0) {
       await this.ctx.storage.deleteAll();
+      await this.syncActiveRoomCache({ forceRemove: true });
     }
   }
 
@@ -508,6 +518,7 @@ export class WebRTCRoom extends DurableObject {
         const updates = await request.json();
         Object.assign(this.roomData.settings, updates);
         await this.saveRoomData();
+        await this.syncActiveRoomCache();
         
         this.broadcast({
           type: 'settings-updated',
@@ -524,8 +535,75 @@ export class WebRTCRoom extends DurableObject {
         });
       }
     }
-    
+
     return new Response('Method not allowed', { status: 405 });
+  }
+
+  private async handleMetadata(request: Request): Promise<Response> {
+    if (request.method !== 'PATCH' && request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    try {
+      const metadata = await request.json() as Record<string, unknown> | undefined;
+
+      if (!metadata || typeof metadata !== 'object') {
+        return new Response(JSON.stringify({ error: 'metadata object is required' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      this.roomData.metadata = {
+        ...(this.roomData.metadata || {}),
+        ...metadata
+      };
+
+      await this.saveRoomData();
+      await this.syncActiveRoomCache();
+
+      return new Response(JSON.stringify({
+        success: true,
+        metadata: this.roomData.metadata
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      log.error('Metadata update error', error as Error, { component: 'WEBRTC_ROOM' });
+      return new Response(JSON.stringify({ error: 'Failed to update metadata' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  private async syncActiveRoomCache(options?: { forceRemove?: boolean }) {
+    if (!this.env?.CACHE) {
+      return;
+    }
+
+    try {
+      if (options?.forceRemove) {
+        await removeActiveRoom(this.env.CACHE, this.roomId);
+        return;
+      }
+
+      const activeCount = this.getActiveParticipants().length;
+      const roomInfo: ActiveRoomInfo = {
+        roomId: this.roomId,
+        roomType: this.roomData.type === 'video' ? 'video' : 'audio',
+        currentParticipants: activeCount,
+        maxParticipants: this.roomData.maxParticipants,
+        status: activeCount > 0 ? 'active' : 'waiting',
+        createdAt: this.roomData.createdAt,
+        updatedAt: new Date().toISOString(),
+        metadata: this.roomData.metadata || {}
+      };
+
+      await upsertActiveRoom(this.env.CACHE, roomInfo);
+    } catch (error) {
+      log.warn('Active room cache sync failed', error as Error, { component: 'WEBRTC_ROOM' });
+    }
   }
 
   private broadcast(message: any, excludeUserId?: string) {
@@ -822,16 +900,6 @@ export class WebRTCRoom extends DurableObject {
 }
 
 // Type definitions
-interface RoomData {
-  id: string;
-  participants: Participant[];
-  maxParticipants: number;
-  createdAt: string;
-  type: 'audio' | 'video';
-  settings: RoomSettings;
-  metrics: RoomMetrics;
-}
-
 interface RoomMetrics {
   totalParticipants: number;
   peakParticipants: number;
@@ -863,6 +931,17 @@ interface RTCIceServer {
   urls: string | string[];
   username?: string;
   credential?: string;
+}
+
+interface RoomData {
+  id: string;
+  participants: Participant[];
+  maxParticipants: number;
+  createdAt: string;
+  type: 'audio' | 'video';
+  settings: RoomSettings;
+  metrics: RoomMetrics;
+  metadata?: Record<string, any>;
 }
 
 interface Participant {

@@ -7,6 +7,7 @@ import { validationError } from '../middleware/error-handler';
 import { internalAuth } from '../middleware/auth';
 import { log } from '../utils/logger';
 import { selectWhisperModel, validateAudioSize, WHISPER_FILE_LIMITS } from '../constants/whisper';
+import { getActiveRooms, upsertActiveRoom } from '../utils/activeRooms';
 
 export const internalRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -165,6 +166,83 @@ internalRoutes.post('/level-test', async (c) => {
     log.error('Internal level test error', error as Error, { component: 'INTERNAL_API' });
     return c.json({
       error: 'Level test evaluation failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// WebRTC 룸 메타데이터 동기화
+internalRoutes.patch('/webrtc/rooms/:roomId/metadata', async (c) => {
+  const roomId = c.req.param('roomId');
+
+  if (!roomId) {
+    return c.json({ error: 'roomId is required' }, 400);
+  }
+
+  try {
+    const metadata = await c.req.json() as Record<string, unknown>;
+
+    if (!metadata || typeof metadata !== 'object') {
+      return c.json({ error: 'metadata object is required' }, 400);
+    }
+
+    const id = c.env.ROOM.idFromName(roomId);
+    const room = c.env.ROOM.get(id);
+
+    const response = await room.fetch(new Request('http://room/metadata', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(metadata)
+    }));
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      return c.json({
+        error: 'Failed to update metadata',
+        details: error?.message || null
+      }, response.status);
+    }
+
+    // Update cached summary
+    const cacheKey = `room:${roomId}`;
+    const cached = await c.env.CACHE.get(cacheKey);
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        const updated = {
+          ...cachedData,
+          metadata: {
+            ...(cachedData.metadata || {}),
+            ...metadata
+          }
+        };
+        await c.env.CACHE.put(cacheKey, JSON.stringify(updated), { expirationTtl: 3600 });
+      } catch (cacheError) {
+        log.warn('Failed to update cached room metadata', cacheError as Error, { component: 'INTERNAL_API', roomId });
+      }
+    }
+
+    // Ensure active room cache is refreshed
+    const activeRooms = await getActiveRooms(c.env.CACHE);
+    const index = activeRooms.findIndex(room => room.roomId === roomId);
+    if (index >= 0) {
+      const updatedRoom = {
+        ...activeRooms[index],
+        metadata: {
+          ...(activeRooms[index].metadata || {}),
+          ...metadata
+        },
+        updatedAt: new Date().toISOString()
+      };
+      await upsertActiveRoom(c.env.CACHE, updatedRoom);
+    }
+
+    const result = await response.json().catch(() => ({ success: true }));
+    return successResponse(c, result);
+  } catch (error) {
+    log.error('WebRTC metadata sync error', error as Error, { component: 'INTERNAL_API', roomId });
+    return c.json({
+      error: 'Failed to sync metadata',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }

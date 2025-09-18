@@ -59,23 +59,10 @@ export default function SessionList() {
         try {
             setLoadingRooms(true);
             log.info('활성 룸 목록 조회 시작', null, 'SESSION_LIST');
-            
-            const response = await fetch('/api/v1/sessions/active-rooms', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                const rooms = await response.json();
-                setActiveRooms(rooms);
-                log.info('활성 룸 목록 조회 완료', { count: rooms.length }, 'SESSION_LIST');
-            } else {
-                console.error('Failed to load active rooms:', response.status);
-                setActiveRooms([]);
-            }
-            
+
+            const rooms = await webrtcAPI.getActiveRooms();
+            setActiveRooms(Array.isArray(rooms) ? rooms : []);
+            log.info('활성 룸 목록 조회 완료', { count: Array.isArray(rooms) ? rooms.length : 0 }, 'SESSION_LIST');
         } catch (error) {
             log.error('활성 룸 목록 조회 실패', error, 'SESSION_LIST');
             setActiveRooms([]);
@@ -120,20 +107,20 @@ export default function SessionList() {
 
     const handleJoinActiveRoom = async (room) => {
         try {
-            setIsJoining(room.id);
-            log.info('활성 룸 입장 시도', { roomId: room.id }, 'SESSION_LIST');
+            setIsJoining(room.roomId);
+            log.info('활성 룸 입장 시도', { roomId: room.roomId }, 'SESSION_LIST');
 
             const userId = localStorage.getItem('userId') || 'guest-' + Date.now();
             const userName = localStorage.getItem('userName') || 'Anonymous';
 
             // Try to join the room
-            await webrtcAPI.joinRoom(room.id, { userId, userName });
+            await webrtcAPI.joinRoom(room.roomId, { userId, userName });
             
             // Navigate to appropriate session room
-            if (room.type === 'video') {
-                navigate(`/session/video/${room.id}`);
+            if (room.roomType === 'video') {
+                navigate(`/session/video/${room.roomId}`);
             } else {
-                navigate(`/session/audio/${room.id}`);
+                navigate(`/session/audio/${room.roomId}`);
             }
 
         } catch (error) {
@@ -240,80 +227,88 @@ export default function SessionList() {
         </div>
     );
 
-    const ActiveRoomCard = ({ room }) => (
-        <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)] mb-4">
-            <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                    <img
-                        src={room.creator.avatar}
-                        alt={room.creator.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="text-[16px] font-semibold text-[var(--black-500)]">
-                                {room.title}
-                            </h3>
-                            {room.isPrivate && (
-                                <span className="px-2 py-1 bg-[var(--warning-yellow)] bg-opacity-20 text-[var(--warning-yellow)] text-[10px] rounded-full">
-                                    비공개
-                                </span>
-                            )}
+    const ActiveRoomCard = ({ room }) => {
+        const metadata = room.metadata || {};
+        const title = metadata.title || (room.roomType === 'video' ? '화상 세션' : '음성 세션');
+        const language = metadata.language || 'en';
+        const hostName = metadata.hostName || metadata.createdByName || metadata.createdBy || '호스트';
+        const createdAt = metadata.createdAt || room.createdAt;
+        const participantsLabel = `${room.currentParticipants}/${room.maxParticipants}명`;
+        const isFull = room.currentParticipants >= room.maxParticipants;
+        const languageLabel = language === 'ko' ? '한국어' : language === 'en' ? 'English' : language.toUpperCase();
+        const roomStatus = room.status === 'active' ? '진행 중' : '대기 중';
+        const createdAtLabel = createdAt
+            ? new Date(createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+            : null;
+
+        return (
+            <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)] mb-4">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                        <div className="w-12 h-12 rounded-full bg-[var(--neutral-100)] flex items-center justify-center text-[var(--black-300)] text-[18px]">
+                            {title.charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex items-center space-x-4 text-[14px] text-[var(--black-300)] mb-2">
-                            <span className="flex items-center space-x-1">
-                                <Users className="w-4 h-4" />
-                                <span>{room.participants}/{room.maxParticipants}명</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                                {room.type === 'video' ? (
-                                    <Video className="w-4 h-4" />
-                                ) : (
-                                    <Mic className="w-4 h-4" />
+                        <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                                <h3 className="text-[16px] font-semibold text-[var(--black-500)]">
+                                    {title}
+                                </h3>
+                                {metadata.isPrivate && (
+                                    <span className="px-2 py-1 bg-[var(--warning-yellow)] bg-opacity-20 text-[var(--warning-yellow)] text-[10px] rounded-full">비공개</span>
                                 )}
-                                <span>{room.type === 'video' ? '화상' : '음성'}</span>
-                            </span>
-                            <span className="text-[var(--black-200)]">
-                                {room.creator.name} 님이 생성
-                            </span>
-                        </div>
-                        <div className="text-[12px] text-[var(--black-200)]">
-                            {formatSessionTime(room.createdAt)}에 시작
+                                <span className={`px-2 py-1 text-[10px] rounded-full ${room.status === 'active' ? 'bg-[rgba(0,196,113,0.15)] text-[var(--green-600)]' : 'bg-[var(--neutral-100)] text-[var(--black-300)]'}`}>
+                                    {roomStatus}
+                                </span>
+                            </div>
+                            <div className="flex items-center space-x-4 text-[14px] text-[var(--black-300)] mb-2">
+                                <span className="flex items-center space-x-1">
+                                    <Users className="w-4 h-4" />
+                                    <span>{participantsLabel}</span>
+                                </span>
+                                <span className="flex items-center space-x-1">
+                                    {room.roomType === 'video' ? <Video className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                                    <span>{room.roomType === 'video' ? '화상' : '음성'}</span>
+                                </span>
+                                <span className="text-[var(--black-200)]">{hostName} 님이 생성</span>
+                            </div>
+                            <div className="text-[12px] text-[var(--black-200)]">
+                                {createdAtLabel ? `${createdAtLabel} 생성` : '방 정보 확인'}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-[var(--neutral-100)] text-[var(--black-300)] text-[12px] rounded-full">
-                        {room.language === 'en' ? 'English' : room.language === 'ko' ? '한국어' : room.language}
-                    </span>
-                    <button
-                        onClick={() => handleJoinActiveRoom(room)}
-                        disabled={isJoining === room.id || room.participants >= room.maxParticipants}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors ${
-                            room.participants >= room.maxParticipants
-                                ? 'bg-[var(--black-50)] text-[var(--black-200)] cursor-not-allowed'
-                                : 'bg-[var(--green-500)] text-white hover:bg-[var(--green-600)]'
-                        }`}
-                    >
-                        {isJoining === room.id ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                입장 중...
-                            </>
-                        ) : room.participants >= room.maxParticipants ? (
-                            '만실'
-                        ) : (
-                            <>
-                                <Play className="w-4 h-4" />
-                                빠른 입장
-                            </>
-                        )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-[var(--neutral-100)] text-[var(--black-300)] text-[12px] rounded-full">
+                            {languageLabel}
+                        </span>
+                        <button
+                            onClick={() => handleJoinActiveRoom(room)}
+                            disabled={isJoining === room.roomId || isFull}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors ${
+                                isFull
+                                    ? 'bg-[var(--black-50)] text-[var(--black-200)] cursor-not-allowed'
+                                    : 'bg-[var(--green-500)] text-white hover:bg-[var(--green-600)]'
+                            }`}
+                        >
+                            {isJoining === room.roomId ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    입장 중...
+                                </>
+                            ) : isFull ? (
+                                '만실'
+                            ) : (
+                                <>
+                                    <Play className="w-4 h-4" />
+                                    빠른 입장
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="min-h-screen page-bg">
@@ -442,7 +437,7 @@ export default function SessionList() {
                             </div>
                         ) : activeRooms.length > 0 ? (
                             activeRooms.map(room => (
-                                <ActiveRoomCard key={room.id} room={room} />
+                                <ActiveRoomCard key={room.roomId} room={room} />
                             ))
                         ) : (
                             <div className="text-center py-12">

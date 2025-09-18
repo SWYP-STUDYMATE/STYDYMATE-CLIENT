@@ -1,4 +1,4 @@
-import { API_CONFIG, API_ENDPOINTS, apiCall, APIError } from './config.js';
+import { API_CONFIG, API_ENDPOINTS } from './config.js';
 import api from './index.js';
 
 // ===== Spring Boot 서버 API 함수들 =====
@@ -57,7 +57,7 @@ export const getLevelTestQuestions = async (testId, category = 'general') => {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.GET(testId), {
       params: { category }
     });
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Get level test questions error:', error);
     throw error;
@@ -76,7 +76,7 @@ export const submitVoiceAnswer = async (testId, questionId, audioBlob) => {
         'Content-Type': 'multipart/form-data'
       }
     });
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Submit voice answer error:', error);
     throw error;
@@ -97,7 +97,7 @@ export const submitVoiceAnswer = async (testId, questionId, audioBlob) => {
      userAudioUrl,
      responseTimeSeconds,
    });
-    return response.data;
+    return unwrap(response);
  };
 
 const unwrap = (resp) => (resp?.data?.data ?? resp?.data ?? resp);
@@ -156,7 +156,7 @@ export const getVoiceTestResult = async (testId) => {
 export const completeLevelTest = async (testId) => {
   try {
     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.COMPLETE(testId));
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Complete level test error:', error);
     throw error;
@@ -167,7 +167,7 @@ export const completeLevelTest = async (testId) => {
 export const getLevelTestResult = async (testId) => {
   try {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.GET(testId));
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Get level test result error:', error);
     throw error;
@@ -180,7 +180,7 @@ export const getUserLevelTests = async (page = 0, size = 10) => {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.MY_TESTS, {
       params: { page, size }
     });
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Get user level tests error:', error);
     throw error;
@@ -191,7 +191,7 @@ export const getUserLevelTests = async (page = 0, size = 10) => {
 export const getLevelTestSummary = async () => {
   try {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.SUMMARY);
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Get level test summary error:', error);
     throw error;
@@ -212,7 +212,7 @@ export const restartLevelTest = async (language = 'en') => {
     const response = await api.post(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/restart`, {
       targetLanguage: language
     });
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Restart level test error:', error);
     throw error;
@@ -222,7 +222,7 @@ export const restartLevelTest = async (language = 'en') => {
 export const getLevelTestSettings = async () => {
   try {
     const response = await api.get(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/settings`);
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Get level test settings error:', error);
     throw error;
@@ -232,7 +232,7 @@ export const getLevelTestSettings = async () => {
 export const getLevelTestStats = async () => {
   try {
     const response = await api.get(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/stats`);
-    return response.data;
+    return unwrap(response);
   } catch (error) {
     console.error('Get level test stats error:', error);
     throw error;

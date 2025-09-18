@@ -19,26 +19,19 @@ export default function Schedule() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
-  const {
-    calendarEvents,
-    calendarLoading,
-    calendarError,
-    loadCalendar,
-  } = useSessionStore((state) => ({
-    calendarEvents: state.calendarEvents,
-    calendarLoading: state.calendarLoading,
-    calendarError: state.calendarError,
-    loadCalendar: state.loadCalendar,
-  }));
+  const calendarEvents = useSessionStore((state) => state.calendarEvents);
+  const calendarLoading = useSessionStore((state) => state.calendarLoading);
+  const calendarError = useSessionStore((state) => state.calendarError);
 
   const fetchCalendar = useCallback(async () => {
     const { start, end } = getMonthBounds(currentMonthDate);
     try {
+      const loadCalendar = useSessionStore.getState().loadCalendar;
       await loadCalendar({ startDate: start, endDate: end });
     } catch (error) {
       // 상위 컴포넌트에서 에러 메시지를 표시하므로 여기서는 무시
     }
-  }, [currentMonthDate, loadCalendar]);
+  }, [currentMonthDate]);
 
   useEffect(() => {
     fetchCalendar();

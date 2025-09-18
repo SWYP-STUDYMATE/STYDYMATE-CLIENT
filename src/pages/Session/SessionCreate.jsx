@@ -152,6 +152,8 @@ export default function SessionCreate() {
           allowRecording: sessionConfig.allowRecording,
           autoTranscription: sessionConfig.autoTranscription,
           createdBy: localStorage.getItem('userId') || 'anonymous',
+          hostName: localStorage.getItem('userName') || 'Host',
+          createdByName: localStorage.getItem('userName') || 'Host',
           createdAt: new Date().toISOString()
         }
       });

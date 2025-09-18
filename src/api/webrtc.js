@@ -8,6 +8,22 @@ class WebRTCAPI {
     this.baseURL = API_CONFIG.WORKERS_API;
   }
 
+  async parseResponse(response, defaultErrorMessage) {
+    let result;
+    try {
+      result = await response.json();
+    } catch (error) {
+      throw new Error(defaultErrorMessage || 'Invalid response from WebRTC service');
+    }
+
+    if (!response.ok || (result && result.success === false)) {
+      const message = result?.error?.message || result?.message || defaultErrorMessage || 'WebRTC request failed';
+      throw new Error(message);
+    }
+
+    return result?.data ?? result;
+  }
+
   /**
    * Create a new room
    * @param {Object} options - Room options
@@ -24,16 +40,13 @@ class WebRTCAPI {
         },
         body: JSON.stringify({
           roomType: options.roomType || 'audio',
-          maxParticipants: options.maxParticipants || 4
+          maxParticipants: options.maxParticipants || 4,
+          metadata: options.metadata || {},
         }),
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create room');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to create room');
     } catch (error) {
       log.error('WebRTC 룸 생성 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -61,13 +74,7 @@ class WebRTCAPI {
         credentials: 'include',
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to join room');
-      }
-
-      return result;
+      return await this.parseResponse(response, 'Failed to join room');
     } catch (error) {
       log.error('WebRTC 룸 입장 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -83,7 +90,7 @@ class WebRTCAPI {
    */
   async leaveRoom(roomId, userId) {
     try {
-      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/leave`, {
+      const response = await fetch(API_ENDPOINTS.WORKERS.WEBRTC.LEAVE_ROOM(roomId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,11 +99,7 @@ class WebRTCAPI {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to leave room');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to leave room');
     } catch (error) {
       log.error('WebRTC 룸 나가기 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -111,16 +114,12 @@ class WebRTCAPI {
    */
   async getRoomInfo(roomId) {
     try {
-      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/info`, {
+      const response = await fetch(API_ENDPOINTS.WORKERS.WEBRTC.GET_ROOM_INFO(roomId), {
         method: 'GET',
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get room info');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to get room info');
     } catch (error) {
       log.error('WebRTC 룸 정보 조회 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -136,7 +135,7 @@ class WebRTCAPI {
    */
   async updateRoomSettings(roomId, settings) {
     try {
-      const response = await fetch(`${this.baseURL}/webrtc/${roomId}/settings`, {
+      const response = await fetch(`${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/settings`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -145,11 +144,7 @@ class WebRTCAPI {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update room settings');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to update room settings');
     } catch (error) {
       log.error('WebRTC 룸 설정 업데이트 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -164,16 +159,12 @@ class WebRTCAPI {
    */
   async getIceServers(roomId) {
     try {
-      const response = await fetch(`${this.baseURL}/api/v1/room/${roomId}/ice-servers`, {
+      const response = await fetch(API_ENDPOINTS.WORKERS.WEBRTC.GET_ICE_SERVERS(roomId), {
         method: 'GET',
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get ICE servers');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to get ICE servers');
     } catch (error) {
       log.error('ICE 서버 조회 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -188,16 +179,12 @@ class WebRTCAPI {
    */
   async getRoomMetrics(roomId) {
     try {
-      const response = await fetch(`${this.baseURL}/api/v1/room/${roomId}/metrics`, {
+      const response = await fetch(`${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/metrics`, {
         method: 'GET',
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get room metrics');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to get room metrics');
     } catch (error) {
       log.error('WebRTC 룸 메트릭 조회 실패', error, 'WEBRTC');
       handleApiError(error);
@@ -222,19 +209,34 @@ class WebRTCAPI {
       formData.append('filename', filename);
       formData.append('duration', duration.toString());
 
-      const response = await fetch(`${this.baseURL}/api/v1/room/${roomId}/recording/upload`, {
+      const response = await fetch(`${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/recording/upload`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload recording');
-      }
-
-      return await response.json();
+      return await this.parseResponse(response, 'Failed to upload recording');
     } catch (error) {
       log.error('녹음 파일 업로드 실패', error, 'WEBRTC');
+      handleApiError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get list of active rooms from Workers
+   * @returns {Promise<Array>} Active room summaries
+   */
+  async getActiveRooms() {
+    try {
+      const response = await fetch(API_ENDPOINTS.WORKERS.WEBRTC.ACTIVE_ROOMS, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      return await this.parseResponse(response, 'Failed to load active rooms');
+    } catch (error) {
+      log.error('활성 WebRTC 룸 목록 조회 실패', error, 'WEBRTC');
       handleApiError(error);
       throw error;
     }

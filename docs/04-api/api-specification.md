@@ -237,8 +237,11 @@ POST /api/v1/leveltest/evaluate
 
 | 엔드포인트 | 메서드 | 설명 | Frontend | 상태 |
 |-----------|-------|------|----------|------|
-| `/api/v1/analytics/metrics` | GET | 학습 메트릭 | `analytics.js` | ✅ |
+| `/api/v1/analytics/metrics` | GET | 학습 메트릭 | `analytics.js` | ✅ (Cloudflare Workers 제공) |
 | `/api/v1/analytics/user-stats` | GET | 사용자 통계 | `analytics.js` | ✅ |
+
+> **Note:** `/api/v1/analytics/*` 엔드포인트는 Spring 서버가 아닌 Cloudflare Workers(`workers/src/routes/analytics.ts`)에서 제공되며, 인증/응답 스키마는 Workers 문서를 기준으로 관리됩니다.
+
 | `/api/v1/analytics/progress` | GET | 진도 현황 | `analytics.js` | ✅ |
 | `/api/v1/analytics/achievements` | GET | 업적 목록 | `analytics.js` | ✅ |
 

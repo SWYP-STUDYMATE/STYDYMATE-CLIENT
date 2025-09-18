@@ -160,10 +160,6 @@ api.interceptors.response.use(
             }
             originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
-            // mock 테스트일 때는 재요청하지 않음
-            if (originalRequest._mock) {
-              return Promise.resolve();
-            }
             return api(originalRequest);
           }
         } catch (refreshError) {
@@ -269,10 +265,6 @@ api.interceptors.response.use(
           }
           // 원래 요청 헤더에 새 토큰 적용
           originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
-          // mock 테스트일 때는 재요청하지 않음
-          if (originalRequest._mock) {
-            return Promise.resolve();
-          }
           return api(originalRequest);
         }
       } catch (refreshError) {

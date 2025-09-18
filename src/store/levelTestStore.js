@@ -3,7 +3,6 @@ import { persist } from "zustand/middleware";
 import { 
   startLevelTest,
   getLevelTestQuestions,
-  submitAnswer,
   submitVoiceAnswer,
   completeLevelTest,
   getLevelTestResult,
@@ -11,6 +10,157 @@ import {
 } from "../api/levelTest";
 import { log } from '../utils/logger';
 import { handleLevelTestError } from '../utils/errorHandler';
+
+const SCORE_KEYS = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'coherence', 'interaction'];
+
+const pickFirst = (...candidates) => candidates.find((value) => value !== undefined && value !== null);
+
+const clampToPercent = (value) => {
+  if (value === null || value === undefined) return null;
+  const numeric = typeof value === 'string' ? Number.parseFloat(value) : value;
+  if (!Number.isFinite(numeric)) return null;
+  return Math.max(0, Math.min(100, numeric));
+};
+
+const toArray = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : item))
+      .filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/[;,\n]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const pickList = (candidates = []) => {
+  for (const candidate of candidates) {
+    const list = toArray(candidate);
+    if (list.length > 0) {
+      return list;
+    }
+  }
+  return [];
+};
+
+const extractScore = (sources, key) => {
+  for (const source of sources) {
+    if (!source) continue;
+    const valueFromScores = source.scores?.[key];
+    if (valueFromScores !== undefined && valueFromScores !== null) return valueFromScores;
+    const valueFromScoresWithSuffix = source.scores?.[`${key}Score`];
+    if (valueFromScoresWithSuffix !== undefined && valueFromScoresWithSuffix !== null) return valueFromScoresWithSuffix;
+    const direct = source[key];
+    if (direct !== undefined && direct !== null) return direct;
+    const withSuffix = source[`${key}Score`];
+    if (withSuffix !== undefined && withSuffix !== null) return withSuffix;
+  }
+  return null;
+};
+
+const normalizeTestResult = (primary, fallback = null, context = {}) => {
+  if (!primary && !fallback) {
+    return null;
+  }
+
+  const primaryPayload = primary?.data ?? primary;
+  const fallbackPayload = fallback?.data ?? fallback;
+
+  const analysisSources = [primaryPayload?.analysis, fallbackPayload?.analysis].filter(Boolean);
+
+  const resolvedTestId = Number(
+    pickFirst(
+      context.testId,
+      primaryPayload?.testId,
+      fallbackPayload?.testId,
+      primaryPayload?.id,
+      fallbackPayload?.id
+    )
+  );
+
+  const resolvedLevel = pickFirst(
+    primaryPayload?.estimatedLevel,
+    primaryPayload?.level,
+    primaryPayload?.cefrLevel,
+    fallbackPayload?.estimatedLevel,
+    fallbackPayload?.level,
+    fallbackPayload?.cefrLevel,
+    context.level
+  ) || null;
+
+  const overallScoreCandidate = pickFirst(
+    primaryPayload?.overallScore,
+    primaryPayload?.estimatedScore,
+    primaryPayload?.score,
+    primaryPayload?.analysis?.overallScore,
+    fallbackPayload?.overallScore,
+    fallbackPayload?.estimatedScore,
+    context.overallScore
+  );
+
+  const scoreSources = [primaryPayload, fallbackPayload, ...analysisSources].filter(Boolean);
+  const normalizedScores = SCORE_KEYS.reduce((acc, key) => {
+    acc[key] = clampToPercent(extractScore(scoreSources, key));
+    return acc;
+  }, {});
+
+  const strengths = pickList([
+    primaryPayload?.strengths,
+    primaryPayload?.analysis?.strengths,
+    fallbackPayload?.strengths,
+    fallbackPayload?.analysis?.strengths,
+    context.strengths
+  ]);
+
+  const improvements = pickList([
+    primaryPayload?.improvements,
+    primaryPayload?.weaknesses,
+    primaryPayload?.analysis?.improvements,
+    primaryPayload?.analysis?.weaknesses,
+    fallbackPayload?.improvements,
+    fallbackPayload?.weaknesses,
+    fallbackPayload?.analysis?.improvements,
+    fallbackPayload?.analysis?.weaknesses,
+    context.improvements
+  ]);
+
+  const feedback = pickFirst(
+    primaryPayload?.analysis?.feedback,
+    primaryPayload?.feedback,
+    fallbackPayload?.analysis?.feedback,
+    fallbackPayload?.feedback,
+    context.feedback
+  ) || '';
+
+  const completedAt = pickFirst(
+    primaryPayload?.completedAt,
+    primaryPayload?.date,
+    fallbackPayload?.completedAt,
+    fallbackPayload?.date,
+    context.completedAt
+  ) || null;
+
+  return {
+    testId: Number.isFinite(resolvedTestId) ? resolvedTestId : null,
+    level: resolvedLevel,
+    overallScore: clampToPercent(overallScoreCandidate),
+    scores: normalizedScores,
+    strengths,
+    improvements,
+    feedback,
+    completedAt,
+    submissions: context.submissions ?? [],
+    updatedAt: new Date().toISOString(),
+    raw: {
+      primary: primary ?? null,
+      fallback: fallback ?? null,
+    },
+  };
+};
 
 const useLevelTestStore = create(
   persist(
@@ -187,42 +337,24 @@ const useLevelTestStore = create(
           
           // 3단계: 결과 조회
           const result = await getLevelTestResult(state.testId);
-          
-          // Process result (Spring Boot response format)
-          const testResult = {
+
+          const normalizedResult = normalizeTestResult(result, completeResult, {
             testId: state.testId,
-            level: result.estimatedLevel || completeResult.estimatedLevel || 'B1',
-            overallScore: result.estimatedScore || completeResult.estimatedScore || 65,
-            scores: {
-              pronunciation: result.pronunciation || 70,
-              fluency: result.fluency || 65,
-              grammar: result.grammar || 60,
-              vocabulary: result.vocabulary || 70,
-              coherence: result.coherence || 65,
-              interaction: result.interaction || 60
-            },
-            strengths: result.strengths || [
-              'Good pronunciation and intonation',
-              'Natural speaking pace',
-              'Clear communication'
-            ],
-            improvements: result.weaknesses || result.improvements || [
-              'Expand vocabulary range',
-              'Use more complex grammar structures',
-              'Improve coherence in longer responses'
-            ],
-            feedback: result.feedback || 'Good overall performance. Continue practicing to improve fluency and expand vocabulary.',
-            date: result.completedAt || new Date().toISOString(),
-            submissions // API 호출 기록 포함
-          };
-          
+            submissions,
+            completedAt: result?.completedAt ?? completeResult?.completedAt
+          });
+
+          if (!normalizedResult) {
+            throw new Error('레벨 테스트 결과를 파싱하지 못했습니다.');
+          }
+
           set({ 
-            testResult,
+            testResult: normalizedResult,
             testStatus: 'completed',
             isSubmitting: false
           });
           
-          return testResult;
+          return normalizedResult;
         } catch (error) {
           handleLevelTestError(error, 'submitTest');
           set({ 
@@ -383,12 +515,26 @@ const useLevelTestStore = create(
       },
       
       // 테스트 결과
-      setTestResult: (result) => set({ 
-        testResult: {
-          ...result,
-          date: new Date().toISOString()
+      setTestResult: (result, options = {}) => {
+        if (!result) {
+          set({ testResult: null });
+          return null;
         }
-      }),
+
+        const normalized = normalizeTestResult(result, options?.fallback ?? null, {
+          testId: options?.testId ?? get().testId,
+          submissions: options?.submissions ?? [],
+          completedAt: options?.completedAt ?? result?.completedAt ?? result?.date ?? null,
+          strengths: options?.strengths,
+          improvements: options?.improvements,
+          level: options?.level,
+          overallScore: options?.overallScore,
+          feedback: options?.feedback
+        });
+
+        set({ testResult: normalized });
+        return normalized;
+      },
       
       // 전체 초기화
       resetTest: () => set((state) => {
@@ -429,16 +575,25 @@ const useLevelTestStore = create(
     }),
     {
       name: "level-test-storage", // localStorage key
-      partialize: (state) => ({
-        // 지속성이 필요한 상태만 저장
-        testResult: state.testResult,
-        recordings: state.recordings.map(r => ({
-          questionIndex: r.questionIndex,
-          duration: r.duration,
-          timestamp: r.timestamp,
-          // blob은 저장하지 않음 (너무 큼)
-        })),
-      }),
+      partialize: (state) => {
+        const persistedResult = state.testResult
+          ? {
+              ...state.testResult,
+              raw: undefined,
+            }
+          : null;
+
+        return {
+          // 지속성이 필요한 상태만 저장
+          testResult: persistedResult,
+          recordings: state.recordings.map((r) => ({
+            questionIndex: r.questionIndex,
+            duration: r.duration,
+            timestamp: r.timestamp,
+            // blob은 저장하지 않음 (너무 큼)
+          })),
+        };
+      },
     }
   )
 );

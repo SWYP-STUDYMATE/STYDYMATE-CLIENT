@@ -5,6 +5,7 @@ import { successResponse, createdResponse } from '../utils/response';
 import { validationError, notFoundError, conflictError } from '../middleware/error-handler';
 import { auth } from '../middleware/auth';
 import { log } from '../utils/logger';
+import { getActiveRooms } from '../utils/activeRooms';
 
 export const webrtcRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -59,6 +60,12 @@ webrtcRoutes.post('/create', auth({ optional: true }), async (c) => {
   );
 
   return createdResponse(c, data, `/api/v1/room/${roomId}`);
+});
+
+// List active rooms (for dashboards / client session list)
+webrtcRoutes.get('/active', async (c) => {
+  const rooms = await getActiveRooms(c.env.CACHE);
+  return successResponse(c, rooms);
 });
 
 // Join a room

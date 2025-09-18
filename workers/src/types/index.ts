@@ -86,11 +86,33 @@ export interface LevelTestResult {
 }
 
 // WebRTC 관련 타입
+export interface WebRTCParticipantInfo {
+    userId: string;
+    userName?: string;
+    joinedAt?: string;
+    audioEnabled?: boolean;
+    videoEnabled?: boolean;
+    isScreenSharing?: boolean;
+}
+
 export interface WebRTCRoom {
     id: string;
-    participants: string[];
+    participants: WebRTCParticipantInfo[];
     createdAt: string;
     type: 'video' | 'audio';
+    maxParticipants: number;
+    metadata?: Record<string, any>;
+}
+
+export interface ActiveRoomInfo {
+    roomId: string;
+    roomType: 'video' | 'audio';
+    currentParticipants: number;
+    maxParticipants: number;
+    status: 'waiting' | 'active';
+    createdAt: string;
+    updatedAt: string;
+    metadata?: Record<string, any>;
 }
 
 export interface WebRTCSignal {

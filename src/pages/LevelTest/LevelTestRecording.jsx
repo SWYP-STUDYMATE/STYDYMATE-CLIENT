@@ -4,7 +4,7 @@ import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
 import useLevelTestStore from '../../store/levelTestStore';
-import { uploadVoiceRecording,submitLevelTest, completeLevelTest, analyzeVoiceTest } from '../../api/levelTest';
+import { uploadVoiceRecording, analyzeVoiceTest } from '../../api/levelTest';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 
@@ -169,7 +169,7 @@ export default function LevelTestRecording() {
         {/* Question Card */}
         <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[var(--black-50)]">
           <p className="text-[20px] font-bold text-[var(--black-500)] mb-3">
-            {currentQuestion?.questionText || ''}
+            {currentQuestion?.questionText || currentQuestion?.text || ''}
           </p>
         </div>
 

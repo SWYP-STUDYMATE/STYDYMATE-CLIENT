@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   BarChart3, TrendingUp, Users, Globe, Clock, Calendar,
   Target, Award, MessageSquare, Video, ChevronRight,
-  RefreshCw, Download, Filter, ChevronDown
+  RefreshCw, Filter, ChevronDown
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -11,9 +11,7 @@ import {
 } from 'recharts';
 import { 
   getStudyStats, 
-  getSessionActivity, 
-  generateMockAnalyticsData,
-  connectToMetricsStream 
+  getSessionActivity
 } from '../../api/analytics';
 import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
 import LevelTestHistoryChart from '../../components/analytics/LevelTestHistoryChart';
@@ -24,37 +22,32 @@ const AnalyticsPage = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('week');
   const [analyticsData, setAnalyticsData] = useState(null);
-
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [timeRange]);
+  const [error, setError] = useState(null);
 
   const loadAnalyticsData = async () => {
     setLoading(true);
-    
+    setError(null);
+
     try {
-      let data;
-      
-      // 실제 API에서 데이터 로드
       const [studyStatsResponse, sessionActivityResponse] = await Promise.all([
         getStudyStats(timeRange),
         getSessionActivity(timeRange)
       ]);
-      
-      // API 응답을 컴포넌트에서 사용하는 형태로 변환
-      data = transformApiDataToAnalyticsData(studyStatsResponse, sessionActivityResponse);
-      
+
+      const data = transformApiDataToAnalyticsData(studyStatsResponse, sessionActivityResponse);
       setAnalyticsData(data);
-    } catch (error) {
-      console.error('Analytics data loading failed:', error);
-      
-      // 에러 시 Mock 데이터 사용
-      const fallbackData = generateMockAnalyticsData();
-      setAnalyticsData(fallbackData);
+    } catch (fetchError) {
+      console.error('Analytics data loading failed:', fetchError);
+      setAnalyticsData(null);
+      setError('학습 통계를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [timeRange]);
 
   /**
    * API 응답 데이터를 컴포넌트에서 사용하는 형태로 변환
@@ -72,11 +65,9 @@ const AnalyticsPage = () => {
       },
       sessionStats: sessionActivity?.metrics?.dailyStats || [],
       languageProgress: studyStats?.metrics?.languageProgress || [],
-      sessionTypes: studyStats?.metrics?.sessionTypes || [
-        { name: '1:1 대화', value: 65, color: '#00C471' },
-        { name: '그룹 세션', value: 25, color: '#4285F4' },
-        { name: '텍스트 채팅', value: 10, color: '#FFB800' }
-      ],
+      sessionTypes: Array.isArray(studyStats?.metrics?.sessionTypes)
+        ? studyStats.metrics.sessionTypes
+        : [],
       weeklyGoals: studyStats?.metrics?.weeklyGoals || {
         current: 0,
         target: 7,
@@ -104,6 +95,27 @@ const AnalyticsPage = () => {
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-[#00C471] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-[#929292]">통계를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
+        <div className="bg-white border border-[#FFE0E0] rounded-[16px] px-8 py-10 text-center max-w-lg shadow-sm">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[#FFF5F5] flex items-center justify-center">
+            <TrendingUp className="w-6 h-6 text-[#E53E3E]" />
+          </div>
+          <h2 className="text-[20px] font-bold text-[#111111] mb-2">통계 데이터를 불러올 수 없습니다</h2>
+          <p className="text-[14px] text-[#606060] mb-6">{error}</p>
+          <button
+            type="button"
+            onClick={loadAnalyticsData}
+            className="px-5 py-2 rounded-[8px] bg-[#00C471] text-white text-[14px] font-semibold hover:bg-[#00B267] transition-colors"
+          >
+            다시 시도
+          </button>
         </div>
       </div>
     );

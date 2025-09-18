@@ -13,54 +13,7 @@ import LanguageProfile from "../components/LanguageProfile";
 import LanguageExchangeMates from "../components/LanguageExchangeMates";
 import AchievementBadges from "../components/AchievementBadges";
 import useAchievementOverview from "../hooks/useAchievementOverview";
-
-const mapArrayToNames = (ids = [], map = new Map()) =>
-  (ids || [])
-    .map((id) => map.get(id)?.name)
-    .filter(Boolean);
-
-const transformOnboardingDataToProfile = (data) => {
-  if (!data?.userOnboardingData) {
-    return null;
-  }
-
-  const { userOnboardingData, availableOptions } = data;
-
-  const languageMap = new Map((availableOptions?.languages ?? []).map((lang) => [lang.id, lang]));
-  const motivationMap = new Map((availableOptions?.motivations ?? []).map((item) => [item.id, item]));
-  const topicMap = new Map((availableOptions?.topics ?? []).map((item) => [item.id, item]));
-  const learningStyleMap = new Map((availableOptions?.learningStyles ?? []).map((item) => [item.id, item]));
-  const expectationMap = new Map((availableOptions?.learningExpectations ?? []).map((item) => [item.id, item]));
-
-  const teachableLanguages = [];
-  if (userOnboardingData.nativeLanguageId) {
-    const languageInfo = languageMap.get(userOnboardingData.nativeLanguageId);
-    teachableLanguages.push({
-      language: languageInfo?.name || "모국어 미지정",
-      level: "Native",
-    });
-  }
-
-  const learningLanguages = (userOnboardingData.targetLanguages ?? []).map((target) => ({
-    language: target.languageName,
-    level: target.targetLevelName || target.currentLevelName || "레벨 미정",
-    currentLevel: target.currentLevelName,
-    targetLevel: target.targetLevelName,
-  }));
-
-  const interests = new Set([
-    ...mapArrayToNames(userOnboardingData.motivationIds, motivationMap),
-    ...mapArrayToNames(userOnboardingData.topicIds, topicMap),
-    ...mapArrayToNames(userOnboardingData.learningStyleIds, learningStyleMap),
-    ...mapArrayToNames(userOnboardingData.learningExpectationIds, expectationMap),
-  ]);
-
-  return {
-    teachableLanguages,
-    learningLanguages,
-    interests: Array.from(interests),
-  };
-};
+import { transformOnboardingDataToLanguageProfile } from "../utils/onboardingTransform";
 
 const transformMatches = (matches = []) =>
   matches.map((match) => {
@@ -165,7 +118,7 @@ export default function Main() {
       try {
         const response = await getOnboardingData();
         const payload = response?.data ?? response;
-        const transformed = transformOnboardingDataToProfile(payload);
+        const transformed = transformOnboardingDataToLanguageProfile(payload);
         setLanguageProfileData(transformed);
       } catch (error) {
         console.error("온보딩 데이터 로드 실패:", error);
@@ -178,7 +131,7 @@ export default function Main() {
     const loadMatchedPartners = async () => {
       setMatesLoading(true);
       try {
-        const response = await getSpringBootMatches(1, 4);
+        const response = await getSpringBootMatches(0, 4);
         const payload = response?.data ?? response;
         const matchedContent = payload?.content ?? [];
         setMates(transformMatches(matchedContent));

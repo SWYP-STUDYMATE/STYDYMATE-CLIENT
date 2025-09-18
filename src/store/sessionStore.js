@@ -21,6 +21,9 @@ const normalizeSession = (session) => {
   return {
     ...session,
     id: session.id ?? session.sessionId,
+    type: session.type ?? (session.sessionType ? session.sessionType.toLowerCase() : undefined),
+    duration: session.duration ?? session.durationMinutes,
+    language: session.language ?? session.languageCode,
     status: normalizedStatus,
     rawStatus: originalStatus,
   };

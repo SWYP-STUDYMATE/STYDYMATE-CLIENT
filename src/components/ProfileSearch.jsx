@@ -1,44 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, X, MapPin, Globe, Users } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Filter, X, MapPin, Globe, Users, AlertTriangle } from 'lucide-react';
 import { ProfileCardCompact } from './ProfileCard';
-import CommonButton from './CommonButton';
-
-// Mock API - 실제로는 백엔드 API를 호출해야 함
-const mockProfiles = [
-  {
-    id: '1',
-    name: '김지영',
-    englishName: 'Jenny Kim',
-    residence: 'Seoul, Korea',
-    profileImage: null,
-    languages: ['Korean', 'English'],
-    level: 'Intermediate',
-    interests: ['Travel', 'Music'],
-    isOnline: true
-  },
-  {
-    id: '2',
-    name: '박민수',
-    englishName: 'Mike Park',
-    residence: 'Busan, Korea',
-    profileImage: null,
-    languages: ['Korean', 'Japanese'],
-    level: 'Advanced',
-    interests: ['Technology', 'Food'],
-    isOnline: false
-  },
-  {
-    id: '3',
-    name: '이소영',
-    englishName: 'Sofia Lee',
-    residence: 'New York, USA',
-    profileImage: null,
-    languages: ['Korean', 'English', 'Spanish'],
-    level: 'Expert',
-    interests: ['Art', 'Photography'],
-    isOnline: true
-  }
-];
+import useMatchingStore from '../store/matchingStore';
 
 export default function ProfileSearch({ onProfileSelect, className = '' }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,10 +14,30 @@ export default function ProfileSearch({ onProfileSelect, className = '' }) {
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [error, setError] = useState(null);
 
   // 디바운싱된 검색
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const searchPartners = useMatchingStore((state) => state.searchPartners);
   
+  const buildSearchFilters = useCallback((filterOptions) => {
+    const payload = {};
+
+    if (filterOptions.language !== 'all') {
+      payload.targetLanguage = filterOptions.language;
+    }
+
+    if (filterOptions.level !== 'all') {
+      payload.proficiencyLevel = filterOptions.level;
+    }
+
+    if (filterOptions.location.trim()) {
+      payload.location = filterOptions.location.trim();
+    }
+
+    return payload;
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -66,59 +49,31 @@ export default function ProfileSearch({ onProfileSelect, className = '' }) {
   // 프로필 검색 API 호출
   const searchProfiles = useCallback(async (query, filterOptions) => {
     setIsLoading(true);
-    
+    setError(null);
+
     try {
-      // Mock 검색 로직 - 실제로는 API 호출
-      let filtered = [...mockProfiles];
+      const normalizedFilters = buildSearchFilters(filterOptions);
+      const partners = await searchPartners(query.trim(), normalizedFilters);
 
-      // 텍스트 검색
-      if (query.trim()) {
-        filtered = filtered.filter(profile =>
-          profile.name.toLowerCase().includes(query.toLowerCase()) ||
-          profile.englishName.toLowerCase().includes(query.toLowerCase()) ||
-          profile.residence.toLowerCase().includes(query.toLowerCase())
-        );
-      }
+      const filteredPartners = filterOptions.onlineOnly
+        ? partners.filter((partner) => partner.isOnline)
+        : partners;
 
-      // 언어 필터
-      if (filterOptions.language !== 'all') {
-        filtered = filtered.filter(profile =>
-          profile.languages.some(lang => 
-            lang.toLowerCase().includes(filterOptions.language.toLowerCase())
-          )
-        );
-      }
+      const normalizedResults = filteredPartners.map((partner) => ({
+        ...partner,
+        englishName: partner.englishName || partner.name,
+        residence: partner.location ?? partner.residence ?? '',
+      }));
 
-      // 레벨 필터
-      if (filterOptions.level !== 'all') {
-        filtered = filtered.filter(profile =>
-          profile.level.toLowerCase() === filterOptions.level.toLowerCase()
-        );
-      }
-
-      // 위치 필터
-      if (filterOptions.location.trim()) {
-        filtered = filtered.filter(profile =>
-          profile.residence.toLowerCase().includes(filterOptions.location.toLowerCase())
-        );
-      }
-
-      // 온라인 상태 필터
-      if (filterOptions.onlineOnly) {
-        filtered = filtered.filter(profile => profile.isOnline);
-      }
-
-      // 검색 결과 시뮬레이션을 위한 지연
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setResults(filtered);
+      setResults(normalizedResults);
     } catch (error) {
       console.error('Profile search error:', error);
       setResults([]);
+      setError('프로필을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [buildSearchFilters, searchPartners]);
 
   // 검색 실행
   useEffect(() => {
@@ -141,9 +96,11 @@ export default function ProfileSearch({ onProfileSelect, className = '' }) {
   };
 
   // 활성 필터 개수
-  const activeFiltersCount = Object.values(filters).filter(value => 
-    value !== 'all' && value !== '' && value !== false
-  ).length;
+  const activeFiltersCount = useMemo(() => (
+    Object.values(filters).filter((value) => (
+      value !== 'all' && value !== '' && value !== false
+    )).length
+  ), [filters]);
 
   return (
     <div className={`bg-white rounded-[16px] border border-[#E7E7E7] ${className}`}>
@@ -200,8 +157,22 @@ export default function ProfileSearch({ onProfileSelect, className = '' }) {
               필터 초기화
             </button>
           )}
-        </div>
       </div>
+    </div>
+
+      {error && !isLoading && (
+        <div className="px-4 py-3 border-b border-[#FFE0E0] bg-[#FFF5F5] flex items-center gap-2 text-[#C53030] text-[14px]">
+          <AlertTriangle className="w-4 h-4" />
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => searchProfiles(debouncedQuery, filters)}
+            className="ml-auto text-[#8B0000] underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
 
       {/* 필터 옵션 */}
       {isFilterOpen && (

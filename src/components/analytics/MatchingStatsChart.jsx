@@ -4,11 +4,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Users, Heart, TrendingUp, Clock, Target, UserCheck } from 'lucide-react';
-import { getMatchingStats, generateMockAnalyticsData } from '../../api/analytics';
+import { getMatchingStats } from '../../api/analytics';
 
 const MatchingStatsChart = ({ timeRange = 'month' }) => {
   const [matchingData, setMatchingData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedView, setSelectedView] = useState('success-rate'); // 'success-rate', 'frequency', 'duration', 'type'
 
   useEffect(() => {
@@ -17,157 +18,352 @@ const MatchingStatsChart = ({ timeRange = 'month' }) => {
 
   const loadMatchingStats = async () => {
     setLoading(true);
-    
+    setError(null);
+
     try {
-      let data;
-      
       const response = await getMatchingStats(timeRange);
-      data = transformMatchingData(response);
-      
+      const data = transformMatchingData(response);
       setMatchingData(data);
-    } catch (error) {
-      console.error('Matching stats loading failed:', error);
-      
-      // 에러 시 Mock 데이터 사용
-      const fallbackData = generateMockMatchingStats();
-      setMatchingData(fallbackData);
+    } catch (fetchError) {
+      console.error('Matching stats loading failed:', fetchError);
+      setMatchingData(null);
+      setError('매칭 통계를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
   };
 
-  const generateMockMatchingStats = () => {
-    const currentDate = new Date();
-    const data = [];
-    
-    // 최근 30일간의 매칭 데이터 생성
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(currentDate);
-      date.setDate(date.getDate() - i);
-      
-      const requests = Math.floor(Math.random() * 10) + 2; // 2-12 requests per day
-      const successful = Math.floor(requests * (0.6 + Math.random() * 0.3)); // 60-90% success rate
-      const failed = requests - successful;
-      
-      data.push({
-        date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
-        requests,
-        successful,
-        failed,
-        successRate: ((successful / requests) * 100).toFixed(1),
-        avgWaitTime: Math.floor(Math.random() * 300) + 30, // 30초 - 5분
-        avgSessionDuration: Math.floor(Math.random() * 60) + 15 // 15-75분
-      });
-    }
-    
-    const totalRequests = data.reduce((sum, d) => sum + d.requests, 0);
-    const totalSuccessful = data.reduce((sum, d) => sum + d.successful, 0);
-    const totalFailed = data.reduce((sum, d) => sum + d.failed, 0);
-    const overallSuccessRate = ((totalSuccessful / totalRequests) * 100).toFixed(1);
-    
-    // 매칭 타입별 분포
-    const matchingTypes = [
-      { name: '1:1 회화', value: 45, color: '#00C471' },
-      { name: '그룹 세션', value: 25, color: '#4285F4' },
-      { name: '랜덤 매칭', value: 20, color: '#FFB800' },
-      { name: '주제별 토론', value: 10, color: '#FF6B6B' }
+  // API 데이터 변환 헬퍼 함수들
+  const parseEventDate = (event) => {
+    const candidates = [
+      event?.createdDate,
+      event?.createdAt,
+      event?.created_at,
+      event?.timestamp,
+      event?.eventTime,
+      event?.time,
+      event?.properties?.createdAt,
+      event?.properties?.timestamp,
+      event?.properties?.eventTime
     ];
-    
-    // 언어별 매칭 성공률
-    const languageStats = [
-      { language: 'English', attempts: 120, successful: 108, successRate: 90 },
-      { language: 'Japanese', attempts: 85, successful: 72, successRate: 84.7 },
-      { language: 'Chinese', attempts: 56, successful: 45, successRate: 80.4 },
-      { language: 'Korean', attempts: 42, successful: 38, successRate: 90.5 }
-    ];
-    
-    // 시간대별 매칭 성공률
-    const hourlyStats = [];
-    for (let hour = 0; hour < 24; hour++) {
-      const baseSuccessRate = hour >= 9 && hour <= 21 ? 80 : 60; // 9시-21시가 성공률 높음
-      const variance = Math.random() * 20 - 10; // ±10% 변동
-      
-      hourlyStats.push({
-        hour: `${hour.toString().padStart(2, '0')}:00`,
-        successRate: Math.max(30, Math.min(95, baseSuccessRate + variance)).toFixed(1),
-        attempts: Math.floor(Math.random() * 20) + 1
-      });
+
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      const date = new Date(candidate);
+      if (!Number.isNaN(date.getTime())) {
+        return date;
+      }
     }
-    
-    return {
-      dailyStats: data,
-      summary: {
-        totalRequests,
-        totalSuccessful,
-        totalFailed,
-        overallSuccessRate,
-        avgWaitTime: Math.round(data.reduce((sum, d) => sum + d.avgWaitTime, 0) / data.length),
-        avgSessionDuration: Math.round(data.reduce((sum, d) => sum + d.avgSessionDuration, 0) / data.length)
-      },
-      matchingTypes,
-      languageStats,
-      hourlyStats
-    };
+
+    return null;
   };
 
-  // API 데이터 변환 헬퍼 함수들
-  const processMatchingEvents = (events) => {
-    // 매칭 이벤트들을 일별 통계로 변환
-    const dailyMap = {};
-    events.forEach(event => {
-      const date = event.createdDate ? event.createdDate.split('T')[0] : new Date().toISOString().split('T')[0];
-      if (!dailyMap[date]) {
-        dailyMap[date] = { date, requests: 0, successful: 0, failed: 0 };
+  const resolveStatus = (event) => {
+    const candidates = [
+      event?.status,
+      event?.properties?.status,
+      event?.properties?.result,
+      event?.event,
+      event?.properties?.eventType
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toUpperCase());
+
+    if (candidates.some((value) => value.includes('SUCCESS') || value.includes('MATCHED') || value.includes('ACCEPT'))) {
+      return 'SUCCESS';
+    }
+    if (candidates.some((value) => value.includes('FAIL') || value.includes('REJECT') || value.includes('DECLINE') || value.includes('CANCEL'))) {
+      return 'FAILED';
+    }
+    if (candidates.some((value) => value.includes('REQUEST') || value.includes('PENDING'))) {
+      return 'REQUEST';
+    }
+    return 'OTHER';
+  };
+
+  const extractWaitTimeSeconds = (event) => {
+    const props = event?.properties || {};
+    const keys = [
+      'waitTimeSeconds',
+      'wait_time_seconds',
+      'waitTime',
+      'wait_time',
+      'matchingWaitSeconds',
+      'matchWaitSeconds',
+      'queueWaitSeconds',
+      'queueWaitTime',
+      'waitingSeconds',
+      'waitingTime',
+      'waitDurationSeconds',
+      'waitDurationMillis',
+      'waitTimeMs'
+    ];
+
+    for (const key of keys) {
+      if (!(key in props)) continue;
+      const value = props[key];
+      if (value === null || value === undefined || value === '') continue;
+      const num = Number(value);
+      if (Number.isNaN(num)) continue;
+
+      const lowerKey = key.toLowerCase();
+      if (lowerKey.includes('millis') || lowerKey.endsWith('ms')) {
+        return Math.round(num / 1000);
       }
-      dailyMap[date].requests++;
-      if (event.status === 'MATCHED') {
-        dailyMap[date].successful++;
-      } else {
-        dailyMap[date].failed++;
+      if (lowerKey.includes('minute')) {
+        return Math.round(num * 60);
+      }
+      if (lowerKey.includes('hour')) {
+        return Math.round(num * 3600);
+      }
+      return Math.round(num);
+    }
+
+    return null;
+  };
+
+  const extractSessionDurationMinutes = (event) => {
+    const props = event?.properties || {};
+    const keys = [
+      'sessionDurationMinutes',
+      'durationMinutes',
+      'sessionDuration',
+      'duration',
+      'callDuration',
+      'meetingDuration',
+      'conversationDuration',
+      'lengthMinutes',
+      'length',
+      'sessionDurationSeconds',
+      'durationSeconds'
+    ];
+
+    for (const key of keys) {
+      if (!(key in props)) continue;
+      const value = props[key];
+      if (value === null || value === undefined || value === '') continue;
+      const num = Number(value);
+      if (Number.isNaN(num)) continue;
+
+      const lowerKey = key.toLowerCase();
+      if (lowerKey.includes('millis') || lowerKey.endsWith('ms')) {
+        return Math.round(num / 60000);
+      }
+      if (lowerKey.includes('second')) {
+        return Math.round(num / 60);
+      }
+      if (lowerKey.includes('hour')) {
+        return Math.round(num * 60);
+      }
+      return Math.round(num);
+    }
+
+    return null;
+  };
+
+  const matchTypeLabel = (event) => {
+    const props = event?.properties || {};
+    const rawType = props.matchType || props.matchingType || props.sessionType || props.roomType || props.channelType || props.mode || props.sessionMode;
+    if (!rawType) return '기타';
+
+    const normalized = String(rawType).toUpperCase();
+    if (normalized.includes('GROUP')) return '그룹 세션';
+    if (normalized.includes('RANDOM')) return '랜덤 매칭';
+    if (normalized.includes('TEXT')) return '텍스트 채팅';
+    if (normalized.includes('VOICE') || normalized.includes('AUDIO')) return '음성 매칭';
+    if (normalized.includes('VIDEO')) return '영상 매칭';
+    if (normalized.includes('DISCUSSION') || normalized.includes('TOPIC')) return '주제별 토론';
+    if (normalized.includes('ONE') || normalized.includes('1:1') || normalized.includes('SOLO')) return '1:1 회화';
+    return String(rawType);
+  };
+
+  const LANGUAGE_LABEL_MAP = {
+    EN: 'English',
+    ENGLISH: 'English',
+    KO: 'Korean',
+    KOREAN: 'Korean',
+    JA: 'Japanese',
+    JAPANESE: 'Japanese',
+    ZH: 'Chinese',
+    CHINESE: 'Chinese',
+    ES: 'Spanish',
+    SPANISH: 'Spanish',
+    FR: 'French',
+    FRENCH: 'French'
+  };
+
+  const languageLabel = (event) => {
+    const props = event?.properties || {};
+    const rawLanguage = props.targetLanguage || props.language || props.learningLanguage || props.sessionLanguage || props.partnerLanguage || props.requestLanguage;
+    if (!rawLanguage) return '기타';
+
+    const normalized = LANGUAGE_LABEL_MAP[String(rawLanguage).toUpperCase()];
+    return normalized || String(rawLanguage);
+  };
+
+  const processMatchingEvents = (events) => {
+    const dailyMap = new Map();
+
+    events.forEach((event) => {
+      const date = parseEventDate(event) || new Date();
+      const dayKey = date.toISOString().split('T')[0];
+      const status = resolveStatus(event);
+
+      if (!dailyMap.has(dayKey)) {
+        dailyMap.set(dayKey, { date: dayKey, requests: 0, successful: 0, failed: 0 });
+      }
+
+      const dayEntry = dailyMap.get(dayKey);
+
+      if (status === 'SUCCESS') {
+        dayEntry.successful += 1;
+        dayEntry.requests += 1;
+      } else if (status === 'FAILED') {
+        dayEntry.failed += 1;
+        dayEntry.requests += 1;
+      } else if (status === 'REQUEST') {
+        dayEntry.requests += 1;
       }
     });
-    
-    return Object.values(dailyMap).map(day => ({
-      ...day,
-      day: new Date(day.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
-      successRate: day.requests > 0 ? ((day.successful / day.requests) * 100).toFixed(1) : 0
-    }));
+
+    return Array.from(dailyMap.values())
+      .map((day) => ({
+        ...day,
+        day: new Date(day.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+        successRate: day.requests > 0 ? Number(((day.successful / day.requests) * 100).toFixed(1)) : 0
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 
   const calculateSummaryStats = (events) => {
-    const total = events.length;
-    const successful = events.filter(e => e.status === 'MATCHED').length;
+    let totalRequests = 0;
+    let totalSuccessful = 0;
+    let totalFailed = 0;
+    const waitTimes = [];
+    const sessionDurations = [];
+
+    events.forEach((event) => {
+      const status = resolveStatus(event);
+
+      if (status === 'SUCCESS') {
+        totalSuccessful += 1;
+        totalRequests += 1;
+      } else if (status === 'FAILED') {
+        totalFailed += 1;
+        totalRequests += 1;
+      } else if (status === 'REQUEST') {
+        totalRequests += 1;
+      }
+
+      const waitSeconds = extractWaitTimeSeconds(event);
+      if (Number.isFinite(waitSeconds) && waitSeconds > 0) {
+        waitTimes.push(waitSeconds);
+      }
+
+      const durationMinutes = extractSessionDurationMinutes(event);
+      if (Number.isFinite(durationMinutes) && durationMinutes > 0) {
+        sessionDurations.push(durationMinutes);
+      }
+    });
+
     return {
-      totalRequests: total,
-      totalSuccessful: successful,
-      totalFailed: total - successful,
-      overallSuccessRate: total > 0 ? ((successful / total) * 100).toFixed(1) : 0,
-      avgWaitTime: 120, // 기본값 2분 (실제로는 API에서 계산)
-      avgSessionDuration: 45 // 기본값 45분 (실제로는 API에서 계산)
+      totalRequests,
+      totalSuccessful,
+      totalFailed,
+      overallSuccessRate: totalRequests > 0
+        ? Number(((totalSuccessful / totalRequests) * 100).toFixed(1))
+        : 0,
+      avgWaitTime: waitTimes.length > 0
+        ? Math.round(waitTimes.reduce((sum, current) => sum + current, 0) / waitTimes.length)
+        : 0,
+      avgSessionDuration: sessionDurations.length > 0
+        ? Math.round(sessionDurations.reduce((sum, current) => sum + current, 0) / sessionDurations.length)
+        : 0
     };
   };
 
   const calculateTypeDistribution = (events) => {
-    // 매칭 타입별 분포 계산 (실제 API 데이터 기반)
-    return [
-      { name: '1:1 회화', value: 65, color: '#00C471' },
-      { name: '그룹 세션', value: 25, color: '#4285F4' },
-      { name: '랜덤 매칭', value: 10, color: '#FFB800' }
-    ];
+    const counts = new Map();
+
+    events.forEach((event) => {
+      if (resolveStatus(event) !== 'SUCCESS') return;
+      const label = matchTypeLabel(event);
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+
+    const total = Array.from(counts.values()).reduce((sum, count) => sum + count, 0);
+    if (total === 0) return [];
+
+    const colors = ['#00C471', '#4285F4', '#FFB800', '#FF6B6B', '#9C27B0', '#6366F1'];
+
+    return Array.from(counts.entries()).map(([name, count], index) => ({
+      name,
+      value: count,
+      percentage: Number(((count / total) * 100).toFixed(1)),
+      color: colors[index % colors.length]
+    }));
   };
 
   const calculateLanguageStats = (events) => {
-    // 언어별 매칭 성공률 계산
-    return [
-      { language: 'English', attempts: 50, successful: 45, successRate: 90 },
-      { language: 'Japanese', attempts: 30, successful: 25, successRate: 83.3 }
-    ];
+    const statsMap = new Map();
+
+    events.forEach((event) => {
+      const status = resolveStatus(event);
+      if (!['SUCCESS', 'FAILED', 'REQUEST'].includes(status)) return;
+
+      const label = languageLabel(event);
+      if (!statsMap.has(label)) {
+        statsMap.set(label, { language: label, attempts: 0, successful: 0 });
+      }
+
+      const entry = statsMap.get(label);
+      entry.attempts += 1;
+      if (status === 'SUCCESS') {
+        entry.successful += 1;
+      }
+    });
+
+    const results = Array.from(statsMap.values())
+      .filter((entry) => entry.attempts > 0)
+      .map((entry) => ({
+        ...entry,
+        successRate: Number(((entry.successful / entry.attempts) * 100).toFixed(1))
+      }));
+
+    return results.sort((a, b) => b.successRate - a.successRate);
   };
 
   const calculateHourlyStats = (events) => {
-    // 시간대별 매칭 성공률 계산
-    return [];
+    const hourlyMap = new Map();
+
+    events.forEach((event) => {
+      const status = resolveStatus(event);
+      if (!['SUCCESS', 'FAILED'].includes(status)) return;
+
+      const date = parseEventDate(event);
+      if (!date) return;
+
+      const hour = date.getHours();
+      if (!hourlyMap.has(hour)) {
+        hourlyMap.set(hour, { hour, attempts: 0, successful: 0 });
+      }
+
+      const entry = hourlyMap.get(hour);
+      entry.attempts += 1;
+      if (status === 'SUCCESS') {
+        entry.successful += 1;
+      }
+    });
+
+    return Array.from(hourlyMap.values())
+      .sort((a, b) => a.hour - b.hour)
+      .map((entry) => ({
+        hour: `${entry.hour.toString().padStart(2, '0')}:00`,
+        attempts: entry.attempts,
+        successRate: entry.attempts > 0
+          ? Number(((entry.successful / entry.attempts) * 100).toFixed(1))
+          : 0
+      }));
   };
 
   const transformMatchingData = (apiResponse) => {
@@ -226,6 +422,31 @@ const MatchingStatsChart = ({ timeRange = 'month' }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-[18px] font-bold text-[var(--black-500)]">매칭 성공률 통계</h3>
+          <button
+            type="button"
+            onClick={loadMatchingStats}
+            className="px-3 py-1.5 bg-[#00C471] text-white text-[13px] font-semibold rounded-lg hover:bg-[#00B267] transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+
+        <div className="h-96 flex items-center justify-center">
+          <div className="text-center max-w-sm">
+            <Users className="w-12 h-12 text-[var(--red-300,#F87171)] mx-auto mb-4" />
+            <p className="text-[16px] text-[var(--black-400,#565656)] font-semibold mb-2">매칭 통계를 불러오지 못했습니다</p>
+            <p className="text-[14px] text-[var(--black-300,#808080)]">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!matchingData?.summary.totalRequests) {
     return (
       <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
@@ -271,7 +492,7 @@ const MatchingStatsChart = ({ timeRange = 'month' }) => {
             border: '1px solid var(--black-50)',
             borderRadius: '8px'
           }}
-          formatter={(value, name) => [`${value}%`, '성공률']}
+          formatter={(value) => [`${value}%`, '성공률']}
         />
         <Area 
           type="monotone" 
@@ -310,67 +531,91 @@ const MatchingStatsChart = ({ timeRange = 'month' }) => {
     </ResponsiveContainer>
   );
 
-  const renderTypeDistribution = () => (
-    <div className="flex items-center justify-center">
-      <div className="w-80 h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={matchingData.matchingTypes}
-              cx="50%"
-              cy="50%"
-              outerRadius={120}
-              paddingAngle={3}
-              dataKey="value"
-            >
-              {matchingData.matchingTypes.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+  const renderTypeDistribution = () => {
+    if (!matchingData.matchingTypes.length) {
+      return (
+        <div className="h-80 flex flex-col items-center justify-center text-center text-[var(--black-300)]">
+          <Users className="w-12 h-12 text-[var(--black-200)] mb-3" />
+          <p className="text-[16px] font-medium text-[var(--black-400)] mb-1">분석할 매칭 타입이 없습니다</p>
+          <p className="text-[14px]">매칭을 완료하면 타입별 통계가 표시됩니다.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-center">
+        <div className="w-80 h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={matchingData.matchingTypes}
+                cx="50%"
+                cy="50%"
+                outerRadius={120}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {matchingData.matchingTypes.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [`${value}건`, '매칭 수']} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="ml-8">
+          <h4 className="text-[16px] font-bold text-[var(--black-500)] mb-4">매칭 타입별 분포</h4>
+          {matchingData.matchingTypes.map((type, index) => (
+            <div key={index} className="flex items-center mb-3">
+              <div 
+                className="w-4 h-4 rounded-full mr-3"
+                style={{ backgroundColor: type.color }}
+              />
+              <div className="flex-1">
+                <div className="text-[14px] text-[var(--black-500)] font-medium">{type.name}</div>
+                <div className="text-[12px] text-[var(--black-300)]">{type.percentage}% · {type.value}건</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="ml-8">
-        <h4 className="text-[16px] font-bold text-[var(--black-500)] mb-4">매칭 타입별 분포</h4>
-        {matchingData.matchingTypes.map((type, index) => (
-          <div key={index} className="flex items-center mb-3">
-            <div 
-              className="w-4 h-4 rounded-full mr-3"
-              style={{ backgroundColor: type.color }}
-            />
-            <div className="flex-1">
-              <div className="text-[14px] text-[var(--black-500)] font-medium">{type.name}</div>
-              <div className="text-[12px] text-[var(--black-300)]">{type.value}%</div>
+    );
+  };
+
+  const renderLanguageStats = () => {
+    if (!matchingData.languageStats.length) {
+      return (
+        <div className="h-80 flex flex-col items-center justify-center text-center text-[var(--black-300)]">
+          <Users className="w-12 h-12 text-[var(--black-200)] mb-3" />
+          <p className="text-[16px] font-medium text-[var(--black-400)] mb-1">언어별 매칭 데이터가 없습니다</p>
+          <p className="text-[14px]">매칭 시도 후 다시 확인해주세요.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {matchingData.languageStats.map((lang, index) => (
+          <div key={index} className="border border-[var(--black-50)] rounded-[12px] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-[16px] font-semibold text-[var(--black-500)]">{lang.language}</h4>
+              <span className="text-[14px] font-bold text-[#00C471]">{lang.successRate}%</span>
+            </div>
+            <div className="flex items-center justify-between text-[12px] text-[var(--black-300)] mb-2">
+              <span>{lang.successful}/{lang.attempts} 성공</span>
+              <span>{lang.attempts - lang.successful} 실패</span>
+            </div>
+            <div className="w-full bg-[var(--black-50)] rounded-full h-2">
+              <div 
+                className="bg-[#00C471] h-2 rounded-full transition-all duration-500"
+                style={{ width: `${lang.successRate}%` }}
+              />
             </div>
           </div>
         ))}
       </div>
-    </div>
-  );
-
-  const renderLanguageStats = () => (
-    <div className="space-y-4">
-      {matchingData.languageStats.map((lang, index) => (
-        <div key={index} className="border border-[var(--black-50)] rounded-[12px] p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-[16px] font-semibold text-[var(--black-500)]">{lang.language}</h4>
-            <span className="text-[14px] font-bold text-[#00C471]">{lang.successRate}%</span>
-          </div>
-          <div className="flex items-center justify-between text-[12px] text-[var(--black-300)] mb-2">
-            <span>{lang.successful}/{lang.attempts} 성공</span>
-            <span>{lang.attempts - lang.successful} 실패</span>
-          </div>
-          <div className="w-full bg-[var(--black-50)] rounded-full h-2">
-            <div 
-              className="bg-[#00C471] h-2 rounded-full transition-all duration-500"
-              style={{ width: `${lang.successRate}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">

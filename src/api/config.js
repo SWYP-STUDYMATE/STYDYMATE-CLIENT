@@ -129,13 +129,13 @@ export const API_ENDPOINTS = {
     // WebRTC 화상 통화
     WEBRTC: {
       CREATE_ROOM: `${API_CONFIG.WORKERS_API}/api/v1/room/create`,
-      JOIN_ROOM: (roomId) => `${API_CONFIG.WORKERS_API}/webrtc/${roomId}/join`,
+      JOIN_ROOM: (roomId) => `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/join`,
       LEAVE_ROOM: (roomId) =>
-        `${API_CONFIG.WORKERS_API}/webrtc/${roomId}/leave`,
+        `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/leave`,
       GET_ROOM_INFO: (roomId) =>
-        `${API_CONFIG.WORKERS_API}/webrtc/${roomId}/info`,
+        `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/info`,
       GET_ICE_SERVERS: (roomId) =>
-        `${API_CONFIG.WORKERS_API}/webrtc/${roomId}/ice-servers`,
+        `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/ice-servers`,
       WEBSOCKET: (roomId, userId, userName) =>
         `${API_CONFIG.WORKERS_API.replace(
           "https",
@@ -143,6 +143,7 @@ export const API_ENDPOINTS = {
         )}/webrtc/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(
           userName
         )}`,
+      ACTIVE_ROOMS: `${API_CONFIG.WORKERS_API}/api/v1/room/active`,
     },
   },
 

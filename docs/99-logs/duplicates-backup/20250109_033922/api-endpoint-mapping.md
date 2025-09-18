@@ -57,8 +57,8 @@ PUT  /api/v1/user/settings                // 사용자 설정 업데이트
 ✅ getUserProfile()             → GET  /user/profile
 ✅ updateUserProfile()          → PATCH /user/profile  // 레거시
 ✅ getUserInfo()                → GET  /user/info
-✅ getUserLanguageInfo()        → GET  /user/language-info
-✅ updateUserLanguageInfo()     → PATCH /user/language-info
+✅ getUserLanguageInfo()        → GET  /user/language-info  // 2025-09-18 구현
+✅ updateUserLanguageInfo()     → PATCH /user/language-info  // 2025-09-18 구현
 ✅ getUserMotivationInfo()      → GET  /user/motivation-info
 ✅ updateUserMotivationInfo()   → PATCH /user/motivation-info
 ✅ getUserPartnerInfo()         → GET  /user/partner-info

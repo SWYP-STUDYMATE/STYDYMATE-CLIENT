@@ -277,15 +277,36 @@ export const getSpringBootSentMatchRequests = async (status = 'pending', page = 
   }
 };
 
-// Spring Boot: 매칭된 파트너 목록 조회
-export const getSpringBootMatches = async (page = 1, size = 20) => {
+// Spring Boot: 매칭된 파트너 목록 조회 (Spring Pageable은 0부터 시작)
+export const getSpringBootMatches = async (page = 0, size = 20) => {
   try {
+    const normalizedPage = Number.isFinite(Number(page)) ? Number(page) : 0;
+    const normalizedSize = Number.isFinite(Number(size)) ? Number(size) : 20;
+
     const response = await api.get('/matching/matches', {
-      params: { page, size }
+      params: {
+        page: Math.max(0, normalizedPage),
+        size: Math.max(1, normalizedSize)
+      }
     });
     return response.data;
   } catch (error) {
     console.error('Get spring boot matches error:', error);
+    throw error;
+  }
+};
+
+// Spring Boot: 매칭 해제
+export const deleteSpringBootMatch = async (matchId) => {
+  try {
+    if (!matchId) {
+      throw new Error('matchId is required');
+    }
+
+    const response = await api.delete(`/matching/matches/${matchId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete spring boot match error:', error);
     throw error;
   }
 };

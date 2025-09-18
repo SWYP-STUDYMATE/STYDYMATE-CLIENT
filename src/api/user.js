@@ -1,4 +1,5 @@
 // @ts-check
+import axios from 'axios';
 import api from './index';
 
 // 완전한 사용자 프로필 조회 (Spring Boot API 연동)
@@ -78,6 +79,13 @@ export const getUserLanguageInfo = async () => {
     const response = await api.get('/user/language-info');
     return response.data;
   } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status && [401, 403, 404].includes(status)) {
+        console.warn('User language info endpoint returned no data:', status);
+        return null;
+      }
+    }
     console.error('Get user language info error:', error);
     throw error;
   }

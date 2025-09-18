@@ -25,8 +25,8 @@ const SKILL_CATEGORIES = [
   { name: 'Vocabulary', fullName: '어휘' },
   { name: 'Pronunciation', fullName: '발음' },
   { name: 'Fluency', fullName: '유창성' },
-  { name: 'Comprehension', fullName: '이해력' },
-  { name: 'Confidence', fullName: '자신감' }
+  { name: 'Coherence', fullName: '논리 전개' },
+  { name: 'Interaction', fullName: '상호작용' }
 ];
 
 export default function RadarChart({ scores = {}, animate = true }) {

@@ -22,11 +22,13 @@ import useProfileStore from '../../store/profileStore';
 import { logout } from '../../api/auth';
 import { getOptimizedImageUrl } from '../../api/profile';
 import { getUserLanguageInfo, getUserSettings, updateUserSettings } from '../../api/user';
+import { getOnboardingData } from '../../api/onboarding';
 import { getSessionActivity, getStudyStats } from '../../api/analytics';
 import { deleteChatFile, fetchMyChatFiles } from '../../api/chat';
 import { getFileUrl } from '../../api/profile';
 import { useAlert } from '../../hooks/useAlert';
 import useAchievementOverview from '../../hooks/useAchievementOverview';
+import { transformOnboardingDataToLanguageProfile, transformUserLanguageInfoResponse } from '../../utils/onboardingTransform';
 
 const defaultLearningStats = {
   totalSessions: 0,
@@ -44,33 +46,13 @@ const normalizeLanguageValue = (value) => {
   return value.name || value.label || value.title || value.language || value.languageName || '';
 };
 
-const normalizeLanguageProfile = (raw) => {
-  if (!raw) {
-    return {
-      teachableLanguages: [],
-      learningLanguages: [],
-      interests: []
-    };
-  }
-
-  const toLanguageTag = (language) => ({
-    language: normalizeLanguageValue(language),
-    level: language?.level || language?.levelName || language?.proficiency || language?.cefrLevel || language?.skillLevel || ''
-  });
-
-  const teachable = raw.teachableLanguages || raw.teach || raw.nativeLanguages || raw.otherLanguages || [];
-  const learning = raw.learningLanguages || raw.learn || raw.targetLanguages || raw.wantedLanguages || [];
-  const interests = raw.interests || raw.topics || raw.motivations || [];
-
-  return {
-    teachableLanguages: Array.isArray(teachable) ? teachable.map(toLanguageTag).filter(({ language }) => language) : [],
-    learningLanguages: Array.isArray(learning) ? learning.map(toLanguageTag).filter(({ language }) => language) : [],
-    interests: Array.isArray(interests)
-      ? interests
-          .map(normalizeLanguageValue)
-          .filter(Boolean)
-      : []
-  };
+const hasLanguageData = (profile) => {
+  if (!profile) return false;
+  return Boolean(
+    (profile.teachableLanguages && profile.teachableLanguages.length > 0) ||
+    (profile.learningLanguages && profile.learningLanguages.length > 0) ||
+    (profile.interests && profile.interests.length > 0)
+  );
 };
 
 const normalizeStudyStats = (raw) => {
@@ -239,8 +221,17 @@ export default function ProfilePage() {
       setLanguageLoading(true);
       try {
         const response = await getUserLanguageInfo();
+        let profilePayload = transformUserLanguageInfoResponse(response?.data ?? response);
+
+        if (!hasLanguageData(profilePayload)) {
+          const onboarding = await getOnboardingData();
+          const fallbackProfile = transformOnboardingDataToLanguageProfile(onboarding?.data ?? onboarding);
+          if (hasLanguageData(fallbackProfile)) {
+            profilePayload = fallbackProfile;
+          }
+        }
         if (!isActive) return;
-        setLanguageProfile(normalizeLanguageProfile(response?.data ?? response));
+        setLanguageProfile(profilePayload);
       } catch (error) {
         console.error('언어 정보를 불러오지 못했습니다.', error);
         if (isActive) showError('언어 정보를 불러오는 데 실패했습니다.');
