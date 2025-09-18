@@ -139,26 +139,30 @@ async function sendToAnalyticsEngine(env: Env, event: AnalyticsEvent) {
     if (!env.ANALYTICS) return;
 
     try {
-        // Analytics Engine 쓰기
-        (env.ANALYTICS as any).writeDataPoint({
+        const statusIndex = event.metrics.status != null
+            ? event.metrics.status.toString()
+            : 'unknown';
+
+        await (env.ANALYTICS as any).writeDataPoint({
             blobs: [
                 event.type,
                 event.metrics.method,
                 event.metrics.path,
                 event.metrics.error || '',
-                event.metrics.aiModel || ''
+                event.metrics.aiModel || '',
+                event.metrics.country || '',
+                event.metrics.cacheStatus || '',
+                event.metadata?.environment || '',
+                event.metadata?.version || ''
             ],
             doubles: [
                 event.metrics.duration,
                 event.metrics.cpuTime,
                 event.metrics.aiTokensUsed || 0,
-                event.metrics.aiDuration || 0
+                event.metrics.aiDuration || 0,
+                event.metrics.cacheHit ? 1 : 0
             ],
-            indexes: [
-                event.metrics.status.toString(),
-                event.metrics.country || '',
-                event.metrics.cacheHit ? '1' : '0'
-            ]
+            indexes: [statusIndex]
         });
     } catch (error) {
         console.error('Failed to write to Analytics Engine:', error);

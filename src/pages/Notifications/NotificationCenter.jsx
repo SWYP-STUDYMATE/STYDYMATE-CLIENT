@@ -50,24 +50,32 @@ const NotificationCenter = () => {
 
       const params = {
         page,
-        limit: 20,
-        type: filter !== 'all' ? filter : undefined,
-        unreadOnly: filter === 'unread'
+        size: 20
       };
 
+      if (filter === 'unread') {
+        params.unreadOnly = true;
+      } else if (filter !== 'all') {
+        params.category = filter;
+      }
+
       const response = await getNotifications(params);
-      
+      const notificationItems = response?.notifications || [];
+
       if (page === 1) {
-        setNotifications(response.data || []);
+        setNotifications(notificationItems);
       } else {
-        setNotifications(prev => [...prev, ...(response.data || [])]);
+        setNotifications(prev => [...prev, ...notificationItems]);
       }
 
       setPagination({
-        currentPage: response.currentPage || 1,
-        totalPages: response.totalPages || 1,
-        hasMore: response.hasMore || false
+        currentPage: response?.pagination?.page || page,
+        totalPages: response?.pagination?.totalPages || 1,
+        hasMore: response?.pagination?.hasNext || false
       });
+      if (response?.unreadCount !== undefined) {
+        setUnreadCount(response.unreadCount);
+      }
     } catch (error) {
       console.error('Failed to load notifications:', error);
     } finally {
@@ -79,7 +87,7 @@ const NotificationCenter = () => {
   const loadUnreadCount = async () => {
     try {
       const response = await getUnreadNotificationCount();
-      setUnreadCount(response.count || 0);
+      setUnreadCount(Number.isFinite(response) ? response : 0);
     } catch (error) {
       console.error('Failed to load unread count:', error);
     }
@@ -206,16 +214,33 @@ const NotificationCenter = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'chat':
+      case 'new_message':
+      case 'chat_invitation':
         return <MessageSquare className="w-5 h-5 text-blue-500" />;
       case 'match_request':
       case 'match_accepted':
+      case 'match_rejected':
+      case 'match_found':
+      case 'matching':
         return <Users className="w-5 h-5 text-green-500" />;
       case 'session_invitation':
       case 'session_reminder':
+      case 'session_cancelled':
+      case 'session_started':
+      case 'session_completed':
+      case 'session':
         return <Video className="w-5 h-5 text-purple-500" />;
       case 'achievement':
       case 'level_test_result':
+      case 'level_test_available':
+      case 'level_test_reminder':
         return <Award className="w-5 h-5 text-yellow-500" />;
+      case 'system':
+      case 'system_maintenance':
+      case 'system_update':
+      case 'account_security':
+      case 'password_changed':
+        return <Bell className="w-5 h-5 text-gray-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -241,8 +266,12 @@ const NotificationCenter = () => {
 
   const filteredNotifications = notifications.filter(notification => {
     if (searchTerm) {
-      return notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-             notification.message.toLowerCase().includes(searchTerm.toLowerCase());
+      const lowerTerm = searchTerm.toLowerCase();
+      return (
+        notification.title?.toLowerCase().includes(lowerTerm) ||
+        notification.message?.toLowerCase().includes(lowerTerm) ||
+        notification.content?.toLowerCase().includes(lowerTerm)
+      );
     }
     return true;
   });
@@ -250,10 +279,10 @@ const NotificationCenter = () => {
   const filterTabs = [
     { id: 'all', label: '전체', count: notifications.length },
     { id: 'unread', label: '읽지 않음', count: unreadCount },
-    { id: 'chat', label: '채팅', count: notifications.filter(n => n.type === 'chat').length },
-    { id: 'matching', label: '매칭', count: notifications.filter(n => n.type.includes('match')).length },
-    { id: 'session', label: '세션', count: notifications.filter(n => n.type.includes('session')).length },
-    { id: 'system', label: '시스템', count: notifications.filter(n => n.type === 'system').length }
+    { id: 'chat', label: '채팅', count: notifications.filter(n => n.category === 'chat').length },
+    { id: 'matching', label: '매칭', count: notifications.filter(n => n.category === 'matching' || n.type?.includes('match')).length },
+    { id: 'session', label: '세션', count: notifications.filter(n => n.category === 'session' || n.type?.includes('session')).length },
+    { id: 'system', label: '시스템', count: notifications.filter(n => n.category === 'system').length }
   ];
 
   return (
@@ -426,7 +455,7 @@ const NotificationCenter = () => {
                   )}
                   
                   <div className="mt-1">
-                    {getNotificationIcon(notification.type)}
+                    {getNotificationIcon(notification.category || notification.type)}
                   </div>
                   
                   <div className="flex-1 min-w-0">

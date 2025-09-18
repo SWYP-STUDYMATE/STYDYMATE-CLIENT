@@ -77,17 +77,23 @@ const NotificationList = () => {
       navigate(notification.clickUrl);
     } else {
       // 기본 액션 처리
-      switch (notification.type) {
+      const baseType = notification.category || notification.type;
+      switch (baseType) {
         case 'chat':
           navigate('/chat');
           break;
         case 'matching':
+        case 'match_request':
+        case 'match_accepted':
           navigate('/matching');
           break;
         case 'session':
+        case 'session_reminder':
+        case 'session_invitation':
           navigate('/main');
           break;
         case 'achievement':
+        case 'level_test_result':
           navigate('/profile');
           break;
         default:
@@ -147,30 +153,41 @@ const NotificationList = () => {
   };
 
   const getTypeIcon = (type) => {
-    const icons = {
-      chat: MessageSquare,
-      matching: Users,
-      session: Calendar,
-      achievement: Award,
-      system: Info,
-      urgent: AlertCircle,
-      personal: Bell
-    };
-    const Icon = icons[type] || Bell;
-    return <Icon className="w-5 h-5" />;
+    if (!type) return <Bell className="w-5 h-5" />;
+    const normalized = type.toLowerCase();
+
+    if (normalized.includes('chat')) {
+      return <MessageSquare className="w-5 h-5" />;
+    }
+    if (normalized.includes('match')) {
+      return <Users className="w-5 h-5" />;
+    }
+    if (normalized.includes('session')) {
+      return <Calendar className="w-5 h-5" />;
+    }
+    if (normalized.includes('achieve') || normalized.includes('level_test')) {
+      return <Award className="w-5 h-5" />;
+    }
+    if (normalized.includes('system')) {
+      return <Info className="w-5 h-5" />;
+    }
+    if (normalized.includes('urgent')) {
+      return <AlertCircle className="w-5 h-5" />;
+    }
+    return <Bell className="w-5 h-5" />;
   };
 
   const getTypeColor = (type) => {
-    const colors = {
-      chat: 'text-blue-600',
-      matching: 'text-green-600',
-      session: 'text-purple-600',
-      achievement: 'text-yellow-600',
-      system: 'text-gray-600',
-      urgent: 'text-red-600',
-      personal: 'text-indigo-600'
-    };
-    return colors[type] || colors.personal;
+    if (!type) return 'text-indigo-600';
+    const normalized = type.toLowerCase();
+
+    if (normalized.includes('chat')) return 'text-blue-600';
+    if (normalized.includes('match')) return 'text-green-600';
+    if (normalized.includes('session')) return 'text-purple-600';
+    if (normalized.includes('achieve') || normalized.includes('level_test')) return 'text-yellow-600';
+    if (normalized.includes('system')) return 'text-gray-600';
+    if (normalized.includes('urgent')) return 'text-red-600';
+    return 'text-indigo-600';
   };
 
   const formatTime = (timestamp) => {
@@ -327,11 +344,11 @@ const NotificationList = () => {
           {showFilters && (
             <div className="mt-4 flex flex-wrap gap-2">
               <FilterButton type={null} label="전체" count={notifications.length} />
-              <FilterButton type="chat" label="채팅" count={notifications.filter(n => n.type === 'chat').length} />
-              <FilterButton type="matching" label="매칭" count={notifications.filter(n => n.type === 'matching').length} />
-              <FilterButton type="session" label="세션" count={notifications.filter(n => n.type === 'session').length} />
-              <FilterButton type="achievement" label="성취" count={notifications.filter(n => n.type === 'achievement').length} />
-              <FilterButton type="system" label="시스템" count={notifications.filter(n => n.type === 'system').length} />
+              <FilterButton type="chat" label="채팅" count={notifications.filter(n => (n.category || n.type) === 'chat').length} />
+              <FilterButton type="matching" label="매칭" count={notifications.filter(n => (n.category || '').includes('matching') || n.type?.includes('match')).length} />
+              <FilterButton type="session" label="세션" count={notifications.filter(n => (n.category || '').includes('session') || n.type?.includes('session')).length} />
+              <FilterButton type="achievement" label="성취" count={notifications.filter(n => (n.category || n.type) === 'achievement').length} />
+              <FilterButton type="system" label="시스템" count={notifications.filter(n => (n.category || n.type) === 'system').length} />
             </div>
           )}
 
@@ -429,8 +446,8 @@ const NotificationList = () => {
                           />
                         )}
                         
-                        <div className={`${getTypeColor(notification.type)} mt-1`}>
-                          {getTypeIcon(notification.type)}
+                        <div className={`${getTypeColor(notification.category || notification.type)} mt-1`}>
+                          {getTypeIcon(notification.category || notification.type)}
                         </div>
                         
                         <div className="flex-1 min-w-0">

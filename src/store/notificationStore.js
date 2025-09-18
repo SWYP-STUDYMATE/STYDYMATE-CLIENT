@@ -47,19 +47,27 @@ const useNotificationStore = create(
           set({ loading: true, error: null });
           
           const { filter } = get();
-          const response = await getNotifications(page, size, filter.type, filter.isRead);
+          const response = await getNotifications({
+            page,
+            size,
+            category: filter.type,
+            isRead: filter.isRead,
+            unreadOnly: filter.isRead === false
+          });
           
-          const newNotifications = response.notifications || [];
+          const newNotifications = response?.notifications || [];
+          const pagination = response?.pagination || {};
           
           set((state) => ({
             notifications: resetList ? newNotifications : [...state.notifications, ...newNotifications],
             pagination: {
-              page: response.page || page,
-              size: response.size || size,
-              totalPages: response.totalPages || 0,
-              totalElements: response.totalElements || 0,
-              hasNext: response.hasNext || false
+              page: pagination.page || page,
+              size: pagination.size || size,
+              totalPages: pagination.totalPages || 0,
+              totalElements: pagination.totalElements || 0,
+              hasNext: pagination.hasNext ?? false
             },
+            unreadCount: response?.unreadCount ?? state.unreadCount,
             loading: false
           }));
           
@@ -73,7 +81,7 @@ const useNotificationStore = create(
       loadUnreadCount: async () => {
         try {
           const response = await getUnreadNotificationCount();
-          set({ unreadCount: response.count || 0 });
+          set({ unreadCount: Number.isFinite(response) ? response : 0 });
         } catch (error) {
           console.error('Failed to load unread count:', error);
         }

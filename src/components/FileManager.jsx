@@ -12,11 +12,11 @@ import {
   Filter,
   MoreVertical
 } from 'lucide-react';
-import { deleteProfileImage, getFileUrl, getOptimizedImageUrl } from '../api/profile';
+import { getFileUrl, getOptimizedImageUrl } from '../api/profile';
 
 export default function FileManager({ 
   files = [], 
-  onFileDelete, 
+  onFileDelete,
   onFileSelect,
   allowDelete = true,
   allowPreview = true,
@@ -79,18 +79,22 @@ export default function FileManager({
 
   // 파일 삭제
   const handleDelete = async (file) => {
+    if (!allowDelete) {
+      return;
+    }
+
     if (!window.confirm('정말로 이 파일을 삭제하시겠습니까?')) {
       return;
     }
 
-    try {
-      await deleteProfileImage(file.key);
-      
-      if (onFileDelete) {
-        onFileDelete(file);
-      }
+    if (!onFileDelete) {
+      console.warn('onFileDelete 핸들러가 정의되지 않아 파일 삭제를 진행할 수 없습니다.');
+      return;
+    }
 
-      console.log('✅ 파일 삭제 완료:', file.key);
+    try {
+      await onFileDelete(file);
+      console.log('✅ 파일 삭제 완료:', file.id || file.key || file.name);
     } catch (error) {
       console.error('File delete error:', error);
       alert('파일 삭제 중 오류가 발생했습니다.');
@@ -99,7 +103,7 @@ export default function FileManager({
 
   // 파일 다운로드
   const handleDownload = (file) => {
-    const url = getFileUrl(file.key);
+    const url = file.url || getFileUrl(file.key);
     const link = document.createElement('a');
     link.href = `${url}?download=true`;
     link.download = file.name || file.key.split('/').pop() || 'download';

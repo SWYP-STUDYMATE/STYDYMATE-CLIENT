@@ -161,6 +161,30 @@ export interface LocationRequest {
   locationId: number;
 }
 
+// 캘린더 응답 타입
+export interface CalendarEventResponse {
+  sessionId: number;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  eventType: string; // SESSION, BOOKING 등
+  status: string;
+  isHost: boolean;
+  color?: string;
+}
+
+export interface CalendarAvailableSlotResponse {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+export interface CalendarResponse {
+  events: CalendarEventResponse[];
+  availableSlots: CalendarAvailableSlotResponse[];
+}
+
 export interface CompleteOnboardingRequest {
   step: number;
   data: Record<string, any>;

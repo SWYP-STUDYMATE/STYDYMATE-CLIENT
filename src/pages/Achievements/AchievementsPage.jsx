@@ -1,324 +1,304 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Trophy, 
-  Award, 
-  Star, 
-  Target, 
-  Calendar, 
-  BookOpen, 
-  MessageSquare,
-  Users,
-  Clock,
+import {
+  Trophy,
+  ChevronLeft,
   ChevronRight,
-  Lock
+  Award,
+  Target,
+  Clock,
+  Gift
 } from 'lucide-react';
+import useAchievementOverview from '../../hooks/useAchievementOverview';
+import { ACHIEVEMENT_CATEGORIES } from '../../api/achievement';
 
-const AchievementsPage = () => {
-  const navigate = useNavigate();
-  const [achievements, setAchievements] = useState([]);
-  const [stats, setStats] = useState({});
-  const [loading, setLoading] = useState(true);
+const CATEGORY_LABELS = {
+  ALL: '전체',
+  STUDY: '학습',
+  SOCIAL: '소셜',
+  MILESTONE: '마일스톤',
+  SPECIAL: '특별',
+  STREAK: '연속',
+  ENGAGEMENT: '참여',
+  PROFILE: '프로필',
+  SESSION: '세션',
+  CHAT: '채팅'
+};
 
-  useEffect(() => {
-    loadAchievements();
-    loadStats();
-  }, []);
+const TIER_COLORS = {
+  BRONZE: 'text-orange-500',
+  SILVER: 'text-gray-500',
+  GOLD: 'text-yellow-500',
+  PLATINUM: 'text-blue-500',
+  DIAMOND: 'text-purple-500',
+  LEGENDARY: 'text-amber-500'
+};
 
-  const loadAchievements = async () => {
-    // Mock 데이터 - 실제로는 API에서 가져옴
-    const mockAchievements = [
-      {
-        id: '1',
-        title: '첫 걸음',
-        description: '첫 번째 세션을 완료했습니다',
-        icon: BookOpen,
-        category: 'session',
-        isUnlocked: true,
-        unlockedAt: '2024-01-15T10:00:00Z',
-        progress: 100,
-        maxProgress: 100,
-        rarity: 'common',
-        points: 10
-      },
-      {
-        id: '2',
-        title: '대화의 달인',
-        description: '10번의 채팅 세션을 완료했습니다',
-        icon: MessageSquare,
-        category: 'chat',
-        isUnlocked: true,
-        unlockedAt: '2024-01-20T14:30:00Z',
-        progress: 10,
-        maxProgress: 10,
-        rarity: 'rare',
-        points: 25
-      },
-      {
-        id: '3',
-        title: '연속 학습',
-        description: '7일 연속으로 세션에 참여했습니다',
-        icon: Calendar,
-        category: 'streak',
-        isUnlocked: false,
-        progress: 5,
-        maxProgress: 7,
-        rarity: 'epic',
-        points: 50
-      },
-      {
-        id: '4',
-        title: '파트너 메이커',
-        description: '5명의 새로운 파트너와 매칭했습니다',
-        icon: Users,
-        category: 'social',
-        isUnlocked: false,
-        progress: 3,
-        maxProgress: 5,
-        rarity: 'rare',
-        points: 30
-      }
-    ];
+const formatDate = (dateString) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'short',
+    day: 'numeric'
+  }).format(date);
+};
 
-    setAchievements(mockAchievements);
-    setLoading(false);
-  };
+const AchievementCard = ({ item }) => {
+  const { achievement, isCompleted, progressPercentage, currentProgress, targetValue } = item;
+  const categoryLabel = CATEGORY_LABELS[achievement?.category] || achievement?.category || '기타';
+  const tierClass = TIER_COLORS[achievement?.tier] || 'text-[#929292]';
+  const progress = isCompleted ? 100 : Math.min(100, Math.max(0, progressPercentage ?? 0));
 
-  const loadStats = () => {
-    // Mock 통계 데이터
-    setStats({
-      totalPoints: 35,
-      unlockedCount: 2,
-      totalCount: 4,
-      rank: 'Bronze',
-      nextRankPoints: 100
-    });
-  };
+  return (
+    <div
+      className={`bg-white rounded-[12px] p-4 border transition-all ${
+        isCompleted ? 'border-[#00C471] shadow-sm' : 'border-[#E7E7E7]'
+      }`}
+    >
+      <div className="flex items-start gap-4">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isCompleted ? 'bg-[#E6F9F1]' : 'bg-[#F1F3F5]'}`}>
+          <Award className={`w-5 h-5 ${isCompleted ? 'text-[#00C471]' : 'text-[#B5B5B5]'}`} />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-start justify-between mb-1">
+            <h3 className={`font-bold text-[16px] ${isCompleted ? 'text-[#111111]' : 'text-[#606060]'}`}>
+              {achievement?.title || '이름 없는 업적'}
+            </h3>
+            {achievement?.xpReward ? (
+              <span className="text-[14px] font-bold text-[#4285F4]">+{achievement.xpReward} XP</span>
+            ) : null}
+          </div>
+          <p className="text-[13px] text-[#929292] mb-2 line-clamp-2">{achievement?.description}</p>
+          <div className="flex items-center gap-3 text-[12px] text-[#929292] mb-2">
+            <span className="px-2 py-1 bg-[#F8F9FA] rounded-full">{categoryLabel}</span>
+            {achievement?.tier && <span className={tierClass}>{achievement.tier}</span>}
+            {item.completedAt && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {formatDate(item.completedAt)} 완료
+              </span>
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[12px] text-[#929292]">
+              <span>{isCompleted ? '완료됨' : '진행중'}</span>
+              <span>
+                {currentProgress ?? 0}
+                {targetValue ? ` / ${targetValue}` : ''}
+              </span>
+            </div>
+            <div className="w-full bg-[#F1F3F5] rounded-full h-2">
+              <div
+                className={`h-2 rounded-full ${isCompleted ? 'bg-[#00C471]' : 'bg-[#00C471]/60'}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  const getRarityColor = (rarity) => {
-    switch (rarity) {
-      case 'common': return 'text-gray-500';
-      case 'rare': return 'text-blue-500';
-      case 'epic': return 'text-purple-500';
-      case 'legendary': return 'text-yellow-500';
-      default: return 'text-gray-500';
-    }
-  };
+const StatsOverview = ({ stats }) => {
+  if (!stats) return null;
 
-  const getRarityBg = (rarity) => {
-    switch (rarity) {
-      case 'common': return 'bg-gray-100';
-      case 'rare': return 'bg-blue-100';
-      case 'epic': return 'bg-purple-100';
-      case 'legendary': return 'bg-yellow-100';
-      default: return 'bg-gray-100';
-    }
-  };
+  const completionRate = Math.round(stats.completionRate ?? 0);
 
-  const getCategoryName = (category) => {
-    switch (category) {
-      case 'session': return '세션';
-      case 'chat': return '채팅';
-      case 'streak': return '연속';
-      case 'social': return '소셜';
-      default: return '일반';
-    }
-  };
+  return (
+    <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-[18px] font-bold text-[#111111]">나의 진행 상황</h2>
+        <div className="flex items-center space-x-2">
+          <Trophy className="w-5 h-5 text-[#00C471]" />
+          <span className="text-[14px] font-semibold text-[#111111]">완료율 {completionRate}%</span>
+        </div>
+      </div>
 
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center">
+          <div className="text-[24px] font-bold text-[#00C471] mb-1">{stats.completedAchievements ?? 0}</div>
+          <div className="text-[12px] text-[#929292]">완료한 배지</div>
+        </div>
+        <div className="text-center">
+          <div className="text-[24px] font-bold text-[#111111] mb-1">{stats.inProgressAchievements ?? 0}</div>
+          <div className="text-[12px] text-[#929292]">진행 중</div>
+        </div>
+        <div className="text-center">
+          <div className="text-[24px] font-bold text-[#4285F4] mb-1">{stats.totalXpEarned ?? 0}</div>
+          <div className="text-[12px] text-[#929292]">누적 XP</div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[12px] text-[#929292] mb-2">
+          <span>전체 진행률</span>
+          <span>{completionRate}%</span>
+        </div>
+        <div className="w-full bg-[#F1F3F5] rounded-full h-3">
+          <div
+            className="bg-[#00C471] h-3 rounded-full"
+            style={{ width: `${Math.min(100, Math.max(0, completionRate))}%` }}
+          />
+        </div>
+        {stats.unclaimedRewards ? (
+          <p className="text-[12px] text-[#929292] mt-2 flex items-center gap-1">
+            <Gift className="w-3 h-3 text-[#FFA000]" />
+            아직 수령하지 않은 보상 {stats.unclaimedRewards}개가 있습니다.
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+const CategoryFilter = ({ selected, onSelect }) => (
+  <div className="bg-white px-6 py-3 border border-[#E7E7E7] rounded-[16px]">
+    <div className="flex gap-2 overflow-x-auto">
+      {['ALL', ...Object.values(ACHIEVEMENT_CATEGORIES)].map((category) => (
+        <button
+          key={category}
+          onClick={() => onSelect(category)}
+          className={`px-4 py-2 rounded-full text-[14px] font-medium whitespace-nowrap transition-colors ${
+            selected === category ? 'bg-[#00C471] text-white' : 'bg-[#F1F3F5] text-[#606060] hover:bg-[#E7E7E7]'
+          }`}
+        >
+          {CATEGORY_LABELS[category] || category}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const AchievementsList = ({ achievements, loading, error }) => {
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#00C471] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#929292]">성취를 불러오는 중...</p>
-        </div>
+      <div className="flex justify-center items-center py-24">
+        <div className="w-8 h-8 border-4 border-[#00C471] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-[14px] text-[#929292]">
+        업적을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+      </div>
+    );
+  }
+
+  if (!achievements.length) {
+    return (
+      <div className="text-center py-12">
+        <Trophy className="w-12 h-12 text-[#B5B5B5] mx-auto mb-4" />
+        <p className="text-[#929292]">해당 조건에 맞는 업적이 없습니다.</p>
       </div>
     );
   }
 
   return (
+    <div className="space-y-4">
+      {achievements.map((item) => (
+        <AchievementCard key={item.id ?? item.achievement?.id} item={item} />
+      ))}
+    </div>
+  );
+};
+
+const RecentCompletions = ({ stats }) => {
+  const items = stats?.recentCompletions ?? [];
+  if (!items.length) return null;
+
+  return (
+    <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-5 h-5 text-[#00C471]" />
+        <h3 className="text-[16px] font-bold text-[#111111]">최근 완료한 업적</h3>
+      </div>
+      <div className="space-y-3">
+        {items.slice(0, 5).map((item, index) => (
+          <div key={`${item.achievementTitle}-${index}`} className="flex items-center justify-between text-[14px] text-[#606060]">
+            <span>{item.achievementTitle}</span>
+            <span className="text-[12px] text-[#929292]">{formatDate(item.completedAt)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const UpcomingAchievements = ({ stats }) => {
+  const items = stats?.nearCompletion ?? [];
+  if (!items.length) return null;
+
+  return (
+    <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+      <div className="flex items-center gap-2 mb-4">
+        <Clock className="w-5 h-5 text-[#00C471]" />
+        <h3 className="text-[16px] font-bold text-[#111111]">곧 달성 가능한 업적</h3>
+      </div>
+      <div className="space-y-3">
+        {items.slice(0, 5).map((item) => (
+          <div key={item.id} className="flex items-center justify-between text-[14px] text-[#606060]">
+            <span>{item.achievement?.title}</span>
+            <span className="text-[12px] text-[#929292]">{Math.round(item.progressPercentage ?? 0)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AchievementsPage = () => {
+  const navigate = useNavigate();
+  const { achievements, stats, loading, error, refresh } = useAchievementOverview();
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+
+  const filteredAchievements = useMemo(() => {
+    if (!achievements) return [];
+    if (selectedCategory === 'ALL') return achievements;
+    return achievements.filter((item) => item.achievement?.category === selectedCategory);
+  }, [achievements, selectedCategory]);
+
+  return (
     <div className="min-h-screen bg-[#FAFAFA]">
-      {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="px-6 py-4">
           <div className="flex items-center space-x-3">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ChevronRight className="w-6 h-6 text-[#111111] rotate-180" />
+              <ChevronLeft className="w-6 h-6 text-[#111111]" />
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-[#111111]">성취 & 배지</h1>
-              <p className="text-sm text-[#929292]">
-                {stats.unlockedCount}/{stats.totalCount} 달성 • {stats.totalPoints} 포인트
-              </p>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-bold text-[#111111]">성취 & 배지</h1>
+                  <p className="text-sm text-[#929292]">
+                    완료 {stats?.completedAchievements ?? 0}/{stats?.totalAchievements ?? achievements.length} · 총 XP {stats?.totalXpEarned ?? 0}
+                  </p>
+                </div>
+                <button
+                  onClick={refresh}
+                  className="px-3 py-1.5 text-[13px] text-[#00C471] border border-[#00C471] rounded-full hover:bg-[#00C471]/10"
+                >
+                  새로고침
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Stats Overview */}
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[18px] font-bold text-[#111111]">나의 진행 상황</h2>
-            <div className="flex items-center space-x-2">
-              <Trophy className="w-5 h-5 text-[#00C471]" />
-              <span className="text-[14px] font-semibold text-[#111111]">{stats.rank}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-[24px] font-bold text-[#00C471] mb-1">
-                {stats.totalPoints}
-              </div>
-              <div className="text-[12px] text-[#929292]">총 포인트</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[24px] font-bold text-[#111111] mb-1">
-                {stats.unlockedCount}
-              </div>
-              <div className="text-[12px] text-[#929292]">달성한 배지</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[24px] font-bold text-[#929292] mb-1">
-                {stats.nextRankPoints - stats.totalPoints}
-              </div>
-              <div className="text-[12px] text-[#929292]">다음 등급까지</div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-[12px] text-[#929292] mb-2">
-              <span>Silver까지 진행률</span>
-              <span>{Math.round((stats.totalPoints / stats.nextRankPoints) * 100)}%</span>
-            </div>
-            <div className="w-full bg-[#E7E7E7] rounded-full h-2">
-              <div 
-                className="bg-[#00C471] h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(stats.totalPoints / stats.nextRankPoints) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Achievements Grid */}
-        <div className="space-y-4">
-          <h3 className="text-[16px] font-bold text-[#111111]">모든 성취</h3>
-          
-          <div className="grid gap-4">
-            {achievements.map((achievement) => {
-              const Icon = achievement.icon;
-              return (
-                <div
-                  key={achievement.id}
-                  className={`bg-white rounded-[16px] p-4 border transition-all ${
-                    achievement.isUnlocked
-                      ? 'border-[#00C471] shadow-sm'
-                      : 'border-[#E7E7E7] opacity-75'
-                  }`}
-                >
-                  <div className="flex items-start space-x-4">
-                    {/* Icon */}
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      achievement.isUnlocked 
-                        ? `${getRarityBg(achievement.rarity)}` 
-                        : 'bg-[#F1F3F5]'
-                    }`}>
-                      {achievement.isUnlocked ? (
-                        <Icon className={`w-6 h-6 ${getRarityColor(achievement.rarity)}`} />
-                      ) : (
-                        <Lock className="w-6 h-6 text-[#929292]" />
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className={`text-[16px] font-semibold ${
-                            achievement.isUnlocked ? 'text-[#111111]' : 'text-[#929292]'
-                          }`}>
-                            {achievement.title}
-                          </h4>
-                          <p className={`text-[14px] ${
-                            achievement.isUnlocked ? 'text-[#666666]' : 'text-[#929292]'
-                          }`}>
-                            {achievement.description}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <span className={`text-[12px] px-2 py-1 rounded-full ${
-                            achievement.isUnlocked
-                              ? `${getRarityBg(achievement.rarity)} ${getRarityColor(achievement.rarity)}`
-                              : 'bg-[#F1F3F5] text-[#929292]'
-                          }`}>
-                            {getCategoryName(achievement.category)}
-                          </span>
-                          <div className="flex items-center space-x-1">
-                            <Star className="w-3 h-3 text-[#FFD700]" />
-                            <span className="text-[12px] font-semibold text-[#111111]">
-                              {achievement.points}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Progress */}
-                      {!achievement.isUnlocked && (
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between text-[12px] text-[#929292] mb-1">
-                            <span>진행률</span>
-                            <span>{achievement.progress}/{achievement.maxProgress}</span>
-                          </div>
-                          <div className="w-full bg-[#E7E7E7] rounded-full h-1.5">
-                            <div 
-                              className="bg-[#00C471] h-1.5 rounded-full transition-all duration-300"
-                              style={{ width: `${(achievement.progress / achievement.maxProgress) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Unlocked Date */}
-                      {achievement.isUnlocked && achievement.unlockedAt && (
-                        <div className="mt-2 flex items-center space-x-1">
-                          <Calendar className="w-3 h-3 text-[#929292]" />
-                          <span className="text-[12px] text-[#929292]">
-                            {new Date(achievement.unlockedAt).toLocaleDateString('ko-KR')} 달성
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="bg-gradient-to-r from-[#00C471] to-[#00B267] rounded-[20px] p-6 text-white">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <Target className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-[16px] font-bold mb-1">더 많은 성취를 달성해보세요!</h3>
-              <p className="text-[14px] text-white/80">
-                매일 세션에 참여하고 새로운 파트너와 대화해보세요.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/sessions')}
-              className="bg-white text-[#00C471] px-4 py-2 rounded-lg text-[14px] font-medium hover:bg-white/90 transition-colors"
-            >
-              세션 시작
-            </button>
-          </div>
+        <StatsOverview stats={stats} />
+        <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
+        <AchievementsList achievements={filteredAchievements} loading={loading} error={error} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RecentCompletions stats={stats} />
+          <UpcomingAchievements stats={stats} />
         </div>
       </div>
     </div>

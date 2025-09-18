@@ -11,12 +11,65 @@ import {
   getSpringBootRecommendedPartners,
   searchSpringBootPartners,
   sendSpringBootMatchRequest,
-  acceptSpringBootMatchRequest,
-  rejectSpringBootMatchRequest,
   getSpringBootReceivedMatchRequests,
   getSpringBootSentMatchRequests,
   getSpringBootMatches
 } from "../api/matching";
+
+const normalizeSpringPartner = (partner) => {
+  if (!partner) return null;
+
+  const firstTarget = partner.targetLanguages?.[0];
+  const compatibility = partner.compatibilityScore;
+  const normalizedScore =
+    compatibility === undefined ? undefined :
+      (compatibility > 1 ? Math.round(compatibility) : Math.round(compatibility * 100));
+
+  return {
+    id: partner.userId,
+    userId: partner.userId,
+    name: partner.englishName || '파트너',
+    profileImage: partner.profileImageUrl,
+    bio: partner.selfBio,
+    age: partner.age,
+    gender: partner.gender,
+    location: partner.location,
+    nativeLanguage: partner.nativeLanguage,
+    learningLanguage: firstTarget?.languageName,
+    level: firstTarget?.currentLevel || 'Intermediate',
+    interests: partner.interests || [],
+    personalities: partner.partnerPersonalities || [],
+    matchScore: normalizedScore,
+    isOnline: partner.onlineStatus === 'ONLINE',
+    lastActive: partner.lastActiveTime,
+  };
+};
+
+const normalizeWorkerMatch = (match) => ({
+  id: match.partnerId,
+  partnerId: match.partnerId,
+  matchId: match.matchId,
+  name: match.partnerName || match.partnerId,
+  profileImage: match.partnerProfileImage,
+  bio: match.partnerBio,
+  nativeLanguage: match.partnerNativeLanguage || 'Unknown',
+  learningLanguage: match.targetLanguage || 'Unknown',
+  level: match.partnerLevel || 'Intermediate',
+  interests: match.commonInterests || [],
+  matchScore: match.score,
+  suggestedTopics: match.suggestedTopics || [],
+  isOnline: match.partnerOnlineStatus === 'ONLINE',
+});
+
+const extractPageContent = (payload) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (payload.content) return payload.content;
+  if (payload.data?.content) return payload.data.content;
+  if (payload.matches) return payload.matches;
+  if (payload.data?.matches) return payload.data.matches;
+  return [];
+};
 
 const useMatchingStore = create(
   persist(
@@ -83,17 +136,35 @@ const useMatchingStore = create(
 
         try {
           const result = await findMatchingPartners(state.matchingFilters);
+          const matches = (result?.matches || [])
+            .map(normalizeWorkerMatch)
+            .filter(Boolean);
+
           set({
-            matchedUsers: result.partners || [],
-            matchingStatus: (result.partners && result.partners.length > 0) ? "matched" : "failed",
+            matchedUsers: matches,
+            matchingStatus: matches.length > 0 ? "matched" : "failed",
             isSearching: false
           });
+
+          set((current) => ({
+            matchingHistory: [
+              {
+                filters: current.matchingFilters,
+                result: matches,
+                timestamp: new Date().toISOString()
+              },
+              ...current.matchingHistory
+            ].slice(0, 20)
+          }));
+
+          return matches;
         } catch (error) {
           console.error('Matching error:', error);
           set({
             matchingStatus: "failed",
             isSearching: false
           });
+          throw error;
         }
       },
       
@@ -196,23 +267,28 @@ const useMatchingStore = create(
           const state = get();
           // Spring Boot API 사용
           const result = await getSpringBootRecommendedPartners(state.matchingFilters);
-          const partners = result.content || result.data || [];
+          const partners = extractPageContent(result)
+            .map(normalizeSpringPartner)
+            .filter(Boolean);
           
           set({
             matchedUsers: partners,
             matchingStatus: partners.length > 0 ? "matched" : "idle"
           });
-          return { partners };
+          return partners;
         } catch (error) {
           console.error('Fetch recommended partners error:', error);
           // Spring Boot API 실패시 Workers API fallback
           try {
             const result = await getRecommendedPartners();
+            const workerMatches = (result.matches || [])
+              .map(normalizeWorkerMatch)
+              .filter(Boolean);
             set({
-              matchedUsers: result.partners || [],
-              matchingStatus: (result.partners && result.partners.length > 0) ? "matched" : "idle"
+              matchedUsers: workerMatches,
+              matchingStatus: workerMatches.length > 0 ? "matched" : "idle"
             });
-            return result;
+            return workerMatches;
           } catch (fallbackError) {
             console.error('Fallback API error:', fallbackError);
             throw error;
@@ -224,11 +300,12 @@ const useMatchingStore = create(
       fetchMatchingStatus: async () => {
         try {
           const status = await getMatchingStatus();
+          const stats = status?.stats || status;
           set({
-            matchingStatus: status.status || "idle",
-            isSearching: status.isSearching || false
+            matchingStatus: stats?.activeRequest ? "searching" : "idle",
+            isSearching: Boolean(stats?.activeRequest)
           });
-          return status;
+          return stats;
         } catch (error) {
           console.error('Fetch matching status error:', error);
           throw error;
@@ -240,7 +317,7 @@ const useMatchingStore = create(
         try {
           const history = await getMatchingHistory();
           set({
-            matchingHistory: history.matches || []
+            matchingHistory: history?.matches || history?.content || []
           });
           return history;
         } catch (error) {
@@ -275,7 +352,7 @@ const useMatchingStore = create(
       fetchReceivedRequests: async (status = 'pending') => {
         try {
           const result = await getSpringBootReceivedMatchRequests(status);
-          return result.content || result.data || [];
+          return extractPageContent(result);
         } catch (error) {
           console.error('Fetch received requests error:', error);
           throw error;
@@ -286,7 +363,7 @@ const useMatchingStore = create(
       fetchSentRequests: async (status = 'pending') => {
         try {
           const result = await getSpringBootSentMatchRequests(status);
-          return result.content || result.data || [];
+          return extractPageContent(result);
         } catch (error) {
           console.error('Fetch sent requests error:', error);
           throw error;
@@ -297,7 +374,7 @@ const useMatchingStore = create(
       fetchMatches: async () => {
         try {
           const result = await getSpringBootMatches();
-          return result.content || result.data || [];
+          return extractPageContent(result);
         } catch (error) {
           console.error('Fetch matches error:', error);
           throw error;
@@ -308,8 +385,9 @@ const useMatchingStore = create(
       searchPartners: async (searchQuery, filters = {}) => {
         try {
           const result = await searchSpringBootPartners(searchQuery, filters);
-          const partners = result.content || result.data || [];
-          return partners;
+          return extractPageContent(result)
+            .map(normalizeSpringPartner)
+            .filter(Boolean);
         } catch (error) {
           console.error('Search partners error:', error);
           throw error;

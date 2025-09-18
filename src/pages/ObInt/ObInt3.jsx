@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CommonChecklistItem from "../../components/CommonChecklist";
 import CommonButton from "../../components/CommonButton";
 import Header from "../../components/Header";
@@ -8,11 +8,10 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api";
 
 export default function ObInt3() {
-  const [selected, setSelected] = useState([]);
   const [learningStyles, setLearningStyles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const selectedLearningStyles = useMotivationStore((state) => state.selectedLearningStyles);
   const setSelectedLearningStyles = useMotivationStore((state) => state.setSelectedLearningStyles);
-  const storedLearningStyles = useMotivationStore((state) => state.selectedLearningStyles);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,25 +32,20 @@ export default function ObInt3() {
     fetchLearningStyles();
   }, []);
 
-  useEffect(() => {
-    if (Array.isArray(storedLearningStyles)) {
-      setSelected(storedLearningStyles);
-    }
-  }, [storedLearningStyles]);
-
   const handleToggle = (id) => {
-    setSelected((prev) => {
-      const newSelected = prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id];
-      return newSelected.sort((a, b) => a - b);
-    });
+    const current = Array.isArray(selectedLearningStyles)
+      ? selectedLearningStyles
+      : [];
+
+    const exists = current.includes(id);
+    const nextValues = exists
+      ? current.filter((value) => value !== id)
+      : [...current, id];
+
+    setSelectedLearningStyles(nextValues);
   };
 
   const handleNext = async () => {
-    const sortedLearningStyles = [...selected].sort((a, b) => a - b);
-    setSelected(sortedLearningStyles);
-    setSelectedLearningStyles(sortedLearningStyles);
     navigate("/onboarding-int/4");
   };
 
@@ -74,14 +68,26 @@ export default function ObInt3() {
               <CommonChecklistItem
                 key={item.learningStyleId}
                 label={item.learningStyleName}
-                checked={selected.includes(item.learningStyleId)}
+                checked={
+                  Array.isArray(selectedLearningStyles) &&
+                  selectedLearningStyles.includes(item.learningStyleId)
+                }
                 onChange={() => handleToggle(item.learningStyleId)}
                 type="checkbox"
               />
             ))}
           </div>
         )}
-        <CommonButton text="다음" className="w-full mt-[440px]" disabled={selected.length === 0 || loading} onClick={handleNext} />
+        <CommonButton
+          text="다음"
+          className="w-full mt-[440px]"
+          disabled={
+            loading ||
+            !Array.isArray(selectedLearningStyles) ||
+            selectedLearningStyles.length === 0
+          }
+          onClick={handleNext}
+        />
       </div>
     </div>
   );

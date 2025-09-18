@@ -2,16 +2,13 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, Award, Target } from 'lucide-react';
 
 export default function LanguageLevelProgress({
-    language = 'English',
-    currentLevel = 'B1',
-    progress = 65,
-    nextLevel = 'B2',
-    skills = {
-        speaking: 70,
-        listening: 65,
-        reading: 75,
-        writing: 60
-    }
+    language,
+    currentLevel,
+    progress,
+    nextLevel,
+    skills = {},
+    trendLabel = null,
+    goalMessage = '다음 목표를 설정해 학습을 이어가세요.'
 }) {
     const [animatedProgress, setAnimatedProgress] = useState(0);
     const [animatedSkills, setAnimatedSkills] = useState({
@@ -22,23 +19,18 @@ export default function LanguageLevelProgress({
     });
 
     useEffect(() => {
-        // 애니메이션 효과
         const timer = setTimeout(() => {
-            setAnimatedProgress(progress);
-            setAnimatedSkills(skills);
+            setAnimatedProgress(Number(progress) || 0);
+            setAnimatedSkills({
+                speaking: skills.speaking ?? 0,
+                listening: skills.listening ?? 0,
+                reading: skills.reading ?? 0,
+                writing: skills.writing ?? 0
+            });
         }, 100);
 
         return () => clearTimeout(timer);
     }, [progress, skills]);
-
-    const levelColors = {
-        'A1': 'var(--green-50)',
-        'A2': 'var(--green-100)',
-        'B1': 'var(--green-100)',
-        'B2': 'var(--green-500)',
-        'C1': 'var(--green-600)',
-        'C2': 'var(--green-700)'
-    };
 
     const getSkillName = (skill) => {
         const names = {
@@ -60,6 +52,15 @@ export default function LanguageLevelProgress({
         return icons[skill] || '📚';
     };
 
+    if (!language || progress == null || currentLevel == null) {
+        return (
+            <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-2">언어별 진도</h3>
+                <p className="text-[14px] text-[var(--black-300)]">언어 학습 데이터를 찾을 수 없습니다.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
             {/* Header */}
@@ -68,12 +69,14 @@ export default function LanguageLevelProgress({
                     <h3 className="text-[18px] font-bold text-[#111111]">{language} 레벨</h3>
                     <p className="text-[14px] text-[#606060]">현재 레벨: {currentLevel}</p>
                 </div>
-                <div className="text-right">
-                    <div className="flex items-center gap-1 text-[#00C471]">
-                        <TrendingUp className="w-4 h-4" />
-                        <span className="text-[14px] font-medium">+15% 이번 달</span>
+                {trendLabel && (
+                    <div className="text-right">
+                        <div className="flex items-center gap-1 text-[#00C471]">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="text-[14px] font-medium">{trendLabel}</span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Main Progress */}
@@ -133,9 +136,7 @@ export default function LanguageLevelProgress({
                     <Target className="w-5 h-5 text-[#00C471] mt-0.5" />
                     <div>
                         <p className="text-[14px] font-medium text-[#111111]">다음 목표</p>
-                        <p className="text-[12px] text-[#606060] mt-1">
-                            말하기 실력을 75%까지 올려보세요. 주 3회 이상 음성 세션에 참여하면 빠르게 향상됩니다!
-                        </p>
+                        <p className="text-[12px] text-[#606060] mt-1">{goalMessage}</p>
                     </div>
                 </div>
             </div>

@@ -180,6 +180,22 @@ export const getSessionNotifications = async (sessionId) => {
   }
 };
 
+// 개인 캘린더 조회
+export const getUserCalendar = async ({ startDate, endDate }) => {
+  try {
+    const response = await api.get('/sessions/calendar', {
+      params: {
+        startDate,
+        endDate
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Get user calendar error:', error);
+    throw error;
+  }
+};
+
 // 세션 알림 설정 업데이트
 export const updateSessionNotifications = async (sessionId, settings) => {
   try {

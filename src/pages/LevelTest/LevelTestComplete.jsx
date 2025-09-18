@@ -3,69 +3,76 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useLevelTestStore from '../../store/levelTestStore';
-import { analyzeVoiceTest,completeLevelTest, getLevelTestResult,getVoiceTestResult } from '../../api/levelTest';
+import { analyzeVoiceTest, getVoiceTestResult } from '../../api/levelTest';
 
 export default function LevelTestComplete() {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState(null);
+  const [hasAttemptedProcessing, setHasAttemptedProcessing] = useState(false);
 
-  const testStatus = useLevelTestStore(state => state.testStatus);
   const setTestStatus = useLevelTestStore(state => state.setTestStatus);
   const setTestResult = useLevelTestStore(state => state.setTestResult);
   const recordings = useLevelTestStore(state => state.recordings);
   const testId     = useLevelTestStore(state => state.testId); 
 
   useEffect(() => {
-    // 테스트 상태가 'processing'이 아니면 리디렉션
-    if (testStatus !== 'processing' && isProcessing) {
-      navigate('/level-test');
+    if (hasAttemptedProcessing) {
       return;
     }
 
-    // Workers API로 테스트 완료 및 결과 생성
+    const numericTestId = Number(testId);
+
+    if (!testId || Number.isNaN(numericTestId)) {
+      setError('유효하지 않은 테스트 ID 입니다.');
+      setIsProcessing(false);
+      setHasAttemptedProcessing(true);
+      return;
+    }
+
+    if (recordings.length === 0) {
+      setError('녹음된 데이터가 없습니다.');
+      setIsProcessing(false);
+      setHasAttemptedProcessing(true);
+      return;
+    }
+
     const processTest = async () => {
       try {
         setIsProcessing(true);
-        if (!testId || Number.isNaN(Number(testId))) {
-          throw new Error('유효하지 않은 테스트 ID 입니다.');
-        }        
+        setTestStatus('processing');
+
         // 최소 2초 대기 (UX를 위해)
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        
-     
-     // 1) 서버에 분석 요청
-     await analyzeVoiceTest(Number(testId));
+        // 1) 서버에 분석 요청
+        await analyzeVoiceTest(numericTestId);
 
+        // 2) 분석 완료될 때까지 result 폴링 (최대 6초, 500ms 간격)
+        const MAX_TRIES = 12;
+        const SLEEP_MS = 500;
+        let result = null;
 
-     // 2) 분석 완료될 때까지 result 폴링 (최대 6초, 500ms 간격)
-     const MAX_TRIES = 12;
-     const SLEEP_MS = 500;
-     let result = null;
-     for (let i = 0; i < MAX_TRIES; i++) {
-       try {
-        result = await getVoiceTestResult(Number(testId));
-         // 성공적으로 데이터가 오면 탈출
-         if (result) break;
-       } catch (e) {
-         // 서버가 아직 TEST_NOT_COMPLETED 이라면 잠깐 대기 후 재시도
-           const code = e?.response?.data?.error?.code;
-           if (code !== 'TEST_NOT_COMPLETED') {
-            throw e; // 다른 에러는 즉시 중단
+        for (let i = 0; i < MAX_TRIES; i++) {
+          try {
+            result = await getVoiceTestResult(numericTestId);
+            if (result) {
+              break;
             }
-       }
-       await new Promise(r => setTimeout(r, SLEEP_MS));
-     }
-     if (!result) {
-       throw new Error('분석 결과를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
-     }
-        
-       
-         setTestResult(result?.data ?? result); 
-        
-        // 상태 업데이트 및 결과 페이지로 이동
-       
+          } catch (e) {
+            const code = e?.response?.data?.error?.code;
+            if (code !== 'TEST_NOT_COMPLETED') {
+              throw e;
+            }
+          }
+          await new Promise(r => setTimeout(r, SLEEP_MS));
+        }
+
+        if (!result) {
+          throw new Error('분석 결과를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        }
+
+        setTestResult(result?.data ?? result);
         setTestStatus('completed');
         setIsProcessing(false);
         Promise.resolve().then(() => navigate('/level-test/result'));
@@ -76,14 +83,9 @@ export default function LevelTestComplete() {
       }
     };
 
-    // 녹음이 있는 경우에만 처리 진행
-    if (recordings.length > 0) {
-      processTest();
-    } else {
-      setError('녹음된 데이터가 없습니다.');
-      setIsProcessing(false);
-    }
-   }, [testStatus, isProcessing, testId, navigate, setTestStatus, setTestResult, recordings.length]);
+    setHasAttemptedProcessing(true);
+    processTest();
+  }, [hasAttemptedProcessing, testId, recordings.length, setTestStatus, setTestResult, navigate]);
 
 
   return (

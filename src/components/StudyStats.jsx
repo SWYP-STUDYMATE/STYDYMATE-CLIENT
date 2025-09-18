@@ -1,20 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { getStudyStats, generateMockAnalyticsData } from '../api/analytics';
+import { getStudyStats } from '../api/analytics';
 
-const StudyStats = ({ data = null, loading = false }) => {
+const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
   const [statsData, setStatsData] = useState(null);
   const [isLoading, setIsLoading] = useState(loading);
+  const [error, setError] = useState(errorMessage);
 
   useEffect(() => {
     if (data) {
       // 부모 컴포넌트에서 데이터를 전달받은 경우
-      setStatsData(data);
+      const analyticsData = transformStatsData(data);
+      setStatsData(analyticsData);
       setIsLoading(false);
+      setError(null);
     } else {
       // 독립적으로 데이터를 로드하는 경우
       loadStatsData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      setError(errorMessage);
+    }
+  }, [errorMessage]);
 
   const loadStatsData = async () => {
     if (isLoading) return;
@@ -28,12 +38,12 @@ const StudyStats = ({ data = null, loading = false }) => {
       analyticsData = transformStatsData(response);
       
       setStatsData(analyticsData);
+      setError(null);
     } catch (error) {
       console.error('StudyStats data loading failed:', error);
       
-      // 에러 시 Mock 데이터 사용
-      const fallbackData = generateMockAnalyticsData();
-      setStatsData(fallbackData);
+      setStatsData(null);
+      setError('학습 통계를 불러오지 못했습니다. 나중에 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +65,7 @@ const StudyStats = ({ data = null, loading = false }) => {
 
   const formatTime = (minutes) => {
     if (minutes === 0) return "0시간";
+    if (!minutes) return "-";
     
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -103,6 +114,26 @@ const StudyStats = ({ data = null, loading = false }) => {
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex gap-4">
+        <div className="flex-1 bg-white border border-[#e6f9f1] rounded-[10px] p-6 flex items-center justify-center min-h-[150px]">
+          <p className="text-center text-[#767676] text-base leading-[24px]">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!statsData) {
+    return (
+      <div className="flex gap-4">
+        <div className="flex-1 bg-white border border-[#e6f9f1] rounded-[10px] p-6 flex items-center justify-center min-h-[150px]">
+          <p className="text-center text-[#767676] text-base leading-[24px]">표시할 학습 데이터가 없습니다.</p>
+        </div>
       </div>
     );
   }

@@ -13,19 +13,11 @@ export default function ObInt4() {
   const [learningExpectations, setLearningExpectations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const {
-    selectedMotivations,
-    selectedTopics,
-    selectedLearningStyles,
-    selectedGoal,
-    setSelectedGoal,
-  } = useMotivationStore((state) => ({
-    selectedMotivations: state.selectedMotivations,
-    selectedTopics: state.selectedTopics,
-    selectedLearningStyles: state.selectedLearningStyles,
-    selectedGoal: state.selectedGoal,
-    setSelectedGoal: state.setSelectedGoal,
-  }));
+  const selectedMotivations = useMotivationStore((state) => state.selectedMotivations);
+  const selectedTopics = useMotivationStore((state) => state.selectedTopics);
+  const selectedLearningStyles = useMotivationStore((state) => state.selectedLearningStyles);
+  const selectedGoal = useMotivationStore((state) => state.selectedGoal);
+  const setSelectedGoal = useMotivationStore((state) => state.setSelectedGoal);
   const navigate = useNavigate();
 
   useEffect(() => {

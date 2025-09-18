@@ -210,6 +210,35 @@ export async function initGlobalStompClient(onRoomCreated, onConnectionChange, o
   }
 }
 
+// ===== 파일 관리 =====
+
+/**
+ * 현재 사용자가 업로드한 모든 채팅 파일을 조회합니다.
+ * 서버는 ApiResponse<List<ChatFileResponse>> 형식을 반환합니다.
+ */
+export async function fetchMyChatFiles() {
+  try {
+    const response = await api.get('/chat/files/my-files');
+    return response.data?.data ?? response.data ?? [];
+  } catch (error) {
+    console.error('fetchMyChatFiles 실패', error);
+    throw error;
+  }
+}
+
+/**
+ * 채팅 파일을 삭제합니다 (논리 삭제).
+ * @param {number|string} fileId 삭제할 파일 ID
+ */
+export async function deleteChatFile(fileId) {
+  try {
+    await api.delete(`/chat/files/${fileId}`);
+  } catch (error) {
+    console.error('deleteChatFile 실패', error);
+    throw error;
+  }
+}
+
 // 타이핑 상태 전송
 export function sendTypingStatus(roomId, isTyping) {
   try {
@@ -243,7 +272,7 @@ export function unsubscribeFromTyping(subscriptionId) {
 // 메시지 읽음 처리
 export async function markMessagesAsRead(roomId) {
   try {
-    const res = await api.post(`/chat/rooms/${roomId}/read`);
+    const res = await api.post(`/chat/read-status/rooms/${roomId}/read-all`);
     return res.data.data;
   } catch (error) {
     console.error("메시지 읽음 처리 실패:", error);
@@ -254,7 +283,7 @@ export async function markMessagesAsRead(roomId) {
 // 미읽은 메시지 수 조회
 export async function getUnreadMessageCount(roomId) {
   try {
-    const res = await api.get(`/chat/rooms/${roomId}/unread-count`);
+    const res = await api.get(`/chat/read-status/rooms/${roomId}/unread-count`);
     return res.data.data;
   } catch (error) {
     console.error("미읽은 메시지 수 조회 실패:", error);
@@ -265,7 +294,7 @@ export async function getUnreadMessageCount(roomId) {
 // 전체 미읽은 메시지 수 조회
 export async function getTotalUnreadCount() {
   try {
-    const res = await api.get('/chat/unread-count');
+    const res = await api.get('/chat/read-status/total-unread-count');
     return res.data.data;
   } catch (error) {
     console.error("전체 미읽은 메시지 수 조회 실패:", error);

@@ -45,7 +45,16 @@ const useMotivationStore = create(
       
       // 학습 스타일 선택 상태 저장 (서버 연동은 각 화면에서 처리)
       setSelectedLearningStyles: (ids) => {
-        set({ selectedLearningStyles: Array.isArray(ids) ? ids : [] });
+        if (!Array.isArray(ids)) {
+          set({ selectedLearningStyles: [] });
+          return;
+        }
+
+        const uniqueSorted = Array.from(new Set(ids.map((value) => Number(value))))
+          .filter((value) => !Number.isNaN(value))
+          .sort((a, b) => a - b);
+
+        set({ selectedLearningStyles: uniqueSorted });
       },
       
       // 학습 목표 설정

@@ -1,30 +1,53 @@
-const API_BASE_URL = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
+import api from './index.js';
+
+const WORKERS_API_BASE = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
+
+const buildAuthHeaders = (options = { json: false }) => {
+  const token = localStorage.getItem('accessToken');
+  const headers = {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (options.json) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  return headers;
+};
+
+const sanitizePayload = (payload) => Object.fromEntries(
+  Object.entries(payload)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+);
+
+const buildWorkerMatchingRequest = (preferences = {}) => {
+  const body = {
+    userLevel: preferences.proficiencyLevel,
+    targetLanguage: preferences.targetLanguage,
+    nativeLanguage: preferences.nativeLanguage,
+    interests: preferences.interests || [],
+    availability: preferences.availability || [],
+    preferredCallType: preferences.sessionType || 'both'
+  };
+
+  return {
+    ...sanitizePayload(body),
+    interests: body.interests,
+    availability: body.availability
+  };
+};
 
 // 매칭 파트너 검색
 export async function findMatchingPartners(preferences) {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/find`, {
+    const requestBody = buildWorkerMatchingRequest(preferences);
+
+    const response = await fetch(`${WORKERS_API_BASE}/matching/request`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: JSON.stringify({
-        userId: localStorage.getItem('userId') || 'guest',
-        preferences: {
-          targetLanguage: preferences.targetLanguage,
-          nativeLanguage: preferences.nativeLanguage,
-          proficiencyLevel: preferences.proficiencyLevel,
-          location: preferences.location,
-          minAge: preferences.minAge,
-          maxAge: preferences.maxAge,
-          sessionType: preferences.sessionType,
-          timezone: preferences.timezone || 'Asia/Seoul',
-          availability: preferences.availability || [],
-          interests: preferences.interests || [],
-          learningGoals: preferences.learningGoals || []
-        }
-      }),
+      headers: buildAuthHeaders({ json: true }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -41,16 +64,12 @@ export async function findMatchingPartners(preferences) {
 // 매칭 승인
 export async function acceptMatch(matchId, partnerId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/accept`, {
+    const response = await fetch(`${WORKERS_API_BASE}/matching/accept/${matchId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
+      headers: buildAuthHeaders({ json: true }),
       body: JSON.stringify({
-        userId: localStorage.getItem('userId') || 'guest',
-        matchId,
-        partnerId
+        partnerId,
+        roomType: 'audio'
       }),
     });
 
@@ -68,17 +87,10 @@ export async function acceptMatch(matchId, partnerId) {
 // 매칭 거절
 export async function rejectMatch(matchId, partnerId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/reject`, {
+    const response = await fetch(`${WORKERS_API_BASE}/matching/reject/${matchId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: JSON.stringify({
-        userId: localStorage.getItem('userId') || 'guest',
-        matchId,
-        partnerId
-      }),
+      headers: buildAuthHeaders({ json: true }),
+      body: JSON.stringify({ partnerId })
     });
 
     if (!response.ok) {
@@ -95,11 +107,9 @@ export async function rejectMatch(matchId, partnerId) {
 // 매칭 상태 확인
 export async function getMatchingStatus() {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/status`, {
+    const response = await fetch(`${WORKERS_API_BASE}/matching/stats`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
+      headers: buildAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -116,18 +126,8 @@ export async function getMatchingStatus() {
 // 매칭 히스토리 조회
 export async function getMatchingHistory() {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/history`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await api.get('/matching/history');
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Get matching history error:', error);
     throw error;
@@ -137,11 +137,9 @@ export async function getMatchingHistory() {
 // 추천 파트너 조회
 export async function getRecommendedPartners() {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/recommended`, {
+    const response = await fetch(`${WORKERS_API_BASE}/matching/my-matches`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
+      headers: buildAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -158,23 +156,8 @@ export async function getRecommendedPartners() {
 // 매칭 알고리즘 분석
 export async function analyzeCompatibility(partnerId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/matching/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-      body: JSON.stringify({
-        userId: localStorage.getItem('userId') || 'guest',
-        partnerId
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await api.get(`/matching/compatibility/${partnerId}`);
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Analyze compatibility error:', error);
     throw error;
@@ -183,25 +166,21 @@ export async function analyzeCompatibility(partnerId) {
 
 // ===== Spring Boot API 연동 함수들 =====
 
-import api from './index.js';
-
 // Spring Boot: 추천 파트너 조회
-export const getSpringBootRecommendedPartners = async (preferences = {}, page = 1, size = 20) => {
+export const getSpringBootRecommendedPartners = async (preferences = {}, page = 0, size = 20) => {
   try {
-    const response = await api.get('/matching/recommendations', {
+    const response = await api.get('/matching/partners', {
       params: {
         page,
         size,
-        ageRange: preferences.ageRange,
-        gender: preferences.gender,
-        nationalities: preferences.nationalities?.join(','),
+        nativeLanguage: preferences.nativeLanguage,
         targetLanguage: preferences.targetLanguage,
-        proficiencyLevel: preferences.proficiencyLevel,
-        sessionType: preferences.sessionType,
-        interests: preferences.interests?.join(',')
+        languageLevel: preferences.proficiencyLevel,
+        minAge: preferences.minAge,
+        maxAge: preferences.maxAge
       }
     });
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Get spring boot recommended partners error:', error);
     throw error;
@@ -211,22 +190,24 @@ export const getSpringBootRecommendedPartners = async (preferences = {}, page = 
 // Spring Boot: 파트너 검색
 export const searchSpringBootPartners = async (searchQuery, filters = {}, page = 1, size = 20) => {
   try {
-    const response = await api.get('/matching/search', {
+    const response = await api.post('/matching/partners/advanced', {
+      query: searchQuery,
+      ageRange: filters.ageRange,
+      gender: filters.gender,
+      nationalities: filters.nationalities,
+      targetLanguage: filters.targetLanguage,
+      proficiencyLevel: filters.proficiencyLevel,
+      interests: filters.interests,
+      availability: filters.availability,
+      sessionType: filters.sessionType,
+      location: filters.location
+    }, {
       params: {
-        query: searchQuery,
         page,
-        size,
-        ageRange: filters.ageRange,
-        gender: filters.gender,
-        nationality: filters.nationality,
-        targetLanguage: filters.targetLanguage,
-        proficiencyLevel: filters.proficiencyLevel,
-        interests: filters.interests?.join(','),
-        availability: filters.availability,
-        sortBy: filters.sortBy || 'relevance'
+        size
       }
     });
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Search spring boot partners error:', error);
     throw error;
@@ -236,11 +217,11 @@ export const searchSpringBootPartners = async (searchQuery, filters = {}, page =
 // Spring Boot: 매칭 요청 보내기
 export const sendSpringBootMatchRequest = async (partnerId, message = '') => {
   try {
-    const response = await api.post('/matching/requests', {
-      partnerId,
+    const response = await api.post('/matching/request', {
+      targetUserId: partnerId,
       message
     });
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Send spring boot match request error:', error);
     throw error;
@@ -250,8 +231,8 @@ export const sendSpringBootMatchRequest = async (partnerId, message = '') => {
 // Spring Boot: 매칭 요청 수락
 export const acceptSpringBootMatchRequest = async (requestId) => {
   try {
-    const response = await api.post(`/matching/requests/${requestId}/accept`);
-    return response.data;
+    const response = await api.post(`/matching/accept/${requestId}`);
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Accept spring boot match request error:', error);
     throw error;
@@ -261,10 +242,9 @@ export const acceptSpringBootMatchRequest = async (requestId) => {
 // Spring Boot: 매칭 요청 거절
 export const rejectSpringBootMatchRequest = async (requestId, reason = '') => {
   try {
-    const response = await api.post(`/matching/requests/${requestId}/reject`, {
-      reason
-    });
-    return response.data;
+    const payload = reason ? { reason } : undefined;
+    const response = await api.post(`/matching/reject/${requestId}`, payload);
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Reject spring boot match request error:', error);
     throw error;
@@ -275,7 +255,7 @@ export const rejectSpringBootMatchRequest = async (requestId, reason = '') => {
 export const getSpringBootReceivedMatchRequests = async (status = 'pending', page = 1, size = 20) => {
   try {
     const response = await api.get('/matching/requests/received', {
-      params: { status, page, size }
+      params: { page, size, status }
     });
     return response.data;
   } catch (error) {
@@ -288,7 +268,7 @@ export const getSpringBootReceivedMatchRequests = async (status = 'pending', pag
 export const getSpringBootSentMatchRequests = async (status = 'pending', page = 1, size = 20) => {
   try {
     const response = await api.get('/matching/requests/sent', {
-      params: { status, page, size }
+      params: { page, size, status }
     });
     return response.data;
   } catch (error) {

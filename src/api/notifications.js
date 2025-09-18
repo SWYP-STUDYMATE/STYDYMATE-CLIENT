@@ -1,14 +1,27 @@
 import api from './index.js';
 
+const extractData = (response) => response?.data?.data ?? response?.data;
+
 // 알림 목록 조회
-export const getNotifications = async (page = 1, size = 20, type = null, isRead = null) => {
+export const getNotifications = async (options = {}) => {
   try {
+    const {
+      page = 1,
+      size = 20,
+      category = null,
+      type = null,
+      isRead = null,
+      unreadOnly = false
+    } = options;
+
     const params = { page, size };
-    if (type) params.type = type;
+    const effectiveCategory = category ?? type;
+    if (effectiveCategory) params.category = effectiveCategory;
     if (isRead !== null) params.isRead = isRead;
-    
+    if (unreadOnly) params.unreadOnly = true;
+
     const response = await api.get('/notifications', { params });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get notifications error:', error);
     throw error;
@@ -19,7 +32,7 @@ export const getNotifications = async (page = 1, size = 20, type = null, isRead 
 export const getNotification = async (notificationId) => {
   try {
     const response = await api.get(`/notifications/${notificationId}`);
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get notification error:', error);
     throw error;
@@ -30,7 +43,7 @@ export const getNotification = async (notificationId) => {
 export const markNotificationAsRead = async (notificationId) => {
   try {
     const response = await api.patch(`/notifications/${notificationId}/read`);
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Mark notification as read error:', error);
     throw error;
@@ -41,7 +54,7 @@ export const markNotificationAsRead = async (notificationId) => {
 export const markAllNotificationsAsRead = async () => {
   try {
     const response = await api.patch('/notifications/read-all');
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Mark all notifications as read error:', error);
     throw error;
@@ -52,7 +65,7 @@ export const markAllNotificationsAsRead = async () => {
 export const deleteNotification = async (notificationId) => {
   try {
     const response = await api.delete(`/notifications/${notificationId}`);
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Delete notification error:', error);
     throw error;
@@ -65,7 +78,7 @@ export const deleteNotifications = async (notificationIds) => {
     const response = await api.delete('/notifications/batch', {
       data: { notificationIds }
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Delete notifications error:', error);
     throw error;
@@ -76,7 +89,7 @@ export const deleteNotifications = async (notificationIds) => {
 export const getUnreadNotificationCount = async () => {
   try {
     const response = await api.get('/notifications/unread-count');
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get unread notification count error:', error);
     throw error;
@@ -87,7 +100,7 @@ export const getUnreadNotificationCount = async () => {
 export const getNotificationSettings = async () => {
   try {
     const response = await api.get('/notifications/settings');
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get notification settings error:', error);
     throw error;
@@ -111,7 +124,7 @@ export const updateNotificationSettings = async (settings) => {
       notificationSound: settings.notificationSound,
       vibration: settings.vibration
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Update notification settings error:', error);
     throw error;
@@ -126,7 +139,7 @@ export const registerPushToken = async (token, deviceType = 'web') => {
       deviceType, // 'web', 'ios', 'android'
       userAgent: navigator.userAgent
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Register push token error:', error);
     throw error;
@@ -139,7 +152,7 @@ export const unregisterPushToken = async (token) => {
     const response = await api.delete('/notifications/push-token', {
       data: { token }
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Unregister push token error:', error);
     throw error;
@@ -153,7 +166,7 @@ export const sendTestNotification = async (type = 'test') => {
       type,
       message: '테스트 알림입니다.'
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Send test notification error:', error);
     throw error;
@@ -166,7 +179,7 @@ export const subscribeToNotifications = async (topics) => {
     const response = await api.post('/notifications/subscribe', {
       topics // ['matches', 'sessions', 'chats', 'system']
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Subscribe to notifications error:', error);
     throw error;
@@ -179,7 +192,7 @@ export const unsubscribeFromNotifications = async (topics) => {
     const response = await api.post('/notifications/unsubscribe', {
       topics
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Unsubscribe from notifications error:', error);
     throw error;
@@ -190,7 +203,7 @@ export const unsubscribeFromNotifications = async (topics) => {
 export const getNotificationCategories = async () => {
   try {
     const response = await api.get('/notifications/categories');
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get notification categories error:', error);
     throw error;
@@ -203,7 +216,7 @@ export const getNotificationHistory = async (page = 1, size = 50) => {
     const response = await api.get('/notifications/history', {
       params: { page, size }
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get notification history error:', error);
     throw error;
@@ -221,7 +234,7 @@ export const sendUrgentNotification = async (recipients, notification) => {
       priority: 'high',
       expiresAt: notification.expiresAt
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Send urgent notification error:', error);
     throw error;
@@ -239,7 +252,7 @@ export const scheduleNotification = async (notification, scheduledAt) => {
       scheduledAt,
       recurring: notification.recurring // { type: 'daily', interval: 1, endDate: '2024-12-31' }
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Schedule notification error:', error);
     throw error;
@@ -250,7 +263,7 @@ export const scheduleNotification = async (notification, scheduledAt) => {
 export const cancelScheduledNotification = async (scheduledNotificationId) => {
   try {
     const response = await api.delete(`/notifications/scheduled/${scheduledNotificationId}`);
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Cancel scheduled notification error:', error);
     throw error;
@@ -263,7 +276,7 @@ export const getScheduledNotifications = async (page = 1, size = 20) => {
     const response = await api.get('/notifications/scheduled', {
       params: { page, size }
     });
-    return response.data;
+    return extractData(response);
   } catch (error) {
     console.error('Get scheduled notifications error:', error);
     throw error;
