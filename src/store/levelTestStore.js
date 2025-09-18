@@ -12,6 +12,7 @@ import { log } from '../utils/logger';
 import { handleLevelTestError } from '../utils/errorHandler';
 
 const SCORE_KEYS = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'coherence', 'interaction'];
+const SCORE_KEY_SET = new Set(SCORE_KEYS);
 
 const pickFirst = (...candidates) => candidates.find((value) => value !== undefined && value !== null);
 
@@ -20,6 +21,77 @@ const clampToPercent = (value) => {
   const numeric = typeof value === 'string' ? Number.parseFloat(value) : value;
   if (!Number.isFinite(numeric)) return null;
   return Math.max(0, Math.min(100, numeric));
+};
+
+const normalizeScoreKey = (key) => {
+  if (!key && key !== 0) return null;
+  const cleaned = key
+    .toString()
+    .replace(/Score$/i, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  if (!cleaned) {
+    return null;
+  }
+
+  return cleaned.replace(/\s+([a-z0-9])/g, (_, char) => char);
+};
+
+const collectScoreValues = (sources = [], allowedKeys = SCORE_KEY_SET) => {
+  const queue = Array.isArray(sources) ? [...sources] : [sources];
+  const visited = new WeakSet();
+  const collected = {};
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    if (!current || typeof current !== 'object') {
+      continue;
+    }
+
+    if (visited.has(current)) {
+      continue;
+    }
+
+    visited.add(current);
+
+    Object.entries(current).forEach(([rawKey, rawValue]) => {
+      if (rawValue === null || rawValue === undefined) {
+        return;
+      }
+
+      if (typeof rawValue === 'object') {
+        if (Array.isArray(rawValue)) {
+          rawValue.forEach((item) => {
+            if (item && typeof item === 'object') {
+              queue.push(item);
+            }
+          });
+        } else {
+          queue.push(rawValue);
+        }
+        return;
+      }
+
+      const normalizedKey = normalizeScoreKey(rawKey);
+
+      if (!normalizedKey) {
+        return;
+      }
+
+      if (allowedKeys && allowedKeys.size > 0 && !allowedKeys.has(normalizedKey)) {
+        return;
+      }
+
+      if (!(normalizedKey in collected)) {
+        collected[normalizedKey] = rawValue;
+      }
+    });
+  }
+
+  return collected;
 };
 
 const toArray = (value) => {
@@ -47,21 +119,6 @@ const pickList = (candidates = []) => {
   return [];
 };
 
-const extractScore = (sources, key) => {
-  for (const source of sources) {
-    if (!source) continue;
-    const valueFromScores = source.scores?.[key];
-    if (valueFromScores !== undefined && valueFromScores !== null) return valueFromScores;
-    const valueFromScoresWithSuffix = source.scores?.[`${key}Score`];
-    if (valueFromScoresWithSuffix !== undefined && valueFromScoresWithSuffix !== null) return valueFromScoresWithSuffix;
-    const direct = source[key];
-    if (direct !== undefined && direct !== null) return direct;
-    const withSuffix = source[`${key}Score`];
-    if (withSuffix !== undefined && withSuffix !== null) return withSuffix;
-  }
-  return null;
-};
-
 const normalizeTestResult = (primary, fallback = null, context = {}) => {
   if (!primary && !fallback) {
     return null;
@@ -69,8 +126,6 @@ const normalizeTestResult = (primary, fallback = null, context = {}) => {
 
   const primaryPayload = primary?.data ?? primary;
   const fallbackPayload = fallback?.data ?? fallback;
-
-  const analysisSources = [primaryPayload?.analysis, fallbackPayload?.analysis].filter(Boolean);
 
   const resolvedTestId = Number(
     pickFirst(
@@ -102,9 +157,26 @@ const normalizeTestResult = (primary, fallback = null, context = {}) => {
     context.overallScore
   );
 
-  const scoreSources = [primaryPayload, fallbackPayload, ...analysisSources].filter(Boolean);
-  const normalizedScores = SCORE_KEYS.reduce((acc, key) => {
-    acc[key] = clampToPercent(extractScore(scoreSources, key));
+  const allowedScoreKeys = new Set([
+    ...SCORE_KEYS,
+    ...(
+      Array.isArray(context.allowedScoreKeys)
+        ? context.allowedScoreKeys
+            .map(normalizeScoreKey)
+            .filter(Boolean)
+        : []
+    ),
+  ]);
+
+  const rawScoreValues = collectScoreValues([primaryPayload, fallbackPayload], allowedScoreKeys);
+
+  const normalizedScores = Object.entries(rawScoreValues).reduce((acc, [key, value]) => {
+    const clamped = clampToPercent(value);
+
+    if (clamped !== null) {
+      acc[key] = clamped;
+    }
+
     return acc;
   }, {});
 
@@ -160,6 +232,14 @@ const normalizeTestResult = (primary, fallback = null, context = {}) => {
       fallback: fallback ?? null,
     },
   };
+};
+
+const resolveSeconds = (value, fallback = 180) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return fallback;
+  }
+  return Math.max(0, Math.floor(numeric));
 };
 
 const useLevelTestStore = create(
@@ -419,8 +499,25 @@ const useLevelTestStore = create(
         timerSeconds: Math.max(0, state.timerSeconds - 1),
         timeRemaining: Math.max(0, state.timeRemaining - 1)
       })),
-      resetTimer: () => set({ timerSeconds: 180, timeRemaining: 180, isTimerRunning: false }),
-      setTimerSeconds: (seconds) => set({ timerSeconds: seconds, timeRemaining: seconds }),
+      resetTimer: (seconds) => set((state) => {
+        const currentQuestion = state.questions[state.currentQuestionIndex];
+        const fallbackDuration = resolveSeconds(currentQuestion?.duration, 180);
+        const safeSeconds = resolveSeconds(seconds, fallbackDuration);
+
+        return {
+          timerSeconds: safeSeconds,
+          timeRemaining: safeSeconds,
+          isTimerRunning: false,
+        };
+      }),
+      setTimerSeconds: (seconds) => set((state) => {
+        const safeSeconds = resolveSeconds(seconds, resolveSeconds(state.timeRemaining, 0));
+
+        return {
+          timerSeconds: safeSeconds,
+          timeRemaining: safeSeconds,
+        };
+      }),
       
       // 질문 설정
       setQuestions: (questions) => set({ 
@@ -529,7 +626,8 @@ const useLevelTestStore = create(
           improvements: options?.improvements,
           level: options?.level,
           overallScore: options?.overallScore,
-          feedback: options?.feedback
+          feedback: options?.feedback,
+          allowedScoreKeys: options?.allowedScoreKeys
         });
 
         set({ testResult: normalized });

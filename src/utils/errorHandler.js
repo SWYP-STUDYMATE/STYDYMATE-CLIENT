@@ -4,6 +4,7 @@
  */
 
 import { APIError } from '../api/config.js';
+import { log } from './logger.js';
 
 export class AppError extends Error {
   constructor(message, type = 'GENERAL', statusCode = 500, details = {}) {
@@ -59,7 +60,16 @@ const ERROR_MESSAGES = {
 
 // API 응답 에러 처리 (개선된 버전)
 export const handleApiError = (error, context = '') => {
-  console.error(`API Error in ${context}:`, error);
+  log.error(`API Error in ${context}`, {
+    message: error?.message,
+    status: error?.response?.status,
+    response: error?.response?.data ?? null,
+    request: error?.config ? {
+      method: error.config.method,
+      url: error.config.url,
+      baseURL: error.config.baseURL
+    } : null
+  }, 'API_ERROR_HANDLER');
 
   // APIError 인스턴스인 경우
   if (error instanceof APIError) {
@@ -115,7 +125,12 @@ export const handleApiError = (error, context = '') => {
 
 // 레벨테스트 전용 에러 처리
 export const handleLevelTestError = (error, phase = 'unknown') => {
-  console.error(`Level Test Error in ${phase}:`, error);
+  log.error('Level Test Error', {
+    phase,
+    message: error?.message,
+    status: error?.response?.status,
+    response: error?.response?.data ?? null
+  }, 'LEVEL_TEST');
 
   if (error instanceof AppError) {
     throw error;
@@ -133,7 +148,11 @@ export const handleLevelTestError = (error, phase = 'unknown') => {
 
 // WebRTC 전용 에러 처리
 export const handleWebRTCError = (error, operation = 'unknown') => {
-  console.error(`WebRTC Error in ${operation}:`, error);
+  log.error('WebRTC Error', {
+    operation,
+    message: error?.message,
+    status: error?.response?.status ?? error?.statusCode ?? null
+  }, 'WEBRTC');
 
   if (error instanceof AppError) {
     throw error;
@@ -151,7 +170,11 @@ export const handleWebRTCError = (error, operation = 'unknown') => {
 
 // 파일 업로드 전용 에러 처리
 export const handleFileUploadError = (error, fileType = 'file') => {
-  console.error(`File Upload Error for ${fileType}:`, error);
+  log.error('File Upload Error', {
+    fileType,
+    message: error?.message,
+    status: error?.response?.status ?? error?.statusCode ?? null
+  }, 'FILE_UPLOAD');
 
   if (error instanceof AppError) {
     throw error;
@@ -228,11 +251,7 @@ export const getUserFriendlyMessage = (error) => {
 // 에러 리포팅 (선택적)
 export const reportError = (error, additionalInfo = {}) => {
   if (import.meta.env.DEV) {
-    console.group('🚨 Error Report');
-    console.error('Error:', error);
-    console.log('Additional Info:', additionalInfo);
-    console.log('Timestamp:', new Date().toISOString());
-    console.groupEnd();
+    log.error('Error Report', { error, additionalInfo }, 'REPORT_ERROR');
   }
 
   // 프로덕션에서는 외부 에러 트래킹 서비스로 전송
@@ -266,7 +285,11 @@ export const withRetry = async (apiCall, maxRetries = 3, delay = 1000) => {
 
       // 마지막 시도가 아니면 대기 후 재시도
       if (attempt < maxRetries) {
-        console.warn(`API call failed (attempt ${attempt}/${maxRetries}). Retrying in ${delay}ms...`);
+        log.warn(`API call failed (attempt ${attempt}/${maxRetries}). Retrying`, {
+          attempt,
+          maxRetries,
+          delay
+        }, 'API_RETRY');
         await new Promise(resolve => setTimeout(resolve, delay));
         delay *= Math.min(2, 1.5); // 지수적 백오프 (최대 2배)
       }
@@ -279,7 +302,12 @@ export const withRetry = async (apiCall, maxRetries = 3, delay = 1000) => {
 
 // 온보딩 에러 처리 추가
 export const handleOnboardingError = (error, step) => {
-  console.error(`Onboarding Error at Step ${step}:`, error);
+  log.error('Onboarding Error', {
+    step,
+    message: error?.message,
+    status: error?.response?.status,
+    response: error?.response?.data ?? null
+  }, 'ONBOARDING');
   
   if (error.response?.data?.code === 'ONBOARDING_ALREADY_COMPLETED') {
     throw new AppError(
@@ -304,7 +332,12 @@ export const handleOnboardingError = (error, step) => {
 
 // 매칭 에러 처리 추가
 export const handleMatchingError = (error, context) => {
-  console.error(`Matching Error:`, error);
+  log.error('Matching Error', {
+    context,
+    message: error?.message,
+    status: error?.response?.status,
+    response: error?.response?.data ?? null
+  }, 'MATCHING');
   
   if (error.response?.data?.code === 'NO_MATCHING_PARTNERS') {
     throw new AppError(
@@ -329,7 +362,12 @@ export const handleMatchingError = (error, context) => {
 
 // 채팅 에러 처리 추가
 export const handleChatError = (error, context) => {
-  console.error(`Chat Error:`, error);
+  log.error('Chat Error', {
+    context,
+    message: error?.message,
+    status: error?.response?.status,
+    response: error?.response?.data ?? null
+  }, 'CHAT');
   
   if (error.response?.data?.code === 'ROOM_NOT_FOUND') {
     throw new AppError(

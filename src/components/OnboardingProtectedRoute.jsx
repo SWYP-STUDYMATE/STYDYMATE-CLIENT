@@ -4,6 +4,7 @@ import ProtectedRoute from './ProtectedRoute';
 import { getOnboardingStatus } from '../api/user';
 import { AppError, ERROR_TYPES } from '../utils/errorHandler';
 import { resolveNextOnboardingStep } from '../utils/onboardingStatus';
+import { log } from '../utils/logger';
 
 /**
  * OnboardingProtectedRoute 컴포넌트
@@ -17,47 +18,42 @@ export default function OnboardingProtectedRoute({ children }) {
 
   useEffect(() => {
     const checkOnboarding = async () => {
+      const startedAt = performance.now();
+      log.info('온보딩 상태 조회 시작', {
+        path: window.location.pathname,
+        hasAccessToken: Boolean(localStorage.getItem('accessToken')),
+        hasRefreshToken: Boolean(localStorage.getItem('refreshToken'))
+      }, 'ONBOARDING_GUARD');
+
       try {
-        console.log('🔍 온보딩 상태 확인 중...');
         const status = await getOnboardingStatus();
-        console.log('🔍 온보딩 상태:', status);
+
+        log.info('온보딩 상태 조회 성공', {
+          durationMs: Math.round(performance.now() - startedAt),
+          response: status
+        }, 'ONBOARDING_GUARD');
+
         setOnboardingStatus(status);
       } catch (error) {
-        console.error('🔍 온보딩 상태 확인 실패:', error);
+        const diagnostics = buildOnboardingErrorDiagnostics(error);
 
-        const originalError = error instanceof AppError
-          ? error.details?.originalError ?? null
-          : error;
-        const status = error?.response?.status
-          ?? (error instanceof AppError ? error.statusCode : undefined)
-          ?? originalError?.response?.status;
-        const errorType = error instanceof AppError ? error.type : undefined;
+        log.error('온보딩 상태 조회 실패', diagnostics, 'ONBOARDING_GUARD');
 
-        const hasAnyToken = Boolean(localStorage.getItem('accessToken') || localStorage.getItem('refreshToken'));
-
-        if (!hasAnyToken) {
-          console.log('🔍 저장된 토큰 없음 - 인증 상태 해제');
+        if (!diagnostics.hasAnyToken) {
           setError('AUTH_ERROR');
-        } else if (
-          error.message &&
-          (error.message.includes('refresh token') || error.message.includes('로그인이 필요'))
-        ) {
-          console.log('🔍 토큰 오류 메시지 감지 - 인증 에러 처리');
+        } else if (diagnostics.indicatesTokenIssue) {
           setError('AUTH_ERROR');
-        } else if (status === 404) {
-          console.log('🔍 온보딩 미시작 - 온보딩 페이지로 이동');
+        } else if (diagnostics.status === 404) {
+          log.warn('온보딩 미완료 상태 감지 - 온보딩 플로우로 이동', diagnostics, 'ONBOARDING_GUARD');
           setOnboardingStatus({ isCompleted: false, nextStep: 1 });
         } else if (
-          status === 401 ||
-          status === 403 ||
-          errorType === ERROR_TYPES.AUTH ||
-          errorType === ERROR_TYPES.PERMISSION
+          diagnostics.status === 401 ||
+          diagnostics.status === 403 ||
+          diagnostics.errorType === ERROR_TYPES.AUTH ||
+          diagnostics.errorType === ERROR_TYPES.PERMISSION
         ) {
-          console.log('🔍 인증 에러 감지 - 로그인 페이지로 이동 예정');
           setError('AUTH_ERROR');
         } else {
-          // 기타 에러 (서버 에러 등)
-          console.error('🔍 온보딩 API 오류');
           setError('API_ERROR');
         }
       } finally {
@@ -67,7 +63,6 @@ export default function OnboardingProtectedRoute({ children }) {
 
     checkOnboarding();
   }, []);
-
   // ProtectedRoute로 먼저 로그인 체크를 수행
   return (
     <ProtectedRoute>
@@ -124,4 +119,49 @@ export default function OnboardingProtectedRoute({ children }) {
       )}
     </ProtectedRoute>
   );
+}
+
+function buildOnboardingErrorDiagnostics(error) {
+  const originalError = error instanceof AppError
+    ? error.details?.originalError ?? null
+    : error;
+
+  const status = error?.response?.status
+    ?? (error instanceof AppError ? error.statusCode : undefined)
+    ?? originalError?.response?.status;
+
+  const errorType = error instanceof AppError ? error.type : undefined;
+
+  const responseBody = error?.response?.data ?? originalError?.response?.data ?? null;
+  const requestConfig = error?.config ?? originalError?.config ?? null;
+
+  const hasAccessToken = Boolean(localStorage.getItem('accessToken'));
+  const hasRefreshToken = Boolean(localStorage.getItem('refreshToken'));
+  const hasAnyToken = hasAccessToken || hasRefreshToken;
+
+  const message = error?.message || originalError?.message;
+  const indicatesTokenIssue = Boolean(
+    message && (
+      message.includes('refresh token') ||
+      message.includes('로그인이 필요') ||
+      message.toLowerCase().includes('token')
+    )
+  );
+
+  return {
+    status,
+    errorType,
+    message,
+    responseBody,
+    request: requestConfig ? {
+      method: requestConfig.method,
+      url: requestConfig.url,
+      baseURL: requestConfig.baseURL
+    } : null,
+    hasAccessToken,
+    hasRefreshToken,
+    hasAnyToken,
+    indicatesTokenIssue,
+    stack: error?.stack || originalError?.stack || null
+  };
 }

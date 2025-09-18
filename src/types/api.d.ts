@@ -9,6 +9,39 @@ export interface ApiResponse<T = any> {
   };
 }
 
+export interface PaginationMeta {
+  page: number; // 0-based index
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  empty: boolean;
+}
+
+export interface SortOrder {
+  property: string;
+  direction: 'ASC' | 'DESC';
+  ignoreCase: boolean;
+  nullHandling: 'NATIVE' | 'NULLS_FIRST' | 'NULLS_LAST';
+}
+
+export interface SortInfo {
+  sorted: boolean;
+  unsorted: boolean;
+  empty: boolean;
+  orders: SortOrder[];
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  pagination: PaginationMeta;
+  sort: SortInfo;
+}
+
 // 공통 응답 타입들
 export interface UserNameResponse {
   englishName: string;

@@ -53,7 +53,7 @@ export default function ImageUploadModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm overlay-soft"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"

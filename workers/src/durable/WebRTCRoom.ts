@@ -207,7 +207,7 @@ export class WebRTCRoom extends DurableObject {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      log.error('Init error', error as Error, { component: 'WEBRTC_ROOM' });
+      log.error('Init error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to initialize room' 
       }), {
@@ -262,7 +262,7 @@ export class WebRTCRoom extends DurableObject {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      log.error('Join error', error as Error, { component: 'WEBRTC_ROOM' });
+      log.error('Join error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to join room' 
       }), { 
@@ -279,7 +279,7 @@ export class WebRTCRoom extends DurableObject {
       
       return new Response(JSON.stringify({ success: true }));
     } catch (error) {
-      log.error('Leave error', error as Error, { component: 'WEBRTC_ROOM' });
+      log.error('Leave error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to leave room' 
       }), { status: 500 });
@@ -300,13 +300,13 @@ export class WebRTCRoom extends DurableObject {
         try {
           ws.send(JSON.stringify({ type: 'signal', from, signal }));
         } catch (e) {
-          log.error('Signal forward error', e as Error, { component: 'WEBRTC_ROOM' });
+          log.error('Signal forward error', e as Error, undefined, { component: 'WEBRTC_ROOM' });
         }
       });
 
       return new Response(JSON.stringify({ success: true }));
     } catch (error) {
-      log.error('Signal error', error as Error, { component: 'WEBRTC_ROOM' });
+      log.error('Signal error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ 
         error: 'Failed to send signal' 
       }), { status: 500 });
@@ -333,7 +333,7 @@ export class WebRTCRoom extends DurableObject {
       
       await this.handleWebSocketMessage(ws, userData.userId, msg);
     } catch (error) {
-      log.error('WebSocket message error', error as Error, { component: 'WEBRTC_ROOM' });
+      log.error('WebSocket message error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       this.updateMetrics('error');
       await this.sendAnalytics('websocket_error', { error: String(error) });
       ws.send(JSON.stringify({ 
@@ -351,7 +351,7 @@ export class WebRTCRoom extends DurableObject {
   }
   
   async webSocketError(ws: WebSocket, error: unknown) {
-    log.error('WebSocket error', error as Error, { component: 'WEBRTC_ROOM' });
+    log.error('WebSocket error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
     this.updateMetrics('error');
     await this.sendAnalytics('websocket_connection_error', { error: String(error) });
     
@@ -569,7 +569,7 @@ export class WebRTCRoom extends DurableObject {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      log.error('Metadata update error', error as Error, { component: 'WEBRTC_ROOM' });
+      log.error('Metadata update error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       return new Response(JSON.stringify({ error: 'Failed to update metadata' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
@@ -602,7 +602,10 @@ export class WebRTCRoom extends DurableObject {
 
       await upsertActiveRoom(this.env.CACHE, roomInfo);
     } catch (error) {
-      log.warn('Active room cache sync failed', error as Error, { component: 'WEBRTC_ROOM' });
+      log.warn('Active room cache sync failed', undefined, {
+        component: 'WEBRTC_ROOM',
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 
@@ -616,7 +619,7 @@ export class WebRTCRoom extends DurableObject {
           ws.send(data);
         }
       } catch (error) {
-        log.error('Broadcast error', error as Error, { component: 'WEBRTC_ROOM' });
+        log.error('Broadcast error', error as Error, undefined, { component: 'WEBRTC_ROOM' });
       }
     });
   }
@@ -629,7 +632,7 @@ export class WebRTCRoom extends DurableObject {
       try {
         ws.send(data);
       } catch (error) {
-        log.error('Send to user error', error as Error, { component: 'WEBRTC_ROOM' }, { userId });
+        log.error('Send to user error', error as Error, undefined, { component: 'WEBRTC_ROOM', userId });
       }
     });
   }

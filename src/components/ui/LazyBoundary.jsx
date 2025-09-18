@@ -122,7 +122,7 @@ export const ComponentLazyBoundary = ({ children, componentName = '컴포넌트'
 export const ModalLazyBoundary = ({ children, ...props }) => (
   <LazyBoundary
     fallback={
-      <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center overlay-strong">
         <div className="bg-white rounded-lg p-6">
           <LoadingSpinner size="medium" message="모달을 불러오는 중..." />
         </div>

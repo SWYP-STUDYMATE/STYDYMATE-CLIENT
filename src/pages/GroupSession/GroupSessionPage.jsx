@@ -392,7 +392,7 @@ export default function GroupSessionPage() {
 
       {/* 세션 생성 모달 */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overlay-strong">
           <div className="bg-white rounded-[20px] w-full max-w-[500px] max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b border-[#E7E7E7]">
               <h2 className="text-[20px] font-bold text-[#111111]">새 그룹 세션 만들기</h2>
@@ -589,7 +589,7 @@ export default function GroupSessionPage() {
 
       {/* 참가 코드 입력 모달 */}
       {showJoinModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overlay-strong">
           <div className="bg-white rounded-[20px] w-full max-w-[400px]">
             <div className="p-6 border-b border-[#E7E7E7]">
               <h2 className="text-[20px] font-bold text-[#111111]">참가 코드 입력</h2>

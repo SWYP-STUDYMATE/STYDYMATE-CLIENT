@@ -140,7 +140,7 @@ const Sidebar = ({ isOpen, onClose, className = '' }) => {
       {/* Backdrop */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden overlay-soft"
           onClick={onClose}
           aria-hidden="true"
         />

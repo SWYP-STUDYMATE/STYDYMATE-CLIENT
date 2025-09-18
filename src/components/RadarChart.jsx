@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -20,62 +20,64 @@ ChartJS.register(
   Legend
 );
 
-const SKILL_CATEGORIES = [
-  { name: 'Grammar', fullName: '문법' },
-  { name: 'Vocabulary', fullName: '어휘' },
-  { name: 'Pronunciation', fullName: '발음' },
-  { name: 'Fluency', fullName: '유창성' },
-  { name: 'Coherence', fullName: '논리 전개' },
-  { name: 'Interaction', fullName: '상호작용' }
-];
+export default function RadarChart({ scores = {}, animate = true, scoreKeys = [], labels = {} }) {
+  const categories = useMemo(() => {
+    const keys = scoreKeys.length > 0 ? scoreKeys : Object.keys(scores);
 
-export default function RadarChart({ scores = {}, animate = true }) {
-  const [animatedScores, setAnimatedScores] = useState(
-    SKILL_CATEGORIES.map(skill => scores[skill.name.toLowerCase()] || 0)
+    return keys.map((key) => ({
+      key,
+      label: labels[key] || key,
+    }));
+  }, [scoreKeys, scores, labels]);
+
+  const targetScores = useMemo(
+    () => categories.map(({ key }) => (Number.isFinite(scores[key]) ? scores[key] : 0)),
+    [categories, scores]
   );
 
+  const [animatedScores, setAnimatedScores] = useState(() => targetScores.map(() => 0));
+
   useEffect(() => {
-    if (!animate) {
-      setAnimatedScores(
-        SKILL_CATEGORIES.map(skill => scores[skill.name.toLowerCase()] || 0)
-      );
+    if (categories.length === 0) {
+      setAnimatedScores([]);
       return;
     }
 
-    // 애니메이션 효과
-    const targetScores = SKILL_CATEGORIES.map(skill => scores[skill.name.toLowerCase()] || 0);
+    if (!animate) {
+      setAnimatedScores(targetScores.map((value) => Math.round(value)));
+      return;
+    }
+
+    setAnimatedScores(targetScores.map(() => 0));
 
     const animationDuration = 1500; // 1.5초
     const frameInterval = 16; // 약 60fps
-    const totalFrames = animationDuration / frameInterval;
+    const totalFrames = Math.max(Math.round(animationDuration / frameInterval), 1);
     let currentFrame = 0;
 
     const animationTimer = setInterval(() => {
-      currentFrame++;
+      currentFrame += 1;
       const progress = currentFrame / totalFrames;
       const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
 
-      setAnimatedScores(
-        targetScores.map(score => Math.round(score * easeProgress))
-      );
+      setAnimatedScores(targetScores.map((score) => Math.round(score * easeProgress)));
 
       if (currentFrame >= totalFrames) {
         clearInterval(animationTimer);
       }
     }, frameInterval);
 
-    return () => clearInterval(animationTimer);
-  }, [scores, animate]);
+    return () => {
+      clearInterval(animationTimer);
+    };
+  }, [targetScores, animate, categories.length]);
 
-  // 평균 점수 계산
-  const averageScore = Math.round(
-    Object.values(scores).reduce((sum, score) => sum + (score || 0), 0) /
-    Object.values(scores).filter(score => score !== undefined).length || 0
-  );
+  const averageScore = categories.length > 0
+    ? Math.round(targetScores.reduce((sum, score) => sum + (score || 0), 0) / categories.length)
+    : 0;
 
-  // Chart.js 데이터 구조
   const data = {
-    labels: SKILL_CATEGORIES.map(skill => skill.fullName),
+    labels: categories.map((category) => category.label),
     datasets: [
       {
         label: '점수',
@@ -91,7 +93,6 @@ export default function RadarChart({ scores = {}, animate = true }) {
     ],
   };
 
-  // Chart.js 옵션
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -106,8 +107,8 @@ export default function RadarChart({ scores = {}, animate = true }) {
       tooltip: {
         callbacks: {
           label: function(context) {
-            const skill = SKILL_CATEGORIES[context.dataIndex];
-            return `${skill.fullName}: ${context.parsed.r}점`;
+            const skill = categories[context.dataIndex];
+            return `${skill.label}: ${context.parsed.r}점`;
           }
         }
       }
@@ -139,11 +140,18 @@ export default function RadarChart({ scores = {}, animate = true }) {
     }
   };
 
+  if (categories.length === 0) {
+    return (
+      <div className="w-full h-full min-h-[300px] flex items-center justify-center text-[14px] text-[#929292]">
+        표시할 점수가 없습니다.
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full min-h-[300px]">
       <Radar data={data} options={options} />
 
-      {/* 중앙 평균 점수 표시 */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
         <div className="bg-white/90 rounded-full px-4 py-2">
           <p className="text-[12px] text-[#666666]">평균</p>

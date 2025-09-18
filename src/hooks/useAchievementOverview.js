@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import useAchievementStore from '../store/achievementStore';
 
 export const useAchievementOverview = () => {
@@ -17,10 +17,22 @@ export const useAchievementOverview = () => {
   }));
 
   useEffect(() => {
+    if (typeof fetchAchievements !== 'function') {
+      console.warn('[useAchievementOverview] fetchAchievements is not available');
+      return;
+    }
+
     fetchAchievements();
   }, [fetchAchievements]);
 
-  const refresh = (options = {}) => fetchAchievements({ force: true, ...options });
+  const refresh = useCallback((options = {}) => {
+    if (typeof fetchAchievements !== 'function') {
+      console.warn('[useAchievementOverview] refresh skipped: fetchAchievements is not a function');
+      return Promise.resolve(null);
+    }
+
+    return fetchAchievements({ force: true, ...options });
+  }, [fetchAchievements]);
 
   return {
     achievements,

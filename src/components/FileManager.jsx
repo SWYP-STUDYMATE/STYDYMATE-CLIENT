@@ -272,7 +272,7 @@ export default function FileManager({
       {/* 이미지 미리보기 모달 */}
       {previewFile && (
         <div 
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 overlay-solid"
           onClick={() => setPreviewFile(null)}
         >
           <div className="relative max-w-4xl max-h-full">
@@ -283,13 +283,13 @@ export default function FileManager({
             />
             <button
               onClick={() => setPreviewFile(null)}
-              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+              className="absolute top-4 right-4 p-2 bg-[#00C471]/80 hover:bg-[#00B267]/90 rounded-full text-white transition-colors"
             >
               ✕
             </button>
-            <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-[6px]">
+            <div className="absolute bottom-4 left-4 bg-[#00C471]/90 text-white px-3 py-2 rounded-[6px]">
               <p className="text-[14px] font-medium">{previewFile.name}</p>
-              <p className="text-[12px] text-gray-300">
+              <p className="text-[12px] text-white/80">
                 {formatFileSize(previewFile.size)}
               </p>
             </div>

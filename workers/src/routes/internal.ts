@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { AppBindings as Env } from '../index';
 import { Variables } from '../types';
-import { evaluateLanguageLevel, generateLevelFeedback } from '../services/ai';
+import { evaluateLanguageLevel, generateLevelFeedback, generateChatCompletion, sanitizeJsonResponse } from '../services/ai';
 import { successResponse, createdResponse } from '../utils/response';
 import { validationError } from '../middleware/error-handler';
 import { internalAuth } from '../middleware/auth';
@@ -57,7 +57,8 @@ internalRoutes.post('/transcribe', async (c) => {
 
     // 크기 경고 로깅
     if (!sizeValidation.isOptimal) {
-      log.warn(sizeValidation.message, {
+      const warningMessage = sizeValidation.message || 'Audio file size exceeds recommended threshold';
+      log.warn(warningMessage, undefined, {
         component: 'INTERNAL_API',
         audioSize: audioBuffer.byteLength
       });
@@ -73,7 +74,7 @@ internalRoutes.post('/transcribe', async (c) => {
       // 언어별 모델 선택
       const modelSelection = selectWhisperModel(language);
 
-      log.info('Processing audio for transcription', {
+      log.info('Processing audio for transcription', undefined, {
         component: 'INTERNAL_API',
         audioSize: audioBuffer.byteLength,
         arrayLength: audioArray.length,
@@ -82,9 +83,16 @@ internalRoutes.post('/transcribe', async (c) => {
         languageName: modelSelection.languageName
       });
 
-      const whisperResponse = await c.env.AI.run(modelSelection.model, {
+      type WhisperResponseShape = {
+        text?: string;
+        language?: string;
+        vtt?: unknown;
+        words?: any[];
+      };
+
+      const whisperResponse = await c.env.AI.run(modelSelection.model as any, {
         audio: audioArray
-      });
+      }) as WhisperResponseShape;
 
       result = {
         text: whisperResponse?.text || '',
@@ -93,14 +101,14 @@ internalRoutes.post('/transcribe', async (c) => {
         words: whisperResponse?.words
       };
 
-      log.info('Transcription successful', {
+      log.info('Transcription successful', undefined, {
         component: 'INTERNAL_API',
         textLength: result.text.length,
         detectedLanguage: result.language
       });
 
     } catch (whisperError) {
-      log.error('Whisper processing error', whisperError as Error, {
+      log.error('Whisper processing error', whisperError instanceof Error ? whisperError : new Error(String(whisperError)), undefined, {
         component: 'INTERNAL_API',
         audioSize: audioBuffer.byteLength,
         error: whisperError instanceof Error ? whisperError.message : 'Unknown error'
@@ -112,7 +120,7 @@ internalRoutes.post('/transcribe', async (c) => {
         message: whisperError instanceof Error ? whisperError.message : 'Unknown error',
         details: {
           audioSize: audioBuffer.byteLength,
-          maxAllowedSize: maxSize
+          maxAllowedSize: WHISPER_FILE_LIMITS.MAX_SIZE
         }
       }, 500);
     }
@@ -129,7 +137,7 @@ internalRoutes.post('/transcribe', async (c) => {
     });
 
   } catch (error) {
-    log.error('Internal transcription error', error as Error, { component: 'INTERNAL_API' });
+    log.error('Internal transcription error', error as Error, undefined, { component: 'INTERNAL_API' });
     return c.json({
       error: 'Transcription failed',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -196,11 +204,11 @@ internalRoutes.patch('/webrtc/rooms/:roomId/metadata', async (c) => {
     }));
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const errorBody = (await response.json().catch(() => ({}))) as { message?: string };
       return c.json({
         error: 'Failed to update metadata',
-        details: error?.message || null
-      }, response.status);
+        details: errorBody?.message || null
+      }, response.status as any);
     }
 
     // Update cached summary
@@ -218,7 +226,11 @@ internalRoutes.patch('/webrtc/rooms/:roomId/metadata', async (c) => {
         };
         await c.env.CACHE.put(cacheKey, JSON.stringify(updated), { expirationTtl: 3600 });
       } catch (cacheError) {
-        log.warn('Failed to update cached room metadata', cacheError as Error, { component: 'INTERNAL_API', roomId });
+        log.warn('Failed to update cached room metadata', undefined, {
+          component: 'INTERNAL_API',
+          roomId,
+          error: cacheError instanceof Error ? cacheError.message : String(cacheError)
+        });
       }
     }
 
@@ -240,7 +252,7 @@ internalRoutes.patch('/webrtc/rooms/:roomId/metadata', async (c) => {
     const result = await response.json().catch(() => ({ success: true }));
     return successResponse(c, result);
   } catch (error) {
-    log.error('WebRTC metadata sync error', error as Error, { component: 'INTERNAL_API', roomId });
+    log.error('WebRTC metadata sync error', error as Error, undefined, { component: 'INTERNAL_API', roomId });
     return c.json({
       error: 'Failed to sync metadata',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -292,22 +304,30 @@ Provide comprehensive feedback in JSON format:
   "fluencyScore": 75
 }`;
 
-    const aiResponse = await c.env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an experienced English conversation coach. Always respond with valid JSON.'
-        },
-        { role: 'user', content: prompt }
-      ],
+    const aiResponse = await generateChatCompletion(c.env.AI, [
+      {
+        role: 'system',
+        content: 'You are an experienced English conversation coach. Always respond with valid JSON.'
+      },
+      { role: 'user', content: prompt }
+    ], {
       temperature: 0.4,
-      max_tokens: 1500
+      max_tokens: 1500,
+      response_format: { type: 'json_object' }
     });
 
     let feedback;
     try {
-      feedback = JSON.parse(aiResponse.response);
+      const sanitized = sanitizeJsonResponse(aiResponse.text);
+      feedback = JSON.parse(sanitized);
     } catch (parseError) {
+      log.warn('Conversation feedback parse error', undefined, {
+        component: 'INTERNAL_API',
+        rawPreview: aiResponse.text?.slice(0, 500),
+        sanitizedPreview: sanitizeJsonResponse(aiResponse.text)?.slice(0, 500),
+        errorMessage: parseError instanceof Error ? parseError.message : String(parseError),
+        model: aiResponse.model
+      });
       // JSON 파싱 실패 시 기본 구조 반환
       feedback = {
         overallAssessment: "The conversation shows your effort to communicate in English.",
@@ -330,7 +350,7 @@ Provide comprehensive feedback in JSON format:
     });
 
   } catch (error) {
-    log.error('Internal conversation feedback error', error as Error, { component: 'INTERNAL_API' });
+    log.error('Internal conversation feedback error', error as Error, undefined, { component: 'INTERNAL_API' });
     return c.json({
       error: 'Conversation feedback generation failed',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -357,7 +377,7 @@ internalRoutes.post('/learning-recommendations', async (c) => {
     });
 
   } catch (error) {
-    log.error('Internal learning recommendations error', error as Error, { component: 'INTERNAL_API' });
+    log.error('Internal learning recommendations error', error as Error, undefined, { component: 'INTERNAL_API' });
     return c.json({
       error: 'Learning recommendations generation failed',
       message: error instanceof Error ? error.message : 'Unknown error'

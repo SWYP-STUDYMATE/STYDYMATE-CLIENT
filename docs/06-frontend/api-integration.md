@@ -16,6 +16,33 @@ interface ApiResponse<T = any> {
     message: string;
   };
 }
+
+interface PageResponse<T> {
+  content: T[];
+  pagination: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    numberOfElements: number;
+    first: boolean;
+    last: boolean;
+    hasNext: boolean;
+    hasPrevious: boolean;
+    empty: boolean;
+  };
+  sort: {
+    sorted: boolean;
+    unsorted: boolean;
+    empty: boolean;
+    orders: Array<{
+      property: string;
+      direction: 'ASC' | 'DESC';
+      ignoreCase: boolean;
+      nullHandling: 'NATIVE' | 'NULLS_FIRST' | 'NULLS_LAST';
+    }>;
+  };
+}
 ```
 
 ### 주요 응답 타입들

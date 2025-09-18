@@ -341,7 +341,7 @@ export default function GroupAudioSession() {
 
                 {/* Connection Status */}
                 {sessionStatus === 'connecting' && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="fixed inset-0 flex items-center justify-center z-50 overlay-strong">
                         <div className="bg-white rounded-[20px] p-8 text-center">
                             <div className="inline-flex items-center space-x-2 mb-4">
                                 <div className="w-3 h-3 bg-[var(--warning-yellow)] rounded-full animate-pulse" />

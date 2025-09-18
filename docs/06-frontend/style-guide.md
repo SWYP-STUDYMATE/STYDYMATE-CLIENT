@@ -51,8 +51,35 @@
   --blue: #4285F4;           /* 정보/링크 */
   --gray-border: #CED4DA;    /* 기본 테두리 */
   --gray-disabled: #F1F3F5;  /* 비활성 배경 */
+  --overlay-soft: rgba(248, 249, 250, 0.78);   /* 기본 모달 오버레이 */
+  --overlay-strong: rgba(230, 249, 241, 0.88); /* 집중도가 높은 팝업 */
+  --overlay-solid: rgba(214, 245, 230, 0.94);  /* 카메라/미디어 등 차단형 */
 }
 ```
+
+#### Overlay 유틸리티
+모든 팝업·모달은 아래 공통 클래스를 사용해 반투명한 밝은 오버레이를 적용합니다.
+
+```css
+.overlay-soft {
+  background: var(--overlay-soft);
+  backdrop-filter: blur(10px);
+}
+
+.overlay-strong {
+  background: var(--overlay-strong);
+  backdrop-filter: blur(12px);
+}
+
+.overlay-solid {
+  background: var(--overlay-solid);
+  backdrop-filter: blur(14px);
+}
+```
+
+- 기본 알림, 확인 모달 → `.overlay-soft`
+- 그룹 세션/프로필 편집 등 주요 플로우 → `.overlay-strong`
+- 카메라 미리보기, 파일 뷰어 등 화면 차단이 필요한 경우 → `.overlay-solid`
 
 ### Tailwind CSS 색상 설정
 ```javascript

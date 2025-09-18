@@ -42,6 +42,9 @@
   --indigo: #4338CA;
   --indigo-700: #3730A3;
   --indigo-800: #312E81;
+  --overlay-soft: rgba(248, 249, 250, 0.78);
+  --overlay-strong: rgba(230, 249, 241, 0.88);
+  --overlay-solid: rgba(214, 245, 230, 0.94);
 }
 
 html,
@@ -145,6 +148,24 @@ body,
 
 .border-default {
   border-color: var(--black-50);
+}
+
+.overlay-soft {
+  background: var(--overlay-soft);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.overlay-strong {
+  background: var(--overlay-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.overlay-solid {
+  background: var(--overlay-solid);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 /* Metric pill variants (remove inline color usage) */

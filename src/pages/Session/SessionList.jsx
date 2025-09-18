@@ -18,6 +18,7 @@ import {
 import CommonButton from '../../components/CommonButton';
 import useSessionStore from '../../store/sessionStore';
 import { webrtcAPI } from '../../api/webrtc';
+import api from '../../api/index.js';
 import { log } from '../../utils/logger';
 
 export default function SessionList() {
@@ -60,7 +61,8 @@ export default function SessionList() {
             setLoadingRooms(true);
             log.info('활성 룸 목록 조회 시작', null, 'SESSION_LIST');
 
-            const rooms = await webrtcAPI.getActiveRooms();
+            const response = await api.get('/webrtc/rooms/active');
+            const rooms = response?.data?.data || response?.data || [];
             setActiveRooms(Array.isArray(rooms) ? rooms : []);
             log.info('활성 룸 목록 조회 완료', { count: Array.isArray(rooms) ? rooms.length : 0 }, 'SESSION_LIST');
         } catch (error) {
@@ -229,10 +231,12 @@ export default function SessionList() {
 
     const ActiveRoomCard = ({ room }) => {
         const metadata = room.metadata || {};
-        const title = metadata.title || (room.roomType === 'video' ? '화상 세션' : '음성 세션');
-        const language = metadata.language || 'en';
-        const hostName = metadata.hostName || metadata.createdByName || metadata.createdBy || '호스트';
-        const createdAt = metadata.createdAt || room.createdAt;
+        const session = room.session || {};
+        const title = session.title || metadata.title || (room.roomType === 'video' ? '화상 세션' : '음성 세션');
+        const language = session.languageCode || metadata.language || 'en';
+        const hostName = session.hostName || metadata.hostName || metadata.createdByName || metadata.createdBy || '호스트';
+        const createdAt = session.scheduledAt || metadata.createdAt || room.createdAt;
+        const waitlistCount = session.waitlistCount ?? metadata.waitlistCount ?? room.waitlistCount ?? 0;
         const participantsLabel = `${room.currentParticipants}/${room.maxParticipants}명`;
         const isFull = room.currentParticipants >= room.maxParticipants;
         const languageLabel = language === 'ko' ? '한국어' : language === 'en' ? 'English' : language.toUpperCase();
@@ -269,6 +273,12 @@ export default function SessionList() {
                                     {room.roomType === 'video' ? <Video className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                                     <span>{room.roomType === 'video' ? '화상' : '음성'}</span>
                                 </span>
+                                {waitlistCount > 0 && (
+                                    <span className="flex items-center space-x-1">
+                                        <Clock className="w-4 h-4" />
+                                        <span>대기 {waitlistCount}명</span>
+                                    </span>
+                                )}
                                 <span className="text-[var(--black-200)]">{hostName} 님이 생성</span>
                             </div>
                             <div className="text-[12px] text-[var(--black-200)]">

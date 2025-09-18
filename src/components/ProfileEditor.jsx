@@ -150,7 +150,7 @@ export default function ProfileEditor({ isOpen, onClose, onSave }) {
   return (
     <>
       {/* 메인 편집 모달 */}
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40 p-4">
+      <div className="fixed inset-0 flex items-center justify-center z-40 p-4 overlay-strong">
         <div className="bg-white rounded-[20px] w-full max-w-lg max-h-[90vh] overflow-y-auto">
           {/* 헤더 */}
           <div className="flex items-center justify-between p-6 border-b border-[#E7E7E7]">

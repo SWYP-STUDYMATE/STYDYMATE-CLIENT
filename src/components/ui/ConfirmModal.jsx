@@ -55,7 +55,7 @@ const ConfirmModal = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-20 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm overlay-soft"
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-[20px] w-full max-w-sm mx-4 shadow-xl">

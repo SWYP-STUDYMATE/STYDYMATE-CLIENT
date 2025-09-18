@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
@@ -11,13 +11,25 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 export default function LevelTestRecording() {
   const navigate = useNavigate();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const autoStartTimeoutRef = useRef(null);
+
+  const scheduleAutoStart = useCallback(() => {
+    setIsTimerRunning(false);
+
+    if (autoStartTimeoutRef.current) {
+      clearTimeout(autoStartTimeoutRef.current);
+    }
+
+    autoStartTimeoutRef.current = setTimeout(() => {
+      setIsTimerRunning(true);
+    }, 100);
+  }, [setIsTimerRunning]);
 
   const {
     testId,
     currentQuestionIndex,
     totalQuestions,
     questions,
-    recordings,
     nextQuestion,
     previousQuestion,
     setTestStatus,
@@ -44,7 +56,7 @@ export default function LevelTestRecording() {
 
   useEffect(() => {
     setTestStatus('recording');
-    setIsTimerRunning(true);
+    scheduleAutoStart();
 
     // Load questions if not already loaded
     if (questions.length === 0) {
@@ -54,14 +66,18 @@ export default function LevelTestRecording() {
     return () => {
       stopTimer();
       clearCurrentRecording();
+      if (autoStartTimeoutRef.current) {
+        clearTimeout(autoStartTimeoutRef.current);
+      }
     };
-  }, [setTestStatus, stopTimer, clearCurrentRecording, loadQuestions, questions.length]);
+  }, [setTestStatus, scheduleAutoStart, stopTimer, clearCurrentRecording, loadQuestions, questions.length]);
+
+  const currentQuestionDuration = currentQuestion?.duration ?? 180;
 
   useEffect(() => {
-    resetTimer();
-    setIsTimerRunning(false);
-    setTimeout(() => setIsTimerRunning(true), 100);
-  }, [currentQuestionIndex, resetTimer]);
+    resetTimer(currentQuestionDuration);
+    scheduleAutoStart();
+  }, [currentQuestionIndex, currentQuestionDuration, resetTimer, scheduleAutoStart]);
 
   const handleRecordingComplete = (blob) => {
     addRecording({
@@ -130,10 +146,8 @@ export default function LevelTestRecording() {
 
   const handleRetry = () => {
     // Remove current recording from store
-    const updatedRecordings = recordings.filter(r => r.questionIndex !== currentQuestionIndex);
-    // This would need a new store method to update recordings
-    resetTimer();
-    setIsTimerRunning(true);
+    resetTimer(currentQuestionDuration);
+    scheduleAutoStart();
   };
 
   return (

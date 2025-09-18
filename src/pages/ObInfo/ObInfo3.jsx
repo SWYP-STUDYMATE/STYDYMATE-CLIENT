@@ -330,7 +330,7 @@ export default function OnboardingInfo3() {
 
       {/* 카메라 모달 */}
       {isCameraOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overlay-solid">
           <div className="bg-white rounded-[20px] w-full max-w-md mx-4 shadow-xl overflow-hidden">
             {/* 헤더 */}
             <div className="flex items-center justify-between p-4 border-b border-[#E7E7E7]">

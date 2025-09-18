@@ -224,13 +224,60 @@ export async function generateText(
 }
 
 // 대화형 텍스트 생성 함수 (Chat Completion)
+function normalizeAiResponseBody(raw: unknown): string {
+    if (typeof raw === 'string') {
+        return raw;
+    }
+
+    if (Array.isArray(raw)) {
+        return raw
+            .map((part) => {
+                if (typeof part === 'string') return part;
+                if (part && typeof part === 'object' && 'text' in part) {
+                    const textValue = (part as Record<string, unknown>).text;
+                    return typeof textValue === 'string' ? textValue : JSON.stringify(textValue ?? {});
+                }
+                return JSON.stringify(part ?? {});
+            })
+            .join('');
+    }
+
+    if (raw && typeof raw === 'object') {
+        if ('text' in (raw as Record<string, unknown>)) {
+            const textValue = (raw as Record<string, unknown>).text;
+            return typeof textValue === 'string' ? textValue : JSON.stringify(textValue ?? {});
+        }
+
+        return JSON.stringify(raw);
+    }
+
+    return '';
+}
+
+export function sanitizeJsonResponse(raw: string | undefined | null): string {
+    if (!raw) return '';
+
+    let text = raw.trim();
+
+    if (text.startsWith('```')) {
+        text = text.replace(/^```(?:json)?\s*/i, '');
+        const closingIndex = text.lastIndexOf('```');
+        if (closingIndex !== -1) {
+            text = text.slice(0, closingIndex);
+        }
+        text = text.trim();
+    }
+
+    return text;
+}
+
 export async function generateChatCompletion(
     ai: Ai,
     messages: ChatMessage[],
     options: LLMOptions = {}
 ): Promise<LLMResponse> {
     try {
-        const model = options.model || '@cf/meta/llama-3.2-3b-instruct';
+        const model = options.model || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
         // Function calling 지원 확인
         const supportsFunctions = ['llama-3.3-70b-instruct-fp8-fast', 'llama-4-scout-17b-16e-instruct'].some(
@@ -261,9 +308,10 @@ export async function generateChatCompletion(
         }
 
         const response = await ai.run(model as any, requestParams);
+        const rawText = (response as any).response ?? response;
 
         return {
-            text: (response as any).response || response,
+            text: normalizeAiResponseBody(rawText),
             model: model,
             usage: (response as any).usage || {
                 prompt_tokens: 0,
@@ -327,9 +375,18 @@ Respond in JSON format:
             response_format: { type: 'json_object' }
         });
 
+        const sanitized = sanitizeJsonResponse(response.text);
+
         try {
-            return JSON.parse(response.text);
-        } catch {
+            return JSON.parse(sanitized);
+        } catch (parseError) {
+            log.warn('Language evaluation parse error', undefined, {
+                component: 'AI_SERVICE',
+                model: response.model,
+                rawPreview: response.text?.slice(0, 500),
+                sanitizedPreview: sanitized.slice(0, 500),
+                errorMessage: parseError instanceof Error ? parseError.message : String(parseError)
+            });
             // Fallback evaluation
             return {
                 scores: {

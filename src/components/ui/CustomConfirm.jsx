@@ -40,12 +40,8 @@ const CustomConfirm = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-0"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overlay-soft"
       onClick={handleBackdropClick}
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0)', // 완전 투명 배경
-        backdropFilter: 'none'
-      }}
     >
       {/* 모달 컨텐츠 */}
       <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[320px] mx-4 animate-in fade-in-0 zoom-in-95 duration-200">

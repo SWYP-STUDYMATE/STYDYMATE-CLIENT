@@ -134,7 +134,7 @@ export default function DashboardLayout() {
             {/* Mobile Sidebar */}
             <div className={`lg:hidden fixed inset-0 z-50 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}>
-                <div className="absolute inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
+                <div className="absolute inset-0 overlay-soft" onClick={() => setIsSidebarOpen(false)} />
                 <div className="relative w-64 h-full bg-white">
                     <div className="p-6">
                         {/* Close Button */}

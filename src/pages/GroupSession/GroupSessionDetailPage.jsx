@@ -540,7 +540,7 @@ export default function GroupSessionDetailPage() {
 
       {/* 세션 수정 모달 */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overlay-strong">
           <div className="bg-white rounded-[20px] w-full max-w-[500px] max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b border-[#E7E7E7]">
               <h2 className="text-[20px] font-bold text-[#111111]">세션 정보 수정</h2>
@@ -642,7 +642,7 @@ export default function GroupSessionDetailPage() {
 
       {/* 세션 취소 모달 */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overlay-strong">
           <div className="bg-white rounded-[20px] w-full max-w-[400px]">
             <div className="p-6 border-b border-[#E7E7E7]">
               <h2 className="text-[20px] font-bold text-[#111111]">세션 취소</h2>

@@ -181,15 +181,42 @@ export default function LevelTestResult() {
     color: 'bg-gray-400'
   };
 
-  const scores = SCORE_ORDER.reduce((acc, key) => {
-    acc[key] = toPercent(testResult.scores?.[key]);
-    return acc;
-  }, {});
-  const hasAnyScore = Object.values(scores).some((score) => score > 0);
-
   const strengthsArr = ensureArray(testResult.strengths);
   const improvementsArr = ensureArray(testResult.improvements);
   const feedback = testResult.feedback || '';
+
+  const rawScores = testResult.scores || {};
+  const orderedAvailableKeys = SCORE_ORDER.filter(
+    (key) => rawScores[key] !== undefined && rawScores[key] !== null
+  );
+  const additionalScoreKeys = Object.keys(rawScores).filter(
+    (key) => !orderedAvailableKeys.includes(key) && rawScores[key] !== undefined && rawScores[key] !== null
+  );
+  const scoreKeys = [...orderedAvailableKeys, ...additionalScoreKeys];
+
+  const scores = scoreKeys.reduce((acc, key) => {
+    acc[key] = toPercent(rawScores[key]);
+    return acc;
+  }, {});
+
+  const hasScoreData = scoreKeys.length > 0;
+
+  const formatScoreLabel = (key) => {
+    if (SCORE_LABELS[key]) {
+      return SCORE_LABELS[key];
+    }
+
+    const spaced = key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/[_-]+/g, ' ')
+      .trim();
+
+    if (!spaced) {
+      return key;
+    }
+
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  };
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
@@ -220,8 +247,8 @@ export default function LevelTestResult() {
             상세 분석 결과
           </h3>
           <div className="h-[300px]">
-            {hasAnyScore ? (
-              <RadarChart scores={scores} animate={true} />
+            {hasScoreData ? (
+              <RadarChart scores={scores} scoreKeys={scoreKeys} labels={SCORE_LABELS} animate={true} />
             ) : (
               <div className="text-sm text-[#929292] text-center pt-16">
                 표시할 점수가 없습니다.
@@ -235,24 +262,30 @@ export default function LevelTestResult() {
             영역별 점수
           </h3>
           <div className="space-y-3">
-            {SCORE_ORDER.map((skill) => (
-              <div key={skill} className="flex items-center justify-between">
-                <span className="text-[16px] text-[#666666]">
-                  {SCORE_LABELS[skill]}
-                </span>
-                <div className="flex items-center">
-                  <div className="w-32 h-2 bg-[#E7E7E7] rounded-full mr-3">
-                    <div
-                      className="h-full bg-[#00C471] rounded-full transition-all duration-1000"
-                      style={{ width: `${scores[skill]}%` }}
-                    />
-                  </div>
-                  <span className="text-[16px] font-semibold text-[#111111] w-12 text-right">
-                    {scores[skill]}
+            {hasScoreData ? (
+              scoreKeys.map((skill) => (
+                <div key={skill} className="flex items-center justify-between">
+                  <span className="text-[16px] text-[#666666]">
+                    {formatScoreLabel(skill)}
                   </span>
+                  <div className="flex items-center">
+                    <div className="w-32 h-2 bg-[#E7E7E7] rounded-full mr-3">
+                      <div
+                        className="h-full bg-[#00C471] rounded-full transition-all duration-1000"
+                        style={{ width: `${scores[skill] ?? 0}%` }}
+                      />
+                    </div>
+                    <span className="text-[16px] font-semibold text-[#111111] w-12 text-right">
+                      {Number.isFinite(scores[skill]) ? scores[skill] : '-'}
+                    </span>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-sm text-[#929292] text-center">
+                표시할 점수가 없습니다.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
