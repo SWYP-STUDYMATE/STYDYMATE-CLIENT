@@ -283,6 +283,23 @@
 - 에러 예시(정원 초과)
   { "success": false, "error": { "message": "Room is full", "code": "CONFLICT" } }
 
+### [Internal] PATCH /api/v1/internal/webrtc/rooms/:roomId/metadata
+- 설명: Spring 서버가 세션 정보(title, scheduledAt, host 등)를 Workers 룸 메타데이터에 병합
+- 인증: `X-Internal-Secret`
+- Body 예시
+  ```json
+  {
+    "sessionId": 123,
+    "title": "Advanced Grammar Workshop",
+    "scheduledAt": "2025-01-15T10:00:00",
+    "durationMinutes": 45,
+    "language": "en",
+    "sessionStatus": "SCHEDULED",
+    "hostName": "Jane",
+    "sessionType": "video"
+  }
+  ```
+
 ---
 
 ## 7) 파일 업로드(R2)

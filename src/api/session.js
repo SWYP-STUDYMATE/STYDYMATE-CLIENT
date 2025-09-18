@@ -36,7 +36,9 @@ export const createSession = async (sessionData) => {
       topic: sessionData.topic,
       description: sessionData.description,
       language: sessionData.language,
-      targetLanguage: sessionData.targetLanguage
+      targetLanguage: sessionData.targetLanguage,
+      webRtcRoomId: sessionData.webRtcRoomId,
+      webRtcRoomType: sessionData.webRtcRoomType
     });
     return response.data;
   } catch (error) {
