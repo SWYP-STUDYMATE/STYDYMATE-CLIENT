@@ -239,46 +239,51 @@ export const saveLanguageInfo = async (languageData) => {
 // 관심사 정보 저장
 export const saveInterestInfo = async (interestData) => {
   try {
+    const unique = (values = []) =>
+      Array.isArray(values)
+        ? [...new Set(values.map((value) => Number(value)))]
+            .filter((value) => !Number.isNaN(value))
+        : [];
+
+    const motivationIds = unique(interestData.motivationIds);
+    const topicIds = unique(interestData.topicIds);
+    const learningStyleIds = unique(interestData.learningStyleIds);
+    const learningExpectationIds = unique(interestData.learningExpectationIds);
+
     const requests = [];
 
     // 동기 저장 (배치로 처리)
-    if (interestData.motivationIds && interestData.motivationIds.length > 0) {
+    if (motivationIds.length > 0) {
       requests.push(
         api.post("/onboarding/interest/motivation", {
-          motivationIds: interestData.motivationIds,
+          motivationIds,
         })
       );
     }
 
     // 주제 저장 (배치로 처리)
-    if (interestData.topicIds && interestData.topicIds.length > 0) {
+    if (topicIds.length > 0) {
       requests.push(
         api.post("/onboarding/interest/topic", {
-          topicIds: interestData.topicIds,
+          topicIds,
         })
       );
     }
 
     // 학습 스타일 저장 (배치로 처리)
-    if (
-      interestData.learningStyleIds &&
-      interestData.learningStyleIds.length > 0
-    ) {
+    if (learningStyleIds.length > 0) {
       requests.push(
         api.post("/onboarding/interest/learning-style", {
-          learningStyleIds: interestData.learningStyleIds,
+          learningStyleIds,
         })
       );
     }
 
     // 학습 기대 저장 (배치로 처리)
-    if (
-      interestData.learningExpectationIds &&
-      interestData.learningExpectationIds.length > 0
-    ) {
+    if (learningExpectationIds.length > 0) {
       requests.push(
         api.post("/onboarding/interest/learning-expectation", {
-          learningExpectationIds: interestData.learningExpectationIds,
+          learningExpectationIds,
         })
       );
     }
