@@ -12,6 +12,7 @@ export default function ObInt2() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const setSelectedTopics = useMotivationStore((state) => state.setSelectedTopics);
+  const storedTopics = useMotivationStore((state) => state.selectedTopics);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +32,12 @@ export default function ObInt2() {
     fetchTopics();
   }, []);
 
+  useEffect(() => {
+    if (Array.isArray(storedTopics)) {
+      setSelected(storedTopics);
+    }
+  }, [storedTopics]);
+
   const handleToggle = (id) => {
     setSelected((prev) => {
       const newSelected = prev.includes(id)
@@ -41,21 +48,10 @@ export default function ObInt2() {
   };
 
   const handleNext = async () => {
-    setSelectedTopics([...selected].sort((a, b) => a - b));
-    
-    // API 호출을 위한 데이터 준비
-    const requestData = {
-      topicIds: selected.sort((a, b) => a - b)
-    };
-
-    try {
-      await api.post("/onboarding/interest/topic", requestData);
-      console.log("주제 데이터 전송 성공");
-      navigate("/onboarding-int/3");
-    } catch (error) {
-      console.error("주제 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
-    }
+    const sortedTopics = [...selected].sort((a, b) => a - b);
+    setSelected(sortedTopics);
+    setSelectedTopics(sortedTopics);
+    navigate("/onboarding-int/3");
   };
 
   return (

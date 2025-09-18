@@ -12,6 +12,7 @@ export default function ObInt1() {
   const [motivations, setMotivations] = useState([]);
   const [loading, setLoading] = useState(true);
   const setZustandSelected = useMotivationStore((state) => state.setSelectedMotivations);
+  const storedMotivations = useMotivationStore((state) => state.selectedMotivations);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +32,12 @@ export default function ObInt1() {
     fetchMotivations();
   }, []);
 
+  useEffect(() => {
+    if (Array.isArray(storedMotivations)) {
+      setSelected(storedMotivations);
+    }
+  }, [storedMotivations]);
+
   const handleToggle = (id) => {
     setSelected((prev) => {
       const newSelected = prev.includes(id)
@@ -41,21 +48,10 @@ export default function ObInt1() {
   };
 
   const handleNext = async () => {
-    setZustandSelected([...selected].sort((a, b) => a - b));
-    
-    // API 호출을 위한 데이터 준비
-    const requestData = {
-      motivationIds: selected.sort((a, b) => a - b)
-    };
-
-    try {
-      await api.post("/onboarding/interest/motivation", requestData);
-      console.log("동기 데이터 전송 성공");
-      navigate("/onboarding-int/2");
-    } catch (error) {
-      console.error("동기 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
-    }
+    const sortedMotivations = [...selected].sort((a, b) => a - b);
+    setSelected(sortedMotivations);
+    setZustandSelected(sortedMotivations);
+    navigate("/onboarding-int/2");
   };
 
   return (

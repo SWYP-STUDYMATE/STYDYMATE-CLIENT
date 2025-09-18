@@ -29,65 +29,23 @@ const useMotivationStore = create(
         }
       },
       
-      // 동기 설정 (서버 동기화)
-      setSelectedMotivations: async (ids) => {
-        try {
-          const { saveInterestInfo } = await import('../api/onboarding.js');
-          const state = get();
-          await saveInterestInfo({
-            motivationIds: ids,
-            topicIds: state.selectedTopics,
-            learningStyleIds: state.selectedLearningStyles,
-            learningExpectationIds: state.selectedGoal ? [state.selectedGoal] : []
-          });
-          set({ selectedMotivations: ids });
-        } catch (error) {
-          console.error('Failed to save motivations:', error);
-          // 로컬에만 저장 (fallback)
-          set({ selectedMotivations: ids });
-        }
+      // 동기 선택 상태 저장 (서버 연동은 각 화면에서 처리)
+      setSelectedMotivations: (ids) => {
+        set({ selectedMotivations: Array.isArray(ids) ? ids : [] });
       },
       
       clearMotivations: () => set({ selectedMotivations: [] }),
       
-      // 주제 설정 (서버 동기화)
-      setSelectedTopics: async (ids) => {
-        try {
-          const { saveInterestInfo } = await import('../api/onboarding.js');
-          const state = get();
-          await saveInterestInfo({
-            motivationIds: state.selectedMotivations,
-            topicIds: ids,
-            learningStyleIds: state.selectedLearningStyles,
-            learningExpectationIds: state.selectedGoal ? [state.selectedGoal] : []
-          });
-          set({ selectedTopics: ids });
-        } catch (error) {
-          console.error('Failed to save topics:', error);
-          // 로컬에만 저장 (fallback)
-          set({ selectedTopics: ids });
-        }
+      // 주제 선택 상태 저장 (서버 연동은 각 화면에서 처리)
+      setSelectedTopics: (ids) => {
+        set({ selectedTopics: Array.isArray(ids) ? ids : [] });
       },
       
       clearTopics: () => set({ selectedTopics: [] }),
       
-      // 학습 스타일 설정 (서버 동기화)
-      setSelectedLearningStyles: async (ids) => {
-        try {
-          const { saveInterestInfo } = await import('../api/onboarding.js');
-          const state = get();
-          await saveInterestInfo({
-            motivationIds: state.selectedMotivations,
-            topicIds: state.selectedTopics,
-            learningStyleIds: ids,
-            learningExpectationIds: state.selectedGoal ? [state.selectedGoal] : []
-          });
-          set({ selectedLearningStyles: ids });
-        } catch (error) {
-          console.error('Failed to save learning styles:', error);
-          // 로컬에만 저장 (fallback)
-          set({ selectedLearningStyles: ids });
-        }
+      // 학습 스타일 선택 상태 저장 (서버 연동은 각 화면에서 처리)
+      setSelectedLearningStyles: (ids) => {
+        set({ selectedLearningStyles: Array.isArray(ids) ? ids : [] });
       },
       
       // 학습 목표 설정

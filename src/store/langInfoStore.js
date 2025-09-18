@@ -23,6 +23,14 @@ const useLangInfoStore = create(
         otherLanguages: state.otherLanguages,
         wantedLanguages: state.wantedLanguages,
       }),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState ?? {}),
+        setNativeLanguage: currentState.setNativeLanguage,
+        setOtherLanguages: currentState.setOtherLanguages,
+        setWantedLanguages: currentState.setWantedLanguages,
+        resetLangInfo: currentState.resetLangInfo,
+      }),
     }
   )
 );

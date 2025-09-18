@@ -6,12 +6,26 @@ import ProgressBar from "../../components/PrograssBar";
 import useMotivationStore from "../../store/motivationStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { saveInterestInfo } from "../../api/onboarding";
 
 export default function ObInt4() {
   const [selectedId, setSelectedId] = useState(null);
   const [learningExpectations, setLearningExpectations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const setSelectedGoal = useMotivationStore((state) => state.setSelectedGoal);
+  const [saving, setSaving] = useState(false);
+  const {
+    selectedMotivations,
+    selectedTopics,
+    selectedLearningStyles,
+    selectedGoal,
+    setSelectedGoal,
+  } = useMotivationStore((state) => ({
+    selectedMotivations: state.selectedMotivations,
+    selectedTopics: state.selectedTopics,
+    selectedLearningStyles: state.selectedLearningStyles,
+    selectedGoal: state.selectedGoal,
+    setSelectedGoal: state.setSelectedGoal,
+  }));
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,25 +45,39 @@ export default function ObInt4() {
     fetchLearningExpectations();
   }, []);
 
+  useEffect(() => {
+    setSelectedId(selectedGoal ?? null);
+  }, [selectedGoal]);
+
   const handleSelect = (id) => {
     setSelectedId(id);
   };
 
   const handleNext = async () => {
-    setSelectedGoal(selectedId);
-    
-    // API 호출을 위한 데이터 준비
-    const requestData = {
-      learningExpectationIds: [selectedId],
-    };
+    if (!selectedId) {
+      return;
+    }
 
+    setSaving(true);
     try {
-      await api.post("/onboarding/interest/learning-expectation", requestData);
-      console.log("학습 기대 데이터 전송 성공");
+      await saveInterestInfo({
+        motivationIds: selectedMotivations,
+        topicIds: selectedTopics,
+        learningStyleIds: selectedLearningStyles,
+        learningExpectationIds: [selectedId],
+      });
+
+      setSelectedGoal(selectedId);
+      console.log("학습 관심사 데이터 전송 성공");
       navigate("/onboarding-int/complete");
     } catch (error) {
-      console.error("학습 기대 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
+      console.error("학습 관심사 데이터 전송 실패:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "데이터 전송에 실패했습니다. 다시 시도해주세요."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -79,7 +107,13 @@ export default function ObInt4() {
             ))}
           </div>
         )}
-        <CommonButton text="다음" className="w-full mt-[372px]" disabled={!selectedId || loading} onClick={handleNext} />
+        <CommonButton
+          text="다음"
+          className="w-full mt-[372px]"
+          disabled={!selectedId || loading || saving}
+          onClick={handleNext}
+          loading={saving}
+        />
       </div>
     </div>
   );

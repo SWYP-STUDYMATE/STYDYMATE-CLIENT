@@ -64,10 +64,20 @@ export default function ObLang1() {
       console.log("🔍 saveLanguageInfo 성공");
 
       // zustand에 언어 ID와 라벨 모두 저장 (서버 호출 없이)
-      setNativeLanguage({
-        id: selected.value,
-        name: selected.label
-      });
+      if (typeof setNativeLanguage === "function") {
+        setNativeLanguage({
+          id: selected.value,
+          name: selected.label
+        });
+      } else {
+        console.warn("setNativeLanguage가 함수가 아니라 직접 상태를 설정합니다.", setNativeLanguage);
+        useLangInfoStore.setState({
+          nativeLanguage: {
+            id: selected.value,
+            name: selected.label
+          }
+        });
+      }
 
       console.log("🔍 페이지 이동 시도: /onboarding-lang/2");
       navigate("/onboarding-lang/2"); // 다음 단계로 이동 (라우팅 구조에 맞게 수정)

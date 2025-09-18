@@ -12,6 +12,7 @@ export default function ObInt3() {
   const [learningStyles, setLearningStyles] = useState([]);
   const [loading, setLoading] = useState(true);
   const setSelectedLearningStyles = useMotivationStore((state) => state.setSelectedLearningStyles);
+  const storedLearningStyles = useMotivationStore((state) => state.selectedLearningStyles);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,6 +33,12 @@ export default function ObInt3() {
     fetchLearningStyles();
   }, []);
 
+  useEffect(() => {
+    if (Array.isArray(storedLearningStyles)) {
+      setSelected(storedLearningStyles);
+    }
+  }, [storedLearningStyles]);
+
   const handleToggle = (id) => {
     setSelected((prev) => {
       const newSelected = prev.includes(id)
@@ -42,21 +49,10 @@ export default function ObInt3() {
   };
 
   const handleNext = async () => {
-    setSelectedLearningStyles(selected);
-    
-    // API 호출을 위한 데이터 준비
-    const requestData = {
-      learningStyleIds: selected.sort((a, b) => a - b)
-    };
-
-    try {
-      await api.post("/onboarding/interest/learning-style", requestData);
-      console.log("학습 스타일 데이터 전송 성공");
-      navigate("/onboarding-int/4");
-    } catch (error) {
-      console.error("학습 스타일 데이터 전송 실패:", error);
-      alert("데이터 전송에 실패했습니다. 다시 시도해주세요.");
-    }
+    const sortedLearningStyles = [...selected].sort((a, b) => a - b);
+    setSelected(sortedLearningStyles);
+    setSelectedLearningStyles(sortedLearningStyles);
+    navigate("/onboarding-int/4");
   };
 
   return (
