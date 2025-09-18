@@ -7,6 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 name = "studymate-api-staging"
 route = { pattern = "staging.studymate-api.workers.dev/*", zone_name = "workers.dev" }
 
+
 # Durable Objects
 [[env.staging.durable_objects.bindings]]
 name = "ROOM"
@@ -32,6 +33,9 @@ binding = "AI"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 CORS_ORIGIN = "https://staging.studymate.com"
+SCORING_MODE = "live"
+EVAL_MODE = "live"
+LEVEL_TEST_STUB = "false"
 
 # Cloudflare Calls
 [env.staging.calls]
