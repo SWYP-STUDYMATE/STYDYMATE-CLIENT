@@ -12,7 +12,7 @@ export class TestHelpers {
     await this.page.click('[data-testid="naver-login-button"]');
     
     // OAuth 콜백 URL로 리다이렉트 모킹
-    await this.page.route('**/login/oauth2/code/naver**', async (route) => {
+    await this.page.route('**/api/v1/auth/callback/naver**', async (route) => {
       await route.fulfill({
         status: 302,
         headers: {

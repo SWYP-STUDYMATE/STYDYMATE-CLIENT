@@ -7,7 +7,6 @@ export default function VoiceMessage({ audioUrl, duration, isMine }) {
     const [totalDuration, setTotalDuration] = useState(duration || 0);
     const [waveformData, setWaveformData] = useState([]);
     const audioRef = useRef(null);
-    const animationRef = useRef(null);
 
     useEffect(() => {
         // 더미 파형 데이터 생성 (실제로는 오디오 분석 필요)

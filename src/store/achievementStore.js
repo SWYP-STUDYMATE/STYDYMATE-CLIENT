@@ -115,6 +115,11 @@ const useAchievementStore = create(
       // 업적 데이터 로드
       fetchAchievements: async ({ force = false } = {}) => {
         const state = get();
+        console.log('[achievementStore] fetchAchievements called', {
+          loading: state.loading,
+          achievementsLength: state.achievements.length,
+          force
+        });
 
         if (state.loading) {
           return {
@@ -138,6 +143,7 @@ const useAchievementStore = create(
         }
 
         set({ loading: true, error: null });
+        console.log('[achievementStore] set loading true');
 
         try {
           const [achievementsResponse, statsResponse] = await Promise.all([
@@ -170,6 +176,11 @@ const useAchievementStore = create(
           };
 
           set(nextState);
+          console.log('[achievementStore] set next state', {
+            achievementsLength: nextState.achievements.length,
+            loading: nextState.loading,
+            lastFetchedAt: nextState.lastFetchedAt
+          });
 
           return {
             achievements: nextState.achievements,
@@ -184,6 +195,7 @@ const useAchievementStore = create(
             loading: false,
             lastFetchedAt: now
           });
+          console.log('[achievementStore] set error state', { message });
 
           return null;
         }

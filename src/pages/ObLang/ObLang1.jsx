@@ -23,11 +23,25 @@ export default function ObLang1() {
     api.get("/onboarding/language/languages")
       .then(res => {
         console.log("🔍 언어 API 응답:", res.data);
-        // [{ id, name }, ...] 또는 [{ languageId, languageName }, ...] -> [{ value, label }, ...]
-        const options = (res.data || []).map(lang => ({
-          value: lang.id ?? lang.languageId,
-          label: lang.name ?? lang.languageName
-        }));
+        const raw = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
+
+        const options = raw
+          .map(lang => {
+            const value = lang.id ?? lang.languageId;
+            const label = lang.name ?? lang.languageName;
+
+            if (!value || !label) {
+              return null;
+            }
+
+            return { value, label };
+          })
+          .filter((option) => option !== null);
+
         console.log("🔍 변환된 언어 옵션:", options);
         setLanguageOptions(options);
       })

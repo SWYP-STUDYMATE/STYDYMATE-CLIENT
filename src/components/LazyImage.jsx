@@ -54,7 +54,7 @@ export default function LazyImage({
 
     if (!isIntersecting || !src) return;
     loadImage(src);
-  }, [isIntersecting, src, priority]);
+  }, [isIntersecting, src, priority, loadImage]);
 
   const loadImage = useCallback((imageSrc) => {
     if (!imageSrc) return;

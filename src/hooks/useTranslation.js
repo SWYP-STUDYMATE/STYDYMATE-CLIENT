@@ -34,7 +34,7 @@ export function useTranslation({
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/translate/translate`, {
+      const response = await fetch(`${API_URL}/api/v1/translate/translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -83,7 +83,7 @@ export function useTranslation({
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/translate/translate/batch`, {
+      const response = await fetch(`${API_URL}/api/v1/translate/translate/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -118,7 +118,7 @@ export function useTranslation({
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/translate/translate/subtitle`, {
+      const response = await fetch(`${API_URL}/api/v1/translate/translate/subtitle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -148,7 +148,7 @@ export function useTranslation({
   // 지원 언어 목록 가져오기
   const getLanguages = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/translate/languages`);
+      const response = await fetch(`${API_URL}/api/v1/translate/languages`);
       if (!response.ok) {
         throw new Error('Failed to fetch languages');
       }

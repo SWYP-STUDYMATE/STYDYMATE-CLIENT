@@ -105,6 +105,26 @@ npm run logs:staging
 
 ## Monitoring & Debugging
 
+## Presence API
+
+Routes:
+- `POST /api/v1/presence/status` (auth required): set user status (`ONLINE|AWAY|STUDYING|OFFLINE`), optional `sessionId`, `deviceInfo`.
+- `POST /api/v1/presence/touch` (auth required): heartbeat to refresh `lastSeenAt`.
+- `POST /api/v1/presence/offline` (auth required): mark current user offline.
+- `GET /api/v1/presence/status` (auth required): fetch current user presence info.
+- Internal endpoints (`/api/v1/presence/...` under `/internal`) require `X-Internal-Secret`.
+
+Durable Object & Scheduled Worker:
+- `UserPresence` DO handles real-time state and flushes updates to `user_status` table.
+- `scheduled` handler runs every cron trigger to auto-offline users inactive for 15 minutes.
+
+Client Guidance:
+- Send `POST /presence/status` on login or when joining sessions; include `sessionId` for study sessions.
+- Ping `POST /presence/touch` every ~5 minutes while the user stays active.
+- Call `/presence/offline` on logout or before closing the app.
+- Presence DO fallback: if DO state is empty, it loads from D1 automatically.
+
+
 ### View Logs
 ```bash
 # Real-time logs

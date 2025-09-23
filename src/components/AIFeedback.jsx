@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, Lightbulb, Check, X, Volume2 } from 'lucide-react';
-import { webrtcAPI } from '../api/webrtc';
 
 export default function AIFeedback({ transcript, userLevel = 'B1', isEnabled = true }) {
     const [feedback, setFeedback] = useState(null);

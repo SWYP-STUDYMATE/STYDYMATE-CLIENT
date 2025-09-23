@@ -2,8 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import { lazyLoad } from './utils/lazyLoad';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
-import { ToastManager } from './components/Toast';
-import NotificationToastManager from './components/NotificationToastManager';
+import { ToastManager } from './components/toast-manager.jsx';
+// import NotificationToastManager from './components/NotificationToastManager';
 import ServerStatusIndicator from './components/ServerStatusIndicator';
 import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx';
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
@@ -105,7 +105,7 @@ function AppContent() {
     <ErrorBoundary>
       <ServerStatusIndicator />
       <ToastManager />
-      <NotificationToastManager />
+      {/* <NotificationToastManager /> */}
       <Layout>
         <Routes>
         {/* 공개 라우트 (로그인 불필요) */}

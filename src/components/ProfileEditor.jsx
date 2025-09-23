@@ -13,10 +13,6 @@ export default function ProfileEditor({ isOpen, onClose, onSave }) {
     residence,
     profileImage,
     intro,
-    setEnglishNameSync,
-    setResidenceSync,
-    setIntroSync,
-    loadProfileFromServer,
     saveProfileToServer
   } = useProfileStore();
 

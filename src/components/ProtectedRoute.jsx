@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { toast } from './Toast';
+import { toast } from './toast-manager.jsx';
 
 /**
  * ProtectedRoute 컴포넌트

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, Camera, X, Loader2 } from 'lucide-react';
 import { uploadProfileImage } from '../api/user';
-import { deleteProfileImage, validateFile, getFileUrl } from '../api/profile';
+import { validateFile } from '../api/profile';
 import useProfileStore from '../store/profileStore';
 
 export default function ProfileImageUpload({ isOpen, onClose }) {
@@ -15,7 +15,7 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
   
-  const { profileImage, setProfileImage, saveProfileToServer } = useProfileStore();
+  const { setProfileImage } = useProfileStore();
 
   // 파일 선택 처리
   const handleFileSelect = (file) => {

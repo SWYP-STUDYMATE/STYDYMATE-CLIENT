@@ -397,3 +397,10 @@ curl -X POST https://workers.languagemate.kr/api/v1/upload/image \
 
 ### 애널리틱스 `/analytics` (보호됨: Bearer)
 - `GET /metrics`, `GET /dashboard`, `GET /stream`(WS), `GET /errors`, `GET /ai-usage`, `GET /performance`
+## Presence API Usage
+- POST `/api/v1/presence/status` : set current user status (include `sessionId` when studying).
+- POST `/api/v1/presence/touch` : send heartbeat every ~5 minutes to stay online.
+- POST `/api/v1/presence/offline` : mark user offline on logout.
+- GET `/api/v1/presence/status` : fetch current presence info.
+
+Durable Object `UserPresence` syncs status to D1 and caches in KV. Scheduled cron automatically sets users offline after 15 minutes of inactivity.

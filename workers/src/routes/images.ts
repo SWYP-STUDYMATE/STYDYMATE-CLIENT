@@ -56,10 +56,10 @@ app.post('/upload', async (c) => {
     // 이미지 변형 URL 생성
     const baseUrl = `https://${c.req.header('host')}`;
     const variants = {
-      original: `${baseUrl}/api/images/serve/${fileName}`,
-      thumbnail: `${baseUrl}/api/images/transform/${fileName}?width=150&height=150&fit=cover`,
-      medium: `${baseUrl}/api/images/transform/${fileName}?width=400&height=400&fit=contain`,
-      large: `${baseUrl}/api/images/transform/${fileName}?width=800&height=800&fit=contain`
+      original: `${baseUrl}/api/v1/images/serve/${fileName}`,
+      thumbnail: `${baseUrl}/api/v1/images/transform/${fileName}?width=150&height=150&fit=cover`,
+      medium: `${baseUrl}/api/v1/images/transform/${fileName}?width=400&height=400&fit=contain`,
+      large: `${baseUrl}/api/v1/images/transform/${fileName}?width=800&height=800&fit=contain`
     };
 
     // 메타데이터 캐싱

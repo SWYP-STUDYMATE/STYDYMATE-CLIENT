@@ -107,7 +107,7 @@ export default function GoogleCallback() {
       // 기존 방식 (code를 통한 토큰 교환)
       const fetchTokens = async () => { 
         try {
-          const url = `/login/oauth2/code/google?code=${code}&state=${state}`;
+          const url = `/auth/callback/google?code=${code}&state=${state}`;
           console.log("백엔드 요청 URL:", url);
 
           const res = await api.get(url);

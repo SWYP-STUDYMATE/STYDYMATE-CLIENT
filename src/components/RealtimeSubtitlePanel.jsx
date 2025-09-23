@@ -55,7 +55,6 @@ export default function RealtimeSubtitlePanel({
   // 로컬 스트림 전사
   const {
     isTranscribing: isLocalTranscribing,
-    currentTranscript: localTranscript,
     toggleTranscription: toggleLocalTranscription,
     error: localError
   } = useRealtimeTranscription({
@@ -66,7 +65,6 @@ export default function RealtimeSubtitlePanel({
   // 리모트 스트림 전사
   const {
     isTranscribing: isRemoteTranscribing,
-    currentTranscript: remoteTranscript,
     toggleTranscription: toggleRemoteTranscription,
     error: remoteError
   } = useRealtimeTranscription({
@@ -183,7 +181,15 @@ export default function RealtimeSubtitlePanel({
         toggleRemoteTranscription(remoteStream);
       }
     }
-  }, [localStream, remoteStream, subtitleEnabled]);
+  }, [
+    localStream,
+    remoteStream,
+    subtitleEnabled,
+    isLocalTranscribing,
+    isRemoteTranscribing,
+    toggleLocalTranscription,
+    toggleRemoteTranscription
+  ]);
 
   // 자동 스크롤
   useEffect(() => {
@@ -220,10 +226,6 @@ export default function RealtimeSubtitlePanel({
     setTranscripts([]);
     setTranslations([]);
   }, []);
-
-  const getLanguageName = (code) => {
-    return SUPPORTED_LANGUAGES.find(lang => lang.code === code)?.name || code;
-  };
 
   const getLanguageFlag = (code) => {
     return SUPPORTED_LANGUAGES.find(lang => lang.code === code)?.flag || '🌐';

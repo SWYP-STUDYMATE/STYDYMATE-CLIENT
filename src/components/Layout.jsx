@@ -3,11 +3,13 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import { Menu, X } from 'lucide-react';
-import { ToastManager } from './Toast';
+import { ToastManager } from './toast-manager.jsx';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+
+  console.count('[Layout] render');
 
   // 사이드바를 숨길 페이지들
   const hideSidebarPages = [

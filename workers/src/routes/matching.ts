@@ -1,252 +1,332 @@
 import { Hono } from 'hono';
-import { Env } from '../index';
-import { 
-  findMatches, 
-  storeMatchRequest, 
-  removeMatchRequest,
-  MatchingRequest 
-} from '../services/calls';
-import { authMiddleware, getUser, checkRateLimit } from '../utils/auth';
-import { ValidationError, validateRequired } from '../utils/errors';
+import type { Env } from '../index';
+import type { Variables } from '../types';
+import { auth as authMiddleware } from '../middleware/auth';
+import { AppError } from '../utils/errors';
+import { successResponse, paginatedResponse } from '../utils/response';
+import {
+  recommendPartners,
+  createMatchingRequest,
+  listSentRequests,
+  listReceivedRequests,
+  acceptMatchingRequest,
+  rejectMatchingRequest,
+  listMatches,
+  removeMatch,
+  addToMatchingQueue,
+  removeFromMatchingQueue,
+  getMatchingQueueStatus,
+  recordFeedback,
+  calculateCompatibilityAnalysis
+} from '../services/matching';
 
-export const matchingRoutes = new Hono<{ Bindings: Env }>();
+const matchingRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-// Apply auth middleware to all routes
-matchingRoutes.use('*', authMiddleware);
+const requireAuth = authMiddleware();
 
-// Submit matching request
+function getPaginationParams(c: any) {
+  const page = Math.max(Number(c.req.query('page') ?? '1'), 1);
+  const size = Math.max(Math.min(Number(c.req.query('size') ?? '20'), 50), 1);
+  return { page, size };
+}
+
+matchingRoutes.use('*', requireAuth);
+
+async function getMatchingSettings(env: Env, userId: string) {
+  const key = `matching:settings:${userId}`;
+  const stored = await env.CACHE.get(key, { type: 'json' }) as Record<string, unknown> | null;
+  if (stored) {
+    return stored;
+  }
+  return {
+    autoAcceptMatches: false,
+    showOnlineStatus: true,
+    allowMatchRequests: true,
+    preferredAgeRange: null,
+    preferredGenders: [],
+    preferredNationalities: [],
+    preferredLanguages: [],
+    maxDistance: null,
+    notificationSettings: {
+      matchFound: true,
+      requestReceived: true
+    }
+  };
+}
+
+matchingRoutes.get('/partners', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
+  const { page, size } = getPaginationParams(c);
+  try {
+    const result = await recommendPartners(c.env, userId, {
+      nativeLanguage: c.req.query('nativeLanguage') || undefined,
+      targetLanguage: c.req.query('targetLanguage') || undefined,
+      languageLevel: c.req.query('languageLevel') || undefined,
+      minAge: c.req.query('minAge') ? Number(c.req.query('minAge')) : undefined,
+      maxAge: c.req.query('maxAge') ? Number(c.req.query('maxAge')) : undefined,
+      page,
+      size
+    });
+    return paginatedResponse(c, result.data, {
+      page: result.page,
+      limit: result.size,
+      total: result.total
+    });
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'Failed to load partners',
+      500,
+      'MATCHING_PARTNERS_FAILED'
+    );
+  }
+});
+
+matchingRoutes.post('/partners/advanced', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
+  const filters = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const { page, size } = getPaginationParams(c);
+
+  try {
+    const result = await recommendPartners(c.env, userId, {
+      nativeLanguage: typeof filters.nativeLanguage === 'string' ? filters.nativeLanguage : undefined,
+      targetLanguage: typeof filters.targetLanguage === 'string' ? filters.targetLanguage : undefined,
+      languageLevel: typeof filters.proficiencyLevel === 'string' ? filters.proficiencyLevel : undefined,
+      minAge: typeof filters.minAge === 'number' ? filters.minAge : undefined,
+      maxAge: typeof filters.maxAge === 'number' ? filters.maxAge : undefined,
+      page,
+      size
+    });
+    return paginatedResponse(c, result.data, {
+      page: result.page,
+      limit: result.size,
+      total: result.total
+    });
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'Failed to search partners',
+      500,
+      'MATCHING_SEARCH_FAILED'
+    );
+  }
+});
+
 matchingRoutes.post('/request', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const body = await c.req.json();
+  if (typeof body.targetUserId !== 'string') {
+    throw new AppError('targetUserId is required', 400, 'INVALID_PAYLOAD');
+  }
   try {
-    const user = getUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    // Rate limiting: 5 requests per hour
-    const allowed = await checkRateLimit(c.env, user.id, 'matching', 5, 3600);
-    if (!allowed) {
-      return c.json({ error: 'Too many matching requests' }, 429);
-    }
-
-    const body = await c.req.json();
-    
-    // Validate required fields
-    validateRequired(body, [
-      'userLevel',
-      'targetLanguage',
-      'nativeLanguage',
-      'interests',
-      'availability'
-    ]);
-
-    const request: MatchingRequest = {
-      userId: user.id,
-      userLevel: body.userLevel,
-      targetLanguage: body.targetLanguage,
-      nativeLanguage: body.nativeLanguage,
-      interests: body.interests || [],
-      availability: body.availability || [],
-      preferredCallType: body.preferredCallType || 'both'
-    };
-
-    // Store request
-    await storeMatchRequest(c.env, request);
-
-    // Find matches
-    const matches = await findMatches(c.env, request);
-
-    return c.json({
-      success: true,
-      requestId: user.id,
-      matches,
-      message: matches.length > 0 
-        ? `Found ${matches.length} potential matches`
-        : 'No matches found yet. We\'ll notify you when someone compatible joins!'
+    await createMatchingRequest(c.env, {
+      senderId: userId,
+      receiverId: body.targetUserId,
+      message: typeof body.message === 'string' ? body.message : undefined
     });
+    return successResponse(c, { success: true });
   } catch (error) {
-    console.error('Matching request error:', error);
-    if (error instanceof ValidationError) {
-      return c.json({ error: error.message }, 400);
-    }
-    return c.json({ error: 'Failed to process matching request' }, 500);
+    throw new AppError(
+      error instanceof Error ? error.message : 'Failed to send matching request',
+      400,
+      'MATCHING_REQUEST_FAILED'
+    );
   }
 });
 
-// Get my matches
+matchingRoutes.get('/requests/sent', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const { page, size } = getPaginationParams(c);
+  const result = await listSentRequests(c.env, userId, page, size);
+  return paginatedResponse(c, result.data, {
+    page: result.page,
+    limit: result.size,
+    total: result.total
+  });
+});
+
+matchingRoutes.get('/requests/received', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const { page, size } = getPaginationParams(c);
+  const result = await listReceivedRequests(c.env, userId, page, size);
+  return paginatedResponse(c, result.data, {
+    page: result.page,
+    limit: result.size,
+    total: result.total
+  });
+});
+
+matchingRoutes.post('/accept/:requestId', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const requestId = c.req.param('requestId');
+  const body = (await c.req.json().catch(() => ({}))) as { responseMessage?: string };
+  try {
+    await acceptMatchingRequest(c.env, {
+      requestId,
+      receiverId: userId,
+      responseMessage: body.responseMessage
+    });
+    return successResponse(c, { success: true });
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'Failed to accept matching request',
+      400,
+      'MATCHING_ACCEPT_FAILED'
+    );
+  }
+});
+
+matchingRoutes.post('/reject/:requestId', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const requestId = c.req.param('requestId');
+  const body = (await c.req.json().catch(() => ({}))) as { responseMessage?: string };
+  try {
+    await rejectMatchingRequest(c.env, {
+      requestId,
+      receiverId: userId,
+      responseMessage: body.responseMessage
+    });
+    return successResponse(c, { success: true });
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'Failed to reject matching request',
+      400,
+      'MATCHING_REJECT_FAILED'
+    );
+  }
+});
+
+matchingRoutes.get('/matches', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const { page, size } = getPaginationParams(c);
+  const result = await listMatches(c.env, userId, page, size);
+  return paginatedResponse(c, result.data, {
+    page: result.page,
+    limit: result.size,
+    total: result.total
+  });
+});
+
+matchingRoutes.delete('/matches/:matchId', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const matchId = c.req.param('matchId');
+  await removeMatch(c.env, { matchId, userId });
+  return successResponse(c, { success: true });
+});
+
+matchingRoutes.post('/queue', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const body = await c.req.json();
+  const sessionType = typeof body.sessionType === 'string' ? body.sessionType : 'ANY';
+  await addToMatchingQueue(c.env, userId, sessionType);
+  return successResponse(c, { success: true });
+});
+
+matchingRoutes.delete('/queue', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  await removeFromMatchingQueue(c.env, userId);
+  return successResponse(c, { success: true });
+});
+
+matchingRoutes.get('/queue/status', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const status = await getMatchingQueueStatus(c.env, userId);
+  return successResponse(c, status ?? {});
+});
+
+matchingRoutes.get('/history', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const { page, size } = getPaginationParams(c);
+  const result = await listMatches(c.env, userId, page, size);
+  return paginatedResponse(c, result.data, {
+    page: result.page,
+    limit: result.size,
+    total: result.total
+  });
+});
+
+matchingRoutes.post('/feedback', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const body = await c.req.json();
+  if (typeof body.partnerId !== 'string' || typeof body.matchId !== 'string' || typeof body.overallRating !== 'number') {
+    throw new AppError('partnerId, matchId, overallRating are required', 400, 'INVALID_PAYLOAD');
+  }
+  await recordFeedback(c.env, {
+    reviewerId: userId,
+    partnerId: body.partnerId,
+    matchId: body.matchId,
+    overallRating: body.overallRating,
+    writtenFeedback: typeof body.writtenFeedback === 'string' ? body.writtenFeedback : undefined,
+    wouldMatchAgain: typeof body.wouldMatchAgain === 'boolean' ? body.wouldMatchAgain : undefined
+  });
+  return successResponse(c, { success: true });
+});
+
 matchingRoutes.get('/my-matches', async (c) => {
-  try {
-    const user = getUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    // Get stored request
-    const requestData = await c.env.CACHE.get(`match:pending:${user.id}`);
-    if (!requestData) {
-      return c.json({
-        success: true,
-        matches: [],
-        message: 'No active matching request. Submit a request to find partners.'
-      });
-    }
-
-    const request: MatchingRequest = JSON.parse(requestData);
-    const matches = await findMatches(c.env, request);
-
-    return c.json({
-      success: true,
-      matches,
-      request
-    });
-  } catch (error) {
-    console.error('Get matches error:', error);
-    return c.json({ error: 'Failed to retrieve matches' }, 500);
-  }
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const result = await listMatches(c.env, userId, 1, 50);
+  return successResponse(c, result.data);
 });
 
-// Accept a match
-matchingRoutes.post('/accept/:matchId', async (c) => {
-  try {
-    const user = getUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    const matchId = c.req.param('matchId');
-    const { partnerId, roomType } = await c.req.json();
-
-    // Create a room for the matched users
-    const roomId = crypto.randomUUID();
-    
-    // Store match acceptance
-    await c.env.CACHE.put(
-      `match:accepted:${matchId}`,
-      JSON.stringify({
-        matchId,
-        userId: user.id,
-        partnerId,
-        roomId,
-        acceptedAt: new Date().toISOString(),
-        roomType: roomType || 'audio'
-      }),
-      { expirationTtl: 86400 } // 24 hours
-    );
-
-    // Notify partner (in production, would use push notifications)
-    await c.env.CACHE.put(
-      `notification:${partnerId}`,
-      JSON.stringify({
-        type: 'match_accepted',
-        from: user.id,
-        roomId,
-        timestamp: new Date().toISOString()
-      }),
-      { expirationTtl: 3600 } // 1 hour
-    );
-
-    // Remove from pending
-    await removeMatchRequest(c.env, user.id);
-
-    return c.json({
-      success: true,
-      roomId,
-      message: 'Match accepted! You can now start a conversation.'
-    });
-  } catch (error) {
-    console.error('Accept match error:', error);
-    return c.json({ error: 'Failed to accept match' }, 500);
-  }
-});
-
-// Reject a match
-matchingRoutes.post('/reject/:matchId', async (c) => {
-  try {
-    const user = getUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    const matchId = c.req.param('matchId');
-    
-    // Store rejection to avoid re-matching
-    await c.env.CACHE.put(
-      `match:rejected:${user.id}:${matchId}`,
-      'true',
-      { expirationTtl: 604800 } // 7 days
-    );
-
-    return c.json({
-      success: true,
-      message: 'Match rejected'
-    });
-  } catch (error) {
-    console.error('Reject match error:', error);
-    return c.json({ error: 'Failed to reject match' }, 500);
-  }
-});
-
-// Cancel matching request
-matchingRoutes.delete('/request', async (c) => {
-  try {
-    const user = getUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    await removeMatchRequest(c.env, user.id);
-
-    return c.json({
-      success: true,
-      message: 'Matching request cancelled'
-    });
-  } catch (error) {
-    console.error('Cancel request error:', error);
-    return c.json({ error: 'Failed to cancel request' }, 500);
-  }
-});
-
-// Get matching statistics
 matchingRoutes.get('/stats', async (c) => {
-  try {
-    const user = getUser(c);
-    if (!user) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    // Get user's matching stats from cache
-    const stats = {
-      totalMatches: 0,
-      acceptedMatches: 0,
-      rejectedMatches: 0,
-      activeRequest: false
-    };
-
-    // Check for active request
-    const activeRequest = await c.env.CACHE.get(`match:pending:${user.id}`);
-    stats.activeRequest = !!activeRequest;
-
-    // Get accepted matches count (would typically query a database)
-    const acceptedKeys = await c.env.CACHE.list({ 
-      prefix: `match:accepted:`,
-      limit: 100
-    });
-    
-    for (const key of acceptedKeys.keys) {
-      const data = await c.env.CACHE.get(key.name);
-      if (data) {
-        const match = JSON.parse(data);
-        if (match.userId === user.id || match.partnerId === user.id) {
-          stats.acceptedMatches++;
-        }
-      }
-    }
-
-    return c.json({
-      success: true,
-      stats
-    });
-  } catch (error) {
-    console.error('Get stats error:', error);
-    return c.json({ error: 'Failed to retrieve statistics' }, 500);
-  }
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const matches = await listMatches(c.env, userId, 1, 20);
+  const queueStatus = await getMatchingQueueStatus(c.env, userId);
+  const activeRequest = (queueStatus as any)?.queue_status === 'WAITING';
+  return successResponse(c, {
+    totalMatches: matches.total,
+    recentMatches: matches.data.slice(0, 5),
+    activeRequest,
+    queueStatus
+  });
 });
+
+matchingRoutes.get('/compatibility/:partnerId', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const partnerId = c.req.param('partnerId');
+  const analysis = await calculateCompatibilityAnalysis(c.env, userId, partnerId);
+  return successResponse(c, {
+    partnerId,
+    ...analysis
+  });
+});
+
+matchingRoutes.get('/settings', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const settings = await getMatchingSettings(c.env, userId);
+  return successResponse(c, settings);
+});
+
+matchingRoutes.patch('/settings', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const updates = await c.req.json().catch(() => ({}));
+  const current = await getMatchingSettings(c.env, userId);
+  const merged = {
+    ...current,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  await c.env.CACHE.put(`matching:settings:${userId}`, JSON.stringify(merged));
+  return successResponse(c, merged);
+});
+
+export default matchingRoutes;

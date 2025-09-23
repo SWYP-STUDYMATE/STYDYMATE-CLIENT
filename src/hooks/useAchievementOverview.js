@@ -1,5 +1,14 @@
 import { useCallback, useEffect } from 'react';
+import { shallow } from 'zustand/shallow';
 import useAchievementStore from '../store/achievementStore';
+
+const selectAchievementOverview = (state) => ({
+  achievements: state.achievements,
+  stats: state.stats,
+  loading: state.loading,
+  error: state.error,
+  fetchAchievements: state.fetchAchievements
+});
 
 export const useAchievementOverview = () => {
   const {
@@ -8,13 +17,7 @@ export const useAchievementOverview = () => {
     loading,
     error,
     fetchAchievements
-  } = useAchievementStore((state) => ({
-    achievements: state.achievements,
-    stats: state.stats,
-    loading: state.loading,
-    error: state.error,
-    fetchAchievements: state.fetchAchievements
-  }));
+  } = useAchievementStore(selectAchievementOverview, shallow);
 
   useEffect(() => {
     if (typeof fetchAchievements !== 'function') {

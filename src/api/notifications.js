@@ -89,44 +89,12 @@ export const deleteNotifications = async (notificationIds) => {
 export const getUnreadNotificationCount = async () => {
   try {
     const response = await api.get('/notifications/unread-count');
-    return extractData(response);
+    const data = extractData(response);
+    if (typeof data === 'number') return data;
+    if (data && typeof data.unreadCount === 'number') return data.unreadCount;
+    return 0;
   } catch (error) {
     console.error('Get unread notification count error:', error);
-    throw error;
-  }
-};
-
-// 알림 설정 조회
-export const getNotificationSettings = async () => {
-  try {
-    const response = await api.get('/notifications/settings');
-    return extractData(response);
-  } catch (error) {
-    console.error('Get notification settings error:', error);
-    throw error;
-  }
-};
-
-// 알림 설정 업데이트
-export const updateNotificationSettings = async (settings) => {
-  try {
-    const response = await api.patch('/notifications/settings', {
-      pushNotifications: settings.pushNotifications,
-      emailNotifications: settings.emailNotifications,
-      smsNotifications: settings.smsNotifications,
-      inAppNotifications: settings.inAppNotifications,
-      matchRequestNotifications: settings.matchRequestNotifications,
-      sessionReminderNotifications: settings.sessionReminderNotifications,
-      chatMessageNotifications: settings.chatMessageNotifications,
-      systemNotifications: settings.systemNotifications,
-      marketingNotifications: settings.marketingNotifications,
-      quietHours: settings.quietHours, // { start: "22:00", end: "08:00" }
-      notificationSound: settings.notificationSound,
-      vibration: settings.vibration
-    });
-    return extractData(response);
-  } catch (error) {
-    console.error('Update notification settings error:', error);
     throw error;
   }
 };
@@ -134,8 +102,9 @@ export const updateNotificationSettings = async (settings) => {
 // 푸시 토큰 등록
 export const registerPushToken = async (token, deviceType = 'web') => {
   try {
+    const normalizedToken = typeof token === 'string' ? token : JSON.stringify(token);
     const response = await api.post('/notifications/push-token', {
-      token,
+      token: normalizedToken,
       deviceType, // 'web', 'ios', 'android'
       userAgent: navigator.userAgent
     });
@@ -149,8 +118,9 @@ export const registerPushToken = async (token, deviceType = 'web') => {
 // 푸시 토큰 제거
 export const unregisterPushToken = async (token) => {
   try {
+    const normalizedToken = typeof token === 'string' ? token : JSON.stringify(token);
     const response = await api.delete('/notifications/push-token', {
-      data: { token }
+      data: { token: normalizedToken }
     });
     return extractData(response);
   } catch (error) {

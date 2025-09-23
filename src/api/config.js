@@ -3,17 +3,40 @@
  * 모든 API 엔드포인트와 설정을 중앙에서 관리
  */
 
+// 기본 URL 계산
+const DEFAULT_WORKER_ORIGIN = "https://workers.languagemate.kr";
+const MAIN_ORIGIN =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_WORKERS_API_URL ||
+  DEFAULT_WORKER_ORIGIN;
+
+const WORKER_ORIGIN =
+  import.meta.env.VITE_WORKERS_API_URL ||
+  MAIN_ORIGIN;
+
+const WS_ORIGIN = (() => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  if (MAIN_ORIGIN.startsWith("https://")) {
+    return MAIN_ORIGIN.replace("https://", "wss://");
+  }
+  if (MAIN_ORIGIN.startsWith("http://")) {
+    return MAIN_ORIGIN.replace("http://", "ws://");
+  }
+  return "wss://workers.languagemate.kr";
+})();
+
 // 환경변수에서 API URL 가져오기
 export const API_CONFIG = {
-  // Spring Boot 메인 서버
-  MAIN_SERVER: import.meta.env.VITE_API_URL || "https://api.languagemate.kr",
+  // 워커 기반 메인 API
+  MAIN_SERVER: MAIN_ORIGIN,
 
-  // Cloudflare Workers API (음성 처리용)
-  WORKERS_API:
-    import.meta.env.VITE_WORKERS_API_URL || "https://workers.languagemate.kr",
+  // Cloudflare Workers API (음성 처리/AI)
+  WORKERS_API: WORKER_ORIGIN,
 
   // WebSocket URL
-  WS_URL: import.meta.env.VITE_WS_URL || "https://api.languagemate.kr",
+  WS_URL: WS_ORIGIN,
 
   // API 버전
   API_VERSION: "/api/v1",
@@ -38,8 +61,8 @@ export const API_ENDPOINTS = {
     LOGOUT: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/auth/logout`,
     REFRESH: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/auth/refresh`,
     OAUTH: {
-      NAVER: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/login/oauth2/code/naver`,
-      GOOGLE: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/login/oauth2/code/google`,
+      NAVER: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/auth/callback/naver`,
+      GOOGLE: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/auth/callback/google`,
     },
   },
 
@@ -122,28 +145,31 @@ export const API_ENDPOINTS = {
   // Workers API (음성 처리 및 WebRTC)
   WORKERS: {
     // 음성 처리
-    WHISPER: `${API_CONFIG.WORKERS_API}/api/whisper`,
-    TTS: `${API_CONFIG.WORKERS_API}/api/tts`,
-    AUDIO_PROCESS: `${API_CONFIG.WORKERS_API}/api/audio/process`,
+    WHISPER: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/whisper`,
+    TTS: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/tts`,
+    AUDIO_PROCESS: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/audio/process`,
 
     // WebRTC 화상 통화
     WEBRTC: {
-      CREATE_ROOM: `${API_CONFIG.WORKERS_API}/api/v1/room/create`,
-      JOIN_ROOM: (roomId) => `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/join`,
+      CREATE_ROOM: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/create`,
+      JOIN_ROOM: (roomId) => `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/${roomId}/join`,
       LEAVE_ROOM: (roomId) =>
-        `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/leave`,
+        `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/${roomId}/leave`,
       GET_ROOM_INFO: (roomId) =>
-        `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/info`,
+        `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/${roomId}/info`,
       GET_ICE_SERVERS: (roomId) =>
-        `${API_CONFIG.WORKERS_API}/api/v1/room/${roomId}/ice-servers`,
-      WEBSOCKET: (roomId, userId, userName) =>
-        `${API_CONFIG.WORKERS_API.replace(
-          "https",
-          "wss"
-        )}/webrtc/${roomId}/ws?userId=${userId}&userName=${encodeURIComponent(
-          userName
-        )}`,
-      ACTIVE_ROOMS: `${API_CONFIG.WORKERS_API}/api/v1/room/active`,
+        `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/${roomId}/ice-servers`,
+      WEBSOCKET: (roomId, userId, userName) => {
+        const wsBase = API_CONFIG.WORKERS_API
+          .replace(/^https:\/\//, 'wss://')
+          .replace(/^http:\/\//, 'ws://');
+        const params = new URLSearchParams({ userId });
+        if (userName) {
+          params.set('userName', userName);
+        }
+        return `${wsBase}${API_CONFIG.API_VERSION}/room/${roomId}/ws?${params.toString()}`;
+      },
+      ACTIVE_ROOMS: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/active`,
     },
   },
 

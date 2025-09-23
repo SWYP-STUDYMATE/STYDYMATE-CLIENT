@@ -4,7 +4,7 @@ import ProgressBar from "../../components/PrograssBar";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import { saveSelfBio } from "../../api/user";
 import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo4() {
@@ -29,7 +29,7 @@ export default function OnboardingInfo4() {
     }
     
     try {
-      await api.post("/user/self-bio", { selfBio: trimmedIntro });
+      await saveSelfBio(trimmedIntro);
       setIntroStore(trimmedIntro);
       showSuccess("자기소개가 저장되었습니다!");
       console.log(trimmedIntro);

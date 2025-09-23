@@ -86,8 +86,8 @@ const NotificationCenter = () => {
 
   const loadUnreadCount = async () => {
     try {
-      const response = await getUnreadNotificationCount();
-      setUnreadCount(Number.isFinite(response) ? response : 0);
+      const unread = await getUnreadNotificationCount();
+      setUnreadCount(Number.isFinite(unread) ? unread : 0);
     } catch (error) {
       console.error('Failed to load unread count:', error);
     }

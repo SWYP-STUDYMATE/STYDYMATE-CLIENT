@@ -198,27 +198,64 @@ export default function Main() {
       <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
         <Sidebar active="home" />
         <div className="flex-1 flex flex-col">
-          <div className="flex space-x-6">
-            <div className="flex-1 flex flex-col">
-              <GreetingCard userName={englishName || "사용자"} age={userAge} level={greetingLevel} />
-              <div className="mt-6">
-                <StudyStats data={studyStatsData} loading={studyStatsLoading} errorMessage={studyStatsError} />
-              </div>
-              <div className="mt-6">
-                <LanguageProfile profileData={languageProfileData} loading={languageProfileLoading} />
-              </div>
-            </div>
-            <div className="w-[540px] flex flex-col">
-              <LanguageExchangeMates mates={mates} loading={matesLoading} />
-            </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <GreetingCard
+              englishName={englishName}
+              userAge={userAge}
+              languageLevel={greetingLevel}
+              achievementsStats={achievementsStats}
+              achievementsLoading={achievementsLoading}
+            />
+
+            <StudyStats
+              data={studyStatsData}
+              loading={studyStatsLoading}
+              error={studyStatsError}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+            <LanguageProfile
+              loading={languageProfileLoading}
+              profile={languageProfileData}
+              englishName={englishName}
+              languageLevel={greetingLevel}
+            />
+
+            <LanguageExchangeMates
+              loading={matesLoading}
+              mates={mates}
+              onRefresh={() => {
+                getSpringBootMatches(0, 4)
+                  .then((response) => {
+                    const payload = response?.data ?? response;
+                    const matchedContent = payload?.content ?? [];
+                    setMates(transformMatches(matchedContent));
+                  })
+                  .catch((error) => {
+                    console.error("매칭 데이터 리프레시 실패:", error);
+                  });
+              }}
+            />
           </div>
 
           <div className="mt-6">
             <AchievementBadges
               achievements={achievements}
-              stats={achievementsStats}
               loading={achievementsLoading}
               error={achievementsError}
+              onRefresh={() => {
+                if (achievementsLoading) return;
+                getSpringBootMatches(0, 4)
+                  .then((response) => {
+                    const payload = response?.data ?? response;
+                    const matchedContent = payload?.content ?? [];
+                    setMates(transformMatches(matchedContent));
+                  })
+                  .catch((error) => {
+                    console.error("매칭 데이터 리프레시 실패:", error);
+                  });
+              }}
             />
           </div>
         </div>
@@ -226,3 +263,4 @@ export default function Main() {
     </div>
   );
 }
+

@@ -1,7 +1,12 @@
 import api from './index';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.languagemate.kr';
-const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_WORKERS_API_URL ||
+  'https://workers.languagemate.kr';
+const WORKERS_API_URL =
+  import.meta.env.VITE_WORKERS_API_URL ||
+  API_BASE_URL;
 
 /**
  * 프로필 이미지 업로드
@@ -127,8 +132,21 @@ export const getOptimizedImageUrl = (url, options = {}) => {
   // Cloudflare Images 또는 다른 CDN 사용 시
   // 여기에 이미지 최적화 로직 추가
   // 예: return `${CDN_URL}/resize?url=${encodeURIComponent(url)}&w=${width}&h=${height}&q=${quality}&format=${format}`;
-  
-  return getFileUrl(url);
+
+  const normalizedUrl = getFileUrl(url);
+  const params = new URLSearchParams();
+
+  if (width) params.set('w', width);
+  if (height) params.set('h', height);
+  if (quality && quality !== 85) params.set('q', quality);
+  if (format && format !== 'webp') params.set('format', format);
+
+  if (Array.from(params.keys()).length === 0) {
+    return normalizedUrl;
+  }
+
+  const separator = normalizedUrl.includes('?') ? '&' : '?';
+  return `${normalizedUrl}${separator}${params.toString()}`;
 };
 
 /**

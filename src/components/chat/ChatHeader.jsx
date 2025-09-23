@@ -7,12 +7,6 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchT
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const currentUser = room.participants.find(
-    (u) => u.userId === currentUserId
-  ) || {
-    name: "",
-    profileImage: "",
-  };
   const partner = room.participants.find((u) => u.userId !== currentUserId) || {
     name: "",
     profileImage: "",

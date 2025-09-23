@@ -18,11 +18,13 @@ export default function ProgressBar({ total, value, className = "" }) {
     setAnimPercent(prevPercent);
 
     // 2. 다음 tick에 트랜지션 켜고 percent로 이동
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       setTransition("width 1s cubic-bezier(0.4,0,0.2,1)");
       setAnimPercent(percent);
     }, 20);
-  }, [value, total]);
+
+    return () => clearTimeout(timeout);
+  }, [percent, prevPercent, total, value]);
 
   return (
     <div

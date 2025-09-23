@@ -6,7 +6,7 @@ import { useState, useCallback } from 'react';
  * @param {Object} options - 업로드 옵션
  * @returns {Object} - 업로드 상태와 함수들
  */
-export function useFileUpload(options = {}) {
+export function useFileUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);

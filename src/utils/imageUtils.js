@@ -29,7 +29,7 @@ export const getOptimizedImageUrl = (url, options = {}) => {
     f: format
   });
   
-  return `/api/images/transform?${params}`;
+  return `/api/v1/images/transform?${params}`;
 };
 
 // 반응형 이미지 소스 생성

@@ -43,7 +43,6 @@ export default function ChatMessageList({
             prevMsg &&
             String(prevMsg.sender.userId) === String(msg.sender.userId);
           const showAvatar = !sameUser;
-          const isLast = idx === messages.length - 1;
           const isHighlighted = highlightedMessageId === msg.messageId;
 
           return (

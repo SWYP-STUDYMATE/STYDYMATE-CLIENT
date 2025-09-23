@@ -36,7 +36,7 @@ export function useWebSocketTranscription({
 
     return new Promise((resolve, reject) => {
       try {
-        const wsUrl = `${WS_URL}/api/transcribe/stream`;
+        const wsUrl = `${WS_URL}/api/v1/transcribe/stream`;
         const ws = new WebSocket(wsUrl);
         
         ws.onopen = () => {

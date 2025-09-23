@@ -113,7 +113,7 @@ export default function Navercallback() {
       const fetchTokens = async () => { 
         try {
           // 백엔드 요청 URL도 콘솔에 찍기
-          const url = `/login/oauth2/code/naver?code=${code}&state=${state}`;
+          const url = `/auth/callback/naver?code=${code}&state=${state}`;
           console.log("백엔드 요청 URL:", url);
 
           const res = await api.get(url);

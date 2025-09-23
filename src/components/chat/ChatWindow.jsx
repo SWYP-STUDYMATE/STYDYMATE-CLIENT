@@ -124,7 +124,7 @@ export default function ChatWindow({
       setTypingUsers([]);
       isTypingSentRef.current = false;
     };
-  }, [isRoomMissing, room?.roomId, onNewMessage]);
+  }, [currentUserId, isRoomMissing, onNewMessage, room?.roomId]);
 
   // 타이핑 상태 관리 함수
   const handleTypingStart = useCallback(() => {

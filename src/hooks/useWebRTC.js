@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+import { API_ENDPOINTS } from '../api/config.js';
 
 // ICE서버 설정
 const ICE_SERVERS = [
@@ -73,7 +72,7 @@ export default function useWebRTC(roomId, userId) {
   const connectWebSocket = useCallback(() => {
     if (!roomId || !userId) return;
 
-    const wsUrl = `${WORKERS_API_URL.replace('https', 'wss')}/api/room/${roomId}/ws`;
+    const wsUrl = API_ENDPOINTS.WORKERS.WEBRTC.WEBSOCKET(roomId, userId, userId);
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {

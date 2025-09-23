@@ -9,14 +9,12 @@ export default function WhisperTest() {
         transcription,
         progress,
         transcribeAudio,
-        translateAudio,
         reset
     } = useWhisper();
 
     const [selectedLanguage, setSelectedLanguage] = useState(WHISPER_LANGUAGES.AUTO);
     const [isRecording, setIsRecording] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
-    const [audioChunks, setAudioChunks] = useState([]);
 
     // 파일 업로드 처리
     const handleFileUpload = async (event) => {
@@ -52,7 +50,6 @@ export default function WhisperTest() {
 
             recorder.start();
             setMediaRecorder(recorder);
-            setAudioChunks(chunks);
             setIsRecording(true);
         } catch (err) {
             console.error('Recording error:', err);

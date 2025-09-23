@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import { getSpringBootMatches, deleteSpringBootMatch } from '../../api/matching';
-import { toast } from '../../components/Toast';
+import { toast } from '../../components/toast-manager.jsx';
 
 const PAGE_SIZE = 12;
 

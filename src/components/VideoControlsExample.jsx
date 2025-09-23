@@ -13,7 +13,7 @@ const VideoControlsExample = () => {
     const [cameraEnabled, setCameraEnabled] = useState(true);
     const [screenSharing, setScreenSharing] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('en');
-    const [participantCount, setParticipantCount] = useState(5);
+    const [participantCount] = useState(5);
     const [unreadMessages, setUnreadMessages] = useState(3);
     const [handRaised, setHandRaised] = useState(false);
     const [callEnded, setCallEnded] = useState(false);

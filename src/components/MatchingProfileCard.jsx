@@ -6,7 +6,7 @@ import { DEFAULT_PROFILE_IMAGE } from '../utils/imageUtils';
 import CommonButton from './CommonButton';
 import useMatchingStore from '../store/matchingStore';
 import ProfileDetailModal from './ProfileDetailModal';
-import { useToast } from './ErrorToast';
+import useToast from '../hooks/useToast.jsx';
 
 export default function MatchingProfileCard({ user, onClick, showActions = true, useModal = true }) {
     const navigate = useNavigate();

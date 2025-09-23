@@ -22,14 +22,6 @@ const CustomConfirm = ({
     }
   };
 
-  const getIconColor = () => {
-    switch (type) {
-      case 'warning': return 'text-amber-500';
-      case 'success': return 'text-green-500';
-      default: return 'text-blue-500';
-    }
-  };
-
   const getIcon = () => {
     switch (type) {
       case 'warning': return '⚠️';

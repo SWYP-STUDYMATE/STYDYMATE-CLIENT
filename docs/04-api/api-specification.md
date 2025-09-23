@@ -43,8 +43,8 @@ graph LR
 
 | 엔드포인트 | 메서드 | 설명 | Frontend | 상태 |
 |-----------|-------|------|----------|------|
-| `/login/oauth2/code/naver` | GET | 네이버 OAuth 로그인 | `auth.js` | ✅ |
-| `/login/oauth2/code/google` | GET | 구글 OAuth 로그인 | `auth.js` | ✅ |
+| `/api/v1/auth/callback/naver` | GET | 네이버 OAuth 로그인 콜백 처리 | `GoogleCallback.jsx`, `Navercallback.jsx` | ✅ |
+| `/api/v1/auth/callback/google` | GET | 구글 OAuth 로그인 콜백 처리 | `GoogleCallback.jsx`, `Navercallback.jsx` | ✅ |
 | `/api/v1/auth/refresh` | POST | 토큰 갱신 | `auth.js` | ✅ |
 | `/api/v1/auth/logout` | POST | 로그아웃 | `auth.js` | ✅ |
 

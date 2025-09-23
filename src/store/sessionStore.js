@@ -29,7 +29,7 @@ const normalizeSession = (session) => {
   };
 };
 
-const useSessionStore = create((set, get) => ({
+const useSessionStore = create((set) => ({
   // 세션 통계
   sessionStats: {
     totalSessions: 0,

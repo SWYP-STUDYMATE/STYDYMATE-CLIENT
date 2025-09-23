@@ -80,8 +80,8 @@ const useNotificationStore = create(
       // 읽지 않은 알림 수 로드
       loadUnreadCount: async () => {
         try {
-          const response = await getUnreadNotificationCount();
-          set({ unreadCount: Number.isFinite(response) ? response : 0 });
+          const unread = await getUnreadNotificationCount();
+          set({ unreadCount: Number.isFinite(unread) ? unread : 0 });
         } catch (error) {
           console.error('Failed to load unread count:', error);
         }

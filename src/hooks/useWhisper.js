@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
+import { API_ENDPOINTS } from '../api/config.js';
 
-const WHISPER_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+const WHISPER_BASE_URL = API_ENDPOINTS.WORKERS.WHISPER;
 
 export function useWhisper() {
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ export function useWhisper() {
         if (options.prefix) formData.append('prefix', options.prefix);
       } else if (typeof audioInput === 'string') {
         // Base64 문자열 입력
-        const response = await fetch(`${WHISPER_API_URL}/api/whisper/transcribe`, {
+        const response = await fetch(`${WHISPER_BASE_URL}/transcribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -60,7 +61,7 @@ export function useWhisper() {
       }
 
       // FormData 전송
-      const response = await fetch(`${WHISPER_API_URL}/api/whisper/transcribe`, {
+      const response = await fetch(`${WHISPER_BASE_URL}/transcribe`, {
         method: 'POST',
         body: formData
       });
@@ -118,7 +119,7 @@ export function useWhisper() {
 
   const getSupportedLanguages = useCallback(async () => {
     try {
-      const response = await fetch(`${WHISPER_API_URL}/api/whisper/languages`);
+      const response = await fetch(`${WHISPER_BASE_URL}/languages`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -131,7 +132,7 @@ export function useWhisper() {
 
   const getAvailableModels = useCallback(async () => {
     try {
-      const response = await fetch(`${WHISPER_API_URL}/api/whisper/models`);
+      const response = await fetch(`${WHISPER_BASE_URL}/models`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

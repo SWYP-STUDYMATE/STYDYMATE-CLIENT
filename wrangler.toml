@@ -7,11 +7,11 @@ pages_build_output_dir = "dist"
 # 환경 변수 (프로덕션)
 [env.production]
 [env.production.vars]
-VITE_API_URL = "https://api.languagemate.kr"
-VITE_WS_URL = "wss://api.languagemate.kr/ws"
+VITE_API_URL = "https://workers.languagemate.kr"
+VITE_WS_URL = "wss://workers.languagemate.kr"
 
 # 환경 변수 (프리뷰)
 [env.preview]
 [env.preview.vars]
-VITE_API_URL = "https://api-staging.languagemate.kr"
-VITE_WS_URL = "wss://api-staging.languagemate.kr/ws"
+VITE_API_URL = "https://workers.languagemate.kr"
+VITE_WS_URL = "wss://workers.languagemate.kr"

@@ -1,6 +1,6 @@
 // Store용 공통 헬퍼 함수들
 import { log } from './logger';
-import { toast } from '../components/Toast';
+import { toast } from '../components/toast-manager.jsx';
 
 /**
  * API 호출을 위한 공통 래퍼 함수

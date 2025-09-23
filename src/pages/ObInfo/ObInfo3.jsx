@@ -4,7 +4,7 @@ import ProgressBar from "../../components/PrograssBar";
 import CommonButton from "../../components/CommonButton";
 import useProfileStore from "../../store/profileStore";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import { uploadProfileImage } from "../../api/user";
 import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo3() {
@@ -15,7 +15,7 @@ export default function OnboardingInfo3() {
   const fileInputRef = useRef();
   const videoRef = useRef();
   const canvasRef = useRef();
-  const { setProfileImage, saveProfileToServer } = useProfileStore();
+  const { setProfileImage } = useProfileStore();
   const navigate = useNavigate();
   const { showError, showSuccess } = useAlert();
 
@@ -245,19 +245,12 @@ export default function OnboardingInfo3() {
         type: imageFile.type
       });
 
-      // FormData를 사용하여 파일 업로드
-      const formData = new FormData();
-      formData.append('file', imageFile);
-
-      const response = await api.post("/user/profile-image", formData);
+      const payload = await uploadProfileImage(imageFile);
       
-      console.log('📥 서버 응답:', response.data);
+      console.log('📥 서버 응답:', payload);
       
       // 서버에서 반환된 URL 사용
-      const profileImageUrl = 
-      response?.data?.data?.url ??
-      response?.data?.url ??
-      response?.url;
+      const profileImageUrl = payload?.data?.url ?? payload?.url;
       
       if (profileImageUrl) {
         // 로컬 스토어 업데이트 (서버에서 받은 URL 사용)
@@ -267,7 +260,7 @@ export default function OnboardingInfo3() {
         showSuccess("사진이 저장되었습니다. 다음 단계로 이동합니다.");
         navigate("/onboarding-info/4");
       } else {
-        console.error('❌ 서버 응답에서 이미지 URL을 찾을 수 없음:', response.data);
+        console.error('❌ 서버 응답에서 이미지 URL을 찾을 수 없음:', payload);
         showError("이미지 업로드는 성공했지만 URL을 받지 못했습니다.");
       }
     } catch (e) {

@@ -1,14 +1,14 @@
 import React from 'react';
-import { 
-  showToast, 
-  showSuccessToast, 
-  showErrorToast, 
+import {
+  showToast,
+  showSuccessToast,
+  showErrorToast,
   showInfoToast,
   showMatchingToast,
   showChatToast,
   showSessionToast,
   showAchievementToast
-} from './NotificationToastManager';
+} from './notification-toast-helpers';
 import CommonButton from './CommonButton';
 
 const NotificationTestPanel = ({ onClose }) => {

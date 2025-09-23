@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Search,
@@ -15,7 +15,7 @@ import CommonButton from '../../components/CommonButton';
 import MatchingProfileCard from '../../components/MatchingProfileCard';
 import FilterPanel from '../../components/FilterPanel';
 import useMatchingStore from '../../store/matchingStore';
-import { useToast } from '../../components/ErrorToast';
+import useToast from '../../hooks/useToast.jsx';
 
 export default function MatchingMain() {
     const navigate = useNavigate();
@@ -37,12 +37,7 @@ export default function MatchingMain() {
         searchPartners,
     } = useMatchingStore();
 
-    useEffect(() => {
-        // 컴포넌트 마운트 시 추천 파트너 가져오기
-        loadRecommendedPartners();
-    }, [fetchRecommendedPartners]);
-
-    const loadRecommendedPartners = async () => {
+    const loadRecommendedPartners = useCallback(async () => {
         setIsLoading(true);
         try {
             await fetchRecommendedPartners();
@@ -51,7 +46,12 @@ export default function MatchingMain() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [fetchRecommendedPartners]);
+
+    useEffect(() => {
+        // 컴포넌트 마운트 시 추천 파트너 가져오기
+        loadRecommendedPartners();
+    }, [loadRecommendedPartners]);
 
     const handleStartMatching = async () => {
         setIsLoading(true);

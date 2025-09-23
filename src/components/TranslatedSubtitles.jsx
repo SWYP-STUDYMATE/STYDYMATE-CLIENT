@@ -26,7 +26,6 @@ export default function TranslatedSubtitles({
   defaultTargetLanguage = 'ko',
   showOriginal = true,
   showTranslation = true,
-  position = 'bottom',
   className = ''
 }) {
   const [targetLanguage, setTargetLanguage] = useState(defaultTargetLanguage);
@@ -39,7 +38,6 @@ export default function TranslatedSubtitles({
   // 로컬 스트림 전사
   const {
     isTranscribing: isLocalTranscribing,
-    currentTranscript: localTranscript,
     toggleTranscription: toggleLocalTranscription,
     error: localError
   } = useRealtimeTranscription({
@@ -56,7 +54,6 @@ export default function TranslatedSubtitles({
   // 리모트 스트림 전사
   const {
     isTranscribing: isRemoteTranscribing,
-    currentTranscript: remoteTranscript,
     toggleTranscription: toggleRemoteTranscription,
     error: remoteError
   } = useRealtimeTranscription({
@@ -72,8 +69,7 @@ export default function TranslatedSubtitles({
 
   // 실시간 번역
   const {
-    translateAndStore: translateLocal,
-    latestTranslation: latestLocalTranslation
+    translateAndStore: translateLocal
   } = useRealtimeTranslation({
     sourceLanguage,
     targetLanguage,
@@ -81,8 +77,7 @@ export default function TranslatedSubtitles({
   });
 
   const {
-    translateAndStore: translateRemote,
-    latestTranslation: latestRemoteTranslation
+    translateAndStore: translateRemote
   } = useRealtimeTranslation({
     sourceLanguage,
     targetLanguage,
@@ -102,7 +97,7 @@ export default function TranslatedSubtitles({
         }
       });
     }
-  }, [localSubtitle, showTranslation, translateLocal]);
+  }, [localSubtitle, showTranslation, translateLocal, targetLanguage]);
 
   // 리모트 자막 번역
   useEffect(() => {
@@ -117,7 +112,7 @@ export default function TranslatedSubtitles({
         }
       });
     }
-  }, [remoteSubtitle, showTranslation, translateRemote]);
+  }, [remoteSubtitle, showTranslation, translateRemote, targetLanguage]);
 
   // 스트림 변경 시 자동 시작
   useEffect(() => {

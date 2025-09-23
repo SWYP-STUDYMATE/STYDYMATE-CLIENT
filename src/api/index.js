@@ -1,14 +1,15 @@
 import axios from "axios";
+import { API_CONFIG } from './config.js';
 import { log } from '../utils/logger';
 import { handleApiError } from '../utils/errorHandler';
-import { toast } from '../components/Toast';
+import { toast } from '../components/toast-manager.jsx';
 
 const api = axios.create({
-  // 프로덕션: 직접 api.languagemate.kr/api/v1 호출
-  // 개발: vite.proxy('/api' → localhost:8080)에서 /api 제거됨
-  baseURL: import.meta.env.DEV 
-    ? "/api/v1"  // 개발환경: Vite proxy가 /api를 제거하므로 /api/v1
-    : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
+  // 개발: vite.proxy('/api' → 워커 로컬)에서 /api 제거됨
+  // 프로덕션: 워커 도메인 직접 호출
+  baseURL: import.meta.env.DEV
+    ? `${API_CONFIG.API_VERSION}`
+    : `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}`,
 });
 
 // JWT 토큰 형식 검증 함수
@@ -126,9 +127,9 @@ api.interceptors.response.use(
           
           // refresh 요청은 별도 axios 인스턴스로 무한 루프 방지
           const refreshApi = axios.create({
-            baseURL: import.meta.env.DEV 
-              ? "/api/v1"  // 개발환경: Vite proxy 사용
-              : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
+            baseURL: import.meta.env.DEV
+              ? `${API_CONFIG.API_VERSION}`
+              : `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}`,
           });
           
           const res = await refreshApi.post(
@@ -229,9 +230,9 @@ api.interceptors.response.use(
         
         // refresh 요청은 별도 axios 인스턴스로 무한 루프 방지
         const refreshApi = axios.create({
-          baseURL: import.meta.env.DEV 
-            ? "/api/v1"  // 개발환경: Vite proxy 사용
-            : `${import.meta.env.VITE_API_URL}/api/v1`, // 프로덕션: 전체 URL 사용
+          baseURL: import.meta.env.DEV
+            ? `${API_CONFIG.API_VERSION}`
+            : `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}`,
         });
         
         const res = await refreshApi.post(
@@ -303,7 +304,7 @@ api.interceptors.response.use(
 
 // 유저 이름 조회
 export const getUserName = async () => {
-  const res = await api.get("/user/name");
+  const res = await api.get("/users/name");
   return res.data;
 };
 

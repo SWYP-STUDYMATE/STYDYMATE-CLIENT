@@ -90,7 +90,7 @@ export default function LiveTranscription({
     const connectWebSocket = useCallback(() => {
         if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
-        const ws = new WebSocket(`${WEBSOCKET_URL}/api/transcribe/stream`);
+        const ws = new WebSocket(`${WEBSOCKET_URL}/api/v1/transcribe/stream`);
 
         ws.onopen = () => {
             console.log('WebSocket connected');
@@ -200,7 +200,7 @@ export default function LiveTranscription({
         } else if (!isActive && isTranscribing) {
             toggleTranscription();
         }
-    }, [isActive]);
+    }, [isActive, isTranscribing, toggleTranscription]);
 
     // 컴포넌트 언마운트 시 정리
     useEffect(() => {

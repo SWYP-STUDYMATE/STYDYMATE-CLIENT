@@ -1,0 +1,907 @@
+[
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/TranslatedSubtitles.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 73,
+        "message": "'latestLocalTranslation' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 82,
+        "message": "'latestRemoteTranslation' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/VideoControlsExample.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 16,
+        "message": "'setParticipantCount' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/WhisperTest.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 12,
+        "message": "'translateAudio' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 19,
+        "message": "'audioChunks' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/analytics/LevelTestHistoryChart.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 19,
+        "message": "React Hook useEffect has a missing dependency: 'loadLevelTestHistory'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/analytics/MatchingStatsChart.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 17,
+        "message": "React Hook useEffect has a missing dependency: 'loadMatchingStats'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/ChatContainer.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 55,
+        "message": "React Hook useEffect has a missing dependency: 'currentUserId'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/ChatHeader.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 10,
+        "message": "'currentUser' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/ChatInputArea.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 1,
+        "message": "'useRef' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/ChatMessageList.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 46,
+        "message": "'isLast' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/ChatWindow.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 127,
+        "message": "React Hook useEffect has a missing dependency: 'currentUserId'. Either include it or remove the dependency array."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 245,
+        "message": "'handleKeyDown' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/MessageSearch.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 42,
+        "message": "React Hook useEffect has a missing dependency: 'performSearch'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/chat/VoiceMessage.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 10,
+        "message": "'animationRef' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/ui/CustomConfirm.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 25,
+        "message": "'getIconColor' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/ui/KeyboardNavigableList.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 36,
+        "message": "React Hook useEffect has a missing dependency: 'items'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/components/ui/LazyList.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 4,
+        "message": "'createKeyboardHint' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/hooks/useFileUpload.js",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 9,
+        "message": "'options' is assigned a value but never used."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 48,
+        "message": "'e' is defined but never used."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 55,
+        "message": "'e' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/hooks/useWebRTC.js",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 146,
+        "message": "React Hook useCallback has missing dependencies: 'closePeerConnection', 'createPeerConnection', 'handleAnswer', 'handleIceCandidate', 'handleOffer', and 'handleParticipantUpdate'. Either include them or remove the dependency array."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 215,
+        "message": "React Hook useCallback has missing dependencies: 'handleConnectionFailure' and 'startStatsMonitoring'. Either include them or remove the dependency array."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 303,
+        "message": "'peerId' is defined but never used."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 451,
+        "message": "React Hook useEffect has missing dependencies: 'connectWebSocket', 'disconnect', and 'getUserMedia'. Either include them or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/hooks/useWebSocketTranscription.js",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 100,
+        "message": "React Hook useCallback has missing dependencies: 'handleWebSocketMessage' and 'scheduleReconnect'. Either include them or remove the dependency array."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 195,
+        "message": "React Hook useCallback has a missing dependency: 'startAudioCapture'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Achievement/AchievementPage.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 21,
+        "message": "React Hook useEffect has a missing dependency: 'loadAchievements'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Analytics/AnalyticsDashboard.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 272,
+        "message": "'Icon' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Analytics/AnalyticsPage.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 50,
+        "message": "React Hook useEffect has a missing dependency: 'loadAnalyticsData'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/GroupSession/GroupSessionDetailPage.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 55,
+        "message": "React Hook useEffect has a missing dependency: 'loadSessionDetails'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/GroupSession/GroupSessionPage.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 53,
+        "message": "React Hook useEffect has a missing dependency: 'loadSessions'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/GroupSession/GroupSessionRoomPage.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 50,
+        "message": "'selectedParticipant' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 50,
+        "message": "'setSelectedParticipant' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 97,
+        "message": "React Hook useEffect has missing dependencies: 'loadSessionAndJoin' and 'startTime'. Either include them or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSessionDuration' needs the current value of 'startTime'."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 280,
+        "message": "'screenStream' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/LevelTest/LevelTestCheck.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 25,
+        "message": "React Hook useEffect has missing dependencies: 'checkPermissions' and 'mediaStream'. Either include them or remove the dependency array."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 37,
+        "message": "'error' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Login/GoogleCallback.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 167,
+        "message": "React Hook useEffect has a missing dependency: 'navigateAfterLogin'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Login/Navercallback.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 184,
+        "message": "React Hook useEffect has a missing dependency: 'navigateAfterLogin'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Matching/MatchingMain.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 23,
+        "message": "'showSuccess' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 43,
+        "message": "React Hook useEffect has a missing dependency: 'loadRecommendedPartners'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Matching/MatchingProfile.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 1,
+        "message": "'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 29,
+        "message": "'selectPartner' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 34,
+        "message": "'scheduleSession' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Notification/NotificationPage.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 26,
+        "message": "React Hook useEffect has a missing dependency: 'loadNotifications'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Notifications/NotificationCenter.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 1,
+        "message": "'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 44,
+        "message": "React Hook useEffect has a missing dependency: 'loadNotifications'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Notifications/NotificationList.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 54,
+        "message": "React Hook useEffect has missing dependencies: 'loadNotifications' and 'loadUnreadCount'. Either include them or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObInfo/ObInfo1.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 4,
+        "message": "'saveEnglishName' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObInfo/ObInfo2.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 7,
+        "message": "'data' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObInfo/ObInfo3.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 18,
+        "message": "'saveProfileToServer' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 210,
+        "message": "React Hook React.useEffect has a missing dependency: 'showError'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObLang/ObLang1.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 9,
+        "message": "'saveOnboardingStep2' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObLang/ObLang2.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 53,
+        "message": "React Hook useEffect has a missing dependency: 'showError'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObLang/ObLangComplete.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 9,
+        "message": "'wantedLanguages' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObSchadule/ObSchadule1.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 32,
+        "message": "React Hook useEffect has a missing dependency: 'showError'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/ObSchadule/ObSchadule4.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 1,
+        "message": "'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 15,
+        "message": "'setLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 143,
+        "message": "'state' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Profile/ProfileTestPage.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 33,
+        "message": "'loadProfileFromServer' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Schedule/Schedule.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 31,
+        "message": "'error' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/AudioConnectionCheck.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 14,
+        "message": "'recordedBlob' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/AudioSession.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 17,
+        "message": "'remoteAudioRef' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 25,
+        "message": "'sessionSettings' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 32,
+        "message": "'connectionState' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 33,
+        "message": "'localStream' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 34,
+        "message": "'remoteStreams' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 36,
+        "message": "'error' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 37,
+        "message": "'stats' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 39,
+        "message": "'disconnectWebRTC' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 40,
+        "message": "'getUserMedia' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/AudioSessionRoom.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 22,
+        "message": "'showSubtitles' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 22,
+        "message": "'setShowSubtitles' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 41,
+        "message": "React Hook useEffect has missing dependencies: 'cleanup' and 'initializeAudioSession'. Either include them or remove the dependency array."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 112,
+        "message": "'stream' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/GroupAudioSession.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 34,
+        "message": "'connectionState' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 117,
+        "message": "React Hook useEffect has a missing dependency: 'participants'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/GroupVideoSession.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 35,
+        "message": "'connectionState' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 41,
+        "message": "'sessionSettings' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/SessionCalendar.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 21,
+        "message": "'viewMode' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 21,
+        "message": "'setViewMode' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 25,
+        "message": "'upcomingSessions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 27,
+        "message": "'addSession' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/SessionCreate.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 62,
+        "message": "'err' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/SessionList.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 41,
+        "message": "'allSessions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 41,
+        "message": "'setAllSessions' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 46,
+        "message": "React Hook useEffect has a missing dependency: 'loadAllSessionsData'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/SessionScheduleNew.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 23,
+        "message": "'englishName' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/VideoSession.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 20,
+        "message": "'isFullscreen' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 22,
+        "message": "'setShowSubtitles' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 23,
+        "message": "'setShowTranslation' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 25,
+        "message": "'setShowAIFeedback' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 26,
+        "message": "'setUserLevel' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 35,
+        "message": "'sessionStatus' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 39,
+        "message": "'sessionSettings' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 56,
+        "message": "'getUserMedia' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Session/VideoSessionRoom.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 28,
+        "message": "'isTranscribing' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 29,
+        "message": "'transcripts' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 30,
+        "message": "'setSubtitlePosition' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 31,
+        "message": "'setSubtitleLanguage' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 32,
+        "message": "'setShowOriginalSubtitle' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 33,
+        "message": "'setEnableTranslation' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 47,
+        "message": "'connectionStats' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 61,
+        "message": "React Hook useEffect has missing dependencies: 'cleanup', 'initializeCall', and 'loadRoomInfo'. Either include them or remove the dependency array."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 185,
+        "message": "'stream' is defined but never used."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 396,
+        "message": "'handleTranscript' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 412,
+        "message": "'toggleSubtitle' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 422,
+        "message": "'getTargetLanguages' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Settings/AccountSettings.jsx",
+    "problems": [
+      {
+        "ruleId": "react-hooks/exhaustive-deps",
+        "line": 29,
+        "message": "React Hook useEffect has a missing dependency: 'loadAccountSettings'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Settings/DeleteAccount.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 10,
+        "message": "'confirmAction' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Settings/NotificationSettings.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 99,
+        "message": "'Icon' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/pages/Settings/PrivacySettings.jsx",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 103,
+        "message": "'Icon' is defined but never used."
+      },
+      {
+        "ruleId": "no-unused-vars",
+        "line": 118,
+        "message": "'Icon' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/services/webrtc.js",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 609,
+        "message": "'error' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/services/websocketService.js",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 235,
+        "message": "'subscriptionId' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/utils/imageUtils.js",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 36,
+        "message": "'alt' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/utils/lazyImports.js",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 139,
+        "message": "'text' is defined but never used."
+      }
+    ]
+  },
+  {
+    "filePath": "/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/src/utils/storeHelpers.js",
+    "problems": [
+      {
+        "ruleId": "no-unused-vars",
+        "line": 48,
+        "message": "'error' is defined but never used."
+      }
+    ]
+  }
+]

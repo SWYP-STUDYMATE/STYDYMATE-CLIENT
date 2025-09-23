@@ -1,4 +1,3 @@
-import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
 class WebSocketService {
@@ -38,13 +37,19 @@ class WebSocketService {
     this.isConnecting = true;
     
     const token = localStorage.getItem("accessToken");
-    const baseUrl = import.meta.env.VITE_WS_URL || "https://api.languagemate.kr";
+    const origin = import.meta.env.VITE_WS_URL
+      || import.meta.env.VITE_API_URL
+      || import.meta.env.VITE_WORKERS_API_URL
+      || "https://workers.languagemate.kr";
+    const baseUrl = origin.startsWith('http')
+      ? origin.replace(/^http/i, origin.startsWith('https') ? 'wss' : 'ws')
+      : origin;
     const socketUrl = `${baseUrl}${endpoint}`;
 
     return new Promise((resolve, reject) => {
       try {
         this.client = new Client({
-          webSocketFactory: () => new SockJS(socketUrl),
+          webSocketFactory: () => new WebSocket(socketUrl),
           connectHeaders: {
             Authorization: `Bearer ${token}`,
             ...headers

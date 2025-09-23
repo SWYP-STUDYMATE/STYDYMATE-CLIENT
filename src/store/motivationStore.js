@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 // 서버 API와 동기화된 학습 동기/관심사 상태 관리
 const useMotivationStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       selectedMotivations: [],
       selectedTopics: [],
       selectedLearningStyles: [],

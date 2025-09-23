@@ -10,7 +10,13 @@ class NotificationWebSocketService {
     this.reconnectDelay = 3000;
     this.subscriptions = new Map();
     this.messageHandlers = new Map();
-    this.wsBase = import.meta.env.VITE_WS_URL || "https://api.languagemate.kr";
+    const origin = import.meta.env.VITE_WS_URL
+      || import.meta.env.VITE_API_URL
+      || import.meta.env.VITE_WORKERS_API_URL
+      || "https://workers.languagemate.kr";
+    this.wsBase = origin.startsWith('http')
+      ? origin.replace(/^http/i, origin.startsWith('https') ? 'wss' : 'ws')
+      : origin;
   }
 
   // WebSocket 연결 초기화

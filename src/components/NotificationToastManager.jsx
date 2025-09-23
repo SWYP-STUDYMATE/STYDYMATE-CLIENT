@@ -6,54 +6,11 @@ const NotificationToastManager = ({ maxToasts = 5, position = 'top-right' }) => 
   const [toasts, setToasts] = useState([]);
   const { realtimeSettings } = useNotificationStore();
 
-  // 토스트 추가
-  const addToast = useCallback((notification) => {
-    const toastId = `toast-${notification.id || Date.now()}-${Math.random()}`;
-    const newToast = {
-      id: toastId,
-      ...notification,
-      timestamp: Date.now()
-    };
-
-    setToasts(prev => {
-      // 중복 방지 - 같은 알림 ID가 이미 있으면 추가하지 않음
-      if (notification.id && prev.some(toast => toast.id === notification.id)) {
-        return prev;
-      }
-
-      // 최대 개수 제한
-      const updated = [newToast, ...prev.slice(0, maxToasts - 1)];
-      return updated;
-    });
-
-    // 사운드 재생
-    if (realtimeSettings.sound) {
-      playNotificationSound(notification.type);
-    }
-
-    return toastId;
-  }, [maxToasts, realtimeSettings.sound]);
-
-  // 토스트 제거
-  const removeToast = useCallback((toastId) => {
-    setToasts(prev => prev.filter(toast => toast.id !== toastId));
-  }, []);
-
-  // 모든 토스트 제거
-  const clearAllToasts = useCallback(() => {
-    setToasts([]);
-  }, []);
-
-  // 특정 타입의 토스트들 제거
-  const clearToastsByType = useCallback((type) => {
-    setToasts(prev => prev.filter(toast => toast.type !== type));
-  }, []);
-
   // 알림 사운드 재생
   const playNotificationSound = useCallback((type) => {
     try {
       let audioFile = '/sounds/notification-default.mp3';
-      
+
       switch (type) {
         case 'urgent':
           audioFile = '/sounds/notification-urgent.mp3';
@@ -86,6 +43,49 @@ const NotificationToastManager = ({ maxToasts = 5, position = 'top-right' }) => 
     } catch (error) {
       console.warn('Error playing notification sound:', error);
     }
+  }, []);
+
+  // 토스트 추가
+  const addToast = useCallback((notification) => {
+    const toastId = `toast-${notification.id || Date.now()}-${Math.random()}`;
+    const newToast = {
+      id: toastId,
+      ...notification,
+      timestamp: Date.now()
+    };
+
+    setToasts(prev => {
+      // 중복 방지 - 같은 알림 ID가 이미 있으면 추가하지 않음
+      if (notification.id && prev.some(toast => toast.id === notification.id)) {
+        return prev;
+      }
+
+      // 최대 개수 제한
+      const updated = [newToast, ...prev.slice(0, maxToasts - 1)];
+      return updated;
+    });
+
+    // 사운드 재생
+    if (realtimeSettings.sound) {
+      playNotificationSound(notification.type);
+    }
+
+    return toastId;
+  }, [maxToasts, realtimeSettings.sound, playNotificationSound]);
+
+  // 토스트 제거
+  const removeToast = useCallback((toastId) => {
+    setToasts(prev => prev.filter(toast => toast.id !== toastId));
+  }, []);
+
+  // 모든 토스트 제거
+  const clearAllToasts = useCallback(() => {
+    setToasts([]);
+  }, []);
+
+  // 특정 타입의 토스트들 제거
+  const clearToastsByType = useCallback((type) => {
+    setToasts(prev => prev.filter(toast => toast.type !== type));
   }, []);
 
   // WebSocket에서 받은 알림 처리

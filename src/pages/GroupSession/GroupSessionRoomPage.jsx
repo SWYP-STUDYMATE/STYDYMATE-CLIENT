@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getGroupSessionDetails,
-  getSessionParticipants,
   endGroupSession,
   leaveGroupSession,
   submitSessionFeedback
@@ -109,8 +108,7 @@ export default function GroupSessionRoomPage() {
       setIsHost(sessionData.hostId === currentUserId);
       
       // 참가자 목록 로드
-      const participantsResponse = await getSessionParticipants(sessionId);
-      setParticipants(participantsResponse.data || []);
+      setParticipants(sessionData.participants || []);
       
       // WebRTC 초기화 (실제 구현 시)
       initializeWebRTC();

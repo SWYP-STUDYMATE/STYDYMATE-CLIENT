@@ -18,7 +18,9 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
   const {
     startRecording: storeStartRecording,
     stopRecording: storeStopRecording,
-    updateRecordingDuration
+    updateRecordingDuration,
+    startTimer: startCountdown,
+    stopTimer: stopCountdown
   } = useLevelTestStore();
 
   useEffect(() => {
@@ -33,8 +35,9 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      stopCountdown();
     };
-  }, []);
+  }, [stopCountdown]);
 
   const visualizeAudio = () => {
     if (!analyserRef.current) return;
@@ -105,6 +108,8 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       setIsRecording(true);
       setRecordingTime(0);
 
+      startCountdown();
+
       // Start timer
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
@@ -139,6 +144,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
 
       setAudioLevel(0);
       storeStopRecording();
+      stopCountdown();
     }
   };
 
@@ -154,6 +160,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
           });
         }, 1000);
         visualizeAudio();
+        startCountdown();
       } else {
         mediaRecorderRef.current.pause();
         if (timerRef.current) {
@@ -162,6 +169,7 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
         }
+        stopCountdown();
       }
       setIsPaused(!isPaused);
     }

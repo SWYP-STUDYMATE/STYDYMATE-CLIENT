@@ -92,7 +92,7 @@ export async function getSignedUrl(
   try {
     // R2에서 서명된 URL을 직접 지원하지 않음
     // Worker를 통한 직접 URL 반환으로 대체
-    return `/api/upload/file/${key}`;
+    return `/api/v1/upload/file/${key}`;
   } catch (error) {
     console.error('Signed URL error:', error);
     throw new Error('Failed to generate signed URL');

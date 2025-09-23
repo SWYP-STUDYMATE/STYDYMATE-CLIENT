@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
@@ -10,21 +10,6 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function LevelTestRecording() {
   const navigate = useNavigate();
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const autoStartTimeoutRef = useRef(null);
-
-  const scheduleAutoStart = useCallback(() => {
-    setIsTimerRunning(false);
-
-    if (autoStartTimeoutRef.current) {
-      clearTimeout(autoStartTimeoutRef.current);
-    }
-
-    autoStartTimeoutRef.current = setTimeout(() => {
-      setIsTimerRunning(true);
-    }, 100);
-  }, [setIsTimerRunning]);
-
   const {
     testId,
     currentQuestionIndex,
@@ -34,17 +19,13 @@ export default function LevelTestRecording() {
     previousQuestion,
     setTestStatus,
     addRecording,
-    setCurrentRecording,
     clearCurrentRecording,
     getRecordingForQuestion,
     isCurrentQuestionRecorded,
-    isTestComplete,
     resetTimer,
     stopTimer,
     loadQuestions,
-    submitTest,
     isSubmitting,
-    submitError,
     setIsSubmitting,
     setTestResult,
     currentRecording
@@ -53,10 +34,16 @@ export default function LevelTestRecording() {
   const currentQuestion = questions[currentQuestionIndex];
   const hasRecording = isCurrentQuestionRecorded();
   const recordingForCurrentQuestion = getRecordingForQuestion(currentQuestionIndex);
+  const currentQuestionDuration = useMemo(() => {
+    const durationValue = Number(currentQuestion?.duration);
+    if (!Number.isFinite(durationValue) || durationValue <= 0) {
+      return 600;
+    }
+    return Math.floor(durationValue);
+  }, [currentQuestion]);
 
   useEffect(() => {
     setTestStatus('recording');
-    scheduleAutoStart();
 
     // Load questions if not already loaded
     if (questions.length === 0) {
@@ -66,25 +53,22 @@ export default function LevelTestRecording() {
     return () => {
       stopTimer();
       clearCurrentRecording();
-      if (autoStartTimeoutRef.current) {
-        clearTimeout(autoStartTimeoutRef.current);
-      }
     };
-  }, [setTestStatus, scheduleAutoStart, stopTimer, clearCurrentRecording, loadQuestions, questions.length]);
-
-  const currentQuestionDuration = currentQuestion?.duration ?? 180;
+  }, [setTestStatus, stopTimer, clearCurrentRecording, loadQuestions, questions.length]);
 
   useEffect(() => {
+    if (!currentQuestion) {
+      return;
+    }
     resetTimer(currentQuestionDuration);
-    scheduleAutoStart();
-  }, [currentQuestionIndex, currentQuestionDuration, resetTimer, scheduleAutoStart]);
+  }, [currentQuestion, currentQuestionDuration, resetTimer]);
 
   const handleRecordingComplete = (blob) => {
     addRecording({
       blob,
       duration: 0 // Duration will be set by the store
     });
-    setIsTimerRunning(false);
+    stopTimer();
   };
 
   const handleTimeUp = () => {
@@ -147,7 +131,6 @@ export default function LevelTestRecording() {
   const handleRetry = () => {
     // Remove current recording from store
     resetTimer(currentQuestionDuration);
-    scheduleAutoStart();
   };
 
   return (
@@ -190,9 +173,8 @@ export default function LevelTestRecording() {
         {/* Timer */}
         <div className="mb-8">
           <CountdownTimer
-            duration={currentQuestion?.duration || 180}
+            duration={currentQuestionDuration}
             onTimeUp={handleTimeUp}
-            autoStart={isTimerRunning}
           />
         </div>
 

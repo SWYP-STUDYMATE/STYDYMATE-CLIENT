@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const OptimizedImage = ({
     src,
@@ -17,35 +17,12 @@ const OptimizedImage = ({
     const [hasError, setHasError] = useState(false);
     const imgRef = useRef(null);
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        loadImage();
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            {
-                rootMargin: '50px',
-            }
-        );
+    const loadImage = useCallback(() => {
+        if (!src) return;
 
-        if (imgRef.current && loading === 'lazy') {
-            observer.observe(imgRef.current);
-        } else {
-            loadImage();
-        }
+        setHasError(false);
+        setIsLoading(true);
 
-        return () => {
-            if (imgRef.current) {
-                observer.unobserve(imgRef.current);
-            }
-        };
-    }, [src]);
-
-    const loadImage = () => {
         const img = new Image();
         img.src = src;
 
@@ -60,7 +37,45 @@ const OptimizedImage = ({
             setIsLoading(false);
             onError && onError();
         };
-    };
+    }, [onError, onLoad, src]);
+
+    useEffect(() => {
+        if (!src) return;
+
+        if (loading !== 'lazy') {
+            loadImage();
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries, obs) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        loadImage();
+                        obs.unobserve(entry.target);
+                    }
+                });
+            },
+            {
+                rootMargin: '50px',
+            }
+        );
+
+        const target = imgRef.current;
+
+        if (target) {
+            observer.observe(target);
+        } else {
+            loadImage();
+        }
+
+        return () => {
+            if (target) {
+                observer.unobserve(target);
+            }
+            observer.disconnect();
+        };
+    }, [loadImage, loading, src]);
 
     // WebP 지원 체크 및 폴백
     const getOptimizedSrc = (originalSrc) => {
@@ -74,7 +89,7 @@ const OptimizedImage = ({
                 q: '85',
                 f: 'auto'
             });
-            return `/workers/api/images/transform?${params}`;
+            return `/workers/api/v1/images/transform?${params}`;
         }
         return originalSrc;
     };

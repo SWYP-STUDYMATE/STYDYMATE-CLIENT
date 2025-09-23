@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getGroupSessionDetails,
-  getSessionParticipants,
   joinGroupSession,
   leaveGroupSession,
   startGroupSession,
@@ -80,13 +79,7 @@ export default function GroupSessionDetailPage() {
         tags: sessionData.tags || []
       });
       
-      // 참가자 목록 로드
-      try {
-        const participantsResponse = await getSessionParticipants(sessionId);
-        setParticipants(participantsResponse.data || []);
-      } catch (error) {
-        console.error('Failed to load participants:', error);
-      }
+      setParticipants(sessionData.participants || []);
     } catch (error) {
       console.error('Failed to load session details:', error);
       showError('세션 정보를 불러오는데 실패했습니다.');
@@ -169,11 +162,11 @@ export default function GroupSessionDetailPage() {
     }
   };
 
-  const handleKickParticipant = async (participantId, participantName) => {
+  const handleKickParticipant = async (participantUserId, participantName) => {
     if (!confirm(`${participantName}님을 세션에서 내보내시겠습니까?`)) return;
     
     try {
-      await kickParticipant(sessionId, participantId);
+      await kickParticipant(sessionId, participantUserId);
       showSuccess('참가자를 내보냈습니다.');
       loadSessionDetails();
     } catch (error) {
@@ -490,9 +483,12 @@ export default function GroupSessionDetailPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {participants.map((participant) => (
+            {participants.map((participant) => {
+              const participantId = participant.userId ?? participant.id;
+              const participantName = participant.userName ?? participant.name ?? '참가자';
+              return (
               <div
-                key={participant.id}
+                key={participantId}
                 className="bg-white rounded-[10px] p-4 border border-[#E7E7E7] 
                   flex items-center justify-between"
               >
@@ -500,7 +496,7 @@ export default function GroupSessionDetailPage() {
                   {participant.profileImage ? (
                     <img
                       src={participant.profileImage}
-                      alt={participant.name}
+                      alt={participantName}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
@@ -511,21 +507,21 @@ export default function GroupSessionDetailPage() {
                   )}
                   <div>
                     <p className="text-[14px] font-medium text-[#111111]">
-                      {participant.name}
-                      {participant.id === session.hostId && (
+                      {participantName}
+                      {participantId === session.hostId && (
                         <span className="ml-2 px-2 py-0.5 bg-[#00C471] text-white 
                           text-[10px] rounded-full">호스트</span>
                       )}
                     </p>
                     <p className="text-[12px] text-[#606060]">
-                      {participant.language} • {participant.level}
+                      {participant.language ?? '언어 정보 없음'} • {participant.level ?? '레벨 정보 없음'}
                     </p>
                   </div>
                 </div>
                 
-                {isHost && participant.id !== session.hostId && session.status !== 'COMPLETED' && (
+                {isHost && participantId !== session.hostId && session.status !== 'COMPLETED' && (
                   <button
-                    onClick={() => handleKickParticipant(participant.id, participant.name)}
+                    onClick={() => handleKickParticipant(participantId, participantName)}
                     className="p-2 text-[#929292] hover:text-[#EA4335] hover:bg-[#FFF5F5] 
                       rounded-full transition-colors"
                   >
@@ -533,7 +529,8 @@ export default function GroupSessionDetailPage() {
                   </button>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

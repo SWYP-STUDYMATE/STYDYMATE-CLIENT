@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Bell, MessageSquare, Users, Calendar, Award, AlertCircle, Info } from 'lucide-react';
 
@@ -39,6 +39,22 @@ const NotificationToast = ({
   const Icon = typeIcons[type] || Bell;
   const colors = typeColors[type] || typeColors.personal;
 
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  }, [onClose]);
+
+  const handleClick = useCallback(() => {
+    if (notification.clickUrl) {
+      window.location.href = notification.clickUrl;
+    } else if (onAction) {
+      onAction(notification);
+    }
+    handleClose();
+  }, [handleClose, notification, onAction]);
+
   useEffect(() => {
     // 애니메이션을 위한 지연
     const showTimer = setTimeout(() => setIsVisible(true), 50);
@@ -55,23 +71,7 @@ const NotificationToast = ({
       clearTimeout(showTimer);
       if (autoCloseTimer) clearTimeout(autoCloseTimer);
     };
-  }, [autoClose, duration, type]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose();
-    }, 300);
-  };
-
-  const handleClick = () => {
-    if (notification.clickUrl) {
-      window.location.href = notification.clickUrl;
-    } else if (onAction) {
-      onAction(notification);
-    }
-    handleClose();
-  };
+  }, [autoClose, duration, handleClose, type]);
 
   const getPositionClasses = () => {
     switch (position) {

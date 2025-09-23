@@ -45,7 +45,7 @@ const ObInfoGoogle = () => {
   useEffect(() => {
     const fetchGenderTypes = async () => {
       try {
-        const response = await api.get('/user/gender-type');
+        const response = await api.get('/users/gender-type');
         // API 응답이 객체 배열인 경우 {name, description} 구조 처리
         const genderOptions = Array.isArray(response.data) 
           ? response.data.map(item => ({
@@ -117,19 +117,19 @@ const ObInfoGoogle = () => {
     if (isCompleteEnabled()) {
       try {
         // 1. 성별 저장 API 호출
-        await api.post('/user/gender', {
+        await api.post('/users/gender', {
           genderType: selectedGenderType // API 명세서에 따라 name 값 사용
         });
 
         // 2. 출생 연도 저장 API 호출
-        await api.post('/user/birthyear', {
+        await api.post('/users/birthyear', {
           birthyear: birthYear.value.toString()
         });
 
         // 3. 생일 저장 API 호출 (MM-DD 형식)
         const month = birthMonth.value.toString().padStart(2, '0');
         const day = birthDay.value.toString().padStart(2, '0');
-        await api.post('/user/birthday', {
+        await api.post('/users/birthday', {
           birthday: `${month}-${day}`
         });
 

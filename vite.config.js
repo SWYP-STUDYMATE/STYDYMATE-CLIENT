@@ -9,6 +9,8 @@ import path from 'node:path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
+  const isSandbox = process.env.CODEX_SANDBOX === 'seatbelt'
+  const workboxMode = isSandbox || !isProduction ? 'development' : 'production'
   
   return {
     plugins: [
@@ -33,6 +35,7 @@ export default defineConfig(({ mode }) => {
           icons: []
         },
         workbox: {
+          mode: workboxMode,
           // 필요 시 실제 산출물 확장자만 남겨서 경고 제거 가능
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
           runtimeCaching: [
@@ -109,12 +112,12 @@ export default defineConfig(({ mode }) => {
       hmr: { overlay: true },
       proxy: {
         '/api/v1/login': {
-          target: env.VITE_API_URL || 'http://localhost:8080',
+          target: env.VITE_API_URL || env.VITE_WORKERS_API_URL || 'http://localhost:8787',
           changeOrigin: true,
           rewrite: (p) => p,
         },
         '/api': {
-          target: env.VITE_API_URL || 'http://localhost:8080',
+          target: env.VITE_API_URL || env.VITE_WORKERS_API_URL || 'http://localhost:8787',
           changeOrigin: true,
         },
         '/workers': {
@@ -125,7 +128,7 @@ export default defineConfig(({ mode }) => {
           ws: true,
         },
         '/login/oauth2/code/naver': {
-          target: env.VITE_API_URL || 'http://localhost:8080',
+          target: env.VITE_API_URL || env.VITE_WORKERS_API_URL || 'http://localhost:8787',
           changeOrigin: true,
         }
       },
@@ -188,29 +191,20 @@ export default defineConfig(({ mode }) => {
             const info = assetInfo.name.split('.');
             const ext = info[info.length - 1];
             if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) {
-              return `images/[name]-[hash].${ext}`;
+              return `images/[name].${ext}`;
             }
             if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
-              return `fonts/[name]-[hash].${ext}`;
+              return `fonts/[name].${ext}`;
             }
             if (/\.css$/i.test(assetInfo.name)) {
-              return `css/[name]-[hash].${ext}`;
+              return `css/[name].${ext}`;
             }
-            return `assets/[name]-[hash].${ext}`;
+            return `assets/[name].${ext}`;
           },
-          chunkFileNames: () => `js/[name]-[hash]-${Date.now().toString(36)}.js`,
-          entryFileNames: () => `js/[name]-[hash]-${Date.now().toString(36)}.js`,
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-router': ['react-router-dom'],
-            'vendor-state': ['zustand'],
-            'vendor-ui': ['lucide-react'],
-            'vendor-api': ['axios', 'jwt-decode'],
-            'vendor-socket': ['sockjs-client', '@stomp/stompjs'],
-            'vendor-emoji': ['emoji-picker-react'],
-            'vendor-charts': ['recharts'],
-            'vendor-select': ['react-select']
-          }
+          inlineDynamicImports: true,
+          // 디버깅 편의를 위해 기본 청크 네이밍으로 되돌린다.
+          chunkFileNames: 'js/[name].js',
+          entryFileNames: 'js/[name].js'
         }
       },
       cssCodeSplit: true,

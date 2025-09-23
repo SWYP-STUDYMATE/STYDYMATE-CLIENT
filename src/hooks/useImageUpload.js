@@ -43,7 +43,7 @@ export function useImageUpload() {
       }, 100);
 
       // 이미지 업로드
-      const response = await fetch(`${API_URL}/api/images/upload`, {
+      const response = await fetch(`${API_URL}/api/v1/images/upload`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -84,7 +84,7 @@ export function useImageUpload() {
         throw new Error('로그인이 필요합니다.');
       }
 
-      const response = await fetch(`${API_URL}/api/images/${fileName}`, {
+      const response = await fetch(`${API_URL}/api/v1/images/${fileName}`, {
         method: 'DELETE',
         headers: {
           'X-User-Id': userId
@@ -114,14 +114,14 @@ export function useImageUpload() {
     
     switch (variant) {
       case 'thumbnail':
-        return `${baseUrl}/api/images/transform/${fileName}?width=150&height=150&fit=cover`;
+        return `${baseUrl}/api/v1/images/transform/${fileName}?width=150&height=150&fit=cover`;
       case 'medium':
-        return `${baseUrl}/api/images/transform/${fileName}?width=400&height=400&fit=contain`;
+        return `${baseUrl}/api/v1/images/transform/${fileName}?width=400&height=400&fit=contain`;
       case 'large':
-        return `${baseUrl}/api/images/transform/${fileName}?width=800&height=800&fit=contain`;
+        return `${baseUrl}/api/v1/images/transform/${fileName}?width=800&height=800&fit=contain`;
       case 'original':
       default:
-        return `${baseUrl}/api/images/serve/${fileName}`;
+        return `${baseUrl}/api/v1/images/serve/${fileName}`;
     }
   }, []);
 
@@ -130,7 +130,7 @@ export function useImageUpload() {
     setError(null);
 
     try {
-      let url = `${API_URL}/api/images/list/${userId}`;
+      let url = `${API_URL}/api/v1/images/list/${userId}`;
       if (type) {
         url += `?type=${type}`;
       }

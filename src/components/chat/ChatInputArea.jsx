@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Mic, Paperclip, X, Smile } from "lucide-react";
 import Picker from "emoji-picker-react";
 import VoiceRecorder from "./VoiceRecorder";

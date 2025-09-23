@@ -23,7 +23,9 @@ export default function Login() {
     }
   }, [navigate]);
 
-  const API_BASE = import.meta.env.DEV ? "" : "https://api.languagemate.kr";
+  const API_BASE = import.meta.env.DEV
+    ? ""
+    : (import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || "https://workers.languagemate.kr");
   const FRONT_ORIGIN = window.location.origin
 
    const startLogin = useCallback((provider) => {

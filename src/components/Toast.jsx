@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
@@ -15,6 +15,14 @@ const Toast = ({
   const [isVisible, setIsVisible] = useState(true);
   const [isLeaving, setIsLeaving] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose?.(id);
+    }, 300);
+  }, [id, onClose]);
+
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(() => {
@@ -23,15 +31,7 @@ const Toast = ({
 
       return () => clearTimeout(timer);
     }
-  }, [duration]);
-
-  const handleClose = () => {
-    setIsLeaving(true);
-    setTimeout(() => {
-      setIsVisible(false);
-      onClose?.(id);
-    }, 300);
-  };
+  }, [duration, handleClose]);
 
   const getIcon = () => {
     switch (type) {
@@ -129,72 +129,6 @@ const Toast = ({
     </div>,
     document.body
   );
-};
-
-// Toast Manager 컴포넌트
-let toastId = 0;
-
-export const ToastManager = () => {
-  const [toasts, setToasts] = useState([]);
-
-  // 전역 toast 함수들을 window에 등록
-  useEffect(() => {
-    window.addToast = (toastData) => {
-      const id = ++toastId;
-      const toast = { id, ...toastData };
-      setToasts(prev => [...prev, toast]);
-      return id;
-    };
-
-    window.removeToast = (id) => {
-      setToasts(prev => prev.filter(toast => toast.id !== id));
-    };
-
-    window.clearAllToasts = () => {
-      setToasts([]);
-    };
-
-    return () => {
-      delete window.addToast;
-      delete window.removeToast;
-      delete window.clearAllToasts;
-    };
-  }, []);
-
-  const handleToastClose = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
-
-  return (
-    <>
-      {toasts.map(toast => (
-        <Toast
-          key={toast.id}
-          {...toast}
-          onClose={handleToastClose}
-        />
-      ))}
-    </>
-  );
-};
-
-// 편의 함수들
-export const toast = {
-  success: (title, message, options = {}) => {
-    return window.addToast?.({ type: 'success', title, message, ...options });
-  },
-  error: (title, message, options = {}) => {
-    return window.addToast?.({ type: 'error', title, message, ...options });
-  },
-  warning: (title, message, options = {}) => {
-    return window.addToast?.({ type: 'warning', title, message, ...options });
-  },
-  info: (title, message, options = {}) => {
-    return window.addToast?.({ type: 'info', title, message, ...options });
-  },
-  custom: (options) => {
-    return window.addToast?.(options);
-  }
 };
 
 export default Toast;

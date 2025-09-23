@@ -36,7 +36,7 @@ export function useRealtimeTranscription({
       formData.append('vad_filter', 'true');
       formData.append('initial_prompt', 'This is a conversation between two people learning languages.');
 
-      const response = await fetch(`${API_URL}/api/whisper/transcribe`, {
+      const response = await fetch(`${API_URL}/api/v1/whisper/transcribe`, {
         method: 'POST',
         body: formData
       });

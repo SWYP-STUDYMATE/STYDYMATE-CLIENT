@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useLazyList, useInfiniteScroll } from '../../hooks/useLazyLoading';
 import { SkeletonLoader } from './LoadingSpinner';
-import { createAriaLabel, createKeyboardHint } from '../../utils/accessibility';
+import { createAriaLabel } from '../../utils/accessibility';
 
 /**
  * 지연 로딩 리스트 컴포넌트

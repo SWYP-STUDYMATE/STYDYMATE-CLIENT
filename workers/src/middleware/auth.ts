@@ -3,6 +3,7 @@ import { verify } from 'hono/jwt';
 import { AuthUser, Variables } from '../types';
 import { authError, forbiddenError } from './error-handler';
 import type { AppBindings as Env } from '../index';
+import { assertEnvVar } from '../utils/security';
 
 interface AuthOptions {
     optional?: boolean; // 인증이 선택적인지
@@ -13,9 +14,18 @@ interface AuthOptions {
 /**
  * JWT 토큰에서 사용자 정보 추출
  */
-async function extractUser(token: string, secret: string): Promise<AuthUser | null> {
+async function extractUser(token: string, env: Env): Promise<AuthUser | null> {
     try {
-        const payload = await verify(token, secret);
+        const secret = assertEnvVar(env.JWT_SECRET, 'JWT_SECRET');
+        const verifyOptions: {
+            alg: 'HS512';
+            iss?: string;
+        } = { alg: 'HS512' };
+        const issuer = env.JWT_ISSUER ?? env.API_BASE_URL;
+        if (issuer) {
+            verifyOptions.iss = issuer;
+        }
+        const payload = await verify(token, secret, verifyOptions);
         return {
             id: payload.sub as string,
             email: payload.email as string,
@@ -47,8 +57,7 @@ export function auth(options: AuthOptions = {}) {
         }
 
         const token = match[1];
-        const secret = c.env.JWT_SECRET || 'development-secret-change-in-production';
-        const user = await extractUser(token, secret);
+        const user = await extractUser(token, c.env);
 
         if (!user) {
             throw authError('Invalid or expired token');

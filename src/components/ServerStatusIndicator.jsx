@@ -10,7 +10,7 @@ const ServerStatusIndicator = () => {
       await api.get('/health');
       setServerStatus('online');
       setLastChecked(new Date());
-    } catch (error) {
+    } catch {
       setServerStatus('offline');
       setLastChecked(new Date());
     }

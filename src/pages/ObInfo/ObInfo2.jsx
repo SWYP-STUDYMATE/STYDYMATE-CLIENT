@@ -7,6 +7,7 @@ import useProfileStore from "../../store/profileStore";
 import { data, useNavigate } from "react-router-dom";
 import commonSelectStyles from "../../components/SelectStyles";
 import api from "../../api";
+import { saveLocation } from "../../api/user";
 import { useAlert } from "../../hooks/useAlert.jsx";
 
 export default function OnboardingInfo2() {
@@ -98,17 +99,34 @@ export default function OnboardingInfo2() {
       return [];
     }
     
-    return locations.map(loc => ({
-      value: loc.locationId,
-      label: `${loc.city}, ${loc.country} (${loc.timezone})`
-    }));
+    return locations
+      .map((loc) => {
+        const locationId = loc.locationId ?? loc.id;
+        if (!locationId) {
+          return null;
+        }
+
+        const timeZone = loc.timezone ?? loc.timeZone;
+        const suffix = timeZone ? ` (${timeZone})` : "";
+
+        return {
+          value: locationId,
+          label: `${loc.city}, ${loc.country}${suffix}`
+        };
+      })
+      .filter((option) => option !== null);
   }, [locations]);
 
   const isButtonEnabled = !!selected;
 
   const handleNext = async () => {
+    if (!selected?.value) {
+      showError("거주지를 선택해주세요.");
+      return;
+    }
+
     try {
-      await api.post("/user/location", { locationId: selected.value });
+      await saveLocation(selected.value);
       setResidence(selected.value);
       navigate("/onboarding-info/3");
     } catch (e) {

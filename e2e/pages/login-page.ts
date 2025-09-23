@@ -199,7 +199,7 @@ export class LoginPage extends BasePage {
    */
   async verifyNetworkErrorHandling() {
     // 네트워크 에러 모킹
-    await this.page.route('**/login/oauth2/code/naver**', route => {
+    await this.page.route('**/api/v1/auth/callback/naver**', route => {
       route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -222,7 +222,7 @@ export class LoginPage extends BasePage {
    */
   async verifyOAuthCancelHandling() {
     // OAuth 취소 시나리오 모킹
-    await this.page.route('**/login/oauth2/code/naver**', route => {
+    await this.page.route('**/api/v1/auth/callback/naver**', route => {
       route.fulfill({
         status: 400,
         contentType: 'application/json',

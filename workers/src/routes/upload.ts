@@ -198,7 +198,7 @@ uploadRoutes.post('/video', auth(), bodySizeLimit(100 * 1024 * 1024), async (c) 
 
 // Get uploaded file
 uploadRoutes.get('/file/*', async (c) => {
-  const path = c.req.path.replace('/api/v1/upload/file/', '').replace('/api/upload/file/', '');
+  const path = c.req.path.replace('/api/v1/upload/file/', '');
   const variant = c.req.query('variant');
   const download = c.req.query('download') === 'true';
 
@@ -258,7 +258,7 @@ uploadRoutes.get('/file/*', async (c) => {
 
 // Delete file
 uploadRoutes.delete('/file/*', auth(), async (c) => {
-  const path = c.req.path.replace('/api/v1/upload/file/', '').replace('/api/upload/file/', '');
+  const path = c.req.path.replace('/api/v1/upload/file/', '');
   const user = getCurrentUser(c)!;
 
   if (!path) {

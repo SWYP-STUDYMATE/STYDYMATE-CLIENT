@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 // 서버 API와 동기화된 파트너 선호도 상태 관리
 const usePartnerStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       selectedPartnerGender: null,
       selectedPartnerStyles: [],
       selectedGroupSizes: [],

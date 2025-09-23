@@ -15,19 +15,20 @@ const CountdownTimer = ({ duration = 180, onTimeUp, autoStart = false }) => {
   } = useLevelTestStore();
 
   useEffect(() => {
-    // Initialize timer with duration
     setTimerSeconds(duration);
-
-    if (autoStart) {
-      startTimer();
-    }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [duration, autoStart, setTimerSeconds, startTimer]);
+  }, [duration, setTimerSeconds]);
+
+  useEffect(() => {
+    if (autoStart) {
+      startTimer();
+    }
+  }, [autoStart, startTimer]);
 
   useEffect(() => {
     if (isTimerRunning && timerSeconds > 0) {

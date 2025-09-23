@@ -7,7 +7,10 @@ import { log } from '../utils/logger';
  */
 
 // Workers API 기본 URL 설정
-const WORKERS_API_BASE = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
+const WORKERS_API_BASE =
+  import.meta.env.VITE_WORKERS_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  'https://workers.languagemate.kr';
 
 // Workers API 전용 axios 인스턴스 생성
 const workersApi = axios.create({
@@ -170,27 +173,17 @@ export const getSessionActivity = async (timeRange = 'week') => {
 export const getLevelTestHistory = async () => {
   try {
     log.info('레벨 테스트 히스토리 조회 시작', null, 'ANALYTICS');
-    
-    // 레벨 테스트 관련 이벤트 조회
-    const params = new URLSearchParams({
-      start: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(), // 1년
-      end: new Date().toISOString(),
-      groupBy: 'path'
-    });
-    
-    const response = await workersApi.get(`/api/v1/analytics/events?${params}`);
-    
-    // 레벨 테스트 관련 이벤트만 필터링
-    const levelTestData = response.data?.events?.filter(event => 
-      event.event === 'level_test_complete' || 
-      event.properties?.page?.includes('level-test')
-    ) || [];
-    
-    log.info('레벨 테스트 히스토리 조회 성공', levelTestData, 'ANALYTICS');
-    return { levelTests: levelTestData };
+
+    const response = await workersApi.get('/api/v1/analytics/dashboard');
+    const levelTests = Array.isArray(response.data?.levelTests)
+      ? response.data.levelTests
+      : [];
+
+    log.info('레벨 테스트 히스토리 조회 성공', levelTests, 'ANALYTICS');
+    return { levelTests };
   } catch (error) {
     log.error('레벨 테스트 히스토리 조회 실패', error, 'ANALYTICS');
-    throw error;
+    return { levelTests: [] };
   }
 };
 
@@ -202,44 +195,17 @@ export const getLevelTestHistory = async () => {
 export const getMatchingStats = async (timeRange = 'month') => {
   try {
     log.info('매칭 통계 조회 시작', { timeRange }, 'ANALYTICS');
-    
-    const end = new Date();
-    const start = new Date();
-    
-    switch (timeRange) {
-      case 'week':
-        start.setDate(end.getDate() - 7);
-        break;
-      case 'month':
-        start.setMonth(end.getMonth() - 1);
-        break;
-      case 'year':
-        start.setFullYear(end.getFullYear() - 1);
-        break;
-      default:
-        start.setMonth(end.getMonth() - 1);
-    }
-    
-    const params = new URLSearchParams({
-      start: start.toISOString(),
-      end: end.toISOString(),
-      groupBy: 'status'
-    });
-    
-    const response = await workersApi.get(`/api/v1/analytics/events?${params}`);
-    
-    // 매칭 관련 이벤트만 필터링
-    const matchingData = response.data?.events?.filter(event => 
-      event.event === 'matching_request' || 
-      event.event === 'matching_success' || 
-      event.event === 'matching_failed'
-    ) || [];
-    
-    log.info('매칭 통계 조회 성공', matchingData, 'ANALYTICS');
-    return { matchingEvents: matchingData };
+
+    const response = await workersApi.get('/api/v1/analytics/dashboard');
+    const matchingEvents = Array.isArray(response.data?.matchingEvents)
+      ? response.data.matchingEvents
+      : [];
+
+    log.info('매칭 통계 조회 성공', matchingEvents, 'ANALYTICS');
+    return { matchingEvents };
   } catch (error) {
     log.error('매칭 통계 조회 실패', error, 'ANALYTICS');
-    throw error;
+    return { matchingEvents: [] };
   }
 };
 

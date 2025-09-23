@@ -37,7 +37,7 @@ export default function RealtimeSubtitles({
       formData.append('task', 'transcribe');
       formData.append('vad_filter', 'true'); // Voice Activity Detection
 
-      const response = await fetch(`${API_URL}/api/whisper/transcribe`, {
+      const response = await fetch(`${API_URL}/api/v1/whisper/transcribe`, {
         method: 'POST',
         body: formData
       });

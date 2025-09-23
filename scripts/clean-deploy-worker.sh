@@ -41,14 +41,20 @@ cd "$PROJECT_ROOT"
 log_info "STUDYMATE CLIENT - Worker Clean Deploy 시작"
 log_info "프로젝트 루트: $PROJECT_ROOT"
 
-# Worker 관련 파일 확인
-if [ ! -f "worker.js" ] && [ ! -f "src/worker.js" ] && [ ! -f "workers/index.js" ]; then
+# Worker 디렉토리 확인
+if [ -d "workers" ]; then
+    log_info "Workers 디렉토리 발견"
+    cd workers
+    WORKER_DIR="$PROJECT_ROOT/workers"
+elif [ ! -f "worker.js" ] && [ ! -f "src/worker.js" ]; then
     log_warning "Worker 파일을 찾을 수 없습니다. 일반적인 위치를 확인하세요:"
     log_warning "  - worker.js"
     log_warning "  - src/worker.js"
-    log_warning "  - workers/index.js"
+    log_warning "  - workers/ 디렉토리"
     log_warning "Worker 배포를 건너뛰고 계속 진행합니다."
     exit 0
+else
+    WORKER_DIR="$PROJECT_ROOT"
 fi
 
 # 1. Worker 빌드 캐시 삭제

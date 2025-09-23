@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     BarChart3, TrendingUp, Users, Globe, AlertCircle,
     Activity, Clock, Zap, Database, RefreshCw
@@ -8,7 +8,10 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_WORKERS_API_URL ||
+  'https://workers.languagemate.kr';
 
 export default function AnalyticsDashboard() {
     const [dashboardData, setDashboardData] = useState(null);
@@ -20,7 +23,7 @@ export default function AnalyticsDashboard() {
     const refreshIntervalRef = useRef(null);
 
     // 대시보드 데이터 가져오기
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/v1/analytics/dashboard`, {
                 headers: {
@@ -41,10 +44,18 @@ export default function AnalyticsDashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    // 실시간 메트릭 업데이트
+    const updateRealtimeMetrics = useCallback((metrics) => {
+        setDashboardData(prev => ({
+            ...prev,
+            realtime: metrics
+        }));
+    }, []);
 
     // WebSocket 연결
-    const connectWebSocket = () => {
+    const connectWebSocket = useCallback(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
         const ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/v1/analytics/stream`);
@@ -73,20 +84,12 @@ export default function AnalyticsDashboard() {
             console.log('WebSocket closed');
             // 5초 후 재연결
             if (autoRefresh) {
-                setTimeout(connectWebSocket, 5000);
+                setTimeout(() => connectWebSocket(), 5000);
             }
         };
 
         wsRef.current = ws;
-    };
-
-    // 실시간 메트릭 업데이트
-    const updateRealtimeMetrics = (metrics) => {
-        setDashboardData(prev => ({
-            ...prev,
-            realtime: metrics
-        }));
-    };
+    }, [autoRefresh, updateRealtimeMetrics]);
 
     // 초기 로드 및 자동 새로고침
     useEffect(() => {
@@ -105,7 +108,7 @@ export default function AnalyticsDashboard() {
                 wsRef.current.close();
             }
         };
-    }, [autoRefresh]);
+    }, [autoRefresh, connectWebSocket, fetchDashboardData]);
 
     if (loading) {
         return (
@@ -124,7 +127,7 @@ export default function AnalyticsDashboard() {
         );
     }
 
-    const { overview, topPaths, errorsByStatus, geoDistribution, realtime } = dashboardData || {};
+    const { overview, topPaths, geoDistribution, realtime } = dashboardData || {};
 
     // 차트 데이터 준비
     const requestTrendData = {
