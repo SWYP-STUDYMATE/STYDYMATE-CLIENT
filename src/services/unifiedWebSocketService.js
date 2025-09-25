@@ -27,11 +27,11 @@ class UnifiedWebSocketService {
     this.errorListeners = new Set();
     
     // 환경 설정
-    const fallback = import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+    const fallback = import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
     const wsOrigin = import.meta.env.VITE_WS_URL
       || (fallback.startsWith('https://') ? fallback.replace('https://', 'wss://')
         : fallback.startsWith('http://') ? fallback.replace('http://', 'ws://')
-        : 'wss://workers.languagemate.kr');
+        : 'wss://api.languagemate.kr');
     this.wsBase = wsOrigin;
   }
 

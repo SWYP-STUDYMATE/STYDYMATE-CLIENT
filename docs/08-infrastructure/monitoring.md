@@ -8,7 +8,7 @@ STUDYMATE 플랫폼의 모니터링, 로깅, 알림 시스템과 관찰성(Obser
 
 ### 기술 스택
 - **프론트엔드**: Cloudflare Analytics + Web Vitals
-- **백엔드 API**: Spring Boot Actuator + Micrometer
+- **백엔드 API**: Cloudflare Workers Analytics + Wrangler tail
 - **Node.js Workers**: Cloudflare Workers Analytics
 - **에러 트래킹**: Sentry
 - **실시간 모니터링**: Cloudflare Dashboard

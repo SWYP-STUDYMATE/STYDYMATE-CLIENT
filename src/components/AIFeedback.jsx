@@ -14,7 +14,7 @@ export default function AIFeedback({ transcript, userLevel = 'B1', isEnabled = t
 
         setIsLoading(true);
         try {
-            const response = await fetch(`${import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr'}/api/v1/feedback/realtime`, {
+            const response = await fetch(`${import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr'}/api/v1/feedback/realtime`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

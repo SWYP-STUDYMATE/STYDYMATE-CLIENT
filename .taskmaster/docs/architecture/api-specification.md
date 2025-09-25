@@ -5,7 +5,7 @@
 - **버전**: 1.0.0
 - **대상**: Frontend/Backend 개발자
 
-## 🔷 Spring Boot API (기존 - 확장 필요)
+## 🔷 Cloudflare Workers API (확장 필요)
 
 ### 1. 매칭 시스템 API (NEW)
 

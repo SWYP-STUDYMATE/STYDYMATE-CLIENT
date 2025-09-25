@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, Mic, MicOff, Languages, Eye, EyeOff } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
 
 export default function RealtimeSubtitles({ 
   stream, 

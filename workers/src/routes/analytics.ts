@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { AppBindings as Env } from '../index';
 import { authMiddleware } from '../utils/auth';
 import { getAggregatedMetrics } from '../middleware/analytics';
-import { successResponse, preflightResponse, errorResponse } from '../utils/response';
+import { successResponse, errorResponse } from '../utils/response';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -32,7 +32,21 @@ app.get('/metrics', authMiddleware as any, async (c) => {
         );
 
         if (!metrics) {
-            return c.json({ success: false, error: { message: 'Analytics not available' } }, { status: 503 });
+            return successResponse(c, {
+                timeRange: { start, end },
+                groupBy: query.groupBy ?? null,
+                fallback: true,
+                metrics: {
+                    count: 0,
+                    avgDuration: 0,
+                    avgCpuTime: 0,
+                    p95Duration: 0,
+                    p95CpuTime: 0,
+                    buckets: []
+                }
+            }, {
+                note: 'analytics_fallback'
+            });
         }
 
         return successResponse(c, {
@@ -42,7 +56,24 @@ app.get('/metrics', authMiddleware as any, async (c) => {
         });
     } catch (error) {
         console.error('Metrics query error:', error);
-        return c.json({ success: false, error: { message: 'Failed to query metrics' } }, { status: 500 });
+        return successResponse(c, {
+            timeRange: {
+                start: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                end: new Date()
+            },
+            groupBy: null,
+            fallback: true,
+            metrics: {
+                count: 0,
+                avgDuration: 0,
+                avgCpuTime: 0,
+                p95Duration: 0,
+                p95CpuTime: 0,
+                buckets: []
+            }
+        }, {
+            note: 'analytics_error_fallback'
+        });
     }
 });
 

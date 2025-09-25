@@ -1,5 +1,6 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import useNotificationStore from "../store/notificationStore";
 
 class NotificationWebSocketService {
   constructor() {
@@ -10,13 +11,33 @@ class NotificationWebSocketService {
     this.reconnectDelay = 3000;
     this.subscriptions = new Map();
     this.messageHandlers = new Map();
+    this.fallbackInterval = null;
+    this.fallbackPollInterval = 30000;
     const origin = import.meta.env.VITE_WS_URL
       || import.meta.env.VITE_API_URL
       || import.meta.env.VITE_WORKERS_API_URL
-      || "https://workers.languagemate.kr";
-    this.wsBase = origin.startsWith('http')
-      ? origin.replace(/^http/i, origin.startsWith('https') ? 'wss' : 'ws')
-      : origin;
+      || "https://api.languagemate.kr";
+
+    this.wsBase = this.normalizeWebSocketBase(origin);
+  }
+
+  normalizeWebSocketBase(origin) {
+    if (!origin) return "";
+
+    try {
+      const baseUrl = new URL(origin, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+      if (baseUrl.protocol === 'http:') {
+        baseUrl.protocol = 'ws:';
+      } else if (baseUrl.protocol === 'https:') {
+        baseUrl.protocol = 'wss:';
+      }
+      return baseUrl.href.replace(/\/?$/, '');
+    } catch (error) {
+      console.warn('Failed to normalize WebSocket base, falling back to string replace', { origin, error });
+      return origin
+        .replace(/^https?:\/\//i, (match) => (match.toLowerCase() === 'https://' ? 'wss://' : 'ws://'))
+        .replace(/\/?$/, '');
+    }
   }
 
   // WebSocket 연결 초기화
@@ -47,6 +68,7 @@ class NotificationWebSocketService {
           console.log("Notification WebSocket connected:", frame);
           this.isConnected = true;
           this.reconnectAttempts = 0;
+          this.stopFallbackPolling();
           this.setupDefaultSubscriptions();
           resolve(frame);
         },
@@ -265,6 +287,7 @@ class NotificationWebSocketService {
   handleReconnection() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error("Max reconnection attempts reached for notification WebSocket");
+      this.startFallbackPolling();
       return;
     }
 
@@ -293,6 +316,42 @@ class NotificationWebSocketService {
       this.client = null;
       this.isConnected = false;
       this.reconnectAttempts = 0;
+    }
+
+    this.stopFallbackPolling();
+  }
+
+  startFallbackPolling() {
+    if (this.fallbackInterval) {
+      return;
+    }
+
+    console.warn("Starting notification fallback polling mode");
+    const store = useNotificationStore.getState();
+
+    const poll = async () => {
+      try {
+        await store.loadUnreadCount();
+      } catch (error) {
+        console.error("Fallback polling failed:", error);
+      }
+    };
+
+    poll();
+    this.fallbackInterval = setInterval(poll, this.fallbackPollInterval);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('notification-fallback-started'));
+    }
+  }
+
+  stopFallbackPolling() {
+    if (this.fallbackInterval) {
+      clearInterval(this.fallbackInterval);
+      this.fallbackInterval = null;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('notification-fallback-stopped'));
+      }
     }
   }
 

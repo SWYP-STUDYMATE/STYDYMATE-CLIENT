@@ -2,20 +2,19 @@
 
 ## 📋 개요
 
-STUDYMATE 플랫폼의 데이터베이스 구조와 엔터티 간의 관계를 정의합니다. 이 ERD는 STUDYMATE-SERVER의 PostgreSQL 데이터베이스를 기반으로 합니다.
+STUDYMATE 플랫폼의 데이터베이스 구조와 엔터티 간의 관계를 정의합니다. 이 ERD는 Cloudflare D1 관계형 데이터베이스를 기반으로 합니다.
 
 ## 🏗️ 데이터베이스 아키텍처
 
 ### 기술 스택
-- **주 데이터베이스**: PostgreSQL 15+
-- **캐시 레이어**: Redis 7+  
-- **연결 풀**: HikariCP
-- **ORM**: Spring Data JPA + Hibernate
-- **마이그레이션**: Flyway
+- **주 데이터베이스**: Cloudflare D1 (SQLite 기반)
+- **캐시 레이어**: Workers KV / Durable Objects
+- **데이터 접근**: Hono 서비스 + Drizzle ORM (또는 직접 SQL)
+- **마이그레이션**: `wrangler d1 migrations`
 
 ### 데이터베이스 구성
 ```
-STUDYMATE-SERVER Database
+STUDYMATE API Database (Cloudflare D1)
 ├── 사용자 관리 (User Management)
 ├── 인증 및 세션 (Authentication & Sessions)
 ├── 온보딩 시스템 (Onboarding System)

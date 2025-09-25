@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import app from '../src/index';
+import { app } from '../src/index';
 
 describe('Workers API smoke', () => {
     it('GET / should return API info', async () => {
@@ -18,4 +18,3 @@ describe('Workers API smoke', () => {
         expect(json?.data?.status).toBe('healthy');
     });
 });
-

@@ -100,7 +100,7 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
         });
       }, 200);
 
-      // Spring Boot API로 직접 파일 업로드
+      // Workers API로 직접 파일 업로드
       const result = await uploadProfileImage(selectedFile);
       
       clearInterval(progressInterval);

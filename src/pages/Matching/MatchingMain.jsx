@@ -92,7 +92,7 @@ export default function MatchingMain() {
         
         setIsLoading(true);
         try {
-            // Spring Boot API를 통한 파트너 검색
+            // Workers API를 통한 파트너 검색
             const results = await searchPartners(searchQuery, matchingFilters);
             setSearchResults(results);
         } catch (error) {

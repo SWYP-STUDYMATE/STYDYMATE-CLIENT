@@ -7,14 +7,22 @@ import { successResponse } from '../utils/response';
 import {
   listLanguageOptions,
   listLanguageLevelTypes,
+  listLearningExpectationOptions,
+  listLearningStyleOptions,
   listTopicOptions,
   listPartnerOptions,
   listScheduleOptions,
+  listGroupSizeOptions,
+  listCommunicationMethodOptions,
+  listDailyMinuteOptions,
   listMotivationOptions,
   upsertOnboardingLanguages,
+  upsertOnboardingLearningExpectations,
+  upsertOnboardingLearningStyles,
   upsertOnboardingTopics,
   upsertOnboardingPartner,
   upsertOnboardingSchedules,
+  upsertOnboardingGroupSizes,
   upsertOnboardingMotivations,
   loadOnboardingSummary,
   completeOnboarding
@@ -56,7 +64,19 @@ async function getStepPayload(env: Env, userId: string, step: number) {
 }
 
 async function buildOnboardingData(env: Env, userId: string) {
-  const [profile, step1, step2, step3, step4, progress, languages, motivations, topics] = await Promise.all([
+  const [
+    profile,
+    step1,
+    step2,
+    step3,
+    step4,
+    progress,
+    languages,
+    motivations,
+    topics,
+    learningStyles,
+    learningExpectations
+  ] = await Promise.all([
     getUserProfile(env, userId),
     getStepPayload(env, userId, 1),
     getStepPayload(env, userId, 2),
@@ -65,7 +85,9 @@ async function buildOnboardingData(env: Env, userId: string) {
     getOnboardingProgress(env, userId, TOTAL_ONBOARDING_STEPS),
     listLanguageOptions(env),
     listMotivationOptions(env),
-    listTopicOptions(env)
+    listTopicOptions(env),
+    listLearningStyleOptions(env),
+    listLearningExpectationOptions(env)
   ]);
 
   const step1Payload = (step1 as Record<string, unknown>) ?? {};
@@ -96,8 +118,16 @@ async function buildOnboardingData(env: Env, userId: string) {
       languages,
       motivations,
       topics,
-      learningStyles: [],
-      learningExpectations: []
+      learningStyles: learningStyles.map((item) => ({
+        id: item.learning_style_id,
+        name: item.learning_style_name,
+        description: item.description ?? undefined
+      })),
+      learningExpectations: learningExpectations.map((item) => ({
+        id: item.learning_expectation_id,
+        name: item.learning_expectation_name,
+        description: item.description ?? undefined
+      }))
     }
   };
 }
@@ -180,11 +210,31 @@ onboardingRoutes.get('/interest/topics', async (c) => {
 });
 
 onboardingRoutes.get('/interest/learning-styles', async (c) => {
-  return successResponse(c, []);
+  try {
+    const rows = await listLearningStyleOptions(c.env);
+    const data = rows.map((item) => ({
+      learningStyleId: item.learning_style_id,
+      learningStyleName: item.learning_style_name,
+      description: item.description ?? undefined
+    }));
+    return successResponse(c, data);
+  } catch (error) {
+    throw wrapError(error, 'Failed to load learning style options');
+  }
 });
 
 onboardingRoutes.get('/interest/learning-expectations', async (c) => {
-  return successResponse(c, []);
+  try {
+    const rows = await listLearningExpectationOptions(c.env);
+    const data = rows.map((item) => ({
+      learningExpectationId: item.learning_expectation_id,
+      learningExpectationName: item.learning_expectation_name,
+      description: item.description ?? undefined
+    }));
+    return successResponse(c, data);
+  } catch (error) {
+    throw wrapError(error, 'Failed to load learning expectation options');
+  }
 });
 
 onboardingRoutes.get('/partner-preferences', async (c) => {
@@ -193,6 +243,70 @@ onboardingRoutes.get('/partner-preferences', async (c) => {
     return successResponse(c, data);
   } catch (error) {
     throw wrapError(error, 'Failed to load partner preferences');
+  }
+});
+
+onboardingRoutes.get('/partner/personalities', async (c) => {
+  try {
+    const rows = await listPartnerOptions(c.env);
+    const data = rows.map((item) => ({
+      partnerPersonalityId: item.partner_personality_id,
+      partnerPersonality: item.partner_personality,
+      description: item.description ?? undefined,
+      id: item.partner_personality_id,
+      name: item.partner_personality
+    }));
+    return successResponse(c, data);
+  } catch (error) {
+    throw wrapError(error, 'Failed to load partner personalities');
+  }
+});
+
+onboardingRoutes.get('/partner/gender-type', async (c) => {
+  // NOTE: 레거시 백엔드와 응답 스키마를 맞추기 위해 name/description 필드만 반환
+  const genderTypes = [
+    { name: 'MALE', description: '남성' },
+    { name: 'FEMALE', description: '여성' },
+    { name: 'ANY', description: '상관없음' }
+  ];
+
+  return successResponse(c, genderTypes);
+});
+
+onboardingRoutes.get('/schedule/communication-methods', async (c) => {
+  try {
+    const methods = await listCommunicationMethodOptions(c.env);
+    const data = methods.map((item) => ({
+      communicationMethodId: item.id,
+      code: item.code,
+      name: item.code,
+      label: item.displayName,
+      displayName: item.displayName,
+      description: item.description ?? undefined,
+      sortOrder: item.sortOrder
+    }));
+    return successResponse(c, data);
+  } catch (error) {
+    throw wrapError(error, 'Failed to load communication methods');
+  }
+});
+
+onboardingRoutes.get('/schedule/daily-methods', async (c) => {
+  try {
+    const options = await listDailyMinuteOptions(c.env);
+    const data = options.map((item, index) => ({
+      id: index + 1,
+      name: item.code,
+      code: item.code,
+      minutes: item.minutes,
+      label: item.displayName,
+      displayName: item.displayName,
+      description: item.description ?? item.displayName,
+      sortOrder: item.sortOrder
+    }));
+    return successResponse(c, data);
+  } catch (error) {
+    throw wrapError(error, 'Failed to load daily minute options');
   }
 });
 
@@ -217,6 +331,234 @@ onboardingRoutes.get('/motivation-options', async (c) => {
 onboardingRoutes.use('/*', requireAuth);
 onboardingRoutes.use('/steps/*', requireAuth);
 onboardingRoutes.use('/steps', requireAuth);
+
+onboardingRoutes.get('/schedule/group-sizes', async (c) => {
+  try {
+    const rows = await listGroupSizeOptions(c.env);
+    const data = rows.map((item) => ({
+      groupSizeId: item.group_size_id,
+      groupSize: item.group_size,
+      id: item.group_size_id,
+      name: item.group_size,
+      label: item.group_size
+    }));
+    return successResponse(c, data);
+  } catch (error) {
+    throw wrapError(error, 'Failed to load group size options');
+  }
+});
+
+onboardingRoutes.post('/partner/gender', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const raw =
+    typeof body.partnerGenderType === 'string'
+      ? body.partnerGenderType
+      : typeof body.partnerGender === 'string'
+        ? body.partnerGender
+        : typeof body.genderType === 'string'
+          ? body.genderType
+          : undefined;
+
+  if (!raw) {
+    throw new AppError('partner gender is required', 400, 'INVALID_PAYLOAD');
+  }
+
+  const normalized = String(raw).trim().toUpperCase();
+  const allowed = new Set(['MALE', 'FEMALE', 'ANY', 'OTHER']);
+  if (!allowed.has(normalized)) {
+    throw new AppError('invalid partner gender type', 400, 'INVALID_PAYLOAD');
+  }
+
+  try {
+    await updateUserProfile(c.env, userId, { partnerGender: normalized });
+    const summary = await loadOnboardingSummary(c.env, userId);
+    return successResponse(c, {
+      partnerGender: normalized,
+      partnerPreferences: summary.partnerPreferences
+    });
+  } catch (error) {
+    throw wrapError(error, 'Failed to save partner gender');
+  }
+});
+
+onboardingRoutes.post('/schedule/communication-method', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const raw =
+    typeof (body as any).communicationMethodType === 'string'
+      ? (body as any).communicationMethodType
+      : typeof (body as any).communicationMethod === 'string'
+        ? (body as any).communicationMethod
+        : typeof (body as any).methodCode === 'string'
+          ? (body as any).methodCode
+          : typeof (body as any).code === 'string'
+            ? (body as any).code
+            : typeof (body as any).value === 'string'
+              ? (body as any).value
+              : Array.isArray(body) && body.length > 0 && typeof body[0] === 'string'
+                ? body[0]
+                : undefined;
+
+  if (!raw) {
+    throw new AppError('communication method is required', 400, 'INVALID_PAYLOAD');
+  }
+
+  const normalized = String(raw).trim().toUpperCase();
+  if (!normalized) {
+    throw new AppError('communication method is required', 400, 'INVALID_PAYLOAD');
+  }
+
+  const methods = await listCommunicationMethodOptions(c.env);
+  const selected = methods.find((item) => item.code.toUpperCase() === normalized);
+  if (!selected) {
+    throw new AppError('invalid communication method', 400, 'INVALID_COMMUNICATION_METHOD');
+  }
+
+  try {
+    await updateUserProfile(c.env, userId, { communicationMethod: normalized });
+    await saveOnboardingStep(c.env, userId, 5, { communicationMethod: normalized }, TOTAL_ONBOARDING_STEPS);
+    const progress = await getOnboardingProgress(c.env, userId, TOTAL_ONBOARDING_STEPS);
+    return successResponse(c, {
+      communicationMethod: normalized,
+      label: selected.displayName,
+      progress
+    });
+  } catch (error) {
+    throw wrapError(error, 'Failed to save communication method');
+  }
+});
+
+onboardingRoutes.post('/schedule/daily-minute', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const payload = (await c.req.json().catch(() => ({}))) as any;
+
+  const candidates: unknown[] = [];
+  const pushCandidate = (value: unknown) => {
+    if (value === undefined || value === null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((nested) => pushCandidate(nested));
+      return;
+    }
+    candidates.push(value);
+  };
+
+  const lookupKeys = [
+    'dailyMinutesType',
+    'dailyMinuteType',
+    'dailyMinute',
+    'dailyMinutes',
+    'code',
+    'value',
+    'selection'
+  ] as const;
+
+  for (const key of lookupKeys) {
+    pushCandidate(payload?.[key]);
+  }
+
+  // Fallback: if the payload itself is an array (legacy clients)
+  pushCandidate(payload);
+
+  const stringCandidate = candidates.find(
+    (item): item is string => typeof item === 'string' && item.trim().length > 0
+  );
+
+  const numericCandidate = candidates.find((item): item is number => typeof item === 'number' && Number.isFinite(item))
+    ?? (() => {
+      if (!stringCandidate) {
+        return undefined;
+      }
+      const maybeNumber = Number(stringCandidate.trim());
+      return Number.isFinite(maybeNumber) ? maybeNumber : undefined;
+    })();
+
+  if (!stringCandidate && numericCandidate === undefined) {
+    throw new AppError('daily minute selection is required', 400, 'INVALID_PAYLOAD');
+  }
+
+  const options = await listDailyMinuteOptions(c.env);
+
+  let selectedOption = undefined;
+  if (stringCandidate) {
+    const normalizedCode = stringCandidate.trim().toUpperCase();
+    selectedOption = options.find((item) => item.code.toUpperCase() === normalizedCode);
+  }
+
+  if (!selectedOption && numericCandidate !== undefined) {
+    const normalizedMinutes = Math.round(numericCandidate);
+    selectedOption = options.find((item) => item.minutes === normalizedMinutes);
+  }
+
+  if (!selectedOption) {
+    throw new AppError('invalid daily minute option', 400, 'INVALID_DAILY_MINUTE_OPTION');
+  }
+
+  const normalizedCode = selectedOption.code.toUpperCase();
+
+  try {
+    await updateUserProfile(c.env, userId, { dailyMinute: normalizedCode });
+    await saveOnboardingStep(c.env, userId, 7, { dailyMinute: normalizedCode }, TOTAL_ONBOARDING_STEPS);
+    const progress = await getOnboardingProgress(c.env, userId, TOTAL_ONBOARDING_STEPS);
+
+    return successResponse(c, {
+      dailyMinute: normalizedCode,
+      minutes: selectedOption.minutes,
+      label: selectedOption.displayName,
+      description: selectedOption.description ?? undefined,
+      progress
+    });
+  } catch (error) {
+    throw wrapError(error, 'Failed to save daily minute preference');
+  }
+});
+
+onboardingRoutes.post('/schedule/group-size', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const candidates = Array.isArray(body)
+    ? body
+    : (body as any).groupSizeIds ?? (body as any).group_size_ids ?? (body as any).ids ?? [];
+
+  const normalized = Array.from(new Set((Array.isArray(candidates) ? candidates : []).map((value) => Number(value)))).filter((value): value is number => Number.isFinite(value));
+
+  if (!normalized.length) {
+    throw new AppError('groupSizeIds array required', 400, 'INVALID_PAYLOAD');
+  }
+
+  try {
+    await upsertOnboardingGroupSizes(c.env, userId, normalized);
+    await saveOnboardingStep(c.env, userId, 6, { groupSizeIds: normalized }, TOTAL_ONBOARDING_STEPS);
+    const progress = await getOnboardingProgress(c.env, userId, TOTAL_ONBOARDING_STEPS);
+    const summary = await loadOnboardingSummary(c.env, userId);
+
+    return successResponse(c, {
+      groupSizeIds: normalized,
+      groupSizes: summary.groupSizes,
+      progress
+    });
+  } catch (error) {
+    throw wrapError(error, 'Failed to save group sizes');
+  }
+});
 
 const STATIC_STEP_NUMBERS = [1, 2, 3, 4];
 
@@ -466,10 +808,10 @@ onboardingRoutes.post('/interest/topic', async (c) => {
   const userId = c.get('userId');
   if (!userId) throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
   const body = await c.req.json();
-  const topicIds = Array.isArray((body as any)?.topicIds)
+  const topicIds: unknown[] = Array.isArray((body as any)?.topicIds)
     ? (body as any).topicIds
     : Array.isArray(body)
-      ? body
+      ? (body as unknown[])
       : [];
   const normalized = topicIds
     .map((value: unknown) => Number(value))
@@ -479,11 +821,45 @@ onboardingRoutes.post('/interest/topic', async (c) => {
 });
 
 onboardingRoutes.post('/interest/learning-style', async (c) => {
-  return successResponse(c, { success: true });
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  const body = await c.req.json().catch(() => ({})) as any;
+  const raw: unknown[] = Array.isArray(body?.learningStyleIds)
+    ? body.learningStyleIds
+    : Array.isArray(body)
+      ? (body as unknown[])
+      : [];
+  const normalized = raw
+    .map((value: unknown): number => Number(value))
+    .filter((value: number): value is number => Number.isFinite(value));
+
+  try {
+    await upsertOnboardingLearningStyles(c.env, userId, normalized);
+    return successResponse(c, { count: normalized.length });
+  } catch (error) {
+    throw wrapError(error, 'Failed to save learning styles');
+  }
 });
 
 onboardingRoutes.post('/interest/learning-expectation', async (c) => {
-  return successResponse(c, { success: true });
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  const body = await c.req.json().catch(() => ({})) as any;
+  const raw: unknown[] = Array.isArray(body?.learningExpectationIds)
+    ? body.learningExpectationIds
+    : Array.isArray(body)
+      ? (body as unknown[])
+      : [];
+  const normalized = raw
+    .map((value: unknown): number => Number(value))
+    .filter((value: number): value is number => Number.isFinite(value));
+
+  try {
+    await upsertOnboardingLearningExpectations(c.env, userId, normalized);
+    return successResponse(c, { count: normalized.length });
+  } catch (error) {
+    throw wrapError(error, 'Failed to save learning expectations');
+  }
 });
 
 onboardingRoutes.post('/partner-preferences', async (c) => {

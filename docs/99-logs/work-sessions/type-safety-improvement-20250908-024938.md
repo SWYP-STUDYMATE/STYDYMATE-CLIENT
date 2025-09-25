@@ -3,7 +3,7 @@
 작업자: Claude Code
 
 ## 🎯 작업 목표
-서버(Spring Boot) ApiResponse와 클라이언트(React) API 호출 간의 타입 불일치 해결
+레거시 서버 ApiResponse와 클라이언트(React) API 호출 간의 타입 불일치 해결
 
 ## ⚠️ 식별된 문제점
 

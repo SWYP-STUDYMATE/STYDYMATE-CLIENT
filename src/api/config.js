@@ -4,7 +4,7 @@
  */
 
 // 기본 URL 계산
-const DEFAULT_WORKER_ORIGIN = "https://workers.languagemate.kr";
+const DEFAULT_WORKER_ORIGIN = "https://api.languagemate.kr";
 const MAIN_ORIGIN =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_WORKERS_API_URL ||
@@ -24,7 +24,7 @@ const WS_ORIGIN = (() => {
   if (MAIN_ORIGIN.startsWith("http://")) {
     return MAIN_ORIGIN.replace("http://", "ws://");
   }
-  return "wss://workers.languagemate.kr";
+  return "wss://api.languagemate.kr";
 })();
 
 // 환경변수에서 API URL 가져오기
@@ -116,10 +116,12 @@ export const API_ENDPOINTS = {
     SCHEDULE: {
       BASE: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/onboarding/schedule`,
       SCHEDULE: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/onboarding/schedule/schedule`,
+      COMMUNICATION_METHODS: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/onboarding/schedule/communication-methods`,
+      COMMUNICATION_METHOD: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/onboarding/schedule/communication-method`,
     },
   },
 
-  // 레벨 테스트 관련 (Spring Boot 서버 사용)
+  // 레벨 테스트 관련 (Workers API 제공)
   LEVEL_TEST: {
     BASE: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test`,
     START: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/start`,

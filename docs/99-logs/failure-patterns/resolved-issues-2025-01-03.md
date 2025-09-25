@@ -391,7 +391,7 @@ interface ApiEndpoint {
 
 // 2. API 계약 테스트
 const apiContractTest = {
-  tool: 'Pact.js 또는 Spring Cloud Contract',
+  tool: 'Pact.js 또는 레거시 계약 테스트 도구',
   purpose: 'API 계약 변경 시 자동 감지',
   integration: 'CI/CD 파이프라인에 통합'
 };

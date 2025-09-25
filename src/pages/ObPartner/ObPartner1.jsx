@@ -6,6 +6,7 @@ import ProgressBar from "../../components/PrograssBar";
 import usePartnerStore from "../../store/partnerStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObPartner1() {
   const [selected, setSelected] = useState(null);
@@ -19,7 +20,32 @@ export default function ObPartner1() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/partner/gender-type");
-        setGenders(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const code = typeof item.name === "string" && /^[A-Z_]+$/u.test(item.name)
+              ? item.name
+              : item.id ?? item.code ?? item.genderType ?? item.value ?? null;
+            const display = item.description
+              ?? item.label
+              ?? item.displayName
+              ?? (code && item.name && item.name !== code ? item.name : item.description)
+              ?? item.name
+              ?? code;
+
+            if (!code) {
+              return null;
+            }
+
+            return {
+              ...item,
+              id: code,
+              name: code,
+              description: display ?? code
+            };
+          })
+          .filter((value) => value !== null);
+        setGenders(normalized);
         setLoading(false);
       } catch (error) {
         console.error("성별 데이터를 불러오지 못했습니다:", error);

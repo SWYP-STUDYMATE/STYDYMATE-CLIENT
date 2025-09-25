@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
-const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
 
 export function useTranslation({
   targetLanguage = 'en',

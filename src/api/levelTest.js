@@ -1,9 +1,9 @@
 import { API_CONFIG, API_ENDPOINTS } from './config.js';
 import api from './index.js';
 
-// ===== Spring Boot 서버 API 함수들 =====
+// ===== 레벨 테스트 API 함수들 =====
 
-// 레벨 테스트 시작 (Spring Boot)
+// 레벨 테스트 시작 (Workers API)
 // export const startLevelTest = async (language = 'en') => {
 //   try {
 //     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.START, {
@@ -51,7 +51,7 @@ export const startLevelTest = (language = 'en') =>
 
 
 
-// 레벨 테스트 질문 조회 (Spring Boot)
+// 레벨 테스트 질문 조회
 export const getLevelTestQuestions = async (testId, category = 'general') => {
   try {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.GET(testId), {
@@ -64,7 +64,7 @@ export const getLevelTestQuestions = async (testId, category = 'general') => {
   }
 };
 
-// 음성 답변 제출 (Spring Boot)
+// 음성 답변 제출
 export const submitVoiceAnswer = async (testId, questionId, audioBlob) => {
   try {
     const formData = new FormData();
@@ -101,7 +101,7 @@ export const submitVoiceAnswer = async (testId, questionId, audioBlob) => {
  };
 
 const unwrap = (resp) => (resp?.data?.data ?? resp?.data ?? resp);
-// 음성 테스트 시작 (Spring Boot)
+// 음성 테스트 시작
 export const startVoiceTest = async (languageCode, currentLevel = null) => {
   try {
     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.VOICE.START, {
@@ -115,7 +115,7 @@ export const startVoiceTest = async (languageCode, currentLevel = null) => {
   }
 };
 
-// 음성 파일 업로드 (Spring Boot)
+// 음성 파일 업로드
 export const uploadVoiceRecording = async (testId, audioBlob) => {
   try {
     const formData = new FormData();
@@ -134,7 +134,7 @@ export const uploadVoiceRecording = async (testId, audioBlob) => {
   }
 };
 
-// 음성 테스트 분석 (Spring Boot)
+// 음성 테스트 분석
 export const analyzeVoiceTest = async (testId) => {
   try {
     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.VOICE.ANALYZE(testId));
@@ -152,7 +152,7 @@ export const getVoiceTestResult = async (testId) => {
  };
 
 
-// 레벨 테스트 완료 (Spring Boot)
+// 레벨 테스트 완료
 export const completeLevelTest = async (testId) => {
   try {
     const response = await api.post(API_ENDPOINTS.LEVEL_TEST.COMPLETE(testId));
@@ -163,7 +163,7 @@ export const completeLevelTest = async (testId) => {
   }
 };
 
-// 레벨 테스트 결과 조회 (Spring Boot)
+// 레벨 테스트 결과 조회
 export const getLevelTestResult = async (testId) => {
   try {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.GET(testId));
@@ -174,7 +174,7 @@ export const getLevelTestResult = async (testId) => {
   }
 };
 
-// 사용자의 레벨 테스트 목록 조회 (Spring Boot)
+// 사용자의 레벨 테스트 목록 조회
 export const getUserLevelTests = async (page = 0, size = 10) => {
   try {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.MY_TESTS, {
@@ -187,7 +187,7 @@ export const getUserLevelTests = async (page = 0, size = 10) => {
   }
 };
 
-// 레벨 테스트 요약 정보 조회 (Spring Boot)
+// 레벨 테스트 요약 정보 조회
 export const getLevelTestSummary = async () => {
   try {
     const response = await api.get(API_ENDPOINTS.LEVEL_TEST.SUMMARY);

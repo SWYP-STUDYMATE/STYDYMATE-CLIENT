@@ -208,4 +208,4 @@ unifiedWebSocketService.connect({ debug: true });
 
 - STOMP 프로토콜 사양: https://stomp.github.io/
 - SockJS 폴백 메커니즘 활용
-- Spring Boot WebSocket 엔드포인트와 호환
+- 기존 STOMP 엔드포인트와 호환성 유지

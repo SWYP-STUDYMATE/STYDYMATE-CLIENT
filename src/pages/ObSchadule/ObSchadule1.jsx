@@ -6,6 +6,7 @@ import CommonButton from "../../components/CommonButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import { useAlert } from "../../hooks/useAlert";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObSchadule1() {
   const { showError } = useAlert();
@@ -19,7 +20,26 @@ export default function ObSchadule1() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/schedule/communication-methods");
-        setCommunicationMethods(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const code = typeof item.name === "string" && /^[A-Z_]+$/u.test(item.name)
+              ? item.name
+              : item.code ?? item.id ?? item.value ?? item.communicationMethod ?? item.name ?? null;
+            const description = item.description ?? item.label ?? item.displayName ?? item.text ?? item.name ?? code;
+
+            if (!code) {
+              return null;
+            }
+
+            return {
+              ...item,
+              name: code,
+              description
+            };
+          })
+          .filter((value) => value !== null);
+        setCommunicationMethods(normalized);
         setLoading(false);
       } catch (error) {
         console.error("소통 방식 데이터를 불러오지 못했습니다:", error);

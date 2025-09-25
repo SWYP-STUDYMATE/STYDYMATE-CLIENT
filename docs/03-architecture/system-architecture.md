@@ -23,19 +23,21 @@
        │                  │                   │
        ▼                  ▼                   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Spring Boot Backend                       │
-│                  https://api.languagemate.kr                 │
+│                Cloudflare Workers API Layer                 │
+│                  https://api.languagemate.kr                │
 │  ┌─────────┬──────────┬──────────┬──────────┬──────────┐   │
-│  │  Auth   │   User   │ Matching │   Chat   │  Session │   │
-│  │ Service │ Service  │ Service  │ Service  │ Service  │   │
+│  │  Auth   │   User   │ Matching │   Chat   │ Sessions │   │
+│  │ Routes  │ Routes   │ Routes   │ Routes   │ Routes   │   │
 │  └─────────┴──────────┴──────────┴──────────┴──────────┘   │
+│        ▲ Durable Objects (WebRTC / Presence / Chat Hub)     │
 └─────────────────────────┬───────────────────────────────────┘
                           │
-        ┌─────────────────┼─────────────────┐
+        ┌─────────────────┼─────────────────┬────────────────┐
         ▼                 ▼                 ▼
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│    MySQL     │  │    Redis     │  │ Object Store │
-│   Database   │  │    Cache     │  │   (Images)   │
+│      D1      │  │  Workers KV  │  │      R2      │
+│  Relational  │  │   Cache &    │  │  Assets &    │
+│   Storage    │  │ Configuration│  │   Media      │
 └──────────────┘  └──────────────┘  └──────────────┘
 ```
 
@@ -64,36 +66,38 @@ src/
 └── services/      # 비즈니스 로직
 ```
 
-### 2. Backend (STUDYMATE-SERVER)
+### 2. Backend (Cloudflare Workers)
 
 #### 기술 스택
-- **Framework**: Spring Boot 3.3.5
-- **Language**: Java 17
-- **Database**: MySQL 8.0
-- **Cache**: Redis
-- **Security**: Spring Security + JWT
-- **WebSocket**: Spring WebSocket
+- **Framework**: Hono 4.x
+- **Language**: TypeScript (Service Worker 런타임)
+- **Data Stores**: Cloudflare D1, Workers KV, R2
+- **Stateful Components**: Durable Objects (WebRTC Room, UserPresence, ChatHub)
+- **Authentication**: JWT + OAuth2 Callback Routes
+- **Observability**: Cloudflare Analytics, Wrangler Tail, Workers Logs
 
-#### 레이어드 아키텍처
+#### 디렉토리 구조
 ```
-com.studymate/
-├── domain/
-│   ├── user/           # 사용자 도메인
-│   ├── auth/           # 인증 도메인
-│   ├── matching/       # 매칭 도메인
-│   ├── chat/           # 채팅 도메인
-│   ├── session/        # 세션 도메인
-│   ├── leveltest/      # 레벨테스트 도메인
-│   └── ai/             # AI 연동 도메인
-├── global/
-│   ├── config/         # 설정
-│   ├── exception/      # 예외 처리
-│   ├── security/       # 보안 설정
-│   └── util/           # 유틸리티
-└── infrastructure/
-    ├── persistence/    # DB 연동
-    └── external/       # 외부 API
+workers/src/
+├── routes/        # REST / WebSocket 핸들러 집합
+│   ├── auth.ts
+│   ├── users.ts
+│   ├── matching.ts
+│   ├── onboarding.ts
+│   ├── notifications.ts
+│   └── ...
+├── services/      # 비즈니스 로직 및 데이터 접근
+├── middleware/    # 인증, 로깅, 에러 처리 미들웨어
+├── durable/       # Durable Object 구현 (WebRTCRoom, UserPresence, ChatHub)
+├── utils/         # 공용 유틸리티
+└── types/         # 타입 선언 및 바인딩 정의
 ```
+
+#### 데이터 계층
+- **D1**: 사용자, 매칭, 알림, 레벨 테스트 등 관계형 데이터 관리
+- **Workers KV**: 매칭 설정, 캐시된 메타데이터, 속도 민감 키-값 데이터
+- **R2**: 음성/이미지 업로드 등 대용량 객체 저장
+- **Durable Objects**: 실시간 세션 상태 및 Presence 관리
 
 ### 3. AI Service (STUDYMATE-WORKERS)
 
@@ -139,7 +143,7 @@ WebRTC (P2P) + WebSocket (시그널링)
 ### 1. 인증/인가
 - JWT Access Token (15분)
 - Refresh Token (7일)
-- Spring Security Filter Chain
+- Hono 기반 JWT 미들웨어 + 내부 토큰 검증 유틸
 
 ### 2. API 보안
 - HTTPS 전용
@@ -148,26 +152,26 @@ WebRTC (P2P) + WebSocket (시그널링)
 
 ### 3. 데이터 보호
 - 비밀번호: BCrypt 해싱
-- 민감 정보: AES 암호화
-- 세션: Redis TTL 관리
+- 민감 정보: AES 암호화 (D1 컬럼 레벨)
+- 세션 상태: Durable Objects + JWT 조합
 
 ## 📊 확장성 고려사항
 
 ### 1. 수평 확장
-- Stateless 서버 설계
-- 세션 외부 저장 (Redis)
-- 로드 밸런싱 가능
+- Workers 글로벌 배포 (자동 확장)
+- Durable Objects를 통한 세션/Presence 공유
+- Edge 캐싱으로 응답 지연 최소화
 
 ### 2. 성능 최적화
 - CDN 활용 (Cloudflare)
 - 이미지 최적화 (WebP)
-- 캐싱 전략 (Redis)
-- DB 인덱싱
+- 캐싱 전략 (Workers KV, Cache API)
+- D1 인덱스 및 읽기 분리 설계
 
 ### 3. 모니터링
-- Application: Spring Actuator
-- Infrastructure: Cloudflare Analytics
-- Error Tracking: 로그 수집
+- Workers 로그 + wrangler tail
+- Cloudflare Analytics / Request Tracing
+- Sentry (프런트) & Durable Objects logging
 
 ## 🚀 배포 아키텍처
 
@@ -177,15 +181,15 @@ WebRTC (P2P) + WebSocket (시그널링)
 - **Domain**: languagemate.kr
 
 ### 2. Backend
-- **Platform**: Naver Cloud Platform
-- **Container**: Docker
-- **Orchestration**: Docker Compose
-- **CI/CD**: GitHub Actions
+- **Platform**: Cloudflare Workers
+- **Deployment**: Wrangler CLI (`npm run deploy:*`)
+- **Environments**: production / staging
+- **CI/CD**: GitHub Actions (wrangler publish)
 
 ### 3. Workers
 - **Platform**: Cloudflare Workers
 - **Deployment**: Wrangler CLI
-- **Domain**: workers.languagemate.kr
+- **Domain**: api.languagemate.kr
 
 ## 📈 향후 계획
 

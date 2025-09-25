@@ -12,7 +12,8 @@ export const corsConfig = cors({
       'http://localhost:5173',
       'https://languagemate.kr',
       'https://www.languagemate.kr',
-      'https://preview.languagemate.kr'
+      'https://preview.languagemate.kr',
+      'https://api.languagemate.kr'
     ];
 
     // Allow requests from allowed origins or no origin (e.g., mobile apps)

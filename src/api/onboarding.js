@@ -1,33 +1,34 @@
 // @ts-check
 import api from "./index";
+import { toDataArray, toDataObject } from "../utils/apiResponse";
 
-// 온보딩 데이터 조회 (Spring Boot API 연동)
+// 온보딩 데이터 조회 (Workers API 연동)
 export const getOnboardingData = async () => {
   try {
     const response = await api.get("/onboarding/data");
-    return response.data;
+    return toDataObject(response, response.data ?? {});
   } catch (error) {
     console.error("Get onboarding data error:", error);
     throw error;
   }
 };
 
-// 온보딩 진행 상태 조회 (Spring Boot API 연동)
+// 온보딩 진행 상태 조회 (Workers API 연동)
 export const getOnboardingProgress = async () => {
   try {
     const response = await api.get("/onboarding/progress");
-    return response.data;
+    return toDataObject(response, response.data ?? {});
   } catch (error) {
     console.error("Get onboarding progress error:", error);
     throw error;
   }
 };
 
-// 전체 온보딩 완료 처리 (Spring Boot API 연동)
+// 전체 온보딩 완료 처리 (Workers API 연동)
 export const completeAllOnboarding = async (onboardingData) => {
   try {
     const response = await api.post("/onboarding/complete", onboardingData);
-    return response.data;
+    return toDataObject(response, response.data ?? {});
   } catch (error) {
     console.error("Complete all onboarding error:", error);
     throw error;
@@ -38,7 +39,7 @@ export const completeAllOnboarding = async (onboardingData) => {
 export const getCurrentOnboardingStep = async () => {
   try {
     const response = await api.get("/onboarding/steps/current");
-    return response.data?.data ?? response.data;
+    return toDataObject(response, response.data ?? {});
   } catch (error) {
     console.error("Get current onboarding step error:", error);
     throw error;
@@ -49,7 +50,7 @@ export const getCurrentOnboardingStep = async () => {
 export const skipOnboardingStep = async (step) => {
   try {
     const response = await api.post(`/onboarding/steps/${step}/skip`);
-    return response.data?.data ?? response.data;
+    return toDataObject(response, response.data ?? {});
   } catch (error) {
     console.error("Skip onboarding step error:", error);
     throw error;
@@ -348,7 +349,7 @@ export const saveScheduleInfo = async (scheduleData) => {
 export const getLanguages = async () => {
   try {
     const response = await api.get("/onboarding/language/languages");
-    return response.data.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get languages error:", error);
     throw error;
@@ -359,7 +360,7 @@ export const getLanguages = async () => {
 export const getLanguageLevelTypes = async () => {
   try {
     const response = await api.get("/onboarding/language/level-types-language");
-    return response.data.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get language level types error:", error);
     throw error;
@@ -370,7 +371,7 @@ export const getLanguageLevelTypes = async () => {
 export const getPartnerLevelTypes = async () => {
   try {
     const response = await api.get("/onboarding/language/level-types-partner");
-    return response.data.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get partner level types error:", error);
     throw error;
@@ -381,7 +382,7 @@ export const getPartnerLevelTypes = async () => {
 export const getMotivations = async () => {
   try {
     const response = await api.get("/onboarding/interest/motivations");
-    return response.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get motivations error:", error);
     throw error;
@@ -392,7 +393,7 @@ export const getMotivations = async () => {
 export const getTopics = async () => {
   try {
     const response = await api.get("/onboarding/interest/topics");
-    return response.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get topics error:", error);
     throw error;
@@ -403,7 +404,7 @@ export const getTopics = async () => {
 export const getLearningStyles = async () => {
   try {
     const response = await api.get("/onboarding/interest/learning-styles");
-    return response.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get learning styles error:", error);
     throw error;
@@ -416,7 +417,7 @@ export const getLearningExpectations = async () => {
     const response = await api.get(
       "/onboarding/interest/learning-expectations"
     );
-    return response.data;
+    return toDataArray(response);
   } catch (error) {
     console.error("Get learning expectations error:", error);
     throw error;

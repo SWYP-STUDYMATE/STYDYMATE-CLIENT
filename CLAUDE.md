@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **프론트엔드 개발자**: React/UI 개발 담당
 
 ### 관련 프로젝트
-- **STUDYMATE-SERVER**: Spring Boot 백엔드 (https://api.languagemate.kr)
+- **STUDYMATE-API**: Cloudflare Workers 기반 백엔드 (https://api.languagemate.kr)
 
 ## 📦 기술 스택
 
@@ -330,21 +330,21 @@ const useProfileStore = create(
 
 ### 배포된 서비스
 - **Frontend (Pages)**: https://75931264.studymate-client.pages.dev
-- **Backend (Workers)**: https://workers.languagemate.kr
+- **Backend (Workers)**: https://api.languagemate.kr
 - **메인 도메인**: languagemate.kr (예정)
 
 ### 도메인 설정 (Cloudflare DNS)
 ```
 languagemate.kr → Cloudflare Pages (프로덕션)
-workers.languagemate.kr → Cloudflare Workers (API)
+api.languagemate.kr → Cloudflare Workers (API)
 preview.languagemate.kr → Cloudflare Pages (프리뷰/스테이징)
 ```
 
 ### 환경 변수 설정
 ```bash
 # Production (.env.production)
-VITE_API_URL=https://workers.languagemate.kr
-VITE_WS_URL=wss://workers.languagemate.kr/ws
+VITE_API_URL=https://api.languagemate.kr
+VITE_WS_URL=wss://api.languagemate.kr/ws
 
 # Preview/Staging (.env.staging)
 VITE_API_URL=https://api-staging.languagemate.kr

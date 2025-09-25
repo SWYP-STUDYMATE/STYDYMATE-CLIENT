@@ -11,18 +11,17 @@
 - **URL**: https://languagemate.kr (예정)
 - **저장소**: https://github.com/SWYP-STUDYMATE/STYDYMATE-CLIENT
 
-### 2. STUDYMATE-SERVER (백엔드)
-- **기술 스택**: Spring Boot 3.3, Java 17, MySQL, Redis
-- **배포**: Naver Cloud Platform (NCP)
+### 2. STUDYMATE-API (백엔드)
+- **기술 스택**: Cloudflare Workers (Hono), D1, KV, R2, Durable Objects
+- **배포**: Cloudflare Workers
 - **API URL**: https://api.languagemate.kr
-- **저장소**: https://github.com/SWYP-STUDYMATE/STUDYMATE-SERVER
+- **저장소**: https://github.com/SWYP-STUDYMATE/STYDYMATE-CLIENT (`workers/` 디렉터리)
 
-### 3. STUDYMATE-WORKERS (AI 서비스)
-- **기술 스택**: Cloudflare Workers AI, JavaScript
+### 3. AI & Realtime Services
+- **기술 스택**: Cloudflare Workers AI, WebRTC, STOMP over WebSocket
 - **AI 모델**: Llama 3.1 8B, Whisper
 - **배포**: Cloudflare Workers
-- **URL**: https://workers.languagemate.kr (예정)
-- **현재**: https://studymate-workers.wjstks3474.workers.dev
+- **URL**: https://studymate-workers.wjstks3474.workers.dev
 
 ## 🚀 핵심 기능
 

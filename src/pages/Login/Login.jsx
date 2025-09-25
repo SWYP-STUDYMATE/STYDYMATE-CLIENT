@@ -25,7 +25,7 @@ export default function Login() {
 
   const API_BASE = import.meta.env.DEV
     ? ""
-    : (import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || "https://workers.languagemate.kr");
+    : (import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || "https://api.languagemate.kr");
   const FRONT_ORIGIN = window.location.origin
 
    const startLogin = useCallback((provider) => {

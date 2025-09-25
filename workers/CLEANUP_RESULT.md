@@ -15,7 +15,7 @@ Dashboard에서 다음 항목들이 실제로 존재하는지 확인 필요:
    - 역할: 프론트엔드
 
 2. **studymate-api-production** (Workers)
-   - URL: `workers.languagemate.kr`
+   - URL: `api.languagemate.kr`
    - 역할: API 서버
 
 ## 📋 Dashboard에서 확인 필요 사항

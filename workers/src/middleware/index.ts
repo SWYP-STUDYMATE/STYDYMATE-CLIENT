@@ -29,7 +29,7 @@ export function setupMiddleware(app: Hono) {
                 'http://localhost:5173',
                 'https://languagemate.kr',
                 'https://www.languagemate.kr',
-                'https://workers.languagemate.kr'
+                'https://api.languagemate.kr'
             ];
 
             // 오리진이 없거나 허용된 목록에 있으면 허용

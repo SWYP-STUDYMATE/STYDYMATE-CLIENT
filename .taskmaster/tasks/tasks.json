@@ -864,7 +864,7 @@
         "id": 5,
         "title": "WebSocket 라이브러리 통합",
         "description": "3개의 WebSocket 라이브러리를 하나로 통합",
-        "details": "현재 상황:\n- sockjs-client: STOMP 전송 레이어\n- @stomp/stompjs: STOMP 프로토콜\n- socket.io-client: 별도 WebSocket 구현\n\n분석 필요:\n1. 각 라이브러리 사용처 파악\n2. 기능 요구사항 분석\n3. 통합 가능성 검토\n\n권장 방안:\n- STOMP over SockJS 유지 (Spring Boot와 호환)\n- Socket.io 제거 또는 별도 기능으로 분리\n\n영향 범위:\n- src/services/websocketService.js\n- src/services/notificationWebSocket.js\n- 채팅 관련 컴포넌트",
+        "details": "현재 상황:\n- sockjs-client: STOMP 전송 레이어\n- @stomp/stompjs: STOMP 프로토콜\n- socket.io-client: 별도 WebSocket 구현\n\n분석 필요:\n1. 각 라이브러리 사용처 파악\n2. 기능 요구사항 분석\n3. 통합 가능성 검토\n\n권장 방안:\n- STOMP over SockJS 유지 (Workers 브로커와 호환)\n- Socket.io 제거 또는 별도 기능으로 분리\n\n영향 범위:\n- src/services/websocketService.js\n- src/services/notificationWebSocket.js\n- 채팅 관련 컴포넌트",
         "testStrategy": "1. WebSocket 연결 테스트\n2. 실시간 메시지 전송 테스트\n3. 재연결 로직 확인\n4. 번들 크기 감소 확인",
         "status": "pending",
         "dependencies": [

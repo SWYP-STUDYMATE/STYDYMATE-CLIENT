@@ -7,6 +7,7 @@ import useMotivationStore from "../../store/motivationStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import { saveInterestInfo } from "../../api/onboarding";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObInt4() {
   const [selectedId, setSelectedId] = useState(null);
@@ -25,7 +26,24 @@ export default function ObInt4() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/interest/learning-expectations");
-        setLearningExpectations(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const learningExpectationId = Number(item.learningExpectationId ?? item.learning_expectation_id ?? item.id);
+            const learningExpectationName = item.learningExpectationName ?? item.learning_expectation_name ?? item.name ?? item.label ?? null;
+
+            if (!Number.isFinite(learningExpectationId) || !learningExpectationName) {
+              return null;
+            }
+
+            return {
+              ...item,
+              learningExpectationId,
+              learningExpectationName
+            };
+          })
+          .filter((value) => value !== null);
+        setLearningExpectations(normalized);
         setLoading(false);
       } catch (error) {
         console.error("학습 기대 데이터를 불러오지 못했습니다:", error);

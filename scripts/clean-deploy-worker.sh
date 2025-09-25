@@ -68,12 +68,12 @@ log_success "Worker 빌드 캐시 삭제 완료"
 ENVIRONMENT=${1:-"production"}
 case $ENVIRONMENT in
     "production" | "prod")
-        WORKER_NAME="studymate-api-worker"
+        WORKER_NAME="studymate-api-production"
         ENV="production"
         log_info "배포 환경: Production"
         ;;
     "staging" | "stage")
-        WORKER_NAME="studymate-api-worker-staging"
+        WORKER_NAME="studymate-api-staging"
         ENV="staging"
         log_info "배포 환경: Staging"
         ;;
@@ -116,21 +116,13 @@ log_info "5단계: Cloudflare Workers 배포 중..."
 log_info "Worker 이름: $WORKER_NAME"
 log_info "환경: $ENV"
 
-# wrangler 명령어 실행
-if [ "$ENV" = "production" ]; then
-    if npx wrangler deploy --name "$WORKER_NAME"; then
-        log_success "Cloudflare Workers 배포 완료!"
-    else
-        log_error "Cloudflare Workers 배포 실패"
-        exit 1
-    fi
+# wrangler 명령어 실행 (환경 명시적으로 지정)
+DEPLOY_ARGS=(--env "$ENV")
+if npx wrangler deploy "${DEPLOY_ARGS[@]}"; then
+    log_success "Cloudflare Workers 배포 완료!"
 else
-    if npx wrangler deploy --name "$WORKER_NAME" --env "$ENV"; then
-        log_success "Cloudflare Workers 배포 완료!"
-    else
-        log_error "Cloudflare Workers 배포 실패"
-        exit 1
-    fi
+    log_error "Cloudflare Workers 배포 실패"
+    exit 1
 fi
 
 # 7. 배포 완료 정보

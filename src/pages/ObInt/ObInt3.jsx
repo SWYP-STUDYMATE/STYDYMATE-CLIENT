@@ -6,6 +6,7 @@ import ProgressBar from "../../components/PrograssBar";
 import useMotivationStore from "../../store/motivationStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObInt3() {
   const [learningStyles, setLearningStyles] = useState([]);
@@ -19,7 +20,24 @@ export default function ObInt3() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/interest/learning-styles");
-        setLearningStyles(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const learningStyleId = Number(item.learningStyleId ?? item.learning_style_id ?? item.id);
+            const learningStyleName = item.learningStyleName ?? item.learning_style_name ?? item.name ?? item.label ?? null;
+
+            if (!Number.isFinite(learningStyleId) || !learningStyleName) {
+              return null;
+            }
+
+            return {
+              ...item,
+              learningStyleId,
+              learningStyleName
+            };
+          })
+          .filter((value) => value !== null);
+        setLearningStyles(normalized);
         setLoading(false);
       } catch (error) {
         console.error("학습 스타일 데이터를 불러오지 못했습니다:", error);

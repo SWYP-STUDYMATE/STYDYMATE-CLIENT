@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { toDisplayText } from '../utils/text';
 
 const renderBadgeIcon = (achievement) => {
   const iconUrl = achievement.achievement?.badgeIconUrl;
   const badgeColor = achievement.achievement?.badgeColor || '#E6F9F1';
-  const title = achievement.achievement?.title || '성취 배지';
+  const title = toDisplayText(
+    achievement.achievement?.title
+      || achievement.title
+      || achievement.achievement?.name,
+    '성취 배지'
+  );
 
   if (iconUrl) {
     return (
@@ -28,8 +34,18 @@ const renderBadgeIcon = (achievement) => {
 
 const AchievementBadgeCard = ({ item }) => {
   const { achievement, isCompleted, progressPercentage } = item;
-  const title = achievement?.title ?? '성취 배지';
-  const description = achievement?.description ?? '';
+  const title = toDisplayText(
+    achievement?.title
+      || item.title
+      || achievement?.name,
+    '성취 배지'
+  );
+  const description = toDisplayText(
+    achievement?.description
+      || item.description
+      || achievement?.details,
+    ''
+  ) || '';
   const progress = isCompleted ? 100 : Math.min(100, Math.max(0, progressPercentage ?? 0));
 
   return (
@@ -58,6 +74,23 @@ const AchievementBadgeCard = ({ item }) => {
 };
 
 export default function AchievementBadges({ achievements = [], stats = null, loading = false, error = null, limit = 4 }) {
+  const sanitizedAchievements = useMemo(() => achievements.map((item) => {
+    const normalizedTitle = toDisplayText(item.achievement?.title || item.title || item.name, '성취 배지');
+    const normalizedDescription = toDisplayText(item.achievement?.description || item.description || item.details, '') || '';
+
+    return {
+      ...item,
+      title: normalizedTitle,
+      description: normalizedDescription,
+      achievement: {
+        ...item.achievement,
+        title: normalizedTitle,
+        description: normalizedDescription,
+        badgeColor: item.achievement?.badgeColor || '#E6F9F1'
+      }
+    };
+  }), [achievements]);
+
   if (loading) {
     return (
       <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
@@ -83,9 +116,13 @@ export default function AchievementBadges({ achievements = [], stats = null, loa
     );
   }
 
-  const completedCount = stats?.completedAchievements ?? achievements.filter((item) => item.isCompleted).length;
-  const totalCount = stats?.totalAchievements ?? achievements.length;
-  const progressList = [...achievements]
+  const completedCountRaw = stats?.completedAchievements ?? sanitizedAchievements.filter((item) => item.isCompleted).length;
+  const totalCountRaw = stats?.totalAchievements ?? sanitizedAchievements.length;
+
+  const completedCount = Number.isFinite(completedCountRaw) ? completedCountRaw : 0;
+  const totalCount = Number.isFinite(totalCountRaw) ? totalCountRaw : sanitizedAchievements.length;
+
+  const progressList = [...sanitizedAchievements]
     .sort((a, b) => {
       const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
       const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;

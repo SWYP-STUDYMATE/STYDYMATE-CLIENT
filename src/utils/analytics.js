@@ -3,7 +3,7 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_WORKERS_API_URL ||
-  'https://workers.languagemate.kr';
+  'https://api.languagemate.kr';
 
 class Analytics {
   constructor() {

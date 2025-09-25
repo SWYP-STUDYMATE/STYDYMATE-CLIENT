@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { User, MapPin, MessageSquare, Edit3, Camera } from 'lucide-react';
 import { getOptimizedImageUrl } from '../api/profile';
 import ProfileEditor from './ProfileEditor';
+import { toDisplayText } from '../utils/text';
 
 export default function ProfileCard({ 
   profile, 
@@ -20,6 +21,8 @@ export default function ProfileCard({
     profileImage,
     intro
   } = profile || {};
+
+  const normalizedResidence = toDisplayText(residence, '') || '';
 
   // 프로필 업데이트 핸들러
   const handleProfileUpdate = (updatedData) => {
@@ -91,7 +94,7 @@ export default function ProfileCard({
             <div className="flex items-center gap-2 text-[#606060] mb-1">
               <MapPin className="w-4 h-4 flex-shrink-0" />
               <span className="text-[14px] truncate">
-                {residence || '거주지를 입력해주세요'}
+                {normalizedResidence || '거주지를 입력해주세요'}
               </span>
             </div>
           </div>
@@ -123,7 +126,7 @@ export default function ProfileCard({
         </div>
 
         {/* 빈 상태일 때 안내 */}
-        {isOwner && (!englishName || !residence) && (
+        {isOwner && (!englishName || !normalizedResidence) && (
           <div className="mt-4 p-3 bg-[#FFF7ED] border border-[#FDBA74] rounded-[8px]">
             <p className="text-[12px] text-[#C2410C]">
               💡 프로필을 완성하면 더 많은 사람들과 연결될 수 있어요!
@@ -158,6 +161,8 @@ export function ProfileCardCompact({
     profileImage,
     isOnline
   } = profile || {};
+
+  const normalizedResidence = toDisplayText(residence, '') || '';
 
   return (
     <div 
@@ -207,11 +212,11 @@ export function ProfileCardCompact({
             )}
           </div>
           
-          {residence && (
+          {normalizedResidence && (
             <div className="flex items-center gap-1">
               <MapPin className="w-3 h-3 text-[#929292]" />
               <span className="text-[12px] text-[#929292] truncate">
-                {residence}
+                {normalizedResidence}
               </span>
             </div>
           )}

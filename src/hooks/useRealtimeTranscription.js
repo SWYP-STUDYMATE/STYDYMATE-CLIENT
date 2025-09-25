@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { log } from '../utils/logger';
 
-const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
 
 export function useRealtimeTranscription({
   language = 'auto',

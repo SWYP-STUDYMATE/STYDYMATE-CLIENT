@@ -4,7 +4,7 @@
 
 ## 0. 사전 준비
 - 로컬 환경 변수 확인: `.env.local`에서 `VITE_API_URL`, `VITE_NAVER_REDIRECT_URI`, `VITE_WS_URL` 값을 점검합니다.
-- 백엔드 API 서버(예: Spring, Gateway)와 네이버 개발자 콘솔에서 등록한 Redirect URI가 `http://localhost:3000/login/oauth2/code/naver`와 정확히 일치하는지 미리 확인합니다.
+- 백엔드 API 서버(예: 레거시 자바 서버, Gateway)와 네이버 개발자 콘솔에서 등록한 Redirect URI가 `http://localhost:3000/login/oauth2/code/naver`와 정확히 일치하는지 미리 확인합니다.
 - 필요한 도구: Chrome DevTools, 터미널, `curl` 또는 `httpie`, 네트워크 패킷 캡처는 선택.
 
 ```bash

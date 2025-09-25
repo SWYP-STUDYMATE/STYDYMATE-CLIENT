@@ -303,7 +303,7 @@ const useLevelTestStore = create(
       submitError: null,
       setIsSubmitting: (value) => set({ isSubmitting: value }),
       
-      // Spring Boot API 테스트 ID 및 상태
+      // Workers API 테스트 ID 및 상태
       testId: null,
       testLanguage: 'en',
       setTestId: (id) => set({ testId: id }),
@@ -343,7 +343,7 @@ const useLevelTestStore = create(
               questions: response.questions,
               totalQuestions: response.questions.length
             });
-            log('Questions loaded from Spring Boot:', response.questions.length);
+            log('Questions loaded from Workers API:', response.questions.length);
           } else {
             console.log('Using default questions');
           }
@@ -353,7 +353,7 @@ const useLevelTestStore = create(
         }
       },
       
-      // Spring Boot API 개별 제출 방식
+      // 음성 답변 단건 제출
       submitQuestionAudio: async (audioBlob, questionId) => {
         try {
           const state = get();
@@ -371,7 +371,7 @@ const useLevelTestStore = create(
         }
       },
       
-      // Spring Boot API 테스트 제출 방식
+      // 테스트 전체 제출
       submitTest: async () => {
         const state = get();
         if (state.recordings.length !== state.totalQuestions) {
@@ -388,7 +388,7 @@ const useLevelTestStore = create(
         set({ isSubmitting: true, submitError: null });
         
         try {
-          // 1단계: 모든 음성 파일을 Spring Boot API에 제출
+          // 1단계: 모든 음성 파일을 API에 제출
           const submissions = [];
           for (let i = 0; i < state.recordings.length; i++) {
             const recording = state.recordings[i];

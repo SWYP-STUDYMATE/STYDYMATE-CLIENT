@@ -6,8 +6,8 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 
 ### 기술 스택
 - Frontend: React 19.1.0 + Vite 7.0.4 + Cloudflare Pages
-- Backend API: Spring Boot (STUDYMATE-SERVER) - 기존 API 활용
-- Node.js Backend: WebRTC, AI 레벨테스트 처리 (Cloudflare Workers)
+- Backend API: Cloudflare Workers (STUDYMATE-API)
+- Realtime & AI: Cloudflare Workers Durable Objects + Workers AI
 
 ## 2. 프론트엔드 개발 태스크
 
@@ -116,7 +116,7 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 - 일관된 간격 시스템
 - 버튼/입력 컴포넌트 스타일링
 
-## 3. Node.js 백엔드 개발 태스크
+## 3. Cloudflare Workers 백엔드 개발 태스크
 
 ### 3.1 Cloudflare Workers 기본 설정
 - Wrangler 프로젝트 초기화
@@ -176,7 +176,7 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 - 레벨테스트 결과 임시 저장
 
 ### 3.9 API Gateway 구성
-- STUDYMATE-SERVER 프록시
+- Workers Routes 레이어 정비
 - 요청 라우팅
 - 응답 캐싱
 - API 버전 관리
@@ -189,10 +189,10 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 
 ## 4. 통합 및 연동 태스크
 
-### 4.1 STUDYMATE-SERVER API 연동
+### 4.1 Workers API 연동
 - 사용자 인증 API 연동 (✓ 구현완료)
 - 프로필 관리 API 연동 (✓ 구현완료)  
-- 채팅 API 연동 (✓ 구현완료 - WebSocket)
+- 채팅 API 연동 (✓ 구현완료 - Durable Object WebSocket)
 - 매칭 API 연동 (🔄 부분구현 - 호환성 계산, 매칭 요청/응답, 파트너 추천)
 - 온보딩 API 연동 (✓ 구현완료 - 6단계 온보딩 프로세스)
 - 레벨테스트 API 연동 (🔄 부분구현 - 기본 구조만)
@@ -201,7 +201,7 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 - 분석/통계 API 연동 (🔄 부분구현)
 - Clova 영어 교정 API (✓ 구현완료)
 
-### 4.2 프론트엔드-Node.js 백엔드 연동
+### 4.2 프론트엔드-Workers 백엔드 연동
 - WebRTC 연결 설정
 - 레벨테스트 API 호출
 - 파일 업로드 처리
@@ -220,12 +220,12 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 2. 인증 시스템 구현
 3. 온보딩 프로세스
 4. 기본 프로필 관리
-5. STUDYMATE-SERVER API 연동
+5. Workers API 연동
 
 ### Phase 2 - 레벨테스트 (Week 2)
 1. 레벨테스트 UI 구현
 2. AudioRecorder 컴포넌트
-3. Node.js AI API 구현
+3. Workers AI API 구현
 4. OpenAI 통합
 5. 결과 시각화
 
@@ -248,36 +248,35 @@ STUDYMATE는 실시간 화상통화와 AI 기반 레벨 테스트를 통해 전 
 3. 전체 통합 테스트
 4. 배포 및 최적화
 
-## 6. Spring Boot 백엔드 (STUDYMATE-SERVER) 현재 구현 상태
+## 6. Cloudflare Workers 백엔드 현재 구현 상태
 
 ### 6.1 완전 구현된 도메인
-- **사용자 관리 (User)**: OAuth 인증, JWT 토큰, 프로필 관리
-- **채팅 (Chat)**: WebSocket 실시간 채팅, 채팅방 관리, 메시지 저장
+- **사용자 관리 (User)**: OAuth 인증, JWT 토큰, 프로필 관리 (Workers Routes)
+- **채팅 (Chat)**: Durable Object 기반 실시간 채팅, 채팅방 관리, 메시지 저장
 - **온보딩 (Onboarding)**: 6단계 완전 구현 - 언어/학습스타일/파트너선호도/스케줄
-- **알림 (Notification)**: 실시간 알림, 알림 설정, 통계
-- **Clova**: 네이버 Clova Studio 영어 교정 API
+- **알림 (Notification)**: 실시간 알림, 알림 설정, 통계 (Workers Cron + KV)
+- **AI 교정**: 네이버 Clova Studio 및 OpenAI 연동 API
 
 ### 6.2 부분 구현된 도메인
 - **매칭 (Matching)**: ✅ 호환성 계산, 파트너 추천, 매칭 요청/응답 ❌ 실시간 온라인 상태, 고급 필터링
-- **레벨테스트 (LevelTest)**: ✅ 기본 구조, 테스트 시작/완료 ❌ AI 통합, 상세 평가 로직  
-- **세션 (Session)**: ✅ 예약 시스템, 캘린더 ❌ 실시간 세션 관리, WebRTC 통합
+- **레벨테스트 (LevelTest)**: ✅ 기본 구조, 테스트 시작/완료 ❌ 고도화된 AI 평가 및 상세 리포트  
+- **세션 (Session)**: ✅ 예약 시스템, 캘린더 ❌ 실시간 세션 UX 향상, 고급 통계
 - **분석/통계 (Analytics)**: ✅ 기본 구조 ❌ 상세 메트릭, 대시보드 기능
 
 ### 6.3 미구현/누락 기능
 1. **실시간 온라인 상태 시스템**
 2. **고급 매칭 필터링 및 성능 최적화**  
-3. **레벨테스트 AI 통합 및 CEFR 레벨 산정**
-4. **세션 실시간 관리 (WebRTC와의 연동)**
+3. **레벨테스트 AI 고도화 및 CEFR 세부 지표 산정**
+4. **세션 실시간 품질 모니터링 및 알림**
 5. **상세 학습 분석 및 통계 대시보드**
-6. **파일 업로드 및 미디어 처리**
+6. **파일 업로드 및 미디어 처리 파이프라인 강화**
 7. **채팅 고급 기능 (파일 전송, 읽음 확인 개선)**
 8. **Push 알림 (FCM 통합)**
 
 ## 7. 기술적 제약사항
 
 - 모든 프론트엔드 인프라는 Cloudflare 서비스 활용
-- STUDYMATE-SERVER의 기존 API 최대한 활용 및 확장
-- Redis와 데이터베이스는 STUDYMATE-SERVER 통해 관리
-- Cloudflare Workers와 Spring Boot 간 효율적인 API 분담
+- Cloudflare Workers에서 전체 API와 실시간 기능 관리
+- Durable Objects, KV, D1을 통한 상태 저장 전략 수립
 - 2025년 최신 Cloudflare 기능 활용
 - 기존 디자인 시스템 준수

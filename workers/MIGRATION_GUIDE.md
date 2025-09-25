@@ -1,8 +1,8 @@
 # Cloudflare Workers 마이그레이션 가이드
 
 ## 현재 상태
-- **Spring 서버**: `api.languagemate.kr` (운영 중)
-- **Workers**: `workers.languagemate.kr` (배포 예정)
+- **레거시 서버**: `api.languagemate.kr` (운영 중)
+- **Workers**: `api.languagemate.kr` (배포 예정)
 
 ## Phase 1: 병행 운영 및 테스트
 
@@ -24,17 +24,17 @@ npx wrangler secret put INTERNAL_SECRET --env production
 # 프로덕션 빌드
 npm run build
 
-# workers.languagemate.kr로 배포
+# api.languagemate.kr로 배포
 npx wrangler deploy --env production
 ```
 
-### 4. 테스트 (workers.languagemate.kr)
+### 4. 테스트 (api.languagemate.kr)
 ```bash
 # Health Check
-curl https://workers.languagemate.kr/health
+curl https://api.languagemate.kr/health
 
 # API 테스트 (예: 로그인)
-curl -X POST https://workers.languagemate.kr/api/v1/auth/login \
+curl -X POST https://api.languagemate.kr/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"test"}'
 ```
@@ -44,8 +44,8 @@ curl -X POST https://workers.languagemate.kr/api/v1/auth/login \
 ### 테스트용 클라이언트 환경변수 변경
 ```bash
 # .env.production
-VITE_API_URL=https://workers.languagemate.kr
-VITE_WS_URL=wss://workers.languagemate.kr/ws
+VITE_API_URL=https://api.languagemate.kr
+VITE_WS_URL=wss://api.languagemate.kr/ws
 ```
 
 ### 일부 사용자 대상 카나리 테스트
@@ -71,15 +71,15 @@ zone_name = "languagemate.kr"
 npx wrangler deploy --env production
 ```
 
-### 4. Spring 서버 종료
-- 모든 기능 검증 후 Spring 서버 중지
+### 4. 레거시 서버 종료
+- 모든 기능 검증 후 레거시 서버 중지
 - EC2/ECS 인스턴스 종료로 비용 절감
 
 ## 롤백 계획
 
 문제 발생 시:
 1. Cloudflare Dashboard에서 Workers Route 제거
-2. 원래 DNS 레코드 복원 (Spring 서버로)
+2. 원래 DNS 레코드 복원 (레거시 서버로)
 3. 5분 내 정상 서비스 복구
 
 ## 체크리스트
@@ -88,7 +88,7 @@ npx wrangler deploy --env production
 - [ ] D1 Database ID 확인 및 설정
 - [ ] R2 버킷 생성 확인
 - [ ] KV Namespace 생성 확인
-- [ ] workers.languagemate.kr DNS 설정
+- [ ] api.languagemate.kr DNS 설정
 - [ ] Workers 배포
 - [ ] 기본 API 테스트
 
@@ -103,7 +103,7 @@ npx wrangler deploy --env production
 - [ ] 성능 벤치마크
 - [ ] 에러율 모니터링
 - [ ] DNS 전환
-- [ ] Spring 서버 종료
+- [ ] 레거시 서버 종료
 
 ## 모니터링
 

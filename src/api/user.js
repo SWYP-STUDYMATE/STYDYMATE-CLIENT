@@ -2,7 +2,7 @@
 import axios from 'axios';
 import api from './index';
 
-// 완전한 사용자 프로필 조회 (Spring Boot API 연동)
+// 완전한 사용자 프로필 조회 (Workers API 연동)
 export const getUserCompleteProfile = async () => {
   try {
     const response = await api.get('/users/complete-profile');
@@ -16,7 +16,7 @@ export const getUserCompleteProfile = async () => {
 // getCompleteProfile 별칭 (기존 호환성)
 export const getCompleteProfile = getUserCompleteProfile;
 
-// 완전한 사용자 프로필 업데이트 (Spring Boot API 연동)
+// 완전한 사용자 프로필 업데이트 (Workers API 연동)
 export const updateUserCompleteProfile = async (profileData) => {
   try {
     await api.put('/users/complete-profile', profileData);
@@ -168,18 +168,53 @@ export const updateUserScheduleInfo = async (scheduleData) => {
   }
 };
 
-// 온보딩 상태 조회 (Spring Boot API 연동)
+// 온보딩 상태 조회 (Workers API 연동)
 export const getOnboardingStatus = async () => {
   try {
     const response = await api.get('/users/onboarding-status');
-    return response.data?.data ?? response.data;
+    const payload = response.data?.data ?? response.data;
+
+    if (!payload || typeof payload !== 'object') {
+      return payload;
+    }
+
+    const normalizeBoolean = (value) => {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'number') return value === 1;
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (['1', 'true', 'completed', 'yes'].includes(normalized)) return true;
+        if (['0', 'false', 'incomplete', 'no'].includes(normalized)) return false;
+      }
+      return Boolean(value);
+    };
+
+    const completedValue = payload.isCompleted ?? payload.completed;
+    const isCompleted = normalizeBoolean(completedValue);
+
+    const normalized = {
+      ...payload,
+      ...(payload.next_step !== undefined && payload.nextStep === undefined
+        ? { nextStep: payload.next_step }
+        : {}),
+      ...(payload.current_step !== undefined && payload.currentStep === undefined
+        ? { currentStep: payload.current_step }
+        : {}),
+      ...(payload.total_steps !== undefined && payload.totalSteps === undefined
+        ? { totalSteps: payload.total_steps }
+        : {}),
+      isCompleted,
+      completed: isCompleted,
+    };
+
+    return normalized;
   } catch (error) {
     console.error('Get onboarding status error:', error);
     throw error;
   }
 };
 
-// 온보딩 완료 처리 (Spring Boot API 연동)
+// 온보딩 완료 처리 (Workers API 연동)
 export const completeOnboarding = async (onboardingData) => {
   try {
     await api.post('/users/complete-onboarding', onboardingData || {});
@@ -200,7 +235,7 @@ export const getUserStats = async () => {
   }
 };
 
-// 사용자 설정 조회 (Spring Boot API 연동)
+// 사용자 설정 조회 (Workers API 연동)
 export const getUserSettings = async () => {
   try {
     const response = await api.get('/users/settings');
@@ -211,7 +246,7 @@ export const getUserSettings = async () => {
   }
 };
 
-// 사용자 설정 업데이트 (Spring Boot API 연동)
+// 사용자 설정 업데이트 (Workers API 연동)
 export const updateUserSettings = async (settings) => {
   try {
     await api.put('/users/settings', settings);
@@ -221,7 +256,7 @@ export const updateUserSettings = async (settings) => {
   }
 };
 
-// 프로필 이미지 업로드 (Spring Boot API 연동)
+// 프로필 이미지 업로드 (Workers API 연동)
 export const uploadProfileImage = async (imageFile) => {
   try {
     const formData = new FormData();

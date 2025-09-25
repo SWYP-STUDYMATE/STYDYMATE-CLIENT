@@ -10,7 +10,7 @@ import { log } from '../utils/logger';
 const WORKERS_API_BASE =
   import.meta.env.VITE_WORKERS_API_URL ||
   import.meta.env.VITE_API_URL ||
-  'https://workers.languagemate.kr';
+  'https://api.languagemate.kr';
 
 // Workers API 전용 axios 인스턴스 생성
 const workersApi = axios.create({

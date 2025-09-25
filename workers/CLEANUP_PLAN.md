@@ -37,7 +37,7 @@ npx wrangler delete --name studymate-workers-production
    - 용도: 프론트엔드 호스팅
 
 2. **studymate-api-production** (Workers)
-   - 도메인: `workers.languagemate.kr`
+   - 도메인: `api.languagemate.kr`
    - 용도: API 서버
    - 바인딩: AI, R2, KV, D1, Durable Objects
 

@@ -164,10 +164,10 @@ export async function analyzeCompatibility(partnerId) {
   }
 }
 
-// ===== Spring Boot API 연동 함수들 =====
+// ===== Workers 매칭 API 헬퍼 =====
 
-// Spring Boot: 추천 파트너 조회
-export const getSpringBootRecommendedPartners = async (preferences = {}, page = 0, size = 20) => {
+// 파트너 추천 조회 (Workers API)
+export const getPartnerRecommendations = async (preferences = {}, page = 0, size = 20) => {
   try {
     const response = await api.get('/matching/partners', {
       params: {
@@ -182,13 +182,13 @@ export const getSpringBootRecommendedPartners = async (preferences = {}, page = 
     });
     return response.data?.data ?? response.data;
   } catch (error) {
-    console.error('Get spring boot recommended partners error:', error);
+    console.error('Get partner recommendations error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 파트너 검색
-export const searchSpringBootPartners = async (searchQuery, filters = {}, page = 1, size = 20) => {
+// 파트너 고급 검색 (Workers API)
+export const searchPartners = async (searchQuery, filters = {}, page = 1, size = 20) => {
   try {
     const response = await api.post('/matching/partners/advanced', {
       query: searchQuery,
@@ -209,13 +209,13 @@ export const searchSpringBootPartners = async (searchQuery, filters = {}, page =
     });
     return response.data?.data ?? response.data;
   } catch (error) {
-    console.error('Search spring boot partners error:', error);
+    console.error('Search partners error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭 요청 보내기
-export const sendSpringBootMatchRequest = async (partnerId, message = '') => {
+// 매칭 요청 생성
+export const createMatchRequest = async (partnerId, message = '') => {
   try {
     const response = await api.post('/matching/request', {
       targetUserId: partnerId,
@@ -223,81 +223,81 @@ export const sendSpringBootMatchRequest = async (partnerId, message = '') => {
     });
     return response.data?.data ?? response.data;
   } catch (error) {
-    console.error('Send spring boot match request error:', error);
+    console.error('Create match request error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭 요청 수락
-export const acceptSpringBootMatchRequest = async (requestId) => {
+// 매칭 요청 수락
+export const acceptMatchRequest = async (requestId) => {
   try {
     const response = await api.post(`/matching/accept/${requestId}`);
     return response.data?.data ?? response.data;
   } catch (error) {
-    console.error('Accept spring boot match request error:', error);
+    console.error('Accept match request error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭 요청 거절
-export const rejectSpringBootMatchRequest = async (requestId, reason = '') => {
+// 매칭 요청 거절
+export const rejectMatchRequest = async (requestId, reason = '') => {
   try {
     const payload = reason ? { reason } : undefined;
     const response = await api.post(`/matching/reject/${requestId}`, payload);
     return response.data?.data ?? response.data;
   } catch (error) {
-    console.error('Reject spring boot match request error:', error);
+    console.error('Reject match request error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 받은 매칭 요청 목록 조회
-export const getSpringBootReceivedMatchRequests = async (status = 'pending', page = 1, size = 20) => {
+// 받은 매칭 요청 목록 조회
+export const getReceivedMatchRequests = async (status = 'pending', page = 1, size = 20) => {
   try {
     const response = await api.get('/matching/requests/received', {
       params: { page, size, status }
     });
     return response.data;
   } catch (error) {
-    console.error('Get spring boot received match requests error:', error);
+    console.error('Get received match requests error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 보낸 매칭 요청 목록 조회
-export const getSpringBootSentMatchRequests = async (status = 'pending', page = 1, size = 20) => {
+// 보낸 매칭 요청 목록 조회
+export const getSentMatchRequests = async (status = 'pending', page = 1, size = 20) => {
   try {
     const response = await api.get('/matching/requests/sent', {
       params: { page, size, status }
     });
     return response.data;
   } catch (error) {
-    console.error('Get spring boot sent match requests error:', error);
+    console.error('Get sent match requests error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭된 파트너 목록 조회 (Spring Pageable은 0부터 시작)
-export const getSpringBootMatches = async (page = 0, size = 20) => {
+// 매칭된 파트너 목록 조회 (Workers API)
+export const getMatches = async (page = 1, size = 20) => {
   try {
-    const normalizedPage = Number.isFinite(Number(page)) ? Number(page) : 0;
+    const normalizedPage = Number.isFinite(Number(page)) ? Number(page) : 1;
     const normalizedSize = Number.isFinite(Number(size)) ? Number(size) : 20;
 
     const response = await api.get('/matching/matches', {
       params: {
-        page: Math.max(0, normalizedPage),
+        page: Math.max(1, normalizedPage),
         size: Math.max(1, normalizedSize)
       }
     });
     return response.data;
   } catch (error) {
-    console.error('Get spring boot matches error:', error);
+    console.error('Get matches error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭 해제
-export const deleteSpringBootMatch = async (matchId) => {
+// 매칭 해제
+export const deleteMatch = async (matchId) => {
   try {
     if (!matchId) {
       throw new Error('matchId is required');
@@ -306,24 +306,24 @@ export const deleteSpringBootMatch = async (matchId) => {
     const response = await api.delete(`/matching/matches/${matchId}`);
     return response.data;
   } catch (error) {
-    console.error('Delete spring boot match error:', error);
+    console.error('Delete match error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭 설정 조회
-export const getSpringBootMatchingSettings = async () => {
+// 매칭 설정 조회
+export const getMatchingSettings = async () => {
   try {
     const response = await api.get('/matching/settings');
     return response.data;
   } catch (error) {
-    console.error('Get spring boot matching settings error:', error);
+    console.error('Get matching settings error:', error);
     throw error;
   }
 };
 
-// Spring Boot: 매칭 설정 업데이트
-export const updateSpringBootMatchingSettings = async (settings) => {
+// 매칭 설정 업데이트
+export const updateMatchingSettings = async (settings) => {
   try {
     const response = await api.patch('/matching/settings', {
       autoAcceptMatches: settings.autoAcceptMatches,
@@ -338,7 +338,7 @@ export const updateSpringBootMatchingSettings = async (settings) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Update spring boot matching settings error:', error);
+    console.error('Update matching settings error:', error);
     throw error;
   }
 };

@@ -10,6 +10,7 @@ import { saveOnboardingStep2 } from "../../api/onboarding";
 import { saveLanguageInfo } from "../../api/onboarding";
 
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObLang1() {
   // 언어 옵션 상태
@@ -23,16 +24,12 @@ export default function ObLang1() {
     api.get("/onboarding/language/languages")
       .then(res => {
         console.log("🔍 언어 API 응답:", res.data);
-        const raw = Array.isArray(res.data?.data)
-          ? res.data.data
-          : Array.isArray(res.data)
-            ? res.data
-            : [];
+        const raw = toDataArray(res);
 
         const options = raw
           .map(lang => {
-            const value = lang.id ?? lang.languageId;
-            const label = lang.name ?? lang.languageName;
+            const value = lang.id ?? lang.languageId ?? lang.language_id;
+            const label = lang.name ?? lang.languageName ?? lang.language_name;
 
             if (!value || !label) {
               return null;

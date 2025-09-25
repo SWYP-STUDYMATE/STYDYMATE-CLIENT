@@ -9,16 +9,16 @@
 
 ```mermaid
 graph LR
-    CLIENT[Frontend<br/>React] --> BACKEND[Backend<br/>Spring Boot]
-    CLIENT --> WORKERS[Workers AI<br/>Cloudflare]
-    BACKEND --> WORKERS
+    CLIENT[Frontend<br/>React] --> API[Backend<br/>Cloudflare Workers]
+    CLIENT --> WORKERS[AI Services<br/>Workers AI]
+    API --> WORKERS
 ```
 
 ## 📡 기본 정보
 
 ### Base URLs
 - **Backend API**: `https://api.languagemate.kr/api/v1`
-- **Workers AI**: `https://workers.languagemate.kr/api/v1`
+- **Workers AI**: `https://api.languagemate.kr/api/v1`
 - **WebSocket**: `wss://api.languagemate.kr/ws`
 
 ### 인증 방식
@@ -124,6 +124,8 @@ POST /api/v1/auth/refresh
 | `/api/v1/onboarding/schedule/day-of-week` | GET | 요일 목록 | `onboarding.js` | ✅ |
 | `/api/v1/onboarding/schedule/time-zones` | GET | 시간대 목록 | `onboarding.js` | ✅ |
 | `/api/v1/onboarding/schedule/schedule` | GET/POST/DELETE | 스케줄 관리 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/schedule/communication-methods` | GET | 소통 방식 목록 | `onboarding.js` | ✅ |
+| `/api/v1/onboarding/schedule/communication-method` | POST | 소통 방식 저장 | `onboarding.js` | ✅ |
 
 ### 4. 매칭 (Matching)
 
@@ -240,7 +242,7 @@ POST /api/v1/leveltest/evaluate
 | `/api/v1/analytics/metrics` | GET | 학습 메트릭 | `analytics.js` | ✅ (Cloudflare Workers 제공) |
 | `/api/v1/analytics/user-stats` | GET | 사용자 통계 | `analytics.js` | ✅ |
 
-> **Note:** `/api/v1/analytics/*` 엔드포인트는 Spring 서버가 아닌 Cloudflare Workers(`workers/src/routes/analytics.ts`)에서 제공되며, 인증/응답 스키마는 Workers 문서를 기준으로 관리됩니다.
+> **Note:** `/api/v1/analytics/*` 엔드포인트는 레거시 서버가 아닌 Cloudflare Workers(`workers/src/routes/analytics.ts`)에서 제공되며, 인증/응답 스키마는 Workers 문서를 기준으로 관리됩니다.
 
 | `/api/v1/analytics/progress` | GET | 진도 현황 | `analytics.js` | ✅ |
 | `/api/v1/analytics/achievements` | GET | 업적 목록 | `analytics.js` | ✅ |

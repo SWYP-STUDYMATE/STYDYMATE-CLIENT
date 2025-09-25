@@ -5,6 +5,7 @@ import CommonChecklistItem from "../../components/CommonChecklist";
 import CommonButton from "../../components/CommonButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObSchadule3() {
   const [selected, setSelected] = useState(null);
@@ -17,7 +18,26 @@ export default function ObSchadule3() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/schedule/daily-methods");
-        setDailyMethods(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const code = typeof item.name === "string" && /^[A-Z_]+$/u.test(item.name)
+              ? item.name
+              : item.id ?? item.code ?? item.value ?? item.dailyMethod ?? item.name ?? null;
+            const description = item.description ?? item.label ?? item.displayName ?? item.text ?? item.name ?? code;
+
+            if (!code) {
+              return null;
+            }
+
+            return {
+              ...item,
+              name: code,
+              description
+            };
+          })
+          .filter((value) => value !== null);
+        setDailyMethods(normalized);
         setLoading(false);
       } catch (error) {
         console.error("하루 공부 시간 데이터를 불러오지 못했습니다:", error);

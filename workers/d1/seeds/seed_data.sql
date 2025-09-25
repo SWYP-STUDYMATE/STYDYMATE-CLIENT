@@ -1,5 +1,5 @@
 -- Initial data for STUDYMATE-SERVER
--- This file will be executed automatically by Spring Boot on startup
+-- This file is executed automatically during Workers bootstrap
 
 -- MOTIVATION 테이블 초기 데이터
 INSERT OR IGNORE INTO motivation (motivation_name) VALUES ('취업/진학');

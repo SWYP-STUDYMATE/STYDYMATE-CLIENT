@@ -27,7 +27,7 @@ import settingsRoutes from './routes/settings';
 import { WebRTCRoom } from './durable/WebRTCRoom';
 import { UserPresence } from './durable/UserPresence';
 import { ChatHub } from './durable/ChatHub';
-import { setupMiddleware, notFoundHandler } from './middleware';
+import { errorHandler, notFoundHandler } from './middleware';
 import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analytics';
 import { successResponse } from './utils/response';
 import { Variables } from './types';
@@ -95,9 +95,10 @@ export const scheduled: ExportedHandler<AppBindings>['scheduled'] = async (contr
 const API_VERSION = 'v1';
 
 // Create Hono app with typed context
-const app = new Hono<{ Bindings: AppBindings; Variables: Variables }>();
+export const app = new Hono<{ Bindings: AppBindings; Variables: Variables }>();
 
-
+// 공통 에러 핸들러를 최상단에 등록해 ApiError를 올바른 상태코드로 변환
+app.use('*', errorHandler);
 
 // Analytics 및 에러 추적 미들웨어
 app.use(errorTrackingMiddleware);
@@ -211,7 +212,7 @@ v1.route('/transcribe', transcribeRoutes);
 v1.route('/translate', translateRoutes);
 v1.route('/analytics', analyticsRoutes);
 
-// 내부 서비스 API (Spring Boot 전용)
+// 내부 서비스 API (레거시 연동)
 v1.route('/internal', internalRoutes);
 
 // API 버전 라우팅
@@ -300,4 +301,12 @@ app.notFound(notFoundHandler);
 
 // Global error handler는 middleware에서 처리
 
-export default app;
+const fetchHandler: ExportedHandler<AppBindings>['fetch'] = (request, env, ctx) =>
+  app.fetch(request, env, ctx);
+
+const worker: ExportedHandler<AppBindings> = {
+  fetch: fetchHandler,
+  scheduled,
+};
+
+export default worker;

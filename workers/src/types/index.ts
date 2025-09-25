@@ -176,6 +176,7 @@ export interface OnboardingSummary {
         dayOfWeek: string;
         classTime?: string;
     }>;
+    communicationMethod?: string;
 }
 
 // Matching domain types

@@ -6,6 +6,7 @@ import ProgressBar from "../../components/PrograssBar";
 import useMotivationStore from "../../store/motivationStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObInt1() {
   const [selected, setSelected] = useState([]);
@@ -20,7 +21,25 @@ export default function ObInt1() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/interest/motivations");
-        setMotivations(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const motivationId = Number(item.motivationId ?? item.motivation_id ?? item.id);
+            const motivationName = item.motivationName ?? item.motivation_name ?? item.name ?? item.label ?? null;
+
+            if (!Number.isFinite(motivationId) || !motivationName) {
+              return null;
+            }
+
+            return {
+              ...item,
+              motivationId,
+              motivationName
+            };
+          })
+          .filter((value) => value !== null);
+
+        setMotivations(normalized);
         setLoading(false);
       } catch (error) {
         console.error("동기 데이터를 불러오지 못했습니다:", error);

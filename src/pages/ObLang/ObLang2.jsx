@@ -8,6 +8,7 @@ import commonSelectStyles from "../../components/SelectStyles";
 import useLangInfoStore from "../../store/langInfoStore";
 import api from "../../api";
 import { useAlert } from "../../hooks/useAlert.jsx";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObLang2() {
   const navigate = useNavigate();
@@ -23,10 +24,20 @@ export default function ObLang2() {
     setLoadingLang(true);
     api.get("/onboarding/language/languages")
       .then(res => {
-        const options = (res.data || []).map(lang => ({
-          value: lang.id ?? lang.languageId,
-          label: lang.name ?? lang.languageName
-        }));
+        const raw = toDataArray(res);
+
+        const options = raw
+          .map(lang => {
+            const value = lang.id ?? lang.languageId ?? lang.language_id;
+            const label = lang.name ?? lang.languageName ?? lang.language_name;
+
+            if (!value || !label) {
+              return null;
+            }
+
+            return { value, label };
+          })
+          .filter((option) => option !== null);
         setLanguageOptions(options);
         setLoadingLang(false);
       })
@@ -38,10 +49,20 @@ export default function ObLang2() {
     setLoadingLevel(true);
     api.get("/onboarding/language/level-types-language")
       .then(res => {
-        const options = (res.data || []).map(level => ({
-          value: level.langLevelId,
-          label: level.LangLevelName
-        }));
+        const raw = toDataArray(res);
+
+        const options = raw
+          .map(level => {
+            const value = level.id ?? level.langLevelId ?? level.lang_level_id;
+            const label = level.name ?? level.langLevelName ?? level.lang_level_name;
+
+            if (!value || !label) {
+              return null;
+            }
+
+            return { value, label };
+          })
+          .filter((option) => option !== null);
         setLevelOptions(options);
         setLoadingLevel(false);
       })

@@ -6,6 +6,7 @@ import ProgressBar from "../../components/PrograssBar";
 import useMotivationStore from "../../store/motivationStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObInt2() {
   const [selected, setSelected] = useState([]);
@@ -20,7 +21,25 @@ export default function ObInt2() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/interest/topics");
-        setTopics(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const topicId = Number(item.topicId ?? item.topic_id ?? item.id);
+            const topicName = item.topicName ?? item.topic_name ?? item.name ?? item.label ?? null;
+
+            if (!Number.isFinite(topicId) || !topicName) {
+              return null;
+            }
+
+            return {
+              ...item,
+              topicId,
+              topicName
+            };
+          })
+          .filter((value) => value !== null);
+
+        setTopics(normalized);
         setLoading(false);
       } catch (error) {
         console.error("주제 데이터를 불러오지 못했습니다:", error);

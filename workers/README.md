@@ -299,8 +299,8 @@ MIT License
 
 ## API Reference (v1)
 
-- 베이스 URL: `https://workers.languagemate.kr/api/v1`
-- 헬스체크: `GET https://workers.languagemate.kr/health`
+- 베이스 URL: `https://api.languagemate.kr/api/v1`
+- 헬스체크: `GET https://api.languagemate.kr/health`
 
 ### 레벨 테스트 `/level-test`
 - `GET /questions` 질문 목록
@@ -315,7 +315,7 @@ MIT License
 
 예시
 ```bash
-curl -X POST https://workers.languagemate.kr/api/v1/level-test/submit \
+curl -X POST https://api.languagemate.kr/api/v1/level-test/submit \
   -F "audio=@answer.webm" -F "questionNumber=1" -F "userId=user123"
 ```
 
@@ -326,7 +326,7 @@ curl -X POST https://workers.languagemate.kr/api/v1/level-test/submit \
 
 예시
 ```bash
-curl -X POST https://workers.languagemate.kr/api/v1/whisper/transcribe \
+curl -X POST https://api.languagemate.kr/api/v1/whisper/transcribe \
   -F "audio=@speech.mp3" -F "language=auto" -F "task=transcribe"
 ```
 
@@ -347,7 +347,7 @@ curl -X POST https://workers.languagemate.kr/api/v1/whisper/transcribe \
 
 예시
 ```bash
-curl -X POST https://workers.languagemate.kr/api/v1/translate/translate \
+curl -X POST https://api.languagemate.kr/api/v1/translate/translate \
   -H 'Content-Type: application/json' -d '{"text":"안녕하세요","target":"en"}'
 ```
 
@@ -360,7 +360,7 @@ curl -X POST https://workers.languagemate.kr/api/v1/translate/translate \
 
 예시
 ```bash
-curl -X POST https://workers.languagemate.kr/api/v1/llm/generate \
+curl -X POST https://api.languagemate.kr/api/v1/llm/generate \
   -H 'Content-Type: application/json' -d '{"prompt":"Write a haiku about learning English."}'
 ```
 
@@ -383,7 +383,7 @@ curl -X POST https://workers.languagemate.kr/api/v1/llm/generate \
 
 예시
 ```bash
-curl -X POST https://workers.languagemate.kr/api/v1/upload/image \
+curl -X POST https://api.languagemate.kr/api/v1/upload/image \
   -H 'Authorization: Bearer <JWT>' \
   -F 'file=@avatar.png' -F 'type=profile'
 ```

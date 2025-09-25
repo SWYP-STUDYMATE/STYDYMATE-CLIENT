@@ -120,11 +120,11 @@ STUDYMATE 프로젝트에서 사용되는 핵심 용어들의 정의와 설명�
 **상태 관리**: Zustand
 
 ### Backend API (백엔드 API)
-**기술 스택**: Spring Boot (STUDYMATE-SERVER)  
-**데이터베이스**: PostgreSQL + Redis  
+**기술 스택**: Cloudflare Workers (Hono) + Durable Objects + D1  
+**데이터 저장소**: D1 (SQLite 기반) + Workers KV + R2  
 **인증**: JWT + OAuth2
 
-### Node.js Backend (Node.js 백엔드)
+### Realtime & AI Worker
 **기술 스택**: Cloudflare Workers + Durable Objects  
 **용도**: WebRTC 시그널링, AI 레벨테스트, 파일 처리
 
@@ -138,9 +138,8 @@ STUDYMATE 프로젝트에서 사용되는 핵심 용어들의 정의와 설명�
 **정의**: 독립적으로 배포 가능한 작은 서비스들로 구성된 아키텍처  
 **STUDYMATE 구성**:
 - Frontend (React)
-- Backend API (Spring Boot)
-- WebRTC Server (Node.js)
-- AI Services (Workers)
+- Backend API (Cloudflare Workers)
+- WebRTC & AI Services (Workers)
 
 ### Edge Computing (엣지 컴퓨팅)
 **정의**: 사용자와 가까운 위치에서 컴퓨팅 처리  

@@ -2,6 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getUserCompleteProfile, updateUserCompleteProfile } from "../api/user";
 import { log } from "../utils/logger";
+import { toDisplayText } from "../utils/text";
+
+const normalizeResidence = (value) => {
+  const normalized = toDisplayText(value, "");
+  return typeof normalized === "string" ? normalized : "";
+};
 
 // 서버와 동기화되는 프로필 스토어
 const useProfileStore = create(
@@ -12,7 +18,7 @@ const useProfileStore = create(
       name: "",
       setName: (name) => set({ name: name ?? "" }),
       residence: "",
-      setResidence: (residence) => set({ residence: residence ?? "" }),
+      setResidence: (residence) => set({ residence: normalizeResidence(residence) }),
       profileImage: null,
       setProfileImage: (profileImage) => set({ profileImage: profileImage ?? null }),
       intro: "",
@@ -46,7 +52,7 @@ const useProfileStore = create(
           set({
             englishName: profileData?.englishName ?? "",
             name: profileData?.koreanName ?? profileData?.englishName ?? "",
-            residence: profileData?.location ?? "",
+            residence: normalizeResidence(profileData?.location ?? profileData?.residence),
             profileImage: profileData?.profileImageUrl ?? null,
             intro: profileData?.selfBio ?? "",
             birthYear: profileData?.birthYear ?? null,
@@ -73,7 +79,9 @@ const useProfileStore = create(
           set({
             englishName: profileData.englishName ?? current.englishName,
             name: profileData.koreanName ?? profileData.name ?? current.name,
-            residence: profileData.location ?? profileData.residence ?? current.residence,
+            residence: normalizeResidence(
+              profileData.location ?? profileData.residence ?? current.residence
+            ),
             profileImage: profileData.profileImageUrl ?? profileData.profileImage ?? current.profileImage,
             intro: profileData.selfBio ?? profileData.intro ?? current.intro,
             birthYear: profileData.birthYear ?? current.birthYear,
@@ -100,9 +108,13 @@ const useProfileStore = create(
       },
       
       setResidenceSync: async (residence) => {
-        set({ residence });
+        const normalized = normalizeResidence(residence);
+        set({ residence: normalized });
         try {
-          await useProfileStore.getState().saveProfileToServer({ residence });
+          await useProfileStore.getState().saveProfileToServer({
+            location: normalized,
+            residence: normalized,
+          });
         } catch (error) {
           log.warn('거주지 서버 저장 실패', error, 'PROFILE_STORE');
         }
@@ -149,7 +161,7 @@ const useProfileStore = create(
             set({
               englishName: serverProfile.englishName || localProfile.englishName,
               name: serverProfile.koreanName || localProfile.name,
-              residence: serverProfile.location || localProfile.residence,
+              residence: normalizeResidence(serverProfile.location ?? serverProfile.residence ?? localProfile.residence),
               profileImage: serverProfile.profileImageUrl || localProfile.profileImage,
               intro: serverProfile.selfBio || localProfile.intro,
               birthYear: serverProfile.birthYear ?? localProfile.birthYear,

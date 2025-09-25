@@ -128,7 +128,7 @@ git add . && git commit -m "feat: 기능명
 
 ### STUDYMATE-SERVER (백엔드)
 - **위치**: `/Users/minhan/Desktop/public-repo/STUDYMATE-SERVER/CLAUDE.md`
-- **내용**: Spring Boot 백엔드 서버 개발 가이드
+- **내용**: Cloudflare Workers 백엔드 서버 개발 가이드
 - **연동**: API 명세서와 연계하여 확인 필요
 
 ### 공통 리소스

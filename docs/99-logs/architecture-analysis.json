@@ -21,7 +21,7 @@
     },
     "backend": {
       "type": "external",
-      "api_server": "STUDYMATE-SERVER (Spring Boot)",
+      "api_server": "Cloudflare Workers API",
       "workers": "Cloudflare Workers (AI services)"
     },
     "infrastructure": {
@@ -43,7 +43,7 @@
     },
     "external_dependencies": {
       "api_server": "https://api.languagemate.kr",
-      "workers": "https://workers.languagemate.kr"
+      "workers": "https://api.languagemate.kr"
     }
   }
 }

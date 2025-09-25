@@ -1,5 +1,5 @@
 -- 0006_extended_domains.sql
--- Additional domain tables migrated from Spring Boot JPA entities
+-- Additional domain tables migrated from legacy JPA entities
 
 PRAGMA foreign_keys = ON;
 

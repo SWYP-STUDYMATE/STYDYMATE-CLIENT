@@ -29,6 +29,7 @@ import { getFileUrl } from '../../api/profile';
 import { useAlert } from '../../hooks/useAlert';
 import useAchievementOverview from '../../hooks/useAchievementOverview';
 import { transformOnboardingDataToLanguageProfile, transformUserLanguageInfoResponse } from '../../utils/onboardingTransform';
+import { toDisplayText } from '../../utils/text';
 
 const defaultLearningStats = {
   totalSessions: 0,
@@ -174,6 +175,8 @@ export default function ProfilePage() {
   const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const { englishName, name, profileImage, residence, intro, clearProfile, loadProfileFromServer } = useProfileStore();
+
+  const displayResidence = toDisplayText(residence, '') || '위치 미설정';
 
   const [languageProfile, setLanguageProfile] = useState({ teachableLanguages: [], learningLanguages: [], interests: [] });
   const [languageLoading, setLanguageLoading] = useState(true);
@@ -467,7 +470,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1">
             <h2 className="text-[24px] font-bold text-[#111111]">{englishName || name || 'User'}</h2>
-            <p className="text-[14px] text-[#606060]">{residence || '위치 미설정'}</p>
+            <p className="text-[14px] text-[#606060]">{displayResidence}</p>
             {intro && (
               <p className="text-[14px] text-[#929292] mt-1">{intro}</p>
             )}

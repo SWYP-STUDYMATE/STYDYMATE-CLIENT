@@ -24,8 +24,8 @@
                             ▼
 ┌─────────────────────────────────────────────────────────┐
 │                  Backend Layer                           │
-│           Spring Boot (NCP) + Redis + MySQL              │
-│         (Core Business Logic, Data Persistence)          │
+│        Cloudflare Workers (Hono + Durable Objects)       │
+│        D1 + KV + R2 (Data & State Persistence)           │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -208,7 +208,7 @@ const routes = {
 
 ## 🔌 Backend API 구조
 
-### 기존 Spring Boot API (NCP)
+### Cloudflare Workers API
 ```
 https://api.languagemate.kr
 
@@ -281,11 +281,11 @@ https://api.languagemate.kr/edge
 
 ## 💾 데이터베이스 스키마
 
-### MySQL (NCP RDS)
+### Cloudflare D1 (SQLite)
 ```sql
 -- 사용자 테이블
 CREATE TABLE users (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   email VARCHAR(255) UNIQUE NOT NULL,
   provider VARCHAR(50),
   provider_id VARCHAR(255),
@@ -300,8 +300,8 @@ CREATE TABLE users (
 
 -- 레벨테스트 결과 (NEW)
 CREATE TABLE level_test_results (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id BIGINT NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
   test_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   speaking_score INT,
   listening_score INT,
@@ -314,9 +314,9 @@ CREATE TABLE level_test_results (
 
 -- 세션 테이블 (NEW)
 CREATE TABLE sessions (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   title VARCHAR(255),
-  host_id BIGINT NOT NULL,
+  host_id INTEGER NOT NULL,
   session_type ENUM('audio', 'video'),
   max_participants INT DEFAULT 4,
   scheduled_at TIMESTAMP,
@@ -329,9 +329,9 @@ CREATE TABLE sessions (
 
 -- 세션 참가자 (NEW)
 CREATE TABLE session_participants (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  session_id BIGINT NOT NULL,
-  user_id BIGINT NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   left_at TIMESTAMP NULL,
   speaking_time_seconds INT DEFAULT 0,
@@ -341,9 +341,9 @@ CREATE TABLE session_participants (
 
 -- 매칭 요청 (NEW)
 CREATE TABLE matching_requests (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  requester_id BIGINT NOT NULL,
-  target_id BIGINT NOT NULL,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  requester_id INTEGER NOT NULL,
+  target_id INTEGER NOT NULL,
   compatibility_score FLOAT,
   status ENUM('pending', 'accepted', 'rejected'),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -353,9 +353,9 @@ CREATE TABLE matching_requests (
 );
 ```
 
-### Redis 캐시 구조
+### Workers KV 캐시 구조
 ```javascript
-// 사용자 온라인 상태
+// 사용자 온라인 상태 (Workers KV)
 "user:online:{userId}": {
   status: "online|away|offline",
   lastSeen: timestamp
@@ -600,9 +600,9 @@ const rateLimits = {
 
 ### 1. 수평 확장
 - Cloudflare Workers: 자동 스케일링
-- NCP Auto Scaling: Spring Boot 인스턴스
-- Redis Cluster: 캐시 분산
-- MySQL Read Replicas: 읽기 부하 분산
+- Durable Objects: 지역 샤딩 및 세션 파티셔닝
+- Workers KV: 글로벌 캐시 분산
+- D1 Read Replicas (Preview): 읽기 부하 분산
 
 ### 2. 성능 최적화
 - CDN 캐싱 (Cloudflare)
@@ -614,9 +614,9 @@ const rateLimits = {
 ### 3. 글로벌 배포
 ```
 Regions:
-- Primary: Seoul (NCP)
+- Primary Data: Cloudflare D1 (asia-northeast)
 - Edge: Cloudflare Global Network (275+ PoPs)
-- Backup: Tokyo, Singapore
+- Backup: Durable Object failover (Tokyo, Singapore)
 ```
 
 ## 🎯 다음 단계

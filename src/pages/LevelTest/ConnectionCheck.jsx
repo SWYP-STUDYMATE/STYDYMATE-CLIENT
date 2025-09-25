@@ -38,7 +38,7 @@ export default function ConnectionCheck() {
     // 실제 인터넷 연결 체크
     if (navigator.onLine) {
       // API 엔드포인트 ping 테스트
-      const healthUrl = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr'}/health`;
+      const healthUrl = `${import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr'}/health`;
       fetch(healthUrl, { mode: 'no-cors' })
         .then(() => {
           setInternetConnection('connected');

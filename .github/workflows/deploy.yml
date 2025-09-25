@@ -30,8 +30,8 @@ jobs:
         env:
           VITE_API_URL: https://api.languagemate.kr
           VITE_WS_URL: wss://api.languagemate.kr/ws
-          VITE_WORKERS_API_URL: https://workers.languagemate.kr
-          VITE_WORKERS_WS_URL: wss://workers.languagemate.kr/ws
+          VITE_WORKERS_API_URL: https://api.languagemate.kr
+          VITE_WORKERS_WS_URL: wss://api.languagemate.kr/ws
           VITE_NAVER_CLIENT_ID: ${{ secrets.VITE_NAVER_CLIENT_ID }}
           VITE_NAVER_REDIRECT_URI: https://languagemate.kr/login/oauth2/code/naver
 

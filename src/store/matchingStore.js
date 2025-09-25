@@ -8,15 +8,15 @@ import {
   getMatchingHistory,
   getRecommendedPartners,
   analyzeCompatibility,
-  getSpringBootRecommendedPartners,
-  searchSpringBootPartners,
-  sendSpringBootMatchRequest,
-  getSpringBootReceivedMatchRequests,
-  getSpringBootSentMatchRequests,
-  getSpringBootMatches
+  getPartnerRecommendations,
+  searchPartners as searchPartnersApi,
+  createMatchRequest,
+  getReceivedMatchRequests,
+  getSentMatchRequests,
+  getMatches
 } from "../api/matching";
 
-const normalizeSpringPartner = (partner) => {
+const normalizePartner = (partner) => {
   if (!partner) return null;
 
   const firstTarget = partner.targetLanguages?.[0];
@@ -64,10 +64,14 @@ const normalizeWorkerMatch = (match) => ({
 const extractPageContent = (payload) => {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload;
+  if (typeof payload !== 'object') return [];
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
   if (payload.content) return payload.content;
   if (payload.data?.content) return payload.data.content;
-  if (payload.matches) return payload.matches;
-  if (payload.data?.matches) return payload.data.matches;
+  if (Array.isArray(payload.matches)) return payload.matches;
+  if (Array.isArray(payload.data?.matches)) return payload.data.matches;
+  if (Array.isArray(payload.data?.items)) return payload.data.items;
   return [];
 };
 
@@ -261,14 +265,14 @@ const useMatchingStore = create(
         return proficiencyLevel && availability.length > 0;
       },
       
-      // 추천 파트너 가져오기 (Spring Boot API 우선 사용)
+      // 추천 파트너 가져오기 (Workers API 우선 사용)
       fetchRecommendedPartners: async () => {
         try {
           const state = get();
-          // Spring Boot API 사용
-          const result = await getSpringBootRecommendedPartners(state.matchingFilters);
+          // Workers API 사용
+          const result = await getPartnerRecommendations(state.matchingFilters);
           const partners = extractPageContent(result)
-            .map(normalizeSpringPartner)
+            .map(normalizePartner)
             .filter(Boolean);
           
           set({
@@ -278,7 +282,7 @@ const useMatchingStore = create(
           return partners;
         } catch (error) {
           console.error('Fetch recommended partners error:', error);
-          // Spring Boot API 실패시 Workers API fallback
+          // Workers API 실패 시 my-matches fallback 호출
           try {
             const result = await getRecommendedPartners();
             const workerMatches = (result.matches || [])
@@ -337,10 +341,10 @@ const useMatchingStore = create(
         }
       },
 
-      // 매칭 요청 보내기 (Spring Boot API)
+      // 매칭 요청 보내기 (Workers API)
       sendMatchRequest: async (partnerId, message = '') => {
         try {
-          const result = await sendSpringBootMatchRequest(partnerId, message);
+          const result = await createMatchRequest(partnerId, message);
           return result;
         } catch (error) {
           console.error('Send match request error:', error);
@@ -351,7 +355,7 @@ const useMatchingStore = create(
       // 받은 매칭 요청 조회
       fetchReceivedRequests: async (status = 'pending') => {
         try {
-          const result = await getSpringBootReceivedMatchRequests(status);
+          const result = await getReceivedMatchRequests(status);
           return extractPageContent(result);
         } catch (error) {
           console.error('Fetch received requests error:', error);
@@ -362,7 +366,7 @@ const useMatchingStore = create(
       // 보낸 매칭 요청 조회
       fetchSentRequests: async (status = 'pending') => {
         try {
-          const result = await getSpringBootSentMatchRequests(status);
+          const result = await getSentMatchRequests(status);
           return extractPageContent(result);
         } catch (error) {
           console.error('Fetch sent requests error:', error);
@@ -373,7 +377,7 @@ const useMatchingStore = create(
       // 매칭된 파트너 목록 조회
       fetchMatches: async () => {
         try {
-          const result = await getSpringBootMatches();
+          const result = await getMatches();
           return extractPageContent(result);
         } catch (error) {
           console.error('Fetch matches error:', error);
@@ -381,12 +385,12 @@ const useMatchingStore = create(
         }
       },
 
-      // 파트너 검색 (Spring Boot API)
+      // 파트너 검색 (Workers API)
       searchPartners: async (searchQuery, filters = {}) => {
         try {
-          const result = await searchSpringBootPartners(searchQuery, filters);
+          const result = await searchPartnersApi(searchQuery, filters);
           return extractPageContent(result)
-            .map(normalizeSpringPartner)
+            .map(normalizePartner)
             .filter(Boolean);
         } catch (error) {
           console.error('Search partners error:', error);

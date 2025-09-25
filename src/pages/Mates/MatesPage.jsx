@@ -17,7 +17,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
-import { getSpringBootMatches, deleteSpringBootMatch } from '../../api/matching';
+import { getMatches, deleteMatch } from '../../api/matching';
 import { toast } from '../../components/toast-manager.jsx';
 
 const PAGE_SIZE = 12;
@@ -49,10 +49,34 @@ const parseTopics = (topics) => {
 };
 
 const extractPage = (payload) => {
-  if (!payload) return { content: [] };
+  if (!payload) {
+    return { content: [], number: 0, last: true, totalElements: 0 };
+  }
+
   if (Array.isArray(payload)) {
     return { content: payload, number: 0, last: true, totalElements: payload.length };
   }
+
+  if (Array.isArray(payload?.data)) {
+    const meta = payload.meta ?? {};
+    const pageIndex = typeof meta.page === 'number' ? Math.max(meta.page - 1, 0) : 0;
+    const limit = typeof meta.limit === 'number' && meta.limit > 0 ? meta.limit : payload.data.length;
+    const total = typeof meta.total === 'number' ? meta.total : payload.data.length;
+    const totalPages = typeof meta.totalPages === 'number'
+      ? meta.totalPages
+      : limit > 0 ? Math.ceil(total / limit) : 1;
+
+    return {
+      content: payload.data,
+      number: pageIndex,
+      last: pageIndex + 1 >= totalPages,
+      totalElements: total,
+      limit,
+      totalPages,
+      currentPage: pageIndex + 1,
+    };
+  }
+
   if (payload.content) return payload;
   if (payload.data?.content) return payload.data;
   if (payload.data?.data?.content) return payload.data.data;
@@ -62,27 +86,33 @@ const extractPage = (payload) => {
 const transformMate = (match) => {
   if (!match) return null;
 
-  const status = (match.onlineStatus || 'OFFLINE').toUpperCase();
-  const rawScore = match.compatibilityScore;
+  const status = (match.onlineStatus
+    || match.partnerOnlineStatus
+    || 'OFFLINE').toUpperCase();
+
+  const rawScore = match.compatibilityScore ?? match.score;
   const normalizedScore = typeof rawScore === 'number'
     ? Math.round((rawScore <= 1 ? rawScore * 100 : rawScore))
     : null;
 
   return {
-    matchId: match.matchId,
-    partnerUserId: match.partnerUserId,
-    name: match.partnerUserName || '이름 미등록',
-    profileImage: match.partnerUserProfileImage || null,
-    location: match.partnerUserLocation || null,
-    nativeLanguage: match.partnerUserNativeLanguage || null,
-    bio: match.partnerUserBio || '',
-    matchedAt: match.matchedAt || null,
+    matchId: match.matchId || match.id,
+    partnerUserId: match.partnerUserId || match.partnerId || match.userId || null,
+    name: match.partnerUserName || match.partnerName || match.name || '이름 미등록',
+    profileImage: match.partnerUserProfileImage
+      || match.partnerProfileImageUrl
+      || match.profileImage
+      || null,
+    location: match.partnerUserLocation || match.location || null,
+    nativeLanguage: match.partnerUserNativeLanguage || match.nativeLanguage || null,
+    bio: match.partnerUserBio || match.bio || '',
+    matchedAt: match.matchedAt || match.matchDate || null,
     compatibilityScore: Number.isFinite(normalizedScore) ? normalizedScore : null,
     onlineStatus: status,
     statusLabel: STATUS_LABELS[status] || STATUS_LABELS.OFFLINE,
-    lastActive: match.lastActiveTime || null,
-    totalSessions: match.totalSessionsCompleted ?? 0,
-    favoriteTopics: parseTopics(match.favoriteTopics),
+    lastActive: match.lastActiveTime || match.matchedAt || null,
+    totalSessions: match.totalSessionsCompleted ?? match.sessionsCompleted ?? 0,
+    favoriteTopics: parseTopics(match.favoriteTopics || match.commonInterests),
   };
 };
 
@@ -171,12 +201,12 @@ const MatesPage = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [menuTarget, setMenuTarget] = useState(null);
 
-  const fetchMates = useCallback(async ({ page: targetPage = 0, append = false } = {}) => {
+  const fetchMates = useCallback(async ({ page: targetPage = 1, append = false } = {}) => {
     if (append) {
       setLoadingMore(true);
     } else {
@@ -185,21 +215,27 @@ const MatesPage = () => {
     setError(null);
 
     try {
-      const response = await getSpringBootMatches(targetPage, PAGE_SIZE);
+      const response = await getMatches(targetPage, PAGE_SIZE);
       const pagePayload = extractPage(response);
       const content = Array.isArray(pagePayload?.content) ? pagePayload.content : [];
       const normalized = content.map(transformMate).filter(Boolean);
 
+      let nextList = normalized;
       setMates((prev) => {
-        const nextList = append ? mergeMatches(prev, normalized) : normalized;
-        setTotalCount(pagePayload?.totalElements ?? nextList.length);
+        nextList = append ? mergeMatches(prev, normalized) : normalized;
         return nextList;
       });
 
-      const currentPageIndex = pagePayload?.number ?? targetPage;
-      const nextPageIndex = currentPageIndex + 1;
-      setPage(nextPageIndex);
-      setHasMore(pagePayload?.last === false);
+      const totalElements = pagePayload?.totalElements ?? nextList.length;
+      setTotalCount(totalElements);
+
+      const currentPageNumber = pagePayload?.currentPage ?? (targetPage ?? 1);
+      const computedLimit = pagePayload?.limit ?? PAGE_SIZE;
+      const computedTotalPages = pagePayload?.totalPages
+        ?? (computedLimit > 0 ? Math.ceil(totalElements / computedLimit) : 1);
+
+      setPage(currentPageNumber + 1);
+      setHasMore(currentPageNumber < computedTotalPages);
     } catch (fetchError) {
       console.error('메이트 목록 로드 실패:', fetchError);
       setError('메이트 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -218,7 +254,7 @@ const MatesPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchMates({ page: 0, append: false });
+    fetchMates({ page: 1, append: false });
   }, [fetchMates]);
 
   useEffect(() => {
@@ -268,7 +304,7 @@ const MatesPage = () => {
 
   const handleRefresh = () => {
     if (loading || loadingMore) return;
-    fetchMates({ page: 0, append: false });
+    fetchMates({ page: 1, append: false });
   };
 
   const handleLoadMore = () => {
@@ -299,7 +335,7 @@ const MatesPage = () => {
     }
 
     try {
-      await deleteSpringBootMatch(mate.matchId);
+      await deleteMatch(mate.matchId);
       setMates((prev) => prev.filter((item) => item.matchId !== mate.matchId));
       setTotalCount((prev) => Math.max(0, prev - 1));
       toast.success('매칭 해제 완료', `${mate.name}님과의 매칭이 해제되었습니다.`);
@@ -398,7 +434,7 @@ const MatesPage = () => {
             <div className="flex items-center justify-between">
               <p className="text-[14px]">{error}</p>
               <button
-                onClick={() => fetchMates({ page: 0, append: false })}
+                onClick={() => fetchMates({ page: 1, append: false })}
                 className="text-[13px] font-medium underline underline-offset-4"
               >
                 다시 시도

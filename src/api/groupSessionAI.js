@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Workers AI API 설정
-const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://workers.languagemate.kr';
+const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
 
 const workersApi = axios.create({
   baseURL: WORKERS_API_URL,

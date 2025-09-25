@@ -14,7 +14,7 @@ export const internalRoutes = new Hono<{ Bindings: Env; Variables: Variables }>(
 // 모든 내부 API는 Internal Secret 인증 필요
 internalRoutes.use('*', internalAuth());
 
-// Spring Boot 서버용 음성 전사 엔드포인트
+// 레거시 백엔드 호환 음성 전사 엔드포인트
 internalRoutes.post('/transcribe', async (c) => {
   try {
     const body = await c.req.json();
@@ -145,7 +145,7 @@ internalRoutes.post('/transcribe', async (c) => {
   }
 });
 
-// Spring Boot 서버용 레벨 테스트 평가 엔드포인트
+// 레거시 백엔드 호환 레벨 테스트 평가 엔드포인트
 internalRoutes.post('/level-test', async (c) => {
   try {
     const body = await c.req.json();
@@ -260,7 +260,7 @@ internalRoutes.patch('/webrtc/rooms/:roomId/metadata', async (c) => {
   }
 });
 
-// Spring Boot 서버용 대화 피드백 엔드포인트
+// 레거시 백엔드 호환 대화 피드백 엔드포인트
 internalRoutes.post('/conversation-feedback', async (c) => {
   try {
     const body = await c.req.json();
@@ -358,7 +358,7 @@ Provide comprehensive feedback in JSON format:
   }
 });
 
-// Spring Boot 서버용 학습 추천 엔드포인트 (AI 없이 정적)
+// 레거시 백엔드 호환 학습 추천 엔드포인트 (AI 없이 정적)
 internalRoutes.post('/learning-recommendations', async (c) => {
   try {
     const body = await c.req.json();

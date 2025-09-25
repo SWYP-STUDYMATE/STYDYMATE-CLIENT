@@ -6,11 +6,13 @@ import CommonButton from "../../components/CommonButton";
 import usePartnerStore from "../../store/partnerStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObPartner2() {
   const [selected, setSelected] = useState([]); // id 배열
   const [partnerPersonalities, setPartnerPersonalities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const selectedPartnerGender = usePartnerStore((state) => state.selectedPartnerGender);
   const setSelectedPartnerStyles = usePartnerStore((state) => state.setSelectedPartnerStyles);
   const navigate = useNavigate();
 
@@ -19,7 +21,25 @@ export default function ObPartner2() {
       try {
         setLoading(true);
         const response = await api.get("/onboarding/partner/personalities");
-        setPartnerPersonalities(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const id = Number(item.partnerPersonalityId ?? item.partner_personality_id ?? item.id);
+            const name = item.partnerPersonality ?? item.partner_personality ?? item.name ?? null;
+            const description = item.description ?? item.label ?? name;
+
+            if (!Number.isFinite(id) || !name) {
+              return null;
+            }
+
+            return {
+              ...item,
+              partnerPersonalityId: id,
+              partnerPersonality: description
+            };
+          })
+          .filter((value) => value !== null);
+        setPartnerPersonalities(normalized);
         setLoading(false);
       } catch (error) {
         console.error("파트너 성격 데이터를 불러오지 못했습니다:", error);
@@ -44,10 +64,14 @@ export default function ObPartner2() {
       selected.includes(item.partnerPersonalityId));
     setSelectedPartnerStyles(selectedStyles);
     const ids = [...selected]
-    .map(Number)
-    .filter(Number.isInteger)
-    .sort((a, b) => a - b);
-  const requestData = { personalPartnerIds: ids };
+      .map(Number)
+      .filter(Number.isInteger)
+      .sort((a, b) => a - b);
+    const preferences = ids.map((id) => ({
+      partnerPersonalityId: id,
+      ...(selectedPartnerGender ? { partnerGender: selectedPartnerGender } : {})
+    }));
+    const requestData = { personalPartnerIds: preferences };
 
     try {
       console.log('/onboarding/partner/personality', requestData);

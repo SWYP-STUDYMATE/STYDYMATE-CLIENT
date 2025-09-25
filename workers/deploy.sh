@@ -49,7 +49,7 @@ echo -e "${GREEN}✅ 배포 완료!${NC}"
 
 # 4. 배포 확인
 if [ "$ENV" = "production" ]; then
-    URL="https://workers.languagemate.kr"
+    URL="https://api.languagemate.kr"
 else
     URL="http://localhost:8787"
 fi

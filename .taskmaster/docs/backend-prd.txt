@@ -1,13 +1,13 @@
-# STUDYMATE-SERVER 백엔드 API 개발 - Product Requirements Document
+# STUDYMATE-API 백엔드 개발 - Product Requirements Document
 
 ## 1. 프로젝트 개요
 
-STUDYMATE-CLIENT 프론트엔드에서 필요로 하는 Spring Boot 백엔드 API를 개발합니다.
-Cloudflare Workers는 이미 완전히 구현되어 있으므로, STUDYMATE-SERVER에서만 사용자 데이터 관리 API를 구현합니다.
+STUDYMATE-CLIENT 프론트엔드에서 필요로 하는 Cloudflare Workers 기반 백엔드 API를 개발합니다.
+모든 사용자 데이터 관리 및 비즈니스 로직은 Cloudflare Workers, Durable Objects, D1, KV로 구현하며 별도 서버 프레임워크는 사용하지 않습니다.
 
 ### 기술 스택
-- Backend: Spring Boot (기존 STUDYMATE-SERVER 확장)
-- Database: PostgreSQL/MySQL (기존 DB 활용)
+- Backend: Cloudflare Workers (Hono + Durable Objects)
+- Data Storage: D1 / Workers KV / R2
 - Frontend 연동: React 프론트엔드와 REST API 통신
 
 ## 2. 백엔드 개발 태스크

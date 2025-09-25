@@ -2,9 +2,9 @@
 
 이 문서는 Cloudflare Workers 기반 백엔드 API 전체를 초심자도 이해할 수 있도록 상세히 설명합니다. 각 엔드포인트별로 요청 방법, 필요한 헤더/바디, 실제 예시(curl), 성공/에러 응답, 그리고 프론트엔드에서 어디서 사용하는지까지 포함합니다.
 
-- 프로덕션 도메인: `https://workers.languagemate.kr`
+- 프로덕션 도메인: `https://api.languagemate.kr`
 - API 베이스 경로: `/api/v1`
-- 헬스체크: `GET https://workers.languagemate.kr/health`
+- 헬스체크: `GET https://api.languagemate.kr/health`
 
 ## 공통 규칙
 
@@ -42,7 +42,7 @@
 - 설명: 런타임 상태 확인
 - 인증: 불필요
 - 요청 예시
-  curl -s https://workers.languagemate.kr/health
+  curl -s https://api.languagemate.kr/health
 - 성공 응답 예시
   {
     "success": true,
@@ -86,7 +86,7 @@
 - Content-Type: `multipart/form-data`
 - 폼 필드: `audio`(File), `questionNumber`(1..N), `userId`
 - 요청 예시
-  curl -X POST https://workers.languagemate.kr/api/v1/level-test/submit \
+  curl -X POST https://api.languagemate.kr/api/v1/level-test/submit \
     -F "audio=@answer.webm" -F "questionNumber=1" -F "userId=user123"
 - 성공 응답 예시
   {
@@ -100,7 +100,7 @@
 - 인증: 불필요
 - Body(JSON): `{ "userId": "user123" }`
 - 요청 예시
-  curl -X POST https://workers.languagemate.kr/api/v1/level-test/complete \
+  curl -X POST https://api.languagemate.kr/api/v1/level-test/complete \
     -H 'Content-Type: application/json' \
     -d '{"userId":"user123"}'
 - 성공 응답 예시(요약)
@@ -195,7 +195,7 @@
 - 인증: 불필요
 - Body(JSON): `{ "text": "안녕하세요", "target": "en", "source": "ko" }` (`source` 생략 시 자동감지)
 - 요청 예시
-  curl -X POST https://workers.languagemate.kr/api/v1/translate/translate \
+  curl -X POST https://api.languagemate.kr/api/v1/translate/translate \
     -H 'Content-Type: application/json' \
     -d '{"text":"안녕하세요","target":"en"}'
 - 성공 응답 예시
@@ -229,7 +229,7 @@
 - 설명: 프롬프트/대화 기반 텍스트 생성 (SSE 스트리밍 지원)
 - Body(JSON): `prompt?` 또는 `messages?`(role/content 배열), `model?`, `temperature?`, `max_tokens?`, `stream?`
 - 요청 예시
-  curl -X POST https://workers.languagemate.kr/api/v1/llm/generate \
+  curl -X POST https://api.languagemate.kr/api/v1/llm/generate \
     -H 'Content-Type: application/json' \
     -d '{"prompt":"Write a haiku about learning English."}'
 - 성공 응답 예시
@@ -284,7 +284,7 @@
   { "success": false, "error": { "message": "Room is full", "code": "CONFLICT" } }
 
 ### [Internal] PATCH /api/v1/internal/webrtc/rooms/:roomId/metadata
-- 설명: Spring 서버가 세션 정보(title, scheduledAt, host 등)를 Workers 룸 메타데이터에 병합
+- 설명: 레거시 서버가 세션 정보(title, scheduledAt, host 등)를 Workers 룸 메타데이터에 병합
 - 인증: `X-Internal-Secret`
 - Body 예시
   ```json
@@ -332,7 +332,7 @@
 - 설명: 프리사인드 업로드 정보(placeholder 응답)
 
 - 요청 예시(이미지 업로드)
-  curl -X POST https://workers.languagemate.kr/api/v1/upload/image \
+  curl -X POST https://api.languagemate.kr/api/v1/upload/image \
     -H 'Authorization: Bearer <JWT>' \
     -F 'file=@avatar.png' -F 'type=profile'
 
@@ -390,6 +390,6 @@
 - 500 INTERNAL_ERROR: 서버 오류 → 재시도, 지속 시 로그 확인
 
 ## 빠른 점검 명령 모음
-curl -s https://workers.languagemate.kr/health
-curl -s https://workers.languagemate.kr/api/v1/llm/models
-curl -s https://workers.languagemate.kr/api/v1/whisper/languages
+curl -s https://api.languagemate.kr/health
+curl -s https://api.languagemate.kr/api/v1/llm/models
+curl -s https://api.languagemate.kr/api/v1/whisper/languages

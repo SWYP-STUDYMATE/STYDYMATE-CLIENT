@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Filter, X, MapPin, Globe, Users, AlertTriangle } from 'lucide-react';
 import { ProfileCardCompact } from './ProfileCard';
 import useMatchingStore from '../store/matchingStore';
+import { toDisplayText } from '../utils/text';
 
 export default function ProfileSearch({ onProfileSelect, className = '' }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,7 +63,7 @@ export default function ProfileSearch({ onProfileSelect, className = '' }) {
       const normalizedResults = filteredPartners.map((partner) => ({
         ...partner,
         englishName: partner.englishName || partner.name,
-        residence: partner.location ?? partner.residence ?? '',
+        residence: toDisplayText(partner.location ?? partner.residence, '') || '',
       }));
 
       setResults(normalizedResults);

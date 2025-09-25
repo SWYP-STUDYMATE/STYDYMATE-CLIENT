@@ -5,6 +5,7 @@ import CommonChecklistItem from "../../components/CommonChecklist";
 import CommonButton from "../../components/CommonButton";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { toDataArray } from "../../utils/apiResponse";
 
 export default function ObSchadule2() {
   const [selected, setSelected] = useState([]);
@@ -20,9 +21,25 @@ export default function ObSchadule2() {
         // 실제 API 호출
         const response = await api.get("/onboarding/schedule/group-sizes");
         console.log("그룹 크기 데이터 응답:", response.data);
-        
-        // API 응답 데이터 구조에 맞게 설정
-        setGroupSizes(response.data || []);
+        const raw = toDataArray(response);
+        const normalized = raw
+          .map((item) => {
+            const groupSizeId = Number(item.groupSizeId ?? item.group_size_id ?? item.id);
+            const groupSize = item.groupSize ?? item.group_size ?? item.name ?? item.label ?? null;
+
+            if (!Number.isFinite(groupSizeId) || !groupSize) {
+              return null;
+            }
+
+            return {
+              ...item,
+              groupSizeId,
+              groupSize
+            };
+          })
+          .filter((value) => value !== null);
+
+        setGroupSizes(normalized);
         setLoading(false);
       } catch (error) {
         console.error("그룹 규모 데이터를 불러오지 못했습니다:", error);
@@ -34,9 +51,15 @@ export default function ObSchadule2() {
   }, []);
 
   const handleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
+    const value = Number(id);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    setSelected((prev) => {
+      const exists = prev.includes(value);
+      const next = exists ? prev.filter((s) => s !== value) : [...prev, value];
+      return next.sort((a, b) => a - b);
+    });
   };
 
   const handleNext = async () => {

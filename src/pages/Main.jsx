@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getUserProfile, getUserInfo } from "../api/user";
 import { getStudyStats } from "../api/analytics";
 import { getOnboardingData } from "../api/onboarding";
-import { getSpringBootMatches } from "../api/matching";
+import { getMatches } from "../api/matching";
 import useProfileStore from "../store/profileStore";
 import MainHeader from "../components/MainHeader";
 import Sidebar from "../components/chat/Sidebar";
@@ -14,23 +14,49 @@ import LanguageExchangeMates from "../components/LanguageExchangeMates";
 import AchievementBadges from "../components/AchievementBadges";
 import useAchievementOverview from "../hooks/useAchievementOverview";
 import { transformOnboardingDataToLanguageProfile } from "../utils/onboardingTransform";
+import { toDisplayText } from "../utils/text";
 
 const transformMatches = (matches = []) =>
   matches.map((match) => {
     const rawScore = match?.compatibilityScore;
     const normalizedScore = typeof rawScore === "number"
-      ? Math.round((rawScore <= 1 ? rawScore * 100 : rawScore))
+      ? Math.round(rawScore <= 1 ? rawScore * 100 : rawScore)
       : null;
 
     return {
-      matchId: match?.matchId,
-      name: match?.partnerUserName || "익명 사용자",
-      location: match?.partnerUserLocation || null,
-      nativeLanguage: match?.partnerUserNativeLanguage || null,
-      profileImage: match?.partnerUserProfileImage || null,
+      matchId: match?.matchId ?? match?.id,
+      name: toDisplayText(
+        match?.partnerName
+          || match?.partnerUserName
+          || match?.name
+          || match?.partner?.name
+      ) || "익명 사용자",
+      location: toDisplayText(
+        match?.partnerUserLocation
+          || match?.location
+          || match?.partner?.location
+      ),
+      nativeLanguage: toDisplayText(
+        match?.partnerUserNativeLanguage
+          || match?.nativeLanguage
+          || match?.partner?.nativeLanguage
+      ),
+      profileImage: match?.partnerProfileImageUrl
+        || match?.partnerUserProfileImage
+        || match?.profileImage
+        || match?.partner?.profileImage
+        || null,
       compatibilityScore: normalizedScore,
-      languageExchange: match?.partnerUserBio || null,
-      lastActive: match?.lastActiveTime || null,
+      languageExchange: toDisplayText(
+        match?.partnerUserBio
+          || match?.bio
+          || match?.partner?.bio
+      ),
+      lastActive: toDisplayText(
+        match?.lastActiveTime
+          || match?.matchedAt
+          || match?.lastSessionAt
+      ),
     };
   });
 
@@ -52,6 +78,23 @@ export default function Main() {
 
   const [mates, setMates] = useState([]);
   const [matesLoading, setMatesLoading] = useState(true);
+
+  const fetchLatestMatches = useCallback(async () => {
+    setMatesLoading(true);
+    try {
+      const response = await getMatches(1, 4);
+      const payload = response?.data ?? response;
+      const matchedContent = Array.isArray(payload?.data)
+        ? payload.data
+        : payload?.content ?? [];
+      setMates(transformMatches(matchedContent));
+    } catch (error) {
+      console.error("매칭 데이터 로드 실패:", error);
+      setMates([]);
+    } finally {
+      setMatesLoading(false);
+    }
+  }, []);
 
   const {
     achievements: allAchievements,
@@ -77,11 +120,14 @@ export default function Main() {
   const userAge = normalizedBirthYear && !Number.isNaN(normalizedBirthYear)
     ? Math.max(0, currentYear - normalizedBirthYear)
     : null;
-  const greetingLevel = languageLevel
+  const greetingLevelRaw = languageLevel
     || languageProfileData?.learningLanguages?.[0]?.targetLevel
     || languageProfileData?.learningLanguages?.[0]?.level
     || targetLanguage
     || null;
+  const greetingLevel = toDisplayText(greetingLevelRaw);
+
+  const safeEnglishName = toDisplayText(englishName) || "사용자";
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -125,21 +171,6 @@ export default function Main() {
         setLanguageProfileData(null);
       } finally {
         setLanguageProfileLoading(false);
-      }
-    };
-
-    const loadMatchedPartners = async () => {
-      setMatesLoading(true);
-      try {
-        const response = await getSpringBootMatches(0, 4);
-        const payload = response?.data ?? response;
-        const matchedContent = payload?.content ?? [];
-        setMates(transformMatches(matchedContent));
-      } catch (error) {
-        console.error("매칭 데이터 로드 실패:", error);
-        setMates([]);
-      } finally {
-        setMatesLoading(false);
       }
     };
 
@@ -188,9 +219,9 @@ export default function Main() {
     loadProfile().finally(() => {
       loadStudyStats();
       loadLanguageProfile();
-      loadMatchedPartners();
+      fetchLatestMatches();
     });
-  }, [search, navigate, setProfileImage, setEnglishName, setResidence, loadProfileFromServer]);
+  }, [fetchLatestMatches, search, navigate, setProfileImage, setEnglishName, setResidence, loadProfileFromServer]);
 
   return (
     <div className="page-bg min-h-screen flex flex-col">
@@ -200,24 +231,22 @@ export default function Main() {
         <div className="flex-1 flex flex-col">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <GreetingCard
-              englishName={englishName}
-              userAge={userAge}
-              languageLevel={greetingLevel}
-              achievementsStats={achievementsStats}
-              achievementsLoading={achievementsLoading}
+              userName={safeEnglishName}
+              age={userAge}
+              level={greetingLevel}
             />
 
             <StudyStats
               data={studyStatsData}
               loading={studyStatsLoading}
-              error={studyStatsError}
+              errorMessage={studyStatsError}
             />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
             <LanguageProfile
               loading={languageProfileLoading}
-              profile={languageProfileData}
+              profileData={languageProfileData}
               englishName={englishName}
               languageLevel={greetingLevel}
             />
@@ -225,17 +254,7 @@ export default function Main() {
             <LanguageExchangeMates
               loading={matesLoading}
               mates={mates}
-              onRefresh={() => {
-                getSpringBootMatches(0, 4)
-                  .then((response) => {
-                    const payload = response?.data ?? response;
-                    const matchedContent = payload?.content ?? [];
-                    setMates(transformMatches(matchedContent));
-                  })
-                  .catch((error) => {
-                    console.error("매칭 데이터 리프레시 실패:", error);
-                  });
-              }}
+              onRefresh={fetchLatestMatches}
             />
           </div>
 
@@ -244,18 +263,7 @@ export default function Main() {
               achievements={achievements}
               loading={achievementsLoading}
               error={achievementsError}
-              onRefresh={() => {
-                if (achievementsLoading) return;
-                getSpringBootMatches(0, 4)
-                  .then((response) => {
-                    const payload = response?.data ?? response;
-                    const matchedContent = payload?.content ?? [];
-                    setMates(transformMatches(matchedContent));
-                  })
-                  .catch((error) => {
-                    console.error("매칭 데이터 리프레시 실패:", error);
-                  });
-              }}
+              onRefresh={fetchLatestMatches}
             />
           </div>
         </div>
@@ -263,4 +271,3 @@ export default function Main() {
     </div>
   );
 }
-

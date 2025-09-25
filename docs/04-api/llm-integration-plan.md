@@ -65,33 +65,44 @@ const handleRealtimeTranscript = async (transcript) => {
 
 ## 🔧 구현 방법
 
-### Option 1: Spring Boot에 OpenAI 통합
+### Option 1: Cloudflare Workers에 OpenAI 통합
 **장점**: 
-- 중앙화된 관리
-- 데이터베이스 연동 용이
+- 엣지 런타임에서 빠른 응답
+- 서버리스 모델로 운영 부담 감소
 
 **단점**: 
-- 응답 속도 느림
-- 서버 부하 증가
+- 외부 API 호출 시 네트워크 레이턴시 존재
+- Wrangler 기반 시크릿 관리 필요
 
 **구현**:
-```xml
-<!-- pom.xml -->
-<dependency>
-    <groupId>com.theokanning.openai-gpt3-java</groupId>
-    <artifactId>service</artifactId>
-    <version>0.16.0</version>
-</dependency>
+```ts
+// workers/src/routes/llm.ts
+import { Hono } from 'hono';
+
+const llmRoutes = new Hono();
+
+llmRoutes.post('/chat', async (c) => {
+  const body = await c.req.json();
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${c.env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: body.messages,
+      temperature: 0.3
+    })
+  });
+
+  const result = await response.json();
+  return c.json({ success: true, data: result });
+});
+
+export default llmRoutes;
 ```
 
-```yaml
-# application.yml
-openai:
-  api:
-    key: ${OPENAI_API_KEY}
-    model: gpt-4
-    temperature: 0.7
-```
 
 ### Option 2: Workers API에 LLM 통합 (추천)
 **장점**: 
