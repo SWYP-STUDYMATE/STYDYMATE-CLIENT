@@ -33,6 +33,7 @@ import { successResponse } from './utils/response';
 import { Variables } from './types';
 import { setInactiveUsersOffline } from './services/userStatus';
 import { processScheduledNotifications } from './services/notifications';
+import { handleNotificationWebSocket } from './websocket/notificationSocket';
 
 // Export Durable Object
 export { WebRTCRoom, UserPresence, ChatHub };
@@ -135,6 +136,8 @@ app.get('/ws/chat', (c) => {
   const stub = c.env.CHAT_HUB.get(id);
   return stub.fetch(c.req.raw);
 });
+
+app.get('/ws/notifications', (c) => handleNotificationWebSocket(c));
 
 // API 정보 엔드포인트
 app.get('/', (c) => {

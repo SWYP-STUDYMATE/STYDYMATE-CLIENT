@@ -11,6 +11,7 @@ export interface ApiResponse<T = any> {
         timestamp: string;
         requestId?: string;
         version?: string;
+        note?: string;
     };
 }
 

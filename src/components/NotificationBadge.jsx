@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
+import { shallow } from 'zustand/shallow';
 import useNotificationStore from '../store/notificationStore';
 
 const NotificationBadge = ({ 
@@ -11,26 +12,43 @@ const NotificationBadge = ({
   refreshInterval = 30000 // 30초마다 업데이트
 }) => {
   const navigate = useNavigate();
-  const { unreadCount, loading, loadUnreadCount } = useNotificationStore();
+  const { unreadCount, loading } = useNotificationStore(
+    (state) => ({
+      unreadCount: state.unreadCount,
+      loading: state.loading,
+    }),
+    shallow
+  );
+  const loadUnreadCount = useNotificationStore((state) => state.loadUnreadCount);
 
   useEffect(() => {
-    loadUnreadCount();
-    
-    // 정기적으로 읽지 않은 알림 수 업데이트
-    const interval = setInterval(loadUnreadCount, refreshInterval);
-    
+    const invoke = () => {
+      const loader = useNotificationStore.getState().loadUnreadCount;
+      if (typeof loader === 'function') {
+        loader();
+      } else {
+        console.warn('[NotificationBadge] loadUnreadCount is not available when invoked');
+      }
+    };
+
+    invoke();
+
+    const interval = setInterval(invoke, refreshInterval);
     return () => clearInterval(interval);
-  }, [loadUnreadCount, refreshInterval]);
+  }, [refreshInterval]);
 
   // 페이지 포커스 시에도 업데이트
   useEffect(() => {
     const handleFocus = () => {
-      loadUnreadCount();
+      const loader = useNotificationStore.getState().loadUnreadCount;
+      if (typeof loader === 'function') {
+        loader();
+      }
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [loadUnreadCount]);
+  }, []);
 
   const handleClick = () => {
     if (onClick) {

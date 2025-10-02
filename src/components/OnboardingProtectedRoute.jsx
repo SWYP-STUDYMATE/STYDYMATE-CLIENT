@@ -46,6 +46,9 @@ export default function OnboardingProtectedRoute({ children }) {
         } else if (diagnostics.status === 404) {
           log.warn('온보딩 미완료 상태 감지 - 온보딩 플로우로 이동', diagnostics, 'ONBOARDING_GUARD');
           setOnboardingStatus({ isCompleted: false, nextStep: 1 });
+        } else if (typeof diagnostics.status === 'number' && diagnostics.status >= 500) {
+          log.warn('온보딩 상태 조회 서버 오류 - 온보딩 플로우로 이동', diagnostics, 'ONBOARDING_GUARD');
+          setOnboardingStatus({ isCompleted: false, nextStep: 1, inferredFromError: true });
         } else if (
           diagnostics.status === 401 ||
           diagnostics.status === 403 ||
