@@ -48,19 +48,50 @@ export function auth(options: AuthOptions = {}) {
             if (options.optional) {
                 return next();
             }
-            throw authError('Authorization header required');
+
+            return c.json({
+                success: false,
+                error: {
+                    message: 'Authorization header required',
+                    code: 'AUTH_ERROR'
+                },
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId')
+                }
+            }, 401);
         }
 
         const match = authHeader.match(/^Bearer (.+)$/);
         if (!match) {
-            throw authError('Invalid authorization format. Use: Bearer <token>');
+            return c.json({
+                success: false,
+                error: {
+                    message: 'Invalid authorization format. Use: Bearer <token>',
+                    code: 'AUTH_ERROR'
+                },
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId')
+                }
+            }, 401);
         }
 
         const token = match[1];
         const user = await extractUser(token, c.env);
 
         if (!user) {
-            throw authError('Invalid or expired token');
+            return c.json({
+                success: false,
+                error: {
+                    message: 'Invalid or expired token',
+                    code: 'AUTH_ERROR'
+                },
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId')
+                }
+            }, 401);
         }
 
         // 역할 확인
