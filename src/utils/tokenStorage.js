@@ -67,10 +67,14 @@ export const getTokens = () => ({
 export const removeToken = (key) => {
   try {
     localStorage.removeItem(key);
-  } catch {}
+  } catch (error) {
+    console.warn(`Failed to remove ${key} from localStorage`, error);
+  }
   try {
     sessionStorage.removeItem(key);
-  } catch {}
+  } catch (error) {
+    console.warn(`Failed to remove ${key} from sessionStorage`, error);
+  }
 };
 
 export const clearTokens = () => {
