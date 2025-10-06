@@ -9,7 +9,7 @@ import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx'
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect } from 'react';
-import { getToken } from './utils/tokenStorage';
+import { getToken, isAutoLoginEnabled, clearTokens } from './utils/tokenStorage';
 import ProtectedRoute from './components/ProtectedRoute';
 import OnboardingProtectedRoute from './components/OnboardingProtectedRoute';
 
@@ -100,6 +100,17 @@ function AppContent() {
     };
 
     initializeNotificationServices();
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!isAutoLoginEnabled()) {
+        clearTokens();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   return (

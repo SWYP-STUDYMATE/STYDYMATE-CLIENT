@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { toast } from './toast-manager.jsx';
-import { getToken, removeToken } from '../utils/tokenStorage';
+import { getToken, removeToken, isAutoLoginEnabled } from '../utils/tokenStorage';
 
 /**
  * ProtectedRoute 컴포넌트
@@ -33,6 +33,7 @@ export default function ProtectedRoute({ children }) {
       try {
         const accessToken = getToken('accessToken');
         const refreshToken = getToken('refreshToken');
+        const autoLogin = isAutoLoginEnabled();
 
         // 토큰이 없으면 미인증 상태
         if (!accessToken && !refreshToken) {
@@ -65,7 +66,13 @@ export default function ProtectedRoute({ children }) {
           removeToken('refreshToken');
         }
 
-        if (accessTokenInvalidFormat || accessTokenExpired) {
+        const shouldTreatRefreshOnlyAsGuest = !autoLogin && !accessToken;
+
+        if (shouldTreatRefreshOnlyAsGuest) {
+          console.log('🔒 ProtectedRoute: 자동 로그인 해제 상태에서 accessToken 없음');
+          removeToken('refreshToken');
+          setIsAuthenticated(false);
+        } else if (accessTokenInvalidFormat || accessTokenExpired) {
           console.warn('🔒 ProtectedRoute: accessToken 사용 불가', {
             invalidFormat: accessTokenInvalidFormat,
             expired: accessTokenExpired
