@@ -3,6 +3,7 @@ import Header from "../../components/Header";
 import { useNavigate } from "react-router-dom";
 import { getOnboardingStatus } from "../../api/user";
 import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
+import { getToken } from "../../utils/tokenStorage";
 
 const Agreement = () => {
   // 체크박스 상태 관리
@@ -41,7 +42,7 @@ const Agreement = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!localStorage.getItem("accessToken")) {
+    if (!getToken("accessToken")) {
       navigate("/", { replace: true });
     }
 

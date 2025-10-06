@@ -4,6 +4,7 @@ import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
 import { getOnboardingStatus } from "../../api/user";
 import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
+import { setTokens } from "../../utils/tokenStorage";
 
 // JWT 토큰 형식 검증 함수
 const isValidJWT = (token) => {
@@ -83,17 +84,24 @@ export default function Navercallback() {
       }
 
       // 백엔드에서 토큰을 직접 전달받은 경우
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      setTokens({ accessToken, refreshToken });
       setMessage("네이버 로그인 성공! 사용자 정보를 가져오는 중...");
       
       const fetchUserInfo = async () => {
         try {
           const nameRes = await api.get("/user/name");
           const setName = useProfileStore.getState().setName;
-          setName(nameRes.data.name);
-          localStorage.setItem("userName", nameRes.data.name);
-          console.log("유저 이름 저장 완료:", nameRes.data.name);
+          const fetchedName = nameRes?.data?.name;
+
+          if (typeof fetchedName === "string" && fetchedName.trim().length > 0) {
+            setName(fetchedName);
+            localStorage.setItem("userName", fetchedName);
+            console.log("유저 이름 저장 완료:", fetchedName);
+          } else {
+            setName("");
+            localStorage.removeItem("userName");
+            console.warn("유저 이름이 응답에 없어 기본값으로 초기화했습니다.");
+          }
           
           setMessage("네이버 로그인 성공! 이동 중...");
           setTimeout(() => {
@@ -136,10 +144,11 @@ export default function Navercallback() {
               return;
             }
 
-            localStorage.setItem("accessToken", res.data.accessToken);
-            localStorage.setItem("refreshToken", res.data.refreshToken);
-            if (res.data.name) {
+            setTokens({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken });
+            if (typeof res.data.name === "string" && res.data.name.trim().length > 0) {
               localStorage.setItem("userName", res.data.name);
+            } else {
+              localStorage.removeItem("userName");
             }
             if (typeof res.data.isNewUser !== 'undefined') {
               localStorage.setItem('isNewUser', String(res.data.isNewUser));
@@ -147,9 +156,18 @@ export default function Navercallback() {
             // 유저 이름을 zustand에 저장 (동기화)
             try {
               const nameRes = await api.get("/user/name");
+              const fetchedName = nameRes?.data?.name;
               const setName = useProfileStore.getState().setName;
-              setName(nameRes.data.name);
-              console.log("유저 이름 저장 완료:", nameRes.data.name);
+
+              if (typeof fetchedName === "string" && fetchedName.trim().length > 0) {
+                setName(fetchedName);
+                localStorage.setItem("userName", fetchedName);
+                console.log("유저 이름 저장 완료:", fetchedName);
+              } else {
+                setName("");
+                localStorage.removeItem("userName");
+                console.warn("유저 이름이 응답에 없어 기본값으로 초기화했습니다.");
+              }
             } catch (e) {
               console.error("유저 이름 불러오기 실패:", e);
             }

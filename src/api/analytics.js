@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { log } from '../utils/logger';
+import { getToken } from '../utils/tokenStorage';
 
 /**
  * Analytics API Service
@@ -24,7 +25,7 @@ const workersApi = axios.create({
 
 // Workers API 인터셉터 설정
 workersApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = getToken('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -321,7 +322,7 @@ export const sendAnalyticsEvents = async (events) => {
  */
 export const connectToMetricsStream = (onMessage, onError) => {
   try {
-    const token = localStorage.getItem('accessToken');
+    const token = getToken('accessToken');
     if (!token) {
       throw new Error('인증 토큰이 없습니다');
     }

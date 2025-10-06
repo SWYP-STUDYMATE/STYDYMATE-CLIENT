@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { toast } from './toast-manager.jsx';
+import { getToken, removeToken } from '../utils/tokenStorage';
 
 /**
  * ProtectedRoute 컴포넌트
@@ -30,8 +31,8 @@ export default function ProtectedRoute({ children }) {
 
     const checkAuth = () => {
       try {
-        const accessToken = localStorage.getItem('accessToken');
-        const refreshToken = localStorage.getItem('refreshToken');
+        const accessToken = getToken('accessToken');
+        const refreshToken = getToken('refreshToken');
 
         // 토큰이 없으면 미인증 상태
         if (!accessToken && !refreshToken) {
@@ -61,7 +62,7 @@ export default function ProtectedRoute({ children }) {
             invalidFormat: refreshTokenInvalidFormat,
             expired: refreshTokenExpired
           });
-          localStorage.removeItem('refreshToken');
+          removeToken('refreshToken');
         }
 
         if (accessTokenInvalidFormat || accessTokenExpired) {
@@ -69,7 +70,7 @@ export default function ProtectedRoute({ children }) {
             invalidFormat: accessTokenInvalidFormat,
             expired: accessTokenExpired
           });
-          localStorage.removeItem('accessToken');
+          removeToken('accessToken');
 
           // refreshToken으로 복구 시도 가능
           if (refreshToken && !refreshTokenInvalidFormat && !refreshTokenExpired) {
@@ -77,7 +78,7 @@ export default function ProtectedRoute({ children }) {
             setIsAuthenticated(true);
           } else {
             console.log('🔒 ProtectedRoute: refreshToken도 유효하지 않음');
-            localStorage.removeItem('refreshToken');
+            removeToken('refreshToken');
             setIsAuthenticated(false);
           }
         } else if (accessToken) {
@@ -106,7 +107,7 @@ export default function ProtectedRoute({ children }) {
 
     // storage 이벤트 리스너 추가 (다른 탭에서 로그아웃 감지)
     const handleStorageChange = (e) => {
-      if (e.key === 'accessToken' || e.key === 'refreshToken') {
+      if (e.key === 'accessToken' || e.key === 'refreshToken' || e.key === null) {
         console.log('🔒 ProtectedRoute: 토큰 변경 감지');
         checkAuth();
       }

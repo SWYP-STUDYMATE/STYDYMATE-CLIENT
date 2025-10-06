@@ -15,6 +15,7 @@ import AchievementBadges from "../components/AchievementBadges";
 import useAchievementOverview from "../hooks/useAchievementOverview";
 import { transformOnboardingDataToLanguageProfile } from "../utils/onboardingTransform";
 import { toDisplayText } from "../utils/text";
+import { setToken } from "../utils/tokenStorage";
 
 const transformMatches = (matches = []) =>
   matches.map((match) => {
@@ -63,7 +64,6 @@ const transformMatches = (matches = []) =>
 export default function Main() {
   const navigate = useNavigate();
   const { search } = useLocation();
-  const { setProfileImage, setEnglishName, setResidence, loadProfileFromServer } = useProfileStore();
   const englishName = useProfileStore((state) => state.englishName);
   const birthYear = useProfileStore((state) => state.birthYear);
   const languageLevel = useProfileStore((state) => state.languageLevel);
@@ -135,27 +135,41 @@ export default function Main() {
     const userId = params.get("userId");
 
     if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
+      setToken("accessToken", accessToken);
       if (userId) {
         localStorage.setItem("userId", userId);
       }
       navigate("/main", { replace: true });
-      return;
     }
+  }, [search, navigate]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const {
+      setProfileImage,
+      setEnglishName,
+      setResidence,
+      loadProfileFromServer,
+    } = useProfileStore.getState();
 
     const loadStudyStats = async () => {
       setStudyStatsLoading(true);
       try {
         const response = await getStudyStats("month");
+        if (cancelled) return;
         const payload = response?.data ?? response;
         setStudyStatsData(payload);
         setStudyStatsError(null);
       } catch (error) {
+        if (cancelled) return;
         console.error("학습 통계 로드 실패:", error);
         setStudyStatsData(null);
         setStudyStatsError("학습 통계를 불러오지 못했습니다.");
       } finally {
-        setStudyStatsLoading(false);
+        if (!cancelled) {
+          setStudyStatsLoading(false);
+        }
       }
     };
 
@@ -163,14 +177,18 @@ export default function Main() {
       setLanguageProfileLoading(true);
       try {
         const response = await getOnboardingData();
+        if (cancelled) return;
         const payload = response?.data ?? response;
         const transformed = transformOnboardingDataToLanguageProfile(payload);
         setLanguageProfileData(transformed);
       } catch (error) {
+        if (cancelled) return;
         console.error("온보딩 데이터 로드 실패:", error);
         setLanguageProfileData(null);
       } finally {
-        setLanguageProfileLoading(false);
+        if (!cancelled) {
+          setLanguageProfileLoading(false);
+        }
       }
     };
 
@@ -178,6 +196,8 @@ export default function Main() {
       try {
         console.log("🔄 프로필 로드 시작");
         const profileData = await loadProfileFromServer();
+
+        if (cancelled) return;
 
         if (profileData) {
           console.log("✅ 서버 프로필 로드 성공");
@@ -197,6 +217,7 @@ export default function Main() {
           );
         }
       } catch (error) {
+        if (cancelled) return;
         console.error("프로필 로드 실패:", error);
 
         if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
@@ -216,12 +237,22 @@ export default function Main() {
       }
     };
 
-    loadProfile().finally(() => {
-      loadStudyStats();
-      loadLanguageProfile();
-      fetchLatestMatches();
-    });
-  }, [fetchLatestMatches, search, navigate, setProfileImage, setEnglishName, setResidence, loadProfileFromServer]);
+    const run = async () => {
+      await loadProfile();
+      if (cancelled) return;
+      await Promise.all([
+        loadStudyStats(),
+        loadLanguageProfile(),
+        fetchLatestMatches(),
+      ]);
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchLatestMatches]);
 
   return (
     <div className="page-bg min-h-screen flex flex-col">

@@ -3,13 +3,14 @@ import Header from "../../components/Header";
 import { useNavigate } from "react-router-dom";
 import CommonButton from "../../components/CommonButton";
 import { getUserName } from "../../api";
+import { getToken } from "../../utils/tokenStorage";
 
 export default function SignupComplete() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("회원");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!localStorage.getItem("accessToken")) {
+    if (!getToken("accessToken")) {
       navigate("/", { replace: true });
     }
   }, [navigate]);

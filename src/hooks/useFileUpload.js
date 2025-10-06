@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getToken } from '../utils/tokenStorage';
 
 /**
  * 파일 업로드를 위한 커스텀 훅
@@ -101,7 +102,7 @@ export function useFileUpload() {
 
     try {
       // Authorization 헤더 자동 추가
-      const token = localStorage.getItem('accessToken');
+      const token = getToken('accessToken');
       if (token && !headers.Authorization) {
         headers.Authorization = `Bearer ${token}`;
       }

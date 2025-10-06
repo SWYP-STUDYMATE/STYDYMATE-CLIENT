@@ -1,4 +1,5 @@
 import { Client } from "@stomp/stompjs";
+import { getToken } from "../utils/tokenStorage";
 
 class WebSocketService {
   constructor() {
@@ -36,7 +37,7 @@ class WebSocketService {
 
     this.isConnecting = true;
     
-    const token = localStorage.getItem("accessToken");
+    const token = getToken("accessToken");
     const origin = import.meta.env.VITE_WS_URL
       || import.meta.env.VITE_API_URL
       || import.meta.env.VITE_WORKERS_API_URL

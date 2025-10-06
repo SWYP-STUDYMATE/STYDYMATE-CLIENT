@@ -1,3 +1,5 @@
+import { getToken } from '../utils/tokenStorage';
+
 /**
  * API 설정 파일
  * 모든 API 엔드포인트와 설정을 중앙에서 관리
@@ -241,7 +243,7 @@ export const getHeaders = (isFormData = false) => {
   }
 
   // 인증 토큰 추가
-  const token = localStorage.getItem("accessToken");
+  const token = getToken("accessToken");
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }

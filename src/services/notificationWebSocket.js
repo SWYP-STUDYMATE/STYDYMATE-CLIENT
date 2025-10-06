@@ -1,6 +1,7 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import useNotificationStore from "../store/notificationStore";
+import { getToken } from "../utils/tokenStorage";
 
 class NotificationWebSocketService {
   constructor() {
@@ -48,7 +49,7 @@ class NotificationWebSocketService {
     }
 
     return new Promise((resolve, reject) => {
-      const token = localStorage.getItem("accessToken");
+      const token = getToken("accessToken");
       if (!token) {
         reject(new Error("No access token found"));
         return;
@@ -94,8 +95,12 @@ class NotificationWebSocketService {
   }
 
   buildSocketUrl(token) {
-    const base = (this.wsBase || '').replace(/\/?$/, '');
-    const url = `${base}/ws/notifications`;
+    const rawBase = this.wsBase || '';
+    const trimmedBase = rawBase.replace(/\/$/, '');
+    const urlBase = trimmedBase.endsWith('/ws')
+      ? trimmedBase
+      : `${trimmedBase}/ws`;
+    const url = `${urlBase}/notifications`;
     return url.includes('?') ? `${url}&token=${token}` : `${url}?token=${token}`;
   }
 

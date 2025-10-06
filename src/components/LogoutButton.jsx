@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api";
 import useProfileStore from "../store/profileStore";
 import { useAlert } from "../hooks/useAlert";
+import { removeToken } from "../utils/tokenStorage";
 
 export default function LogoutButton() {
   const navigate = useNavigate();
@@ -17,8 +18,8 @@ export default function LogoutButton() {
       // 실패해도 localStorage는 비움
       console.error("로그아웃 실패", e);
     }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    removeToken("accessToken");
+    removeToken("refreshToken");
     setEnglishName("");
     setResidence("");
     showSuccess("로그아웃 되었습니다.", () => {

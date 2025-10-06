@@ -1,9 +1,10 @@
 import api from './index.js';
+import { getToken } from '../utils/tokenStorage';
 
 const WORKERS_API_BASE = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
 
 const buildAuthHeaders = (options = { json: false }) => {
-  const token = localStorage.getItem('accessToken');
+  const token = getToken('accessToken');
   const headers = {};
 
   if (token) {

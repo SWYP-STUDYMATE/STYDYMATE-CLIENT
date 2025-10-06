@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getToken } from '../utils/tokenStorage';
 
 // Workers 경로: 우선순위 VITE_WORKERS_API_URL → VITE_WORKERS_BASE_URL → '/workers'
 function resolveWorkersBaseUrl() {
@@ -32,7 +33,7 @@ export function useLLM() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          'Authorization': `Bearer ${getToken('accessToken') || ''}`,
         },
         body: JSON.stringify({
           prompt,
@@ -64,7 +65,7 @@ export function useLLM() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          'Authorization': `Bearer ${getToken('accessToken') || ''}`,
         },
         body: JSON.stringify({
           messages,
@@ -96,7 +97,7 @@ export function useLLM() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          'Authorization': `Bearer ${getToken('accessToken') || ''}`,
         },
         body: JSON.stringify({
           analysis,
@@ -128,7 +129,7 @@ export function useLLM() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          'Authorization': `Bearer ${getToken('accessToken') || ''}`,
         },
         body: JSON.stringify({
           level,
@@ -161,7 +162,7 @@ export function useLLM() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          'Authorization': `Bearer ${getToken('accessToken') || ''}`,
         },
         body: JSON.stringify({
           transcript,
@@ -194,7 +195,7 @@ export function useLLM() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          'Authorization': `Bearer ${getToken('accessToken') || ''}`,
         },
         body: JSON.stringify({
           prompt,

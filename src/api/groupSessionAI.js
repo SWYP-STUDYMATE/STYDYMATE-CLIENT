@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from '../utils/tokenStorage';
 
 // Workers AI API 설정
 const WORKERS_API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemate.kr';
@@ -12,7 +13,7 @@ const workersApi = axios.create({
 
 // Request 인터셉터 - 토큰 추가
 workersApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = getToken('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

@@ -1,5 +1,6 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import { getToken } from "../utils/tokenStorage";
 
 /**
  * 통합 WebSocket 서비스
@@ -52,7 +53,7 @@ class UnifiedWebSocketService {
 
     this.isConnecting = true;
     
-    const token = localStorage.getItem("accessToken");
+    const token = getToken("accessToken");
     if (!token) {
       this.isConnecting = false;
       return Promise.reject(new Error("No access token found"));

@@ -9,6 +9,7 @@ import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx'
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect } from 'react';
+import { getToken } from './utils/tokenStorage';
 import ProtectedRoute from './components/ProtectedRoute';
 import OnboardingProtectedRoute from './components/OnboardingProtectedRoute';
 
@@ -83,7 +84,7 @@ function AppContent() {
     const initializeNotificationServices = async () => {
       try {
         // 로그인된 사용자인 경우에만 초기화
-        const accessToken = localStorage.getItem('accessToken');
+        const accessToken = getToken('accessToken');
         if (accessToken) {
           // WebSocket 알림 서비스 초기화
           await initializeNotificationWebSocket();

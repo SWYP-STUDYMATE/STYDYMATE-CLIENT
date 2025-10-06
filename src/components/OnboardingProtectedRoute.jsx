@@ -5,6 +5,7 @@ import { getOnboardingStatus } from '../api/user';
 import { AppError, ERROR_TYPES } from '../utils/errorHandler';
 import { resolveNextOnboardingStep } from '../utils/onboardingStatus';
 import { log } from '../utils/logger';
+import { getToken } from '../utils/tokenStorage';
 
 /**
  * OnboardingProtectedRoute 컴포넌트
@@ -21,8 +22,8 @@ export default function OnboardingProtectedRoute({ children }) {
       const startedAt = performance.now();
       log.info('온보딩 상태 조회 시작', {
         path: window.location.pathname,
-        hasAccessToken: Boolean(localStorage.getItem('accessToken')),
-        hasRefreshToken: Boolean(localStorage.getItem('refreshToken'))
+        hasAccessToken: Boolean(getToken('accessToken')),
+        hasRefreshToken: Boolean(getToken('refreshToken'))
       }, 'ONBOARDING_GUARD');
 
       try {
@@ -138,8 +139,8 @@ function buildOnboardingErrorDiagnostics(error) {
   const responseBody = error?.response?.data ?? originalError?.response?.data ?? null;
   const requestConfig = error?.config ?? originalError?.config ?? null;
 
-  const hasAccessToken = Boolean(localStorage.getItem('accessToken'));
-  const hasRefreshToken = Boolean(localStorage.getItem('refreshToken'));
+  const hasAccessToken = Boolean(getToken('accessToken'));
+  const hasRefreshToken = Boolean(getToken('refreshToken'));
   const hasAnyToken = hasAccessToken || hasRefreshToken;
 
   const message = error?.message || originalError?.message;

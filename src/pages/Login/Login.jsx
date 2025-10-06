@@ -1,16 +1,16 @@
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
+import { getToken, isAutoLoginEnabled, setAutoLoginEnabled } from "../../utils/tokenStorage";
 
 export default function Login() {
-  const [autoLogin, setAutoLogin] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(() => isAutoLoginEnabled());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 기존 토큰 확인
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = getToken("accessToken");
     if (accessToken) {
       // 저장된 리다이렉트 경로가 있으면 그곳으로, 없으면 메인으로
       const redirectPath = sessionStorage.getItem("redirectPath");
@@ -28,9 +28,10 @@ export default function Login() {
     : (import.meta.env.VITE_API_URL || import.meta.env.VITE_WORKERS_API_URL || "https://api.languagemate.kr");
   const FRONT_ORIGIN = window.location.origin
 
-   const startLogin = useCallback((provider) => {
+  const startLogin = useCallback((provider) => {
     setIsLoading(true);
     setError(null);
+    setAutoLoginEnabled(autoLogin);
     
     const url = import.meta.env.DEV
   // dev: Vite 프록시를 타는 시작 엔드포인트로 이동
@@ -40,7 +41,7 @@ export default function Login() {
 
 
     window.location.href = url;
-  }, [API_BASE, FRONT_ORIGIN]);
+  }, [API_BASE, FRONT_ORIGIN, autoLogin]);
 
   const handleNaverLogin = useCallback(() => startLogin("naver"), [startLogin]);
   const handleGoogleLogin = useCallback(() => startLogin("google"), [startLogin]);
@@ -81,7 +82,7 @@ export default function Login() {
           onClick={() => {
             setAutoLogin((v) => {
               const next = !v;
-              console.log('autoLogin 상태:', next);
+              setAutoLoginEnabled(next);
               return next;
             });
           }}
@@ -107,7 +108,7 @@ export default function Login() {
           onClick={() => {
             setAutoLogin((v) => {
               const next = !v;
-              console.log('autoLogin 상태:', next);
+              setAutoLoginEnabled(next);
               return next;
             });
           }}
