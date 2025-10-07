@@ -4,7 +4,8 @@ import {
   getGroupSessionDetails,
   endGroupSession,
   leaveGroupSession,
-  submitSessionFeedback
+  submitSessionFeedback,
+  getPublicGroupSessions
 } from '../../api/groupSession';
 import {
   getIcebreakers,
@@ -12,7 +13,11 @@ import {
   generateSessionSummary,
   translateExpression,
   transcribeAudio,
-  saveSessionFeedback
+  saveSessionFeedback,
+  getSessionTopicRecommendations,
+  getRolePlayScenario,
+  recommendSessionMatches,
+  trackLearningProgress
 } from '../../api/groupSessionAI';
 import Header from '../../components/Header';
 import { useAlert } from '../../hooks/useAlert';
@@ -73,6 +78,12 @@ export default function GroupSessionRoomPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [translationInput, setTranslationInput] = useState('');
   const [translationResult, setTranslationResult] = useState(null);
+  const [topicSuggestions, setTopicSuggestions] = useState([]);
+  const [roleplayScenario, setRoleplayScenario] = useState(null);
+  const [matchRecommendations, setMatchRecommendations] = useState(null);
+  const [isLoadingTopics, setIsLoadingTopics] = useState(false);
+  const [isLoadingRoleplay, setIsLoadingRoleplay] = useState(false);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   
   const currentUserId = localStorage.getItem('userId');
   const localVideoRef = useRef(null);
@@ -105,7 +116,8 @@ export default function GroupSessionRoomPage() {
       setSession(sessionData);
       
       // 호스트 여부 확인
-      setIsHost(sessionData.hostId === currentUserId);
+      const hostFlag = sessionData.hostId === currentUserId;
+      setIsHost(hostFlag);
       
       // 참가자 목록 로드
       setParticipants(sessionData.participants || []);
@@ -115,6 +127,11 @@ export default function GroupSessionRoomPage() {
       
       // AI 아이스브레이커 로드
       loadIcebreakers();
+      loadTopicRecommendations(sessionData);
+      loadRoleplayScenario(sessionData, { lazy: true });
+      if (hostFlag) {
+        loadMatchRecommendations(sessionData);
+      }
       
     } catch (error) {
       console.error('Failed to load session:', error);
@@ -138,6 +155,77 @@ export default function GroupSessionRoomPage() {
       }
     } catch (error) {
       console.error('Failed to load icebreakers:', error);
+    }
+  };
+
+  const loadTopicRecommendations = async (sessionInfo = session) => {
+    if (!sessionInfo) return;
+    setIsLoadingTopics(true);
+    try {
+      const response = await getSessionTopicRecommendations(
+        sessionInfo.language || sessionInfo.targetLanguage || 'English',
+        sessionInfo.targetLevel || sessionInfo.languageLevel || 'Intermediate',
+        sessionInfo.sessionTags || (sessionInfo.topic ? [sessionInfo.topic] : []),
+        Math.max(sessionInfo.participants?.length || participants.length || 4, 2)
+      );
+      if (response.success) {
+        setTopicSuggestions(response.data.topics || response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load topic recommendations:', error);
+    } finally {
+      setIsLoadingTopics(false);
+    }
+  };
+
+  const loadRoleplayScenario = async (sessionInfo = session, options = {}) => {
+    if (!sessionInfo) return;
+    if (options.lazy && roleplayScenario) return;
+    setIsLoadingRoleplay(true);
+    try {
+      const response = await getRolePlayScenario(
+        sessionInfo.language || sessionInfo.targetLanguage || 'English',
+        sessionInfo.targetLevel || sessionInfo.languageLevel || 'Intermediate',
+        sessionInfo.topic || sessionInfo.topicCategory || 'General conversation'
+      );
+      if (response.success) {
+        setRoleplayScenario(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load roleplay scenario:', error);
+    } finally {
+      setIsLoadingRoleplay(false);
+    }
+  };
+
+  const loadMatchRecommendations = async (sessionInfo = session) => {
+    if (!sessionInfo || !currentUserId) return;
+    setIsLoadingMatches(true);
+    try {
+      const available = await getPublicGroupSessions({ page: 1, size: 5 });
+      const availableSessions = Array.isArray(available?.data?.data)
+        ? available.data.data
+        : Array.isArray(available?.data)
+          ? available.data
+          : [];
+
+      const response = await recommendSessionMatches(
+        currentUserId,
+        {
+          language: sessionInfo.language || sessionInfo.targetLanguage,
+          level: sessionInfo.targetLevel || sessionInfo.languageLevel,
+          interests: sessionInfo.sessionTags || [],
+          role: 'HOST'
+        },
+        availableSessions
+      );
+      if (response.success) {
+        setMatchRecommendations(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load match recommendations:', error);
+    } finally {
+      setIsLoadingMatches(false);
     }
   };
   
@@ -366,6 +454,28 @@ export default function GroupSessionRoomPage() {
 
   const handleSubmitFeedback = async () => {
     try {
+      try {
+        const savedSummary = localStorage.getItem(`session_summary_${sessionId}`);
+        const summaryData = savedSummary ? JSON.parse(savedSummary) : null;
+        await trackLearningProgress({
+          sessionId,
+          userId: currentUserId,
+          metrics: {
+            rating: feedback.rating,
+            hostRating: feedback.hostRating,
+            durationSeconds: sessionDuration,
+            suggestions: conversationFeedback?.suggestions || summaryData?.followUpQuestions || [],
+            highlights: summaryData?.highlights || [],
+            vocabulary: summaryData?.vocabulary || []
+          },
+          notes: feedback.comment || summaryData?.summary || conversationFeedback?.summary || null,
+          completedAt: new Date().toISOString(),
+          durationMinutes: Math.max(1, Math.floor(sessionDuration / 60) || 1)
+        });
+      } catch (progressError) {
+        console.warn('Failed to track learning progress:', progressError);
+      }
+
       await submitSessionFeedback(sessionId, feedback);
       showSuccess('피드백이 제출되었습니다.');
       navigate('/group-session');
@@ -838,6 +948,56 @@ export default function GroupSessionRoomPage() {
             </div>
             
             <div className="flex-1 overflow-y-auto">
+              {/* 추천 대화 주제 */}
+              <div className="p-4 border-b border-[#E7E7E7]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[14px] font-medium text-[#111111] flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-[#00C471]" />
+                    추천 대화 주제
+                  </h3>
+                  <button
+                    onClick={() => loadTopicRecommendations()}
+                    className="text-[12px] text-[#00C471] hover:underline"
+                    disabled={isLoadingTopics}
+                  >
+                    {isLoadingTopics ? '로딩 중...' : '새로고침'}
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {topicSuggestions.length > 0 ? (
+                    topicSuggestions.map((topic, index) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-[#F8FFFB] border border-[#D7F5E5] rounded-[6px] text-[13px] text-[#404040]
+                          hover:bg-[#ECFFF4] cursor-pointer transition-colors"
+                        onClick={() => {
+                          if (topic?.title) {
+                            setNewMessage(topic.title);
+                            setShowChat(true);
+                          }
+                        }}
+                      >
+                        <p className="font-medium text-[#00A75A]">{topic.title || '제안된 주제'}</p>
+                        {topic.description && (
+                          <p className="mt-1 text-[12px] text-[#606060]">{topic.description}</p>
+                        )}
+                        {Array.isArray(topic.followUpQuestions) && topic.followUpQuestions.length > 0 && (
+                          <ul className="mt-2 text-[12px] text-[#606060] list-disc ml-4">
+                            {topic.followUpQuestions.map((q, i) => (
+                              <li key={i}>{q}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[12px] text-[#929292]">
+                      {isLoadingTopics ? '추천 주제를 불러오는 중입니다...' : '추천 주제를 준비하고 있어요.'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* 아이스브레이커 */}
               <div className="p-4 border-b border-[#E7E7E7]">
                 <h3 className="text-[14px] font-medium text-[#111111] mb-3 flex items-center gap-2">
@@ -899,6 +1059,99 @@ export default function GroupSessionRoomPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* 역할극 시나리오 */}
+              <div className="p-4 border-b border-[#E7E7E7]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[14px] font-medium text-[#111111] flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-[#00C471]" />
+                    역할극 제안
+                  </h3>
+                  <button
+                    onClick={() => loadRoleplayScenario(session, { lazy: false })}
+                    className="text-[12px] text-[#00C471] hover:underline"
+                    disabled={isLoadingRoleplay}
+                  >
+                    {isLoadingRoleplay ? '생성 중...' : '새로 만들기'}
+                  </button>
+                </div>
+                {roleplayScenario ? (
+                  <div className="space-y-2 text-[12px] text-[#404040] bg-[#F8F9FF] border border-[#DDE3FF] rounded-[6px] p-3">
+                    <p className="font-medium text-[#2740FF]">{roleplayScenario.scenarioTitle}</p>
+                    {roleplayScenario.setting && (
+                      <p className="text-[#606060]">장소: {roleplayScenario.setting}</p>
+                    )}
+                    {Array.isArray(roleplayScenario.roles) && roleplayScenario.roles.length > 0 && (
+                      <p>역할: {roleplayScenario.roles.join(', ')}</p>
+                    )}
+                    {Array.isArray(roleplayScenario.goals) && roleplayScenario.goals.length > 0 && (
+                      <div>
+                        목표:
+                        <ul className="list-disc ml-4 mt-1">
+                          {roleplayScenario.goals.map((goal, i) => (
+                            <li key={i}>{goal}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {Array.isArray(roleplayScenario.scriptOutline) && roleplayScenario.scriptOutline.length > 0 && (
+                      <div>
+                        진행 순서:
+                        <ol className="list-decimal ml-4 mt-1">
+                          {roleplayScenario.scriptOutline.map((step, i) => (
+                            <li key={i}>{step}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[12px] text-[#929292]">
+                    {isLoadingRoleplay ? '역할극 시나리오를 생성 중입니다...' : '역할극 아이디어를 준비하고 있어요.'}
+                  </p>
+                )}
+              </div>
+
+              {/* 추천 세션 (호스트 전용) */}
+              {isHost && (
+                <div className="p-4 border-b border-[#E7E7E7]">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[14px] font-medium text-[#111111] flex items-center gap-2">
+                      <Users className="w-4 h-4 text-[#00C471]" />
+                      추천 세션
+                    </h3>
+                    <button
+                      onClick={() => loadMatchRecommendations(session)}
+                      className="text-[12px] text-[#00C471] hover:underline"
+                      disabled={isLoadingMatches}
+                    >
+                      {isLoadingMatches ? '분석 중...' : '새로고침'}
+                    </button>
+                  </div>
+                  {matchRecommendations?.matches?.length > 0 ? (
+                    <div className="space-y-2 text-[12px]">
+                      {matchRecommendations.matches.map((match, index) => (
+                        <div key={index} className="p-3 bg-[#F1F3F5] rounded-[6px]">
+                          <p className="font-medium text-[#111111]">{match.title || '추천 세션'}</p>
+                          {match.reason && (
+                            <p className="mt-1 text-[#606060]">{match.reason}</p>
+                          )}
+                          {typeof match.fitScore === 'number' && (
+                            <p className="text-[#929292] mt-1">적합도: {match.fitScore}</p>
+                          )}
+                        </div>
+                      ))}
+                      {matchRecommendations.strategy && (
+                        <p className="text-[#929292] text-[11px]">전략: {matchRecommendations.strategy}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[12px] text-[#929292]">
+                      {isLoadingMatches ? '세션 추천을 분석 중입니다...' : '추천 가능한 세션 정보를 수집 중입니다.'}
+                    </p>
+                  )}
                 </div>
               )}
 
