@@ -24,6 +24,7 @@ import {
   respondToInvitation,
   searchGroupSessions
 } from '../services/groupSessions';
+import { saveLearningProgress } from '../services/groupSessionsAI';
 
 const groupSessionsRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 const requireAuth = authMiddleware();
@@ -205,6 +206,34 @@ groupSessionsRoutes.get('/recommended/list', async (c) => {
   const userId = requireUserId(c);
   const sessions = await getRecommendedGroupSessions(c.env, userId);
   return successResponse(c, sessions);
+});
+
+groupSessionsRoutes.post('/progress/track', async (c) => {
+  const userId = requireUserId(c);
+  const body = await c.req.json().catch(() => ({}));
+
+  const sessionId = typeof body.sessionId === 'string' ? body.sessionId : undefined;
+  const metrics = typeof body.metrics === 'object' && body.metrics !== null ? body.metrics : undefined;
+  const notes = typeof body.notes === 'string' ? body.notes : undefined;
+  const completedAt = typeof body.completedAt === 'string' ? body.completedAt : undefined;
+
+  let durationMinutes: number | undefined;
+  if (typeof body.durationMinutes === 'number' && Number.isFinite(body.durationMinutes)) {
+    durationMinutes = body.durationMinutes;
+  } else if (typeof body.duration === 'number' && Number.isFinite(body.duration)) {
+    durationMinutes = body.duration;
+  }
+
+  const record = await saveLearningProgress(c.env, {
+    userId,
+    sessionId,
+    metrics,
+    notes,
+    completedAt,
+    durationMinutes
+  });
+
+  return successResponse(c, { saved: true, progress: record });
 });
 
 groupSessionsRoutes.post('/:sessionId/invite', async (c) => {
