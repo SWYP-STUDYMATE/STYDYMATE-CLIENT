@@ -20,6 +20,7 @@ export default function OnboardingPageGuard({ children }) {
       if (refreshToken) {
         removeToken('refreshToken');
       }
+      console.log('[OnboardingPageGuard] accessToken missing -> redirect home');
       navigate("/", { replace: true });
       return;
     }
@@ -27,6 +28,7 @@ export default function OnboardingPageGuard({ children }) {
     const checkOnboarding = async () => {
       try {
         const onboardingStatus = await getOnboardingStatus();
+        console.log('[OnboardingPageGuard] onboardingStatus', onboardingStatus);
         if (onboardingStatus?.isCompleted) {
           navigate("/main", { replace: true });
           return;
@@ -34,13 +36,16 @@ export default function OnboardingPageGuard({ children }) {
 
         setStatus(STATUS.READY);
       } catch (error) {
+        console.log('[OnboardingPageGuard] error requesting status', error);
         const statusCode = error?.statusCode || error?.response?.status;
         if (statusCode === 401 || statusCode === 403) {
+          console.log('[OnboardingPageGuard] unauthorized -> redirect home');
           navigate("/", { replace: true });
           return;
         }
 
         if (statusCode === 404) {
+          console.log('[OnboardingPageGuard] status 404 -> onboarding step 1');
           navigate(`/onboarding-info/1`, { replace: true });
           return;
         }

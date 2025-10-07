@@ -64,6 +64,7 @@ const transformMatches = (matches = []) =>
 export default function Main() {
   const navigate = useNavigate();
   const { search } = useLocation();
+  console.count('[Main] render');
   const englishName = useProfileStore((state) => state.englishName);
   const birthYear = useProfileStore((state) => state.birthYear);
   const languageLevel = useProfileStore((state) => state.languageLevel);
@@ -192,10 +193,11 @@ export default function Main() {
       }
     };
 
+    const profileStore = useProfileStore.getState();
     const loadProfile = async () => {
       try {
         console.log("🔄 프로필 로드 시작");
-        const profileData = await loadProfileFromServer();
+        const profileData = await profileStore.loadProfileFromServer();
 
         if (cancelled) return;
 
@@ -205,12 +207,12 @@ export default function Main() {
           console.log("⚠️ 서버 프로필 로드 실패, 기존 API 사용");
           const userInfoResponse = await getUserInfo();
           const userInfoPayload = userInfoResponse?.data ?? userInfoResponse;
-          setEnglishName(userInfoPayload?.englishName || userInfoPayload?.name || "사용자");
+          profileStore.setEnglishName(userInfoPayload?.englishName || userInfoPayload?.name || "사용자");
 
           const profileResponse = await getUserProfile();
           const profilePayload = profileResponse?.data ?? profileResponse;
-          setProfileImage(profilePayload?.profileImageUrl || profilePayload?.profileImage || "/assets/basicProfilePic.png");
-          setResidence(
+          profileStore.setProfileImage(profilePayload?.profileImageUrl || profilePayload?.profileImage || "/assets/basicProfilePic.png");
+          profileStore.setResidence(
             profilePayload?.location?.city
             || profilePayload?.residence
             || "위치 정보 없음"
@@ -222,17 +224,17 @@ export default function Main() {
 
         if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
           console.error("🔌 네트워크 연결 오류");
-          setEnglishName("사용자");
-          setProfileImage("/assets/basicProfilePic.png");
-          setResidence("위치 정보 없음");
+          profileStore.setEnglishName("사용자");
+          profileStore.setProfileImage("/assets/basicProfilePic.png");
+          profileStore.setResidence("위치 정보 없음");
           return;
         }
 
         if (error.response?.status >= 500) {
           console.error("🚨 서버 내부 오류");
-          setEnglishName("사용자");
-          setProfileImage("/assets/basicProfilePic.png");
-          setResidence("위치 정보 없음");
+          profileStore.setEnglishName("사용자");
+          profileStore.setProfileImage("/assets/basicProfilePic.png");
+          profileStore.setResidence("위치 정보 없음");
         }
       }
     };
