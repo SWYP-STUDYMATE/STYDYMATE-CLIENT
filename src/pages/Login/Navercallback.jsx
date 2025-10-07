@@ -4,7 +4,7 @@ import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
 import { getOnboardingStatus } from "../../api/user";
 import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
-import { setTokens } from "../../utils/tokenStorage";
+import { setTokens, logTokenState } from "../../utils/tokenStorage";
 
 // JWT 토큰 형식 검증 함수
 const isValidJWT = (token) => {
@@ -47,6 +47,7 @@ export default function Navercallback() {
   useEffect(() => {
     console.log("🔍 네이버 콜백 페이지 로드됨");
     console.log("🔍 현재 URL:", window.location.href);
+    logTokenState('naver:init');
     
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get("accessToken");
@@ -85,6 +86,7 @@ export default function Navercallback() {
 
       // 백엔드에서 토큰을 직접 전달받은 경우
       setTokens({ accessToken, refreshToken });
+      logTokenState('naver:after-setTokens:url');
       setMessage("네이버 로그인 성공! 사용자 정보를 가져오는 중...");
       
       const fetchUserInfo = async () => {
@@ -104,9 +106,7 @@ export default function Navercallback() {
           }
           
           setMessage("네이버 로그인 성공! 이동 중...");
-          setTimeout(() => {
-            void navigateAfterLogin();
-          }, 2000);
+          await navigateAfterLogin();
         } catch (e) {
           console.error("🔍 유저 정보 불러오기 실패:", e);
           console.error("🔍 에러 상세:", e.response?.data, e.message);
@@ -145,6 +145,7 @@ export default function Navercallback() {
             }
 
             setTokens({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken });
+            logTokenState('naver:after-setTokens:fetch');
             if (typeof res.data.name === "string" && res.data.name.trim().length > 0) {
               localStorage.setItem("userName", res.data.name);
             } else {
@@ -172,9 +173,7 @@ export default function Navercallback() {
               console.error("유저 이름 불러오기 실패:", e);
             }
             setMessage("네이버 로그인 성공! 이동 중...");
-            setTimeout(() => {
-              void navigateAfterLogin();
-            }, 2000);
+            await navigateAfterLogin();
           } else {
             setMessage("토큰을 받아오지 못했습니다.");
           }

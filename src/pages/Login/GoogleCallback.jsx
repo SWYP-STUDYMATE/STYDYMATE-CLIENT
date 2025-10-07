@@ -4,7 +4,7 @@ import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
 import { getOnboardingStatus } from "../../api/user";
 import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
-import { setTokens } from "../../utils/tokenStorage";
+import { setTokens, logTokenState } from "../../utils/tokenStorage";
 
 // JWT 토큰 형식 검증 함수
 const isValidJWT = (token) => {
@@ -55,6 +55,7 @@ export default function GoogleCallback() {
 
     // 콘솔로 토큰과 기타 파라미터들 찍기
     console.log("Google 콜백 accessToken:", accessToken);
+    logTokenState('google:init');
     console.log("Google 콜백 refreshToken:", refreshToken);
     console.log("Google 콜백 code:", code);
     console.log("Google 콜백 state:", state);
@@ -80,6 +81,7 @@ export default function GoogleCallback() {
 
       // 백엔드에서 토큰을 직접 전달받은 경우
       setTokens({ accessToken, refreshToken });
+      logTokenState('google:after-setTokens:url');
       setMessage("Google 로그인 성공! 사용자 정보를 가져오는 중...");
       
       const fetchUserInfo = async () => {
@@ -99,9 +101,7 @@ export default function GoogleCallback() {
           }
           
           setMessage("Google 로그인 성공! 이동 중...");
-          setTimeout(() => {
-            void navigateAfterLogin();
-          }, 2000);
+          await navigateAfterLogin();
         } catch (e) {
           console.error("유저 정보 불러오기 실패:", e);
           setMessage("로그인 완료되었지만 사용자 정보를 가져오지 못했습니다.");
@@ -138,6 +138,7 @@ export default function GoogleCallback() {
             }
 
             setTokens({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken });
+            logTokenState('google:after-setTokens:fetch');
             if (typeof res.data.name === "string" && res.data.name.trim().length > 0) {
               localStorage.setItem("userName", res.data.name);
             } else {
@@ -166,9 +167,7 @@ export default function GoogleCallback() {
             }
 
             setMessage("Google 로그인 성공! 이동 중...");
-            setTimeout(() => {
-              void navigateAfterLogin();
-            }, 2000);
+            await navigateAfterLogin();
           } else {
             setMessage("토큰을 받아오지 못했습니다.");
           }

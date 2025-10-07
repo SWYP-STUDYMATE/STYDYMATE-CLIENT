@@ -40,6 +40,7 @@ export const setToken = (key, value) => {
       primary.removeItem(key);
     }
     secondary.removeItem(key);
+    logTokenState(`setToken:${key}`);
   } catch {
     // ignore storage errors
   }
@@ -57,6 +58,8 @@ export const setTokens = ({ accessToken, refreshToken }) => {
   } else if (refreshToken === null) {
     removeToken('refreshToken');
   }
+
+  logTokenState('setTokens');
 };
 
 export const getTokens = () => ({
@@ -75,9 +78,36 @@ export const removeToken = (key) => {
   } catch (error) {
     console.warn(`Failed to remove ${key} from sessionStorage`, error);
   }
+
+  logTokenState(`removeToken:${key}`);
 };
 
 export const clearTokens = () => {
   removeToken('accessToken');
   removeToken('refreshToken');
 };
+
+export function logTokenState(label = 'tokenState') {
+  try {
+    const snapshot = {
+      label,
+      timestamp: new Date().toISOString(),
+      autoLogin: isAutoLoginEnabled(),
+      localStorage: {
+        accessToken: localStorage.getItem('accessToken'),
+        refreshToken: localStorage.getItem('refreshToken'),
+        userName: localStorage.getItem('userName'),
+        isNewUser: localStorage.getItem('isNewUser'),
+        autoLoginFlag: localStorage.getItem(AUTO_LOGIN_KEY)
+      },
+      sessionStorage: {
+        accessToken: sessionStorage.getItem('accessToken'),
+        refreshToken: sessionStorage.getItem('refreshToken'),
+        redirectPath: sessionStorage.getItem('redirectPath')
+      }
+    };
+    console.log('[tokenStorage]', snapshot);
+  } catch (error) {
+    console.warn('[tokenStorage] Failed to log token state', error);
+  }
+}
