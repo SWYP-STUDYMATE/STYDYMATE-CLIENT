@@ -27,7 +27,7 @@ const recommendSchema = z.object({
   participantCount: z.number().int().positive().optional()
 });
 
-aioRoutes.post('/recommend-topics', async (c) => {
+aiRoutes.post('/recommend-topics', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
@@ -44,7 +44,7 @@ const analysisSchema = z.object({
   participantId: z.string().min(1).optional()
 });
 
-aioRoutes.post('/analyze-conversation', async (c) => {
+aiRoutes.post('/analyze-conversation', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
@@ -71,7 +71,7 @@ const summarySchema = z.object({
     .optional()
 });
 
-aioRoutes.post('/generate-summary', async (c) => {
+aiRoutes.post('/generate-summary', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
@@ -88,7 +88,7 @@ const icebreakerSchema = z.object({
   topic: z.string().optional()
 });
 
-aioRoutes.post('/icebreakers', async (c) => {
+aiRoutes.post('/icebreakers', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
@@ -106,7 +106,7 @@ const roleplaySchema = z.object({
   participantRoles: z.array(z.string()).optional()
 });
 
-aioRoutes.post('/roleplay', async (c) => {
+aiRoutes.post('/roleplay', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
@@ -123,7 +123,7 @@ const translateSchema = z.object({
   toLanguage: z.string().min(1)
 });
 
-aioRoutes.post('/translate', async (c) => {
+aiRoutes.post('/translate', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
@@ -140,7 +140,7 @@ const matchSchema = z.object({
   availableSessions: z.array(z.record(z.unknown())).optional()
 });
 
-aioRoutes.post('/match-recommendation', async (c) => {
+aiRoutes.post('/match-recommendation', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
     throw new AppError('User context missing', 500, 'CONTEXT_MISSING_USER');
