@@ -15,7 +15,7 @@ import AchievementBadges from "../components/AchievementBadges";
 import useAchievementOverview from "../hooks/useAchievementOverview";
 import { transformOnboardingDataToLanguageProfile } from "../utils/onboardingTransform";
 import { toDisplayText } from "../utils/text";
-import { setToken } from "../utils/tokenStorage";
+import { setTokens, setAutoLoginEnabled, logTokenState } from "../utils/tokenStorage";
 
 const transformMatches = (matches = []) =>
   matches.map((match) => {
@@ -133,13 +133,30 @@ export default function Main() {
   useEffect(() => {
     const params = new URLSearchParams(search);
     const accessToken = params.get("accessToken");
+    const refreshToken = params.get("refreshToken");
+    const autoLoginParam = params.get("autoLogin");
     const userId = params.get("userId");
 
-    if (accessToken) {
-      setToken("accessToken", accessToken);
-      if (userId) {
-        localStorage.setItem("userId", userId);
-      }
+    const hasQueryTokens = Boolean(accessToken || refreshToken);
+
+    if (!hasQueryTokens && autoLoginParam === null && !userId) {
+      return;
+    }
+
+    if (autoLoginParam !== null) {
+      setAutoLoginEnabled(autoLoginParam === "true");
+    }
+
+    if (hasQueryTokens) {
+      setTokens({ accessToken, refreshToken });
+      logTokenState("main:query-setTokens");
+    }
+
+    if (userId) {
+      localStorage.setItem("userId", userId);
+    }
+
+    if (hasQueryTokens || userId || autoLoginParam !== null) {
       navigate("/main", { replace: true });
     }
   }, [search, navigate]);
