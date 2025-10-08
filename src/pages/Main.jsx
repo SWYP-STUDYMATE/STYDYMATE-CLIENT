@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getUserProfile, getUserInfo } from "../api/user";
 import { getStudyStats } from "../api/analytics";
@@ -161,7 +161,14 @@ export default function Main() {
     }
   }, [search, navigate]);
 
+  const hasInitializedDataFetch = useRef(false);
+
   useEffect(() => {
+    if (hasInitializedDataFetch.current) {
+      return;
+    }
+    hasInitializedDataFetch.current = true;
+
     let cancelled = false;
 
     const {
