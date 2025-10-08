@@ -21,7 +21,7 @@ export default function ObSchadule3() {
         const raw = toDataArray(response);
         const normalized = raw
           .map((item) => {
-            const code = typeof item.name === "string" && /^[A-Z_]+$/u.test(item.name)
+            const code = typeof item.name === "string" && /^[A-Z0-9_]+$/u.test(item.name)
               ? item.name
               : item.id ?? item.code ?? item.value ?? item.dailyMethod ?? item.name ?? null;
             const description = item.description ?? item.label ?? item.displayName ?? item.text ?? item.name ?? code;
