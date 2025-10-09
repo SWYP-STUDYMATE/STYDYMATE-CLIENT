@@ -65,11 +65,6 @@ export default function Main() {
   const navigate = useNavigate();
   const { search } = useLocation();
   console.count('[Main] render');
-  const englishName = useProfileStore((state) => state.englishName);
-  const birthYear = useProfileStore((state) => state.birthYear);
-  const languageLevel = useProfileStore((state) => state.languageLevel);
-  const targetLanguage = useProfileStore((state) => state.targetLanguage);
-
   const [studyStatsData, setStudyStatsData] = useState(null);
   const [studyStatsLoading, setStudyStatsLoading] = useState(true);
   const [studyStatsError, setStudyStatsError] = useState(null);
@@ -79,6 +74,32 @@ export default function Main() {
 
   const [mates, setMates] = useState([]);
   const [matesLoading, setMatesLoading] = useState(true);
+
+  const [profileSnapshot, setProfileSnapshot] = useState({
+    englishName: "",
+    birthYear: null,
+    languageLevel: null,
+    targetLanguage: null,
+  });
+
+  const updateProfileSnapshot = useCallback((next) => {
+    setProfileSnapshot((prev) => {
+      if (
+        prev.englishName === (next.englishName ?? "") &&
+        prev.birthYear === (next.birthYear ?? null) &&
+        prev.languageLevel === (next.languageLevel ?? null) &&
+        prev.targetLanguage === (next.targetLanguage ?? null)
+      ) {
+        return prev;
+      }
+      return {
+        englishName: next.englishName ?? "",
+        birthYear: next.birthYear ?? null,
+        languageLevel: next.languageLevel ?? null,
+        targetLanguage: next.targetLanguage ?? null,
+      };
+    });
+  }, []);
 
   const fetchLatestMatches = useCallback(async () => {
     console.log('[Main][fetchLatestMatches] start');
@@ -138,18 +159,18 @@ export default function Main() {
   }, [allAchievements]);
 
   const currentYear = new Date().getFullYear();
-  const normalizedBirthYear = birthYear ? Number(birthYear) : null;
+  const normalizedBirthYear = profileSnapshot.birthYear ? Number(profileSnapshot.birthYear) : null;
   const userAge = normalizedBirthYear && !Number.isNaN(normalizedBirthYear)
     ? Math.max(0, currentYear - normalizedBirthYear)
     : null;
-  const greetingLevelRaw = languageLevel
+  const greetingLevelRaw = profileSnapshot.languageLevel
     || languageProfileData?.learningLanguages?.[0]?.targetLevel
     || languageProfileData?.learningLanguages?.[0]?.level
-    || targetLanguage
+    || profileSnapshot.targetLanguage
     || null;
   const greetingLevel = toDisplayText(greetingLevelRaw);
 
-  const safeEnglishName = toDisplayText(englishName) || "사용자";
+  const safeEnglishName = toDisplayText(profileSnapshot.englishName) || "사용자";
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -193,11 +214,24 @@ export default function Main() {
     let cancelled = false;
 
     const {
-      setProfileImage,
+      loadProfileFromServer,
       setEnglishName,
       setResidence,
-      loadProfileFromServer,
+      setProfileImage,
+      setLanguageLevel,
+      setTargetLanguage,
+      setBirthYear,
     } = useProfileStore.getState();
+
+    const syncSnapshotFromStore = () => {
+      const snap = useProfileStore.getState();
+      updateProfileSnapshot({
+        englishName: snap.englishName ?? snap.name ?? "",
+        birthYear: snap.birthYear ?? null,
+        languageLevel: snap.languageLevel ?? null,
+        targetLanguage: snap.targetLanguage ?? null,
+      });
+    };
 
     const loadStudyStats = async () => {
       console.log('[Main][loadStudyStats] start');
@@ -244,49 +278,67 @@ export default function Main() {
       }
     };
 
-    const profileStore = useProfileStore.getState();
     const loadProfile = async () => {
       console.log('[Main][loadProfile] start');
       try {
-        const profileData = await profileStore.loadProfileFromServer();
+        const profileData = await loadProfileFromServer();
 
         if (cancelled) return;
 
         if (profileData) {
           console.log('[Main][loadProfile] profile loaded from server');
+          updateProfileSnapshot({
+            englishName: profileData.englishName ?? profileData.koreanName ?? profileData.name ?? "",
+            birthYear: profileData.birthYear ?? null,
+            languageLevel: profileData.languageLevel ?? null,
+            targetLanguage: profileData.targetLanguage ?? null,
+          });
         } else {
           console.log('[Main][loadProfile] fallback to legacy APIs');
           const userInfoResponse = await getUserInfo();
           const userInfoPayload = userInfoResponse?.data ?? userInfoResponse;
-          profileStore.setEnglishName(userInfoPayload?.englishName || userInfoPayload?.name || "사용자");
+
+          setEnglishName(userInfoPayload?.englishName || userInfoPayload?.name || "사용자");
+          setBirthYear(userInfoPayload?.birthYear ?? null);
 
           const profileResponse = await getUserProfile();
           const profilePayload = profileResponse?.data ?? profileResponse;
-          profileStore.setProfileImage(profilePayload?.profileImageUrl || profilePayload?.profileImage || "/assets/basicProfilePic.png");
-          profileStore.setResidence(
+          setProfileImage(profilePayload?.profileImageUrl || profilePayload?.profileImage || "/assets/basicProfilePic.png");
+          setResidence(
             profilePayload?.location?.city
             || profilePayload?.residence
             || "위치 정보 없음"
           );
+          setLanguageLevel(profilePayload?.languageLevel ?? null);
+          setTargetLanguage(profilePayload?.targetLanguage ?? null);
+
+          updateProfileSnapshot({
+            englishName: userInfoPayload?.englishName || userInfoPayload?.name || "사용자",
+            birthYear: userInfoPayload?.birthYear ?? null,
+            languageLevel: profilePayload?.languageLevel ?? null,
+            targetLanguage: profilePayload?.targetLanguage ?? null,
+          });
         }
+        syncSnapshotFromStore();
       } catch (error) {
         if (cancelled) return;
         console.error("프로필 로드 실패:", error);
 
         if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
           console.error("🔌 네트워크 연결 오류");
-          profileStore.setEnglishName("사용자");
-          profileStore.setProfileImage("/assets/basicProfilePic.png");
-          profileStore.setResidence("위치 정보 없음");
+          setEnglishName("사용자");
+          setProfileImage("/assets/basicProfilePic.png");
+          setResidence("위치 정보 없음");
           return;
         }
 
         if (error.response?.status >= 500) {
           console.error("🚨 서버 내부 오류");
-          profileStore.setEnglishName("사용자");
-          profileStore.setProfileImage("/assets/basicProfilePic.png");
-          profileStore.setResidence("위치 정보 없음");
+          setEnglishName("사용자");
+          setProfileImage("/assets/basicProfilePic.png");
+          setResidence("위치 정보 없음");
         }
+        syncSnapshotFromStore();
       }
       console.log('[Main][loadProfile] finish');
     };
