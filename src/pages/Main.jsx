@@ -81,6 +81,7 @@ export default function Main() {
   const [matesLoading, setMatesLoading] = useState(true);
 
   const fetchLatestMatches = useCallback(async () => {
+    console.log('[Main][fetchLatestMatches] start');
     setMatesLoading(true);
     try {
       const response = await getMatches(1, 4);
@@ -89,11 +90,13 @@ export default function Main() {
         ? payload.data
         : payload?.content ?? [];
       setMates(transformMatches(matchedContent));
+      console.log('[Main][fetchLatestMatches] success', { count: matchedContent.length });
     } catch (error) {
       console.error("매칭 데이터 로드 실패:", error);
       setMates([]);
     } finally {
       setMatesLoading(false);
+      console.log('[Main][fetchLatestMatches] finish');
     }
   }, []);
 
@@ -197,6 +200,7 @@ export default function Main() {
     } = useProfileStore.getState();
 
     const loadStudyStats = async () => {
+      console.log('[Main][loadStudyStats] start');
       setStudyStatsLoading(true);
       try {
         const response = await getStudyStats("month");
@@ -204,6 +208,7 @@ export default function Main() {
         const payload = response?.data ?? response;
         setStudyStatsData(payload);
         setStudyStatsError(null);
+        console.log('[Main][loadStudyStats] success', { hasPayload: Boolean(payload) });
       } catch (error) {
         if (cancelled) return;
         console.error("학습 통계 로드 실패:", error);
@@ -212,11 +217,13 @@ export default function Main() {
       } finally {
         if (!cancelled) {
           setStudyStatsLoading(false);
+          console.log('[Main][loadStudyStats] finish');
         }
       }
     };
 
     const loadLanguageProfile = async () => {
+      console.log('[Main][loadLanguageProfile] start');
       setLanguageProfileLoading(true);
       try {
         const response = await getOnboardingData();
@@ -224,6 +231,7 @@ export default function Main() {
         const payload = response?.data ?? response;
         const transformed = transformOnboardingDataToLanguageProfile(payload);
         setLanguageProfileData(transformed);
+        console.log('[Main][loadLanguageProfile] success', { hasPayload: Boolean(payload) });
       } catch (error) {
         if (cancelled) return;
         console.error("온보딩 데이터 로드 실패:", error);
@@ -231,22 +239,23 @@ export default function Main() {
       } finally {
         if (!cancelled) {
           setLanguageProfileLoading(false);
+          console.log('[Main][loadLanguageProfile] finish');
         }
       }
     };
 
     const profileStore = useProfileStore.getState();
     const loadProfile = async () => {
+      console.log('[Main][loadProfile] start');
       try {
-        console.log("🔄 프로필 로드 시작");
         const profileData = await profileStore.loadProfileFromServer();
 
         if (cancelled) return;
 
         if (profileData) {
-          console.log("✅ 서버 프로필 로드 성공");
+          console.log('[Main][loadProfile] profile loaded from server');
         } else {
-          console.log("⚠️ 서버 프로필 로드 실패, 기존 API 사용");
+          console.log('[Main][loadProfile] fallback to legacy APIs');
           const userInfoResponse = await getUserInfo();
           const userInfoPayload = userInfoResponse?.data ?? userInfoResponse;
           profileStore.setEnglishName(userInfoPayload?.englishName || userInfoPayload?.name || "사용자");
@@ -279,9 +288,11 @@ export default function Main() {
           profileStore.setResidence("위치 정보 없음");
         }
       }
+      console.log('[Main][loadProfile] finish');
     };
 
     const run = async () => {
+      console.log('[Main][run] start');
       await loadProfile();
       if (cancelled) return;
       await Promise.all([
@@ -289,6 +300,7 @@ export default function Main() {
         loadLanguageProfile(),
         fetchLatestMatches(),
       ]);
+      console.log('[Main][run] finish');
     };
 
     run();
