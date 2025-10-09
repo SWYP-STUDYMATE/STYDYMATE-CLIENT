@@ -104,6 +104,24 @@ export default function Main() {
     error: achievementsError
   } = useAchievementOverview();
 
+  useEffect(() => {
+    console.log('[Main][debug] loading flags', {
+      studyStatsLoading,
+      languageProfileLoading,
+      matesLoading,
+      achievementsLoading,
+    });
+  }, [studyStatsLoading, languageProfileLoading, matesLoading, achievementsLoading]);
+
+  useEffect(() => {
+    console.log('[Main][debug] primary data sets', {
+      hasStudyStats: Boolean(studyStatsData),
+      hasLanguageProfile: Boolean(languageProfileData),
+      matesLength: mates?.length ?? 0,
+      achievementsLength: allAchievements?.length ?? 0,
+    });
+  }, [studyStatsData, languageProfileData, mates, allAchievements]);
+
   const achievements = useMemo(() => {
     if (!allAchievements || allAchievements.length === 0) return [];
     return [...allAchievements]
