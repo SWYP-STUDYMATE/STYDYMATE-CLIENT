@@ -1,174 +1,25 @@
 import api from './index.js';
-import { getToken } from '../utils/tokenStorage';
 
-const WORKERS_API_BASE = import.meta.env.VITE_WORKERS_API_URL || 'http://localhost:8787';
+/**
+ * 매칭 API - Workers 백엔드와 통신
+ *
+ * 주요 변경사항:
+ * - fetch 기반 → axios 기반 api 인스턴스 사용
+ * - matchId → requestId 파라미터명 변경
+ * - partnerId → targetUserId 변경
+ * - 불필요한 roomType, WORKERS_API_BASE 제거
+ */
 
-const buildAuthHeaders = (options = { json: false }) => {
-  const token = getToken('accessToken');
-  const headers = {};
+// ===== 파트너 추천 및 검색 =====
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  if (options.json) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  return headers;
-};
-
-const sanitizePayload = (payload) => Object.fromEntries(
-  Object.entries(payload)
-    .filter(([, value]) => value !== undefined && value !== null && value !== '')
-);
-
-const buildWorkerMatchingRequest = (preferences = {}) => {
-  const body = {
-    userLevel: preferences.proficiencyLevel,
-    targetLanguage: preferences.targetLanguage,
-    nativeLanguage: preferences.nativeLanguage,
-    interests: preferences.interests || [],
-    availability: preferences.availability || [],
-    preferredCallType: preferences.sessionType || 'both'
-  };
-
-  return {
-    ...sanitizePayload(body),
-    interests: body.interests,
-    availability: body.availability
-  };
-};
-
-// 매칭 파트너 검색
-export async function findMatchingPartners(preferences) {
-  try {
-    const requestBody = buildWorkerMatchingRequest(preferences);
-
-    const response = await fetch(`${WORKERS_API_BASE}/matching/request`, {
-      method: 'POST',
-      headers: buildAuthHeaders({ json: true }),
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Find matching partners error:', error);
-    throw error;
-  }
-}
-
-// 매칭 승인
-export async function acceptMatch(matchId, partnerId) {
-  try {
-    const response = await fetch(`${WORKERS_API_BASE}/matching/accept/${matchId}`, {
-      method: 'POST',
-      headers: buildAuthHeaders({ json: true }),
-      body: JSON.stringify({
-        partnerId,
-        roomType: 'audio'
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Accept match error:', error);
-    throw error;
-  }
-}
-
-// 매칭 거절
-export async function rejectMatch(matchId, partnerId) {
-  try {
-    const response = await fetch(`${WORKERS_API_BASE}/matching/reject/${matchId}`, {
-      method: 'POST',
-      headers: buildAuthHeaders({ json: true }),
-      body: JSON.stringify({ partnerId })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Reject match error:', error);
-    throw error;
-  }
-}
-
-// 매칭 상태 확인
-export async function getMatchingStatus() {
-  try {
-    const response = await fetch(`${WORKERS_API_BASE}/matching/stats`, {
-      method: 'GET',
-      headers: buildAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Get matching status error:', error);
-    throw error;
-  }
-}
-
-// 매칭 히스토리 조회
-export async function getMatchingHistory() {
-  try {
-    const response = await api.get('/matching/history');
-    return response.data?.data ?? response.data;
-  } catch (error) {
-    console.error('Get matching history error:', error);
-    throw error;
-  }
-}
-
-// 추천 파트너 조회
-export async function getRecommendedPartners() {
-  try {
-    const response = await fetch(`${WORKERS_API_BASE}/matching/my-matches`, {
-      method: 'GET',
-      headers: buildAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Get recommended partners error:', error);
-    throw error;
-  }
-}
-
-// 매칭 알고리즘 분석
-export async function analyzeCompatibility(partnerId) {
-  try {
-    const response = await api.get(`/matching/compatibility/${partnerId}`);
-    return response.data?.data ?? response.data;
-  } catch (error) {
-    console.error('Analyze compatibility error:', error);
-    throw error;
-  }
-}
-
-// ===== Workers 매칭 API 헬퍼 =====
-
-// 파트너 추천 조회 (Workers API)
-export const getPartnerRecommendations = async (preferences = {}, page = 0, size = 20) => {
+/**
+ * 파트너 추천 목록 조회
+ * @param {Object} preferences - 검색 필터
+ * @param {number} page - 페이지 번호 (기본: 0)
+ * @param {number} size - 페이지 크기 (기본: 20)
+ * @returns {Promise<Object>} 추천 파트너 목록
+ */
+export async function getPartnerRecommendations(preferences = {}, page = 0, size = 20) {
   try {
     const response = await api.get('/matching/partners', {
       params: {
@@ -186,10 +37,17 @@ export const getPartnerRecommendations = async (preferences = {}, page = 0, size
     console.error('Get partner recommendations error:', error);
     throw error;
   }
-};
+}
 
-// 파트너 고급 검색 (Workers API)
-export const searchPartners = async (searchQuery, filters = {}, page = 1, size = 20) => {
+/**
+ * 고급 파트너 검색
+ * @param {string} searchQuery - 검색 쿼리
+ * @param {Object} filters - 필터 옵션
+ * @param {number} page - 페이지 번호
+ * @param {number} size - 페이지 크기
+ * @returns {Promise<Object>} 검색 결과
+ */
+export async function searchPartners(searchQuery, filters = {}, page = 1, size = 20) {
   try {
     const response = await api.post('/matching/partners/advanced', {
       query: searchQuery,
@@ -203,23 +61,35 @@ export const searchPartners = async (searchQuery, filters = {}, page = 1, size =
       sessionType: filters.sessionType,
       location: filters.location
     }, {
-      params: {
-        page,
-        size
-      }
+      params: { page, size }
     });
     return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Search partners error:', error);
     throw error;
   }
-};
+}
 
-// 매칭 요청 생성
-export const createMatchRequest = async (partnerId, message = '') => {
+/**
+ * [DEPRECATED] 이전 함수명 - getPartnerRecommendations 사용 권장
+ */
+export async function findMatchingPartners(preferences) {
+  console.warn('findMatchingPartners는 deprecated되었습니다. getPartnerRecommendations를 사용하세요.');
+  return getPartnerRecommendations(preferences);
+}
+
+// ===== 매칭 요청 관리 =====
+
+/**
+ * 매칭 요청 생성
+ * @param {string} targetUserId - 매칭 요청 대상 사용자 ID
+ * @param {string} message - 매칭 요청 메시지 (선택)
+ * @returns {Promise<Object>} 요청 결과
+ */
+export async function createMatchRequest(targetUserId, message = '') {
   try {
     const response = await api.post('/matching/request', {
-      targetUserId: partnerId,
+      targetUserId,
       message
     });
     return response.data?.data ?? response.data;
@@ -227,33 +97,70 @@ export const createMatchRequest = async (partnerId, message = '') => {
     console.error('Create match request error:', error);
     throw error;
   }
-};
+}
 
-// 매칭 요청 수락
-export const acceptMatchRequest = async (requestId) => {
+/**
+ * 매칭 요청 수락
+ * @param {string} requestId - 매칭 요청 ID
+ * @param {string} responseMessage - 응답 메시지 (선택)
+ * @returns {Promise<Object>} 수락 결과
+ */
+export async function acceptMatchRequest(requestId, responseMessage = '') {
   try {
-    const response = await api.post(`/matching/accept/${requestId}`);
+    const response = await api.post(`/matching/accept/${requestId}`, {
+      responseMessage
+    });
     return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Accept match request error:', error);
     throw error;
   }
-};
+}
 
-// 매칭 요청 거절
-export const rejectMatchRequest = async (requestId, reason = '') => {
+/**
+ * 매칭 요청 거절
+ * @param {string} requestId - 매칭 요청 ID
+ * @param {string} responseMessage - 거절 사유 (선택)
+ * @returns {Promise<Object>} 거절 결과
+ */
+export async function rejectMatchRequest(requestId, responseMessage = '') {
   try {
-    const payload = reason ? { reason } : undefined;
-    const response = await api.post(`/matching/reject/${requestId}`, payload);
+    const response = await api.post(`/matching/reject/${requestId}`, {
+      responseMessage
+    });
     return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Reject match request error:', error);
     throw error;
   }
-};
+}
 
-// 받은 매칭 요청 목록 조회
-export const getReceivedMatchRequests = async (status = 'pending', page = 1, size = 20) => {
+/**
+ * [DEPRECATED] 이전 함수명 - acceptMatchRequest 사용 권장
+ */
+export async function acceptMatch(matchId, partnerId) {
+  console.warn('acceptMatch는 deprecated되었습니다. acceptMatchRequest(requestId)를 사용하세요.');
+  return acceptMatchRequest(matchId);
+}
+
+/**
+ * [DEPRECATED] 이전 함수명 - rejectMatchRequest 사용 권장
+ */
+export async function rejectMatch(matchId, partnerId) {
+  console.warn('rejectMatch는 deprecated되었습니다. rejectMatchRequest(requestId)를 사용하세요.');
+  return rejectMatchRequest(matchId);
+}
+
+// ===== 매칭 요청 목록 조회 =====
+
+/**
+ * 받은 매칭 요청 목록 조회
+ * @param {string} status - 요청 상태 (pending, accepted, rejected)
+ * @param {number} page - 페이지 번호
+ * @param {number} size - 페이지 크기
+ * @returns {Promise<Object>} 요청 목록
+ */
+export async function getReceivedMatchRequests(status = 'pending', page = 1, size = 20) {
   try {
     const response = await api.get('/matching/requests/received', {
       params: { page, size, status }
@@ -263,10 +170,16 @@ export const getReceivedMatchRequests = async (status = 'pending', page = 1, siz
     console.error('Get received match requests error:', error);
     throw error;
   }
-};
+}
 
-// 보낸 매칭 요청 목록 조회
-export const getSentMatchRequests = async (status = 'pending', page = 1, size = 20) => {
+/**
+ * 보낸 매칭 요청 목록 조회
+ * @param {string} status - 요청 상태 (pending, accepted, rejected)
+ * @param {number} page - 페이지 번호
+ * @param {number} size - 페이지 크기
+ * @returns {Promise<Object>} 요청 목록
+ */
+export async function getSentMatchRequests(status = 'pending', page = 1, size = 20) {
   try {
     const response = await api.get('/matching/requests/sent', {
       params: { page, size, status }
@@ -276,10 +189,17 @@ export const getSentMatchRequests = async (status = 'pending', page = 1, size = 
     console.error('Get sent match requests error:', error);
     throw error;
   }
-};
+}
 
-// 매칭된 파트너 목록 조회 (Workers API)
-export const getMatches = async (page = 1, size = 20) => {
+// ===== 매칭된 파트너 관리 =====
+
+/**
+ * 매칭된 파트너 목록 조회
+ * @param {number} page - 페이지 번호
+ * @param {number} size - 페이지 크기
+ * @returns {Promise<Object>} 매칭 목록
+ */
+export async function getMatches(page = 1, size = 20) {
   try {
     const normalizedPage = Number.isFinite(Number(page)) ? Number(page) : 1;
     const normalizedSize = Number.isFinite(Number(size)) ? Number(size) : 20;
@@ -295,10 +215,14 @@ export const getMatches = async (page = 1, size = 20) => {
     console.error('Get matches error:', error);
     throw error;
   }
-};
+}
 
-// 매칭 해제
-export const deleteMatch = async (matchId) => {
+/**
+ * 매칭 해제
+ * @param {string} matchId - 매칭 ID
+ * @returns {Promise<Object>} 해제 결과
+ */
+export async function deleteMatch(matchId) {
   try {
     if (!matchId) {
       throw new Error('matchId is required');
@@ -310,10 +234,74 @@ export const deleteMatch = async (matchId) => {
     console.error('Delete match error:', error);
     throw error;
   }
-};
+}
 
-// 매칭 설정 조회
-export const getMatchingSettings = async () => {
+/**
+ * 매칭 히스토리 조회
+ * @returns {Promise<Object>} 히스토리 목록
+ */
+export async function getMatchingHistory() {
+  try {
+    const response = await api.get('/matching/history');
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('Get matching history error:', error);
+    throw error;
+  }
+}
+
+// ===== 매칭 상태 및 통계 =====
+
+/**
+ * 매칭 상태 조회 (통계 포함)
+ * @returns {Promise<Object>} 매칭 상태 및 통계
+ */
+export async function getMatchingStatus() {
+  try {
+    const response = await api.get('/matching/stats');
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('Get matching status error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 추천 파트너 조회 (내 매칭 목록)
+ * @returns {Promise<Object>} 추천 파트너 목록
+ */
+export async function getRecommendedPartners() {
+  try {
+    const response = await api.get('/matching/my-matches');
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('Get recommended partners error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 호환성 분석
+ * @param {string} partnerId - 분석할 파트너 ID
+ * @returns {Promise<Object>} 호환성 분석 결과
+ */
+export async function analyzeCompatibility(partnerId) {
+  try {
+    const response = await api.get(`/matching/compatibility/${partnerId}`);
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('Analyze compatibility error:', error);
+    throw error;
+  }
+}
+
+// ===== 매칭 설정 관리 =====
+
+/**
+ * 매칭 설정 조회
+ * @returns {Promise<Object>} 매칭 설정
+ */
+export async function getMatchingSettings() {
   try {
     const response = await api.get('/matching/settings');
     return response.data;
@@ -321,10 +309,14 @@ export const getMatchingSettings = async () => {
     console.error('Get matching settings error:', error);
     throw error;
   }
-};
+}
 
-// 매칭 설정 업데이트
-export const updateMatchingSettings = async (settings) => {
+/**
+ * 매칭 설정 업데이트
+ * @param {Object} settings - 업데이트할 설정
+ * @returns {Promise<Object>} 업데이트 결과
+ */
+export async function updateMatchingSettings(settings) {
   try {
     const response = await api.patch('/matching/settings', {
       autoAcceptMatches: settings.autoAcceptMatches,
@@ -342,4 +334,4 @@ export const updateMatchingSettings = async (settings) => {
     console.error('Update matching settings error:', error);
     throw error;
   }
-};
+}

@@ -1,19 +1,18 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { 
-  findMatchingPartners, 
-  acceptMatch as acceptMatchAPI, 
-  rejectMatch as rejectMatchAPI,
-  getMatchingStatus,
-  getMatchingHistory,
-  getRecommendedPartners,
-  analyzeCompatibility,
+import {
   getPartnerRecommendations,
   searchPartners as searchPartnersApi,
   createMatchRequest,
+  acceptMatchRequest,
+  rejectMatchRequest,
   getReceivedMatchRequests,
   getSentMatchRequests,
-  getMatches
+  getMatches,
+  getMatchingStatus,
+  getRecommendedPartners,
+  getMatchingHistory,
+  analyzeCompatibility
 } from "../api/matching";
 
 const normalizePartner = (partner) => {
@@ -129,24 +128,24 @@ const useMatchingStore = create(
         }
       }),
       
-      // 매칭 시작 (API 연동)
+      // 매칭 시작 (API 연동) - getPartnerRecommendations 사용
       startMatching: async () => {
         const state = get();
-        set({ 
-          isSearching: true, 
+        set({
+          isSearching: true,
           matchingStatus: "searching",
-          matchedUsers: [] 
+          matchedUsers: []
         });
 
         try {
-          const result = await findMatchingPartners(state.matchingFilters);
-          const matches = (result?.matches || [])
-            .map(normalizeWorkerMatch)
+          const result = await getPartnerRecommendations(state.matchingFilters);
+          const partners = extractPageContent(result)
+            .map(normalizePartner)
             .filter(Boolean);
 
           set({
-            matchedUsers: matches,
-            matchingStatus: matches.length > 0 ? "matched" : "failed",
+            matchedUsers: partners,
+            matchingStatus: partners.length > 0 ? "matched" : "failed",
             isSearching: false
           });
 
@@ -154,14 +153,14 @@ const useMatchingStore = create(
             matchingHistory: [
               {
                 filters: current.matchingFilters,
-                result: matches,
+                result: partners,
                 timestamp: new Date().toISOString()
               },
               ...current.matchingHistory
             ].slice(0, 20)
           }));
 
-          return matches;
+          return partners;
         } catch (error) {
           console.error('Matching error:', error);
           set({
@@ -202,59 +201,41 @@ const useMatchingStore = create(
         ].slice(0, 20) // 최근 20개만 유지
       })),
       
-      // 매칭 수락 (API 연동)
-      acceptMatch: async (partnerId) => {
-        const state = get();
-        const partner = state.matchedUsers.find(user => user.id === partnerId);
-        
-        if (partner) {
-          try {
-            const result = await acceptMatchAPI(partner.matchId, partnerId);
-            
-            set({
-              selectedPartner: partner,
-              matchingStatus: "matched"
-            });
-            
-            // 히스토리에 추가
-            state.addToHistory({
-              partnerId: partner.id,
-              partnerName: partner.name,
-              status: "accepted",
-              matchedAt: new Date().toISOString()
-            });
-            
-            return result;
-          } catch (error) {
-            console.error('Accept match error:', error);
-            throw error;
-          }
+      // 매칭 요청 수락 (API 연동) - requestId 사용
+      acceptMatch: async (requestId, responseMessage = '') => {
+        try {
+          const result = await acceptMatchRequest(requestId, responseMessage);
+
+          // 히스토리에 추가
+          const state = get();
+          state.addToHistory({
+            requestId,
+            status: "accepted",
+            acceptedAt: new Date().toISOString()
+          });
+
+          return result;
+        } catch (error) {
+          console.error('Accept match request error:', error);
+          throw error;
         }
       },
       
-      // 매칭 거절 (API 연동)
-      rejectMatch: async (partnerId) => {
-        const state = get();
-        const partner = state.matchedUsers.find(user => user.id === partnerId);
-        
-        if (partner) {
-          try {
-            await rejectMatchAPI(partner.matchId, partnerId);
-            
-            set((state) => ({
-              matchedUsers: state.matchedUsers.filter(user => user.id !== partnerId)
-            }));
-            
-            // 히스토리에 추가
-            state.addToHistory({
-              partnerId,
-              status: "rejected",
-              rejectedAt: new Date().toISOString()
-            });
-          } catch (error) {
-            console.error('Reject match error:', error);
-            throw error;
-          }
+      // 매칭 요청 거절 (API 연동) - requestId 사용
+      rejectMatch: async (requestId, responseMessage = '') => {
+        try {
+          await rejectMatchRequest(requestId, responseMessage);
+
+          // 히스토리에 추가
+          const state = get();
+          state.addToHistory({
+            requestId,
+            status: "rejected",
+            rejectedAt: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('Reject match request error:', error);
+          throw error;
         }
       },
       

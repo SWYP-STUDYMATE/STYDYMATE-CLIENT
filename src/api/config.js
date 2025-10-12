@@ -180,13 +180,36 @@ export const API_ENDPOINTS = {
   // 매칭 관련
   MATCHING: {
     BASE: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching`,
+
+    // 파트너 추천 및 검색
     PARTNERS: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/partners`,
+    ADVANCED_SEARCH: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/partners/advanced`,
+
+    // 매칭 요청 관리
     REQUEST: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/request`,
-    ACCEPT: (matchId) =>
-      `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/accept/${matchId}`,
-    REJECT: (matchId) =>
-      `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/reject/${matchId}`,
-    STATUS: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/status`,
+    ACCEPT: (requestId) =>
+      `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/accept/${requestId}`,
+    REJECT: (requestId) =>
+      `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/reject/${requestId}`,
+
+    // 매칭 요청 목록
+    REQUESTS_RECEIVED: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/requests/received`,
+    REQUESTS_SENT: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/requests/sent`,
+
+    // 매칭된 파트너 관리
+    MATCHES: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/matches`,
+    DELETE_MATCH: (matchId) =>
+      `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/matches/${matchId}`,
+    HISTORY: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/history`,
+
+    // 매칭 상태 및 통계
+    STATS: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/stats`,
+    MY_MATCHES: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/my-matches`,
+    COMPATIBILITY: (partnerId) =>
+      `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/compatibility/${partnerId}`,
+
+    // 매칭 설정
+    SETTINGS: `${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/matching/settings`,
   },
 
   // 채팅 관련

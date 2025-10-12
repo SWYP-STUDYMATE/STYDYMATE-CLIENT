@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **프론트엔드 개발자**: React/UI 개발 담당
 
 ### 관련 프로젝트
-- **STUDYMATE-API**: Cloudflare Workers 기반 백엔드 (https://api.languagemate.kr)
+- **Workers Backend**: Cloudflare Workers 기반 백엔드 (`/Users/minhan/Desktop/public-repo/studymate/STYDYMATE-CLIENT/workers`)
+- **배포 URL**: https://api.languagemate.kr
 
 ## 📦 기술 스택
 
@@ -61,7 +62,7 @@ npm run lint
 
 ## 🔗 API 엔드포인트 구조
 
-### 백엔드 서버 통신 (STUDYMATE-SERVER)
+### Workers 백엔드 서버 통신
 ```javascript
 // 기본 설정
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.languagemate.kr';
@@ -397,18 +398,19 @@ npx wrangler pages deploy dist --project-name=studymate-client --branch=preview
 ## ⚠️ 개발 시 주의사항
 
 ### 📝 필수 상호 참조 규칙
-**클라이언트 개발 시 반드시 확인해야 할 서버 관련 사항:**
-- **API 엔드포인트**: `../STUDYMATE-SERVER/src/*/controller/` 실제 구현 확인
-- **DTO 응답 형식**: `../STUDYMATE-SERVER/src/*/dto/response/` TypeScript 인터페이스와 일치
-- **에러 코드**: `../STUDYMATE-SERVER/docs/07-backend/error-handling.md` 에러 처리 로직 동기화
-- **WebSocket 이벤트**: 서버 소켓 이벤트와 클라이언트 핸들러 일치
+**클라이언트 개발 시 반드시 확인해야 할 Workers 백엔드 관련 사항:**
+- **API 엔드포인트**: `./workers/src/routes/` 실제 라우팅 구현 확인
+- **DTO 응답 형식**: `./workers/src/types/` TypeScript 인터페이스와 일치
+- **에러 코드**: Workers 에러 처리 로직 동기화
+- **WebSocket 이벤트**: Durable Objects 이벤트와 클라이언트 핸들러 일치
 
 ### API 통신 규칙
-- **백엔드 API (STUDYMATE-SERVER)**
+- **Workers 백엔드 API**
+  - Cloudflare Workers 기반 서버리스 아키텍처
   - 모든 비즈니스 로직 및 데이터 처리
   - JWT 인증 필수
   - REST API 규격 준수
-  - WebSocket을 통한 실시간 통신
+  - WebSocket을 통한 실시간 통신 (Durable Objects)
 
 ### 에러 처리
 ```javascript
