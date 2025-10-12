@@ -73,7 +73,14 @@ const AchievementBadgeCard = ({ item }) => {
   );
 };
 
-export default function AchievementBadges({ achievements = [], stats = null, loading = false, error = null, limit = 4 }) {
+export default function AchievementBadges({
+  achievements = [],
+  stats = null,
+  loading = false,
+  error = null,
+  limit = 4,
+  onRefresh = null,
+}) {
   const sanitizedAchievements = useMemo(() => achievements.map((item) => {
     const normalizedTitle = toDisplayText(item.achievement?.title || item.title || item.name, '성취 배지');
     const normalizedDescription = toDisplayText(item.achievement?.description || item.description || item.details, '') || '';
@@ -132,11 +139,23 @@ export default function AchievementBadges({ achievements = [], stats = null, loa
 
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-      <div className="text-center mb-6">
-        <h2 className="text-[24px] font-extrabold text-[#111111] mb-2">🏆 성취 배지</h2>
-        <div className="text-[14px] text-[#606060]">
-          완료 {completedCount}개 · 총 {totalCount}개
+      <div className="mb-6 flex flex-col items-center space-y-3">
+        <div className="text-center">
+          <h2 className="text-[24px] font-extrabold text-[#111111] mb-2">🏆 성취 배지</h2>
+          <div className="text-[14px] text-[#606060]">
+            완료 {completedCount}개 · 총 {totalCount}개
+          </div>
         </div>
+
+        {typeof onRefresh === 'function' && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="px-4 py-2 text-sm font-medium text-[#00C471] border border-[#00C471] rounded-full hover:bg-[#E6F9F1] transition-colors"
+          >
+            새로고침
+          </button>
+        )}
       </div>
 
       {progressList.length === 0 ? (

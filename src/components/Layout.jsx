@@ -9,41 +9,10 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
-  console.count('[Layout] render');
-
-  // 사이드바를 숨길 페이지들
-  const hideSidebarPages = [
-    '/',
-    '/login',
-    '/signup',
-    '/agreement',
-    '/signup-complete'
-  ];
-
-  // 온보딩 페이지들도 포함
-  const hideForOnboarding = location.pathname.includes('/onboarding-');
-  const hideForLevelTest = location.pathname.includes('/level-test');
-  const hideForSession = location.pathname.includes('/session/');
-
-  const shouldHideSidebar = 
-    hideSidebarPages.includes(location.pathname) || 
-    hideForOnboarding || 
-    hideForLevelTest ||
-    hideForSession;
-
   // 라우트 변경 시 사이드바 닫기
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
-
-  if (shouldHideSidebar) {
-    return (
-      <>
-        {children}
-        <ToastManager />
-      </>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-[#FAFAFA] overflow-hidden">

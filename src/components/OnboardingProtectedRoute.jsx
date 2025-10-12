@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import { getOnboardingStatus } from '../api/user';
@@ -16,9 +16,16 @@ export default function OnboardingProtectedRoute({ children }) {
   const [onboardingStatus, setOnboardingStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    // 이미 체크했으면 중복 실행 방지
+    if (hasFetchedRef.current) {
+      return;
+    }
+
     const checkOnboarding = async () => {
+      hasFetchedRef.current = true;
       const startedAt = performance.now();
       log.info('온보딩 상태 조회 시작', {
         path: window.location.pathname,
