@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import { Menu, X } from 'lucide-react';
-import { ToastManager } from './toast-manager.jsx';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -59,8 +58,6 @@ const Layout = ({ children }) => {
       {/* Bottom Navigation (Mobile) */}
       <BottomNav />
 
-      {/* Toast Manager */}
-      <ToastManager />
     </div>
   );
 };

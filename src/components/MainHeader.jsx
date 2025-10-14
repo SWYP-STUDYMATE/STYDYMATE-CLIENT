@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import OptimizedImage from './OptimizedImage';
-import NotificationBadge from './NotificationBadge';
 import NotificationTestPanel from './NotificationTestPanel';
+import { Bell } from 'lucide-react';
 
 export default function MainHeader() {
   const [showTestPanel, setShowTestPanel] = useState(false);
@@ -33,8 +33,10 @@ export default function MainHeader() {
             </button>
           )}
           
-          {/* 알림 배지 */}
-          <NotificationBadge size="md" />
+          {/* 알림 아이콘 (임시) */}
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-[#111111]">
+            <Bell className="w-5 h-5" />
+          </div>
         </div>
       </div>
 

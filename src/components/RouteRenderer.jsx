@@ -14,11 +14,6 @@ import { routes, ROUTE_TYPES } from '../config/routes';
 const renderRoute = (route) => {
   const { path, component: Component, type, layout } = route;
 
-  // Layout 래퍼 함수
-  const withLayout = (element) => {
-    return layout ? <Layout>{element}</Layout> : element;
-  };
-
   // 라우트 타입에 따른 처리
   switch (type) {
     case ROUTE_TYPES.PUBLIC:
@@ -44,13 +39,20 @@ const renderRoute = (route) => {
 
     case ROUTE_TYPES.PROTECTED:
       // 인증 + 온보딩 완료 필요
+      // OnboardingProtectedRoute는 이미 내부에서 ProtectedRoute를 사용함
       return (
         <Route
           key={path}
           path={path}
           element={
             <OnboardingProtectedRoute>
-              {withLayout(<Component />)}
+              {layout ? (
+                <Layout>
+                  <Component />
+                </Layout>
+              ) : (
+                <Component />
+              )}
             </OnboardingProtectedRoute>
           }
         />
@@ -65,12 +67,8 @@ const renderRoute = (route) => {
 /**
  * 모든 라우트를 렌더링하는 컴포넌트
  */
-export const RouteRenderer = () => {
-  return (
-    <>
-      {routes.map(renderRoute)}
-    </>
-  );
-};
+export const renderRoutes = () => routes
+  .map(renderRoute)
+  .filter(Boolean);
 
-export default RouteRenderer;
+export default renderRoutes;

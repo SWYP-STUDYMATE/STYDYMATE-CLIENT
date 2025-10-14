@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/index";
 import useProfileStore from "../../store/profileStore";
-import { getOnboardingStatus } from "../../api/user";
-import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
 import { setTokens, logTokenState } from "../../utils/tokenStorage";
 
 // JWT 토큰 형식 검증 함수
@@ -19,18 +17,14 @@ export default function Navercallback() {
 
   const navigateAfterLogin = useCallback(async () => {
     try {
+      // 신규 사용자인 경우 약관 동의 페이지로
       if (localStorage.getItem('isNewUser') === 'true') {
         navigate("/agreement", { replace: true });
         return;
       }
 
-      const onboardingStatus = await getOnboardingStatus();
-      if (!onboardingStatus.isCompleted) {
-        const nextStep = resolveNextOnboardingStep(onboardingStatus);
-        navigate(`/onboarding-info/${nextStep}`, { replace: true });
-        return;
-      }
-
+      // 온보딩 체크는 OnboardingProtectedRoute에 맡김
+      // 여기서는 단순히 /main으로 리다이렉트만 수행
       const redirectPath = sessionStorage.getItem("redirectPath");
       if (redirectPath) {
         sessionStorage.removeItem("redirectPath");
@@ -39,7 +33,7 @@ export default function Navercallback() {
         navigate("/main", { replace: true });
       }
     } catch (error) {
-      console.error("사용자 상태 확인 실패:", error);
+      console.error("네비게이션 실패:", error);
       navigate("/agreement", { replace: true });
     }
   }, [navigate]);

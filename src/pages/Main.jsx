@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { shallow } from "zustand/shallow";
 
 import MainHeader from "../components/MainHeader";
-import Sidebar from "../components/chat/Sidebar";
 import GreetingCard from "../components/GreetingCard";
 import StudyStats from "../components/StudyStats";
 import LanguageProfile from "../components/LanguageProfile";
@@ -82,35 +80,68 @@ const transformMatches = (matches = []) =>
     };
   });
 
+const normalizeAchievements = (payload) => {
+  if (!payload) return [];
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.achievements)) return payload.achievements;
+  if (Array.isArray(payload)) return payload;
+  return [];
+};
+
+const INITIAL_MAIN_STATE = {
+  loading: true,
+  profile: null,
+  profileError: null,
+  studyStats: null,
+  studyStatsError: null,
+  languageProfile: null,
+  languageProfileError: null,
+  mates: [],
+  matesError: null,
+  achievements: [],
+  achievementsStats: null,
+  achievementsError: null,
+  achievementsLoading: false,
+};
+
+const buildProfileSnapshot = (userInfo, userProfile) => {
+  const englishName = toDisplayText(
+    userInfo?.englishName
+      || userInfo?.name
+      || userInfo?.koreanName,
+    "사용자"
+  );
+
+  const profileImage = userProfile?.profileImageUrl
+    || userProfile?.profileImage
+    || "/assets/basicProfilePic.png";
+
+  const residence = toDisplayText(
+    userProfile?.location?.city
+      || userProfile?.residence
+      || userProfile?.location?.region,
+    "위치 정보 없음"
+  ) || "위치 정보 없음";
+
+  return {
+    englishName,
+    birthYear: userInfo?.birthYear ?? null,
+    languageLevel: userProfile?.languageLevel ?? null,
+    targetLanguage: userProfile?.targetLanguage ?? null,
+    profileImage,
+    residence,
+  };
+};
+
 export default function Main() {
   const navigate = useNavigate();
   const location = useLocation();
   const { search } = location;
 
-  const [studyStatsState, setStudyStatsState] = useState({
-    data: null,
-    loading: true,
-    error: null,
-  });
-  const [languageProfileState, setLanguageProfileState] = useState({
-    data: null,
-    loading: true,
-    error: null,
-  });
-  const [matesState, setMatesState] = useState({
-    items: [],
-    loading: true,
-    error: null,
-  });
-  const [achievementsState, setAchievementsState] = useState({
-    items: [],
-    stats: null,
-    loading: true,
-    error: null,
-  });
+  console.count('[Main] render');
 
+  const [state, setState] = useState(INITIAL_MAIN_STATE);
   const isMountedRef = useRef(true);
-  const hasFetchedRef = useRef(false);
 
   useEffect(() => () => {
     isMountedRef.current = false;
@@ -156,311 +187,229 @@ export default function Main() {
         search: nextSearch ? `?${nextSearch}` : "",
       }, { replace: true });
     }
-  }, [search, navigate, location.pathname]);
+  }, [search, navigate]);
 
-  const {
-    englishName,
-    name,
-    birthYear,
-    languageLevel,
-    targetLanguage,
-    loadProfileFromServer,
-    setEnglishName,
-    setBirthYear,
-    setProfileImage,
-    setResidence,
-    setLanguageLevel,
-    setTargetLanguage,
-  } = useProfileStore(
-    (state) => ({
-      englishName: state.englishName,
-      name: state.name,
-      birthYear: state.birthYear,
-      languageLevel: state.languageLevel,
-      targetLanguage: state.targetLanguage,
-      loadProfileFromServer: state.loadProfileFromServer,
-      setEnglishName: state.setEnglishName,
-      setBirthYear: state.setBirthYear,
-      setProfileImage: state.setProfileImage,
-      setResidence: state.setResidence,
-      setLanguageLevel: state.setLanguageLevel,
-      setTargetLanguage: state.setTargetLanguage,
-    }),
-    shallow
-  );
-
-  const fetchProfile = useCallback(async () => {
+  const loadProfileSection = useCallback(async () => {
     try {
-      const profileData = await loadProfileFromServer();
+      const [userInfoResponse, userProfileResponse] = await Promise.all([
+        getUserInfo(),
+        getUserProfile(),
+      ]);
 
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      if (profileData) {
-        return;
-      }
-
-      const userInfoResponse = await getUserInfo();
       const userInfo = userInfoResponse?.data ?? userInfoResponse ?? {};
+      const userProfile = userProfileResponse?.data ?? userProfileResponse ?? {};
 
-      const profileResponse = await getUserProfile();
-      const profilePayload = profileResponse?.data ?? profileResponse ?? {};
+      const snapshot = buildProfileSnapshot(userInfo, userProfile);
 
-      setEnglishName(userInfo?.englishName || userInfo?.name || "사용자");
-      setBirthYear(userInfo?.birthYear ?? null);
-      setProfileImage(
-        profilePayload?.profileImageUrl
-        || profilePayload?.profileImage
-        || "/assets/basicProfilePic.png"
-      );
-      setResidence(
-        profilePayload?.location?.city
-        || profilePayload?.residence
-        || "위치 정보 없음"
-      );
-      setLanguageLevel(profilePayload?.languageLevel ?? null);
-      setTargetLanguage(profilePayload?.targetLanguage ?? null);
+      useProfileStore.setState((current) => ({
+        ...current,
+        englishName: snapshot.englishName ?? current.englishName,
+        name: userInfo?.koreanName ?? snapshot.englishName ?? current.name,
+        residence: snapshot.residence ?? current.residence,
+        profileImage: snapshot.profileImage ?? current.profileImage,
+        intro: userProfile?.selfBio ?? current.intro,
+        birthYear: snapshot.birthYear,
+        languageLevel: snapshot.languageLevel,
+        targetLanguage: snapshot.targetLanguage,
+      }));
+
+      return { snapshot, error: null };
     } catch (error) {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      if (error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
-        setEnglishName("사용자");
-        setProfileImage("/assets/basicProfilePic.png");
-        setResidence("위치 정보 없음");
-        return;
-      }
-
-      if (error?.response?.status >= 500) {
-        setEnglishName("사용자");
-        setProfileImage("/assets/basicProfilePic.png");
-        setResidence("위치 정보 없음");
-      }
+      console.error("프로필 로드 실패:", error);
+      return { snapshot: null, error: "프로필 정보를 불러오지 못했습니다." };
     }
-  }, [
-    loadProfileFromServer,
-    setBirthYear,
-    setEnglishName,
-    setLanguageLevel,
-    setProfileImage,
-    setResidence,
-    setTargetLanguage,
-  ]);
+  }, []);
 
-  const fetchStudyStats = useCallback(async () => {
-    setStudyStatsState((prev) => ({ ...prev, loading: true, error: null }));
-
+  const loadStudyStatsSection = useCallback(async () => {
     try {
       const response = await getStudyStats("month");
-      if (!isMountedRef.current) {
-        return;
-      }
       const payload = response?.data ?? response ?? null;
-      setStudyStatsState({ data: payload, loading: false, error: null });
+      return { data: payload, error: null };
     } catch (error) {
-      if (!isMountedRef.current) {
-        return;
-      }
-      setStudyStatsState({
-        data: null,
-        loading: false,
-        error: "학습 통계를 불러오지 못했습니다.",
-      });
+      console.error("학습 통계 로드 실패:", error);
+      return { data: null, error: "학습 통계를 불러오지 못했습니다." };
     }
   }, []);
 
-  const fetchLanguageProfile = useCallback(async () => {
-    setLanguageProfileState((prev) => ({ ...prev, loading: true, error: null }));
-
+  const loadLanguageProfileSection = useCallback(async () => {
     try {
       const response = await getOnboardingData();
-      if (!isMountedRef.current) {
-        return;
-      }
       const payload = response?.data ?? response ?? null;
       const transformed = transformOnboardingDataToLanguageProfile(payload);
-      setLanguageProfileState({ data: transformed, loading: false, error: null });
+      return { data: transformed, error: null };
     } catch (error) {
-      if (!isMountedRef.current) {
-        return;
-      }
-      setLanguageProfileState({
-        data: null,
-        loading: false,
-        error: "언어 프로필을 불러오지 못했습니다.",
-      });
+      console.error("언어 프로필 로드 실패:", error);
+      return { data: null, error: "언어 프로필을 불러오지 못했습니다." };
     }
   }, []);
 
-  const fetchMatches = useCallback(async () => {
-    setMatesState((prev) => ({ ...prev, loading: true, error: null }));
-
+  const loadMatesSection = useCallback(async () => {
     try {
       const response = await getMatches(1, 4);
-      if (!isMountedRef.current) {
-        return;
-      }
       const payload = response?.data ?? response ?? {};
       const rawContent = Array.isArray(payload?.data)
         ? payload.data
         : payload?.content ?? [];
 
-      setMatesState({
-        items: transformMatches(rawContent),
-        loading: false,
-        error: null,
-      });
+      return { data: transformMatches(rawContent), error: null };
     } catch (error) {
-      if (!isMountedRef.current) {
-        return;
-      }
-      setMatesState({
-        items: [],
-        loading: false,
-        error: "매칭 데이터를 불러오지 못했습니다.",
-      });
+      console.error("매칭 데이터 로드 실패:", error);
+      return { data: [], error: "매칭 데이터를 불러오지 못했습니다." };
     }
   }, []);
 
-  const fetchAchievements = useCallback(async () => {
-    setAchievementsState((prev) => ({ ...prev, loading: true, error: null }));
-
-    const normalizeAchievements = (payload) => {
-      if (!payload) return [];
-      if (Array.isArray(payload?.data)) return payload.data;
-      if (Array.isArray(payload?.achievements)) return payload.achievements;
-      if (Array.isArray(payload)) return payload;
-      return [];
-    };
-
+  const loadAchievementsSection = useCallback(async () => {
     try {
-      const [achievementsPayload, statsPayload] = await Promise.all([
-        getMyAchievements().catch((error) => {
-          console.error("업적 목록 로드 실패", error);
-          throw error;
-        }),
-        getMyAchievementStats().catch((error) => {
-          console.warn("업적 통계 로드 실패", error);
-          return null;
-        }),
+      const [achievementsResponse, statsResponse] = await Promise.all([
+        getMyAchievements(),
+        getMyAchievementStats().catch(() => null),
       ]);
 
-      if (!isMountedRef.current) {
-        return;
-      }
-
+      const achievementsPayload = achievementsResponse?.data ?? achievementsResponse;
       const normalized = normalizeAchievements(achievementsPayload);
+      const statsPayload = statsResponse ? statsResponse?.data ?? statsResponse : null;
 
-      setAchievementsState({
-        items: normalized,
-        stats: statsPayload ?? null,
-        loading: false,
-        error: null,
-      });
+      return { data: normalized, stats: statsPayload, error: null };
     } catch (error) {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      setAchievementsState({
-        items: [],
-        stats: null,
-        loading: false,
-        error: "성취 배지를 불러오지 못했습니다.",
-      });
+      console.error("업적 로드 실패:", error);
+      return { data: [], stats: null, error: "성취 배지를 불러오지 못했습니다." };
     }
   }, []);
 
-  useEffect(() => {
-    if (hasFetchedRef.current) {
+  const initializeMainData = useCallback(async () => {
+    setState((prev) => ({ ...prev, loading: true }));
+
+    const [
+      profileResult,
+      studyStatsResult,
+      languageProfileResult,
+      matesResult,
+      achievementsResult,
+    ] = await Promise.all([
+      loadProfileSection(),
+      loadStudyStatsSection(),
+      loadLanguageProfileSection(),
+      loadMatesSection(),
+      loadAchievementsSection(),
+    ]);
+
+    if (!isMountedRef.current) {
       return;
     }
 
-    hasFetchedRef.current = true;
+    setState({
+      loading: false,
+      profile: profileResult.snapshot,
+      profileError: profileResult.error,
+      studyStats: studyStatsResult.data,
+      studyStatsError: studyStatsResult.error,
+      languageProfile: languageProfileResult.data,
+      languageProfileError: languageProfileResult.error,
+      mates: matesResult.data,
+      matesError: matesResult.error,
+      achievements: achievementsResult.data,
+      achievementsStats: achievementsResult.stats,
+      achievementsError: achievementsResult.error,
+      achievementsLoading: false,
+    });
+  }, [
+    loadProfileSection,
+    loadStudyStatsSection,
+    loadLanguageProfileSection,
+    loadMatesSection,
+    loadAchievementsSection,
+  ]);
 
-    fetchProfile();
-    fetchStudyStats();
-    fetchLanguageProfile();
-    fetchMatches();
-    fetchAchievements();
-  }, [fetchProfile, fetchStudyStats, fetchLanguageProfile, fetchMatches, fetchAchievements]);
+  useEffect(() => {
+    initializeMainData();
+  }, [initializeMainData]);
+
+  const handleRefreshAchievements = useCallback(async () => {
+    setState((prev) => ({ ...prev, achievementsLoading: true }));
+    const achievementsResult = await loadAchievementsSection();
+
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      achievements: achievementsResult.data,
+      achievementsStats: achievementsResult.stats,
+      achievementsError: achievementsResult.error,
+      achievementsLoading: false,
+    }));
+  }, [loadAchievementsSection]);
 
   const displayName = useMemo(() => (
-    toDisplayText(englishName || name, "사용자")
-  ), [englishName, name]);
+    toDisplayText(state.profile?.englishName, "사용자")
+  ), [state.profile]);
 
   const userAge = useMemo(() => {
-    const parsed = birthYear ? Number(birthYear) : null;
+    const parsed = state.profile?.birthYear ? Number(state.profile.birthYear) : null;
     if (!parsed || Number.isNaN(parsed)) {
       return null;
     }
     const currentYear = new Date().getFullYear();
     return Math.max(0, currentYear - parsed);
-  }, [birthYear]);
+  }, [state.profile?.birthYear]);
 
   const greetingLevel = useMemo(() => {
-    const directLevel = languageLevel
-      || languageProfileState.data?.learningLanguages?.[0]?.targetLevel
-      || languageProfileState.data?.learningLanguages?.[0]?.level
-      || targetLanguage
+    const directLevel = state.profile?.languageLevel
+      || state.languageProfile?.learningLanguages?.[0]?.targetLevel
+      || state.languageProfile?.learningLanguages?.[0]?.level
+      || state.profile?.targetLanguage
       || null;
 
     return toDisplayText(directLevel, "레벨 정보 없음");
-  }, [languageLevel, languageProfileState.data, targetLanguage]);
+  }, [state.profile, state.languageProfile]);
 
-  const matesEmptyMessage = matesState.error
+  const matesEmptyMessage = state.matesError
     || "최근 매칭된 메이트가 없습니다.";
 
   return (
-    <div className="page-bg min-h-screen flex flex-col">
+    <>
       <MainHeader />
-      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
-        <Sidebar active="home" />
-        <div className="flex-1 flex flex-col space-y-6 overflow-y-auto pr-1">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <GreetingCard
-              userName={displayName}
-              age={userAge}
-              level={greetingLevel}
-            />
+      <div className="px-4 lg:px-6 py-6 space-y-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <GreetingCard
+            userName={displayName}
+            age={userAge}
+            level={greetingLevel}
+          />
 
-            <StudyStats
-              data={studyStatsState.data}
-              loading={studyStatsState.loading}
-              errorMessage={studyStatsState.error}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <LanguageProfile
-              loading={languageProfileState.loading}
-              profileData={languageProfileState.data}
-              emptyMessage={
-                languageProfileState.error
-                  || "등록된 언어 정보가 없습니다."
-              }
-            />
-
-            <LanguageExchangeMates
-              mates={matesState.items}
-              loading={matesState.loading}
-              emptyMessage={matesEmptyMessage}
-            />
-          </div>
-
-          <div className="mt-6">
-            <MainAchievementsSection
-              achievements={achievementsState.items}
-              stats={achievementsState.stats}
-              loading={achievementsState.loading}
-              error={achievementsState.error}
-              onRefresh={fetchAchievements}
-            />
-          </div>
+          <StudyStats
+            data={state.studyStats}
+            loading={state.loading}
+            errorMessage={state.studyStatsError}
+          />
         </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <LanguageProfile
+            loading={state.loading}
+            profileData={state.languageProfile}
+            emptyMessage={
+              state.languageProfileError
+                || "등록된 언어 정보가 없습니다."
+            }
+          />
+
+          <LanguageExchangeMates
+            mates={state.mates}
+            loading={state.loading}
+            emptyMessage={matesEmptyMessage}
+          />
+        </div>
+
+        <MainAchievementsSection
+          achievements={state.achievements}
+          stats={state.achievementsStats}
+          loading={state.loading || state.achievementsLoading}
+          error={state.achievementsError}
+          onRefresh={handleRefreshAchievements}
+        />
       </div>
-    </div>
+    </>
   );
 }

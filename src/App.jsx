@@ -6,9 +6,9 @@ import ServerStatusIndicator from './components/ServerStatusIndicator';
 import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx';
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { getToken, isAutoLoginEnabled, clearTokens } from './utils/tokenStorage';
-import RouteRenderer from './components/RouteRenderer';
+import renderRoutes from './components/RouteRenderer';
 
 // AlertProvider를 포함한 AppContent 컴포넌트
 function AppContent() {
@@ -54,14 +54,15 @@ function AppContent() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
+  // Route elements를 메모이제이션하여 매 렌더마다 재생성 방지
+  const routeElements = useMemo(() => renderRoutes(), []);
+
   return (
     <ErrorBoundary>
       <ServerStatusIndicator />
       <ToastManager />
       {/* <NotificationToastManager /> */}
-      <Routes>
-        <RouteRenderer />
-      </Routes>
+      <Routes>{routeElements}</Routes>
     </ErrorBoundary>
   );
 }
