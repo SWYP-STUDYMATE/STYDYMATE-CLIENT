@@ -61,13 +61,19 @@ export default function SessionList() {
             setLoadingRooms(true);
             log.info('활성 룸 목록 조회 시작', null, 'SESSION_LIST');
 
-            const response = await api.get('/webrtc/rooms/active');
+            const response = await api.get('/webrtc/active');
             const rooms = response?.data?.data || response?.data || [];
             setActiveRooms(Array.isArray(rooms) ? rooms : []);
             log.info('활성 룸 목록 조회 완료', { count: Array.isArray(rooms) ? rooms.length : 0 }, 'SESSION_LIST');
         } catch (error) {
-            log.error('활성 룸 목록 조회 실패', error, 'SESSION_LIST');
-            setActiveRooms([]);
+            // 404는 활성 룸이 없는 정상 케이스로 처리
+            if (error.response?.status === 404) {
+                log.info('현재 활성 세션이 없습니다', null, 'SESSION_LIST');
+                setActiveRooms([]);
+            } else {
+                log.error('활성 룸 목록 조회 실패', error, 'SESSION_LIST');
+                setActiveRooms([]);
+            }
         } finally {
             setLoadingRooms(false);
         }

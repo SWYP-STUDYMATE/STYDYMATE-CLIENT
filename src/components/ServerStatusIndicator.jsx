@@ -18,12 +18,17 @@ const ServerStatusIndicator = () => {
 
   useEffect(() => {
     checkServerStatus();
-    
-    // 30초마다 서버 상태 확인
-    const interval = setInterval(checkServerStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
+
+    // 서버가 오프라인일 때만 30초마다 재시도
+    let interval;
+    if (serverStatus === 'offline') {
+      interval = setInterval(checkServerStatus, 30000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [serverStatus]);
 
   if (serverStatus === 'checking') {
     return null; // 첫 로딩 시에는 표시하지 않음
