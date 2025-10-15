@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ChevronLeft,
@@ -11,11 +11,14 @@ import {
     RepeatIcon,
     Bell,
     User,
-    Check
+    Check,
+    Loader2,
+    AlertCircle
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useSessionStore from '../../store/sessionStore';
 import useProfileStore from '../../store/profileStore';
+import { getMatches } from '../../api/matching';
 
 export default function SessionScheduleNew() {
     const navigate = useNavigate();
@@ -39,13 +42,42 @@ export default function SessionScheduleNew() {
         notes: ''
     });
 
-    // 더미 파트너 데이터 (실제로는 API에서 가져와야 함)
-    const availablePartners = [
-        { id: 'emma123', name: 'Emma Wilson', level: 'B2', languages: ['en', 'ko'], avatar: '/assets/basicProfilePic.png' },
-        { id: 'john456', name: 'John Smith', level: 'C1', languages: ['en', 'es'], avatar: '/assets/basicProfilePic.png' },
-        { id: 'sarah111', name: 'Sarah Johnson', level: 'B1', languages: ['en', 'ja'], avatar: '/assets/basicProfilePic.png' },
-        { id: 'mike222', name: 'Mike Chen', level: 'A2', languages: ['en', 'zh'], avatar: '/assets/basicProfilePic.png' }
-    ];
+    // 파트너 목록 상태
+    const [availablePartners, setAvailablePartners] = useState([]);
+    const [partnersLoading, setPartnersLoading] = useState(true);
+    const [partnersError, setPartnersError] = useState(null);
+
+    // 매칭된 파트너 목록 조회
+    useEffect(() => {
+        const fetchPartners = async () => {
+            try {
+                setPartnersLoading(true);
+                setPartnersError(null);
+                const response = await getMatches(1, 50);
+
+                // API 응답 구조에 따라 데이터 추출
+                const matchesData = response.data || [];
+
+                // 파트너 데이터 변환
+                const partners = matchesData.map(match => ({
+                    id: match.partnerId || match.userId,
+                    name: match.partnerName || match.userName || 'Unknown',
+                    level: match.languageLevel || 'B1',
+                    languages: match.languages || ['en', 'ko'],
+                    avatar: match.partnerProfileImage || match.profileImage || '/assets/basicProfilePic.png'
+                }));
+
+                setAvailablePartners(partners);
+            } catch (error) {
+                console.error('Failed to fetch partners:', error);
+                setPartnersError('파트너 목록을 불러오는데 실패했습니다.');
+            } finally {
+                setPartnersLoading(false);
+            }
+        };
+
+        fetchPartners();
+    }, []);
 
     const timeSlots = [
         '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -199,37 +231,79 @@ export default function SessionScheduleNew() {
                         {/* 파트너 선택 */}
                         <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
                             <h2 className="text-[18px] font-bold text-[var(--black-500)] mb-4">파트너 선택</h2>
-                            <div className="space-y-3">
-                                {availablePartners.map(partner => (
+
+                            {/* 로딩 상태 */}
+                            {partnersLoading && (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <Loader2 className="w-8 h-8 text-[var(--green-500)] animate-spin mb-3" />
+                                    <p className="text-[14px] text-[var(--black-300)]">파트너 목록을 불러오는 중...</p>
+                                </div>
+                            )}
+
+                            {/* 에러 상태 */}
+                            {!partnersLoading && partnersError && (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <AlertCircle className="w-12 h-12 text-[var(--red)] mb-3" />
+                                    <p className="text-[14px] text-[var(--black-500)] font-medium mb-2">파트너 목록 로드 실패</p>
+                                    <p className="text-[12px] text-[var(--black-300)] mb-4">{partnersError}</p>
                                     <button
-                                        key={partner.id}
-                                        onClick={() => handlePartnerSelect(partner)}
-                                        className={`w-full p-4 rounded-lg border-2 transition-all ${sessionData.partnerId === partner.id
-                                            ? 'border-[var(--green-500)] bg-[rgba(0,196,113,0.05)]'
-                                            : 'border-[var(--black-50)] hover:border-[color-mix(in_srgb,var(--green-500),#fff 50%)]'
-                                            }`}
+                                        onClick={() => window.location.reload()}
+                                        className="px-4 py-2 bg-[var(--green-500)] text-white rounded-lg text-[14px] font-medium hover:bg-[var(--green-600)] transition-colors"
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-3">
-                                                <img
-                                                    src={partner.avatar}
-                                                    alt={partner.name}
-                                                    className="w-10 h-10 rounded-full object-cover"
-                                                />
-                                                <div className="text-left">
-                                                    <p className="text-[14px] font-medium text-[var(--black-500)]">{partner.name}</p>
-                                                    <p className="text-[12px] text-[var(--black-300)]">
-                                                        Level {partner.level} • {partner.languages.join(', ').toUpperCase()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {sessionData.partnerId === partner.id && (
-                                                <Check className="w-5 h-5 text-[var(--green-500)]" />
-                                            )}
-                                        </div>
+                                        다시 시도
                                     </button>
-                                ))}
-                            </div>
+                                </div>
+                            )}
+
+                            {/* 빈 상태 */}
+                            {!partnersLoading && !partnersError && availablePartners.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <Users className="w-12 h-12 text-[var(--black-200)] mb-3" />
+                                    <p className="text-[14px] text-[var(--black-500)] font-medium mb-2">매칭된 파트너가 없습니다</p>
+                                    <p className="text-[12px] text-[var(--black-300)] mb-4">먼저 파트너를 매칭해주세요.</p>
+                                    <button
+                                        onClick={() => navigate('/mates')}
+                                        className="px-4 py-2 bg-[var(--green-500)] text-white rounded-lg text-[14px] font-medium hover:bg-[var(--green-600)] transition-colors"
+                                    >
+                                        파트너 찾기
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* 파트너 목록 */}
+                            {!partnersLoading && !partnersError && availablePartners.length > 0 && (
+                                <div className="space-y-3">
+                                    {availablePartners.map(partner => (
+                                        <button
+                                            key={partner.id}
+                                            onClick={() => handlePartnerSelect(partner)}
+                                            className={`w-full p-4 rounded-lg border-2 transition-all ${sessionData.partnerId === partner.id
+                                                ? 'border-[var(--green-500)] bg-[rgba(0,196,113,0.05)]'
+                                                : 'border-[var(--black-50)] hover:border-[color-mix(in_srgb,var(--green-500),#fff 50%)]'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <img
+                                                        src={partner.avatar}
+                                                        alt={partner.name}
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                    <div className="text-left">
+                                                        <p className="text-[14px] font-medium text-[var(--black-500)]">{partner.name}</p>
+                                                        <p className="text-[12px] text-[var(--black-300)]">
+                                                            Level {partner.level} • {partner.languages.join(', ').toUpperCase()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {sessionData.partnerId === partner.id && (
+                                                    <Check className="w-5 h-5 text-[var(--green-500)]" />
+                                                )}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* 언어 선택 */}

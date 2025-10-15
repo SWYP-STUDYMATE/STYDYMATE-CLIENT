@@ -15,7 +15,7 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
   
-  const { setProfileImage } = useProfileStore();
+  const { setProfileImageSync } = useProfileStore();
 
   // 파일 선택 처리
   const handleFileSelect = (file) => {
@@ -111,8 +111,8 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
       // 서버에서 반환된 이미지 URL 사용 (ProfileImageUrlResponse.url)
       const imageUrl = result.url || result.data?.url;
       if (imageUrl) {
-        setProfileImage(imageUrl);
-        console.log('✅ 프로필 이미지 URL 저장 성공:', imageUrl);
+        await setProfileImageSync(imageUrl);
+        console.log('✅ 프로필 이미지 URL 저장 및 서버 동기화 성공:', imageUrl);
       } else {
         console.warn('⚠️ 서버 응답에 이미지 URL이 없습니다:', result);
       }

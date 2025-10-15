@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { fetchChatRooms, initGlobalStompClient } from "../../api/chat";
-import Sidebar from "./Sidebar";
 import ChatRoomList from "./ChatRoomList";
 import EmptyPlaceholder from "./EmptyPlaceholder";
 import ChatWindow from "./ChatWindow";
-import MainHeader from "../MainHeader";
 
 export default function ChatContainer() {
   const [rooms, setRooms] = useState([]);
@@ -86,33 +84,32 @@ export default function ChatContainer() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-100">
-      <MainHeader />
-      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
-        <Sidebar active="chat" />
-        <div className="w-80 flex-shrink-0">
-          <ChatRoomList
-            rooms={rooms}
-            onSelectRoom={setCurrentRoom}
-            onNewRoomCreated={handleNewRoomCreated}
-            onJoinRoom={() => {
-              reloadChatRooms();
-            }}
+    <div className="flex h-full bg-[#FAFAFA]">
+      {/* 채팅방 목록 */}
+      <div className="w-80 flex-shrink-0 bg-white border-r border-[#E7E7E7]">
+        <ChatRoomList
+          rooms={rooms}
+          onSelectRoom={setCurrentRoom}
+          onNewRoomCreated={handleNewRoomCreated}
+          onJoinRoom={() => {
+            reloadChatRooms();
+          }}
+        />
+      </div>
+
+      {/* 채팅 창 */}
+      <div className="flex-1">
+        {currentRoom ? (
+          <ChatWindow
+            room={currentRoom}
+            currentUserId={currentUserId}
+            onBack={() => setCurrentRoom(null)}
+            onNewMessage={handleNewMessage}
+            onLeaveRoom={handleLeaveRoom}
           />
-        </div>
-        <div className="flex-1">
-          {currentRoom ? (
-            <ChatWindow
-              room={currentRoom}
-              currentUserId={currentUserId}
-              onBack={() => setCurrentRoom(null)}
-              onNewMessage={handleNewMessage}
-              onLeaveRoom={handleLeaveRoom}
-            />
-          ) : (
-            <EmptyPlaceholder />
-          )}
-        </div>
+        ) : (
+          <EmptyPlaceholder />
+        )}
       </div>
     </div>
   );

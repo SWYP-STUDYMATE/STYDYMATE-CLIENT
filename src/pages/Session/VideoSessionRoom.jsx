@@ -103,11 +103,48 @@ export default function VideoSessionRoom() {
       };
 
       // Initialize media and connect to room
-      await webrtcManager.initializeMedia(constraints);
-      
+      try {
+        await webrtcManager.initializeMedia(constraints);
+        log.info('미디어 초기화 성공', null, 'VIDEO_SESSION');
+      } catch (mediaError) {
+        log.error('미디어 접근 실패', mediaError, 'VIDEO_SESSION');
+
+        // 사용자 친화적인 에러 메시지
+        let errorMessage = '카메라/마이크 접근에 실패했습니다.';
+
+        if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
+          errorMessage = '카메라와 마이크 권한이 필요합니다. 브라우저 설정에서 권한을 허용해주세요.';
+        } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
+          errorMessage = '카메라 또는 마이크를 찾을 수 없습니다. 장치가 연결되어 있는지 확인해주세요.';
+        } else if (mediaError.name === 'NotReadableError' || mediaError.name === 'TrackStartError') {
+          errorMessage = '다른 애플리케이션에서 카메라/마이크를 사용 중입니다. 다른 앱을 종료하고 다시 시도해주세요.';
+        } else if (mediaError.name === 'OverconstrainedError' || mediaError.name === 'ConstraintNotSatisfiedError') {
+          errorMessage = '요청한 카메라 해상도를 지원하지 않습니다. 다른 설정으로 시도합니다.';
+
+          // Fallback to lower resolution
+          try {
+            const fallbackConstraints = {
+              video: { width: 640, height: 480 },
+              audio: true
+            };
+            await webrtcManager.initializeMedia(fallbackConstraints);
+            log.info('대체 해상도로 미디어 초기화 성공', null, 'VIDEO_SESSION');
+          } catch (fallbackError) {
+            throw new Error('카메라 초기화에 실패했습니다.');
+          }
+        } else if (mediaError.name === 'TypeError') {
+          errorMessage = 'HTTPS 연결이 필요합니다. 보안 연결(https://)을 사용해주세요.';
+        } else if (mediaError.name === 'SecurityError') {
+          errorMessage = '보안 정책으로 인해 미디어 접근이 차단되었습니다.';
+        }
+
+        alert(errorMessage);
+        throw mediaError;
+      }
+
       const userId = localStorage.getItem('userId') || 'guest-' + Date.now();
       const userName = localStorage.getItem('userName') || 'Anonymous';
-      
+
       await webrtcManager.connect(roomId, { userId, userName }, {
         autoReconnect: true,
         connectionTimeout: 15000

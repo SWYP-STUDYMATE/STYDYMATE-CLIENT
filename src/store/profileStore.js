@@ -132,7 +132,9 @@ const useProfileStore = create(
       setProfileImageSync: async (profileImage) => {
         set({ profileImage });
         try {
-          await useProfileStore.getState().saveProfileToServer({ profileImage });
+          await useProfileStore.getState().saveProfileToServer({
+            profileImageUrl: profileImage
+          });
         } catch (error) {
           log.warn('프로필 이미지 서버 저장 실패', error, 'PROFILE_STORE');
         }
