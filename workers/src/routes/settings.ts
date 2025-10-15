@@ -219,7 +219,57 @@ settingsRoutes.post('/export', async (c) => {
 });
 
 settingsRoutes.get('/login-history', async (c) => {
-  return successResponse(c, []);
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+
+  // 최근 90일간의 로그인 히스토리 조회
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const history = await query<{
+    id: number;
+    login_time: string;
+    ip_address: string | null;
+    device: string | null;
+    browser: string | null;
+    location: string | null;
+    country_code: string | null;
+    suspicious: number;
+    suspicious_reason: string | null;
+    success: number;
+  }>(
+    c.env.DB,
+    `SELECT
+      id,
+      login_time,
+      ip_address,
+      device,
+      browser,
+      location,
+      country_code,
+      suspicious,
+      suspicious_reason,
+      success
+    FROM login_history
+    WHERE user_id = ? AND login_time >= ? AND success = 1
+    ORDER BY login_time DESC
+    LIMIT 100`,
+    [userId, ninetyDaysAgo.toISOString()]
+  );
+
+  // 데이터 변환
+  const formattedHistory = history.map(record => ({
+    loginTime: record.login_time,
+    ipAddress: record.ip_address || 'Unknown',
+    device: record.device || 'Unknown Device',
+    browser: record.browser || null,
+    location: record.location || 'Unknown Location',
+    countryCode: record.country_code || null,
+    suspicious: Boolean(record.suspicious),
+    suspiciousReason: record.suspicious_reason || null
+  }));
+
+  return successResponse(c, formattedHistory);
 });
 
 settingsRoutes.get('/two-factor', async (c) => {

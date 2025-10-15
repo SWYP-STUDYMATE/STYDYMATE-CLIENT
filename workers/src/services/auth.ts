@@ -3,6 +3,7 @@ import type { Env } from '../index';
 import type { AuthUser } from '../types';
 import { assertEnvVar, generateState, hashSha256 } from '../utils/security';
 import { queryFirst, execute, transaction } from '../utils/db';
+import { parseUserAgent, getLocationFromIP, detectSuspiciousActivity } from '../utils/userAgent';
 
 interface ProviderConfig {
   clientId: string;
@@ -242,6 +243,14 @@ async function issueTokens(options: IssueTokenOptions): Promise<{ accessToken: s
   const issuedAtIso = new Date(nowSeconds * 1000).toISOString();
   const refreshExpiresAtIso = new Date((nowSeconds + refreshTokenTtl) * 1000).toISOString();
 
+  // User-Agent 파싱 및 위치 정보 추출
+  const parsedUA = parseUserAgent(userAgent);
+  const locationInfo = getLocationFromIP(ipAddress);
+  const suspiciousCheck = detectSuspiciousActivity({
+    ipAddress,
+    userAgent
+  });
+
   await transaction(env.DB, [
     ...(replaceTokenId
       ? [
@@ -262,6 +271,37 @@ async function issueTokens(options: IssueTokenOptions): Promise<{ accessToken: s
               ip_address
             ) VALUES (?, ?, ?, ?, ?, ?, ?)` ,
       params: [refreshId, userId, refreshHash, issuedAtIso, refreshExpiresAtIso, userAgent ?? null, ipAddress ?? null]
+    },
+    // 로그인 히스토리 기록
+    {
+      sql: `INSERT INTO login_history (
+              user_id,
+              login_time,
+              ip_address,
+              user_agent,
+              device,
+              browser,
+              location,
+              country_code,
+              suspicious,
+              suspicious_reason,
+              session_id,
+              success
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      params: [
+        userId,
+        issuedAtIso,
+        ipAddress ?? null,
+        userAgent ?? null,
+        parsedUA.device,
+        parsedUA.browser,
+        locationInfo.location,
+        locationInfo.countryCode,
+        suspiciousCheck.suspicious ? 1 : 0,
+        suspiciousCheck.reason ?? null,
+        refreshId,
+        1 // success = 1
+      ]
     }
   ]);
 

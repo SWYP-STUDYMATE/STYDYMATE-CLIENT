@@ -17,7 +17,8 @@ const LoginHistory = () => {
     try {
       setLoading(true);
       const data = await getLoginHistory();
-      setLoginHistory(data);
+      // 배열인지 확인 후 설정
+      setLoginHistory(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load login history:', error);
       setLoginHistory([]);
@@ -87,16 +88,18 @@ const LoginHistory = () => {
     return null;
   };
 
-  const filteredHistory = loginHistory.filter(record => {
-    if (filter === 'suspicious') return record.suspicious;
-    if (filter === 'recent') {
-      const now = new Date();
-      const loginTime = new Date(record.loginTime);
-      const diffInHours = (now - loginTime) / (1000 * 60 * 60);
-      return diffInHours <= 24;
-    }
-    return true;
-  });
+  const filteredHistory = Array.isArray(loginHistory)
+    ? loginHistory.filter(record => {
+        if (filter === 'suspicious') return record.suspicious;
+        if (filter === 'recent') {
+          const now = new Date();
+          const loginTime = new Date(record.loginTime);
+          const diffInHours = (now - loginTime) / (1000 * 60 * 60);
+          return diffInHours <= 24;
+        }
+        return true;
+      })
+    : [];
 
   if (loading) {
     return (

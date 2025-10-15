@@ -157,7 +157,10 @@ export const exportUserData = async () => {
 export const getLoginHistory = async () => {
   try {
     const response = await api.get('/settings/login-history');
-    return response.data;
+    // Workers 백엔드의 표준 응답 형식: { success: true, data: [...] }
+    // data가 배열인지 확인하고, 아니면 빈 배열 반환
+    const result = response.data?.data || response.data;
+    return Array.isArray(result) ? result : [];
   } catch (error) {
     console.error('Get login history error:', error);
     throw error;

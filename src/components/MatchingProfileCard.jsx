@@ -14,13 +14,29 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { showError, showSuccess, ToastContainer } = useToast();
 
+    // 백엔드 필드명 매핑 (Workers API → 프론트엔드)
+    const mappedUser = {
+        ...user,
+        name: user.englishName || user.name,
+        bio: user.selfBio || user.bio || user.intro,
+        profileImage: user.profileImageUrl || user.profileImage,
+        nationality: user.location || user.country || user.nationality,
+        learningLanguage: user.targetLanguages?.[0]?.languageName || user.learningLanguage,
+        level: user.targetLanguages?.[0]?.currentLevel || user.level || user.proficiencyLevel,
+        interests: user.interests?.length > 0
+            ? user.interests
+            : (user.partnerPersonalities?.length > 0 ? user.partnerPersonalities : []),
+        matchScore: user.compatibilityScore || user.matchScore,
+        isOnline: user.onlineStatus === 'ONLINE' || user.isOnline,
+    };
+
     const handleClick = () => {
         if (onClick) {
-            onClick(user);
+            onClick(mappedUser);
         } else if (useModal) {
             setIsModalOpen(true);
         } else {
-            navigate(`/matching/profile/${user.id}`);
+            navigate(`/matching/profile/${mappedUser.id || mappedUser.userId}`);
         }
     };
 
@@ -32,9 +48,10 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
         }
 
         try {
-            await sendMatchRequest(user.id, `안녕하세요! ${user.name}님과 언어 교환을 하고 싶습니다.`);
+            const userId = mappedUser.id || mappedUser.userId;
+            await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
             // 성공 메시지 표시
-            showSuccess(`${user.name}님에게 매칭 요청을 보냈습니다!`);
+            showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
         } catch (error) {
             console.error('매칭 요청 실패:', error);
             showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
@@ -46,13 +63,13 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
         if (useModal) {
             setIsModalOpen(true);
         } else {
-            navigate(`/matching/profile/${user.id}`);
+            navigate(`/matching/profile/${mappedUser.id || mappedUser.userId}`);
         }
     };
 
     // 온라인 상태에 따른 색상 (디자인 시스템 준수)
     const getStatusColor = () => {
-        if (user.isOnline) return 'bg-[#00C471]';  // green-500 from design system
+        if (mappedUser.isOnline) return 'bg-[#00C471]';  // green-500 from design system
         return 'bg-[#929292]';  // black-200 from design system
     };
 
@@ -93,8 +110,8 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                 {/* 프로필 이미지 */}
                 <div className="relative">
                     <OptimizedImage
-                        src={user.profileImage || DEFAULT_PROFILE_IMAGE}
-                        alt={user.name}
+                        src={mappedUser.profileImage || DEFAULT_PROFILE_IMAGE}
+                        alt={mappedUser.name}
                         className="w-16 h-16 rounded-full object-cover"
                         width={64}
                         height={64}
@@ -102,7 +119,7 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                     />
                     {/* 온라인 상태 표시 */}
                     <div
-                        className={`absolute bottom-0 right-0 w-4 h-4 ${getStatusColor()} 
+                        className={`absolute bottom-0 right-0 w-4 h-4 ${getStatusColor()}
                         rounded-full border-2 border-white`}
                     />
                 </div>
@@ -110,9 +127,9 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                 {/* 기본 정보 */}
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-[16px] font-bold text-[#111111]">{user.name}</h3>
-                        {user.age && (
-                            <span className="text-[14px] text-[#606060]">{user.age}세</span>
+                        <h3 className="text-[16px] font-bold text-[#111111]">{mappedUser.name}</h3>
+                        {mappedUser.age && (
+                            <span className="text-[14px] text-[#606060]">{mappedUser.age}세</span>
                         )}
                     </div>
 
@@ -120,24 +137,26 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                     <div className="flex items-center gap-2 mb-2">
                         <Globe className="w-4 h-4 text-[#606060]" />
                         <span className="text-[14px] text-[#606060]">
-                            {user.nativeLanguage} → {user.learningLanguage}
+                            {mappedUser.nativeLanguage || '모국어'} → {mappedUser.learningLanguage || '학습 언어'}
                         </span>
                     </div>
 
                     {/* 레벨 표시 */}
-                    <div
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-[12px] font-medium 
-                        ${getLevelBgColor(user.level)} ${getLevelTextColor(user.level)}`}
-                    >
-                        {user.level}
-                    </div>
+                    {mappedUser.level && (
+                        <div
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-[12px] font-medium
+                            ${getLevelBgColor(mappedUser.level)} ${getLevelTextColor(mappedUser.level)}`}
+                        >
+                            {mappedUser.level}
+                        </div>
+                    )}
                 </div>
 
                 {/* 매칭 점수 */}
-                {user.matchScore && (
+                {mappedUser.matchScore && (
                     <div className="text-center">
                         <div className="text-[24px] font-bold text-[#006C3E]">
-                            {user.matchScore}%
+                            {mappedUser.matchScore}%
                         </div>
                         <div className="text-[12px] text-[#606060]">매칭</div>
                     </div>
@@ -145,16 +164,16 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
             </div>
 
             {/* 소개 */}
-            {user.bio && (
+            {mappedUser.bio && (
                 <p className="text-[14px] text-[#606060] mb-3 line-clamp-2">
-                    {user.bio}
+                    {mappedUser.bio}
                 </p>
             )}
 
             {/* 관심사 태그 */}
-            {user.interests && user.interests.length > 0 && (
+            {mappedUser.interests && mappedUser.interests.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
-                    {user.interests.slice(0, 3).map((interest, index) => (
+                    {mappedUser.interests.slice(0, 3).map((interest, index) => (
                         <span
                             key={index}
                             className="px-3 py-1 bg-[#E7E7E7] text-[#606060] rounded-full text-[12px]"
@@ -162,9 +181,9 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                             #{interest}
                         </span>
                     ))}
-                    {user.interests.length > 3 && (
+                    {mappedUser.interests.length > 3 && (
                         <span className="px-3 py-1 text-[#606060] text-[12px]">
-                            +{user.interests.length - 3}
+                            +{mappedUser.interests.length - 3}
                         </span>
                     )}
                 </div>
@@ -175,36 +194,36 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                 {/* 활동 정보 */}
                 <div className="flex items-center gap-4">
                     {/* 마지막 활동 시간 */}
-                    {user.lastActive && (
+                    {mappedUser.lastActive && (
                         <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 text-[#929292]" />
-                            <span className="text-[12px] text-[#929292]">{user.lastActive}</span>
+                            <span className="text-[12px] text-[#929292]">{mappedUser.lastActive}</span>
                         </div>
                     )}
 
                     {/* 완료된 세션 수 */}
-                    {user.completedSessions !== undefined && (
+                    {mappedUser.completedSessions !== undefined && (
                         <div className="flex items-center gap-1">
                             <MessageCircle className="w-3 h-3 text-[#929292]" />
                             <span className="text-[12px] text-[#929292]">
-                                {user.completedSessions}회
+                                {mappedUser.completedSessions}회
                             </span>
                         </div>
                     )}
 
                     {/* 평점 */}
-                    {user.rating && (
+                    {mappedUser.rating && (
                         <div className="flex items-center gap-1">
                             <Star className="w-3 h-3 text-[#FFD700] fill-current" />
-                            <span className="text-[12px] text-[#929292]">{user.rating}</span>
+                            <span className="text-[12px] text-[#929292]">{mappedUser.rating}</span>
                         </div>
                     )}
                 </div>
 
                 {/* 응답률 */}
-                {user.responseRate && (
+                {mappedUser.responseRate && (
                     <div className="text-[12px] text-[#929292]">
-                        응답률 {user.responseRate}%
+                        응답률 {mappedUser.responseRate}%
                     </div>
                 )}
             </div>
@@ -215,17 +234,19 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                     <CommonButton
                         onClick={handleViewProfile}
                         variant="secondary"
-                        className="flex-1 text-[14px] font-medium py-2"
+                        size="small"
+                        className="flex-1"
+                        icon={<Globe />}
                     >
-                        <Globe className="w-4 h-4 mr-1" />
                         프로필 보기
                     </CommonButton>
                     <CommonButton
                         onClick={handleSendRequest}
-                        variant="primary"
-                        className="flex-1 text-[14px] font-medium py-2"
+                        variant="success"
+                        size="small"
+                        className="flex-1"
+                        icon={<UserPlus />}
                     >
-                        <UserPlus className="w-4 h-4 mr-1" />
                         매칭 요청
                     </CommonButton>
                 </div>

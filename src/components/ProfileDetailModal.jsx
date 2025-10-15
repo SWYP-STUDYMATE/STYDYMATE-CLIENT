@@ -28,6 +28,26 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
 
     if (!isOpen || !user) return null;
 
+    // 백엔드 필드명 매핑 (Workers API → 프론트엔드 표시)
+    const mappedUser = {
+        ...user,
+        name: user.englishName || user.name,
+        bio: user.selfBio || user.bio || user.intro,
+        profileImage: user.profileImageUrl || user.profileImage,
+        nationality: user.location || user.country || user.nationality,
+        // targetLanguages 배열을 단일 learningLanguage로 변환 (첫 번째 언어)
+        learningLanguage: user.targetLanguages?.[0]?.languageName || user.learningLanguage,
+        level: user.targetLanguages?.[0]?.currentLevel || user.level || user.proficiencyLevel,
+        // 페르소나 정보를 interests로 표시 (기존 interests가 없을 경우)
+        interests: user.interests?.length > 0
+            ? user.interests
+            : (user.partnerPersonalities?.length > 0 ? user.partnerPersonalities : []),
+        // 매칭 점수
+        matchScore: user.compatibilityScore || user.matchScore,
+        // 온라인 상태
+        isOnline: user.onlineStatus === 'ONLINE' || user.isOnline,
+    };
+
     const handleSendRequest = async () => {
         if (!message.trim()) {
             showError('메시지를 입력해주세요.');
@@ -56,16 +76,19 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
 
     // 온라인 상태에 따른 색상
     const getStatusColor = () => {
-        if (user.isOnline) return 'bg-[#00C471]';
+        if (mappedUser.isOnline) return 'bg-[#00C471]';
         return 'bg-[#929292]';
     };
 
     return (
-        <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm overlay-soft"
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={handleBackdropClick}
         >
-            <div className="bg-white rounded-[20px] w-full max-w-md max-h-[90vh] overflow-hidden">
+            <div
+                className="bg-white rounded-[20px] w-full max-w-md max-h-[90vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-[#E7E7E7]">
                     <h2 className="text-[18px] font-bold text-[#111111]">파트너 프로필</h2>
@@ -84,39 +107,39 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                         <div className="flex items-start space-x-4 mb-4">
                             <div className="relative">
                                 <OptimizedImage
-                                    src={user.profileImage || DEFAULT_PROFILE_IMAGE}
-                                    alt={user.name}
+                                    src={mappedUser.profileImage || DEFAULT_PROFILE_IMAGE}
+                                    alt={mappedUser.name}
                                     className="w-20 h-20 rounded-full object-cover"
                                     width={80}
                                     height={80}
                                 />
                                 <div
-                                    className={`absolute bottom-0 right-0 w-5 h-5 ${getStatusColor()} 
+                                    className={`absolute bottom-0 right-0 w-5 h-5 ${getStatusColor()}
                                     border-2 border-white rounded-full`}
                                 />
                             </div>
 
                             <div className="flex-1">
                                 <div className="flex items-center space-x-2 mb-1">
-                                    <h3 className="text-[18px] font-bold text-[#111111]">{user.name}</h3>
-                                    {user.matchScore && (
-                                        <span className="px-2 py-1 bg-[#00C471] text-white text-[12px] 
+                                    <h3 className="text-[18px] font-bold text-[#111111]">{mappedUser.name}</h3>
+                                    {mappedUser.matchScore && (
+                                        <span className="px-2 py-1 bg-[#00C471] text-white text-[12px]
                                         font-medium rounded-full">
-                                            매칭 {user.matchScore}%
+                                            매칭 {mappedUser.matchScore}%
                                         </span>
                                     )}
                                 </div>
                                 <p className="text-[14px] text-[#606060] mb-2">
-                                    {user.age}세 • {user.nationality || user.country}
+                                    {mappedUser.age ? `${mappedUser.age}세` : '나이 미공개'} • {mappedUser.nationality || '국가 미공개'}
                                 </p>
                                 <div className="flex items-center space-x-4 text-[14px] text-[#929292]">
                                     <span className="flex items-center space-x-1">
                                         <Globe className="w-4 h-4" />
-                                        <span>{user.nativeLanguage} → {user.learningLanguage || user.targetLanguage}</span>
+                                        <span>{mappedUser.nativeLanguage || '모국어'} → {mappedUser.learningLanguage || '학습 언어'}</span>
                                     </span>
                                     <span className="flex items-center space-x-1">
                                         <Target className="w-4 h-4" />
-                                        <span>{user.level || user.proficiencyLevel}</span>
+                                        <span>{mappedUser.level || '레벨 미공개'}</span>
                                     </span>
                                 </div>
                             </div>
@@ -126,19 +149,19 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                         <div className="grid grid-cols-3 gap-4">
                             <div className="text-center">
                                 <p className="text-[18px] font-bold text-[#111111]">
-                                    {user.completedSessions || 0}
+                                    {mappedUser.completedSessions || 0}
                                 </p>
                                 <p className="text-[12px] text-[#929292]">완료 세션</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-[18px] font-bold text-[#111111]">
-                                    {user.rating || '5.0'}
+                                    {mappedUser.rating || '5.0'}
                                 </p>
                                 <p className="text-[12px] text-[#929292]">평점</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-[18px] font-bold text-[#111111]">
-                                    {user.responseRate || '100'}%
+                                    {mappedUser.responseRate || '100'}%
                                 </p>
                                 <p className="text-[12px] text-[#929292]">응답률</p>
                             </div>
@@ -177,19 +200,21 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                                 <div>
                                     <h4 className="text-[16px] font-bold text-[#111111] mb-3">자기소개</h4>
                                     <p className="text-[14px] text-[#606060] leading-relaxed">
-                                        {user.bio || user.intro || '아직 자기소개를 작성하지 않았습니다.'}
+                                        {mappedUser.bio || '아직 자기소개를 작성하지 않았습니다.'}
                                     </p>
                                 </div>
 
-                                {/* Interests */}
-                                {user.interests && user.interests.length > 0 && (
+                                {/* Interests & Personalities */}
+                                {mappedUser.interests && mappedUser.interests.length > 0 && (
                                     <div>
-                                        <h4 className="text-[16px] font-bold text-[#111111] mb-3">관심사</h4>
+                                        <h4 className="text-[16px] font-bold text-[#111111] mb-3">
+                                            {user.partnerPersonalities?.length > 0 && !user.interests?.length ? '성격 특성' : '관심사'}
+                                        </h4>
                                         <div className="flex flex-wrap gap-2">
-                                            {user.interests.map((interest, index) => (
+                                            {mappedUser.interests.map((interest, index) => (
                                                 <span
                                                     key={index}
-                                                    className="px-3 py-1.5 bg-[#E7E7E7] text-[#606060] 
+                                                    className="px-3 py-1.5 bg-[#E7E7E7] text-[#606060]
                                                     text-[14px] rounded-full"
                                                 >
                                                     #{interest}
@@ -199,12 +224,40 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                                     </div>
                                 )}
 
+                                {/* Target Languages (여러 학습 언어 표시) */}
+                                {user.targetLanguages && user.targetLanguages.length > 0 && (
+                                    <div>
+                                        <h4 className="text-[16px] font-bold text-[#111111] mb-3">학습 중인 언어</h4>
+                                        <div className="space-y-2">
+                                            {user.targetLanguages.map((lang, index) => (
+                                                <div key={index} className="flex items-center justify-between p-3 bg-[#E6F9F1] rounded-lg">
+                                                    <span className="text-[14px] font-medium text-[#111111]">
+                                                        {lang.languageName}
+                                                    </span>
+                                                    <div className="flex gap-2">
+                                                        {lang.currentLevel && (
+                                                            <span className="px-2 py-1 bg-[#00C471] text-white text-[12px] rounded-full">
+                                                                현재: {lang.currentLevel}
+                                                            </span>
+                                                        )}
+                                                        {lang.targetLevel && (
+                                                            <span className="px-2 py-1 bg-[#929292] text-white text-[12px] rounded-full">
+                                                                목표: {lang.targetLevel}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Learning Goals */}
-                                {user.learningGoals && user.learningGoals.length > 0 && (
+                                {mappedUser.learningGoals && mappedUser.learningGoals.length > 0 && (
                                     <div>
                                         <h4 className="text-[16px] font-bold text-[#111111] mb-3">학습 목표</h4>
                                         <ul className="space-y-2">
-                                            {user.learningGoals.map((goal, index) => (
+                                            {mappedUser.learningGoals.map((goal, index) => (
                                                 <li key={index} className="flex items-start space-x-2">
                                                     <CheckCircle className="w-5 h-5 text-[#00C471] flex-shrink-0 mt-0.5" />
                                                     <span className="text-[14px] text-[#606060]">{goal}</span>
@@ -215,11 +268,11 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                                 )}
 
                                 {/* Availability */}
-                                {user.availability && user.availability.length > 0 && (
+                                {mappedUser.availability && mappedUser.availability.length > 0 && (
                                     <div>
                                         <h4 className="text-[16px] font-bold text-[#111111] mb-3">가능한 시간</h4>
                                         <div className="space-y-2">
-                                            {user.availability.map((slot, index) => (
+                                            {mappedUser.availability.map((slot, index) => (
                                                 <div key={index} className="flex items-center justify-between">
                                                     <span className="text-[14px] font-medium text-[#111111]">
                                                         {slot.day}
@@ -228,7 +281,7 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                                                         {slot.times.map((time, timeIndex) => (
                                                             <span
                                                                 key={timeIndex}
-                                                                className="px-2 py-1 bg-[#E7E7E7] text-[#606060] 
+                                                                className="px-2 py-1 bg-[#E7E7E7] text-[#606060]
                                                                 text-[12px] rounded-lg"
                                                             >
                                                                 {time}
@@ -247,13 +300,13 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                                 <div>
                                     <h4 className="text-[16px] font-bold text-[#111111] mb-3">매칭 요청 메시지</h4>
                                     <p className="text-[14px] text-[#929292] mb-3">
-                                        {user.name}님에게 보낼 메시지를 작성해주세요.
+                                        {mappedUser.name}님에게 보낼 메시지를 작성해주세요.
                                     </p>
                                     <textarea
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
-                                        placeholder={`안녕하세요! ${user.name}님과 언어 교환을 하고 싶습니다. 저는...`}
-                                        className="w-full h-32 p-4 border border-[#E7E7E7] rounded-lg resize-none 
+                                        placeholder={`안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다. 저는...`}
+                                        className="w-full h-32 p-4 border border-[#E7E7E7] rounded-lg resize-none
                                         focus:border-[#00C471] focus:outline-none text-[14px]"
                                         maxLength={500}
                                     />
@@ -271,7 +324,7 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                 {/* Footer Actions */}
                 <div className="p-6 border-t border-[#E7E7E7]">
                     {activeTab === 'profile' ? (
-                        <div className="flex space-x-3">
+                        <div className="flex gap-3">
                             <CommonButton
                                 onClick={onClose}
                                 variant="secondary"
@@ -281,15 +334,15 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                             </CommonButton>
                             <CommonButton
                                 onClick={() => setActiveTab('request')}
-                                variant="primary"
+                                variant="success"
                                 className="flex-1"
+                                icon={<UserPlus />}
                             >
-                                <UserPlus className="w-4 h-4 mr-2" />
                                 매칭 요청
                             </CommonButton>
                         </div>
                     ) : (
-                        <div className="flex space-x-3">
+                        <div className="flex gap-3">
                             <CommonButton
                                 onClick={() => setActiveTab('profile')}
                                 variant="secondary"
@@ -299,21 +352,13 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                             </CommonButton>
                             <CommonButton
                                 onClick={handleSendRequest}
-                                variant="primary"
+                                variant="success"
                                 className="flex-1"
                                 disabled={isLoading || !message.trim()}
+                                loading={isLoading}
+                                icon={!isLoading ? <Heart /> : undefined}
                             >
-                                {isLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        전송 중...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Heart className="w-4 h-4 mr-2" />
-                                        요청 보내기
-                                    </>
-                                )}
+                                {isLoading ? '전송 중...' : '요청 보내기'}
                             </CommonButton>
                         </div>
                     )}
