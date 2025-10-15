@@ -81,22 +81,25 @@ export default function AchievementBadges({
   limit = 4,
   onRefresh = null,
 }) {
-  const sanitizedAchievements = useMemo(() => achievements.map((item) => {
-    const normalizedTitle = toDisplayText(item.achievement?.title || item.title || item.name, '성취 배지');
-    const normalizedDescription = toDisplayText(item.achievement?.description || item.description || item.details, '') || '';
+  const sanitizedAchievements = useMemo(() => {
+    if (!Array.isArray(achievements)) return [];
+    return achievements.map((item) => {
+      const normalizedTitle = toDisplayText(item.achievement?.title || item.title || item.name, '성취 배지');
+      const normalizedDescription = toDisplayText(item.achievement?.description || item.description || item.details, '') || '';
 
-    return {
-      ...item,
-      title: normalizedTitle,
-      description: normalizedDescription,
-      achievement: {
-        ...item.achievement,
+      return {
+        ...item,
         title: normalizedTitle,
         description: normalizedDescription,
-        badgeColor: item.achievement?.badgeColor || '#E6F9F1'
-      }
-    };
-  }), [achievements]);
+        achievement: {
+          ...item.achievement,
+          title: normalizedTitle,
+          description: normalizedDescription,
+          badgeColor: item.achievement?.badgeColor || '#E6F9F1'
+        }
+      };
+    });
+  }, [achievements]);
 
   if (loading) {
     return (
@@ -129,11 +132,12 @@ export default function AchievementBadges({
   const completedCount = Number.isFinite(completedCountRaw) ? completedCountRaw : 0;
   const totalCount = Number.isFinite(totalCountRaw) ? totalCountRaw : sanitizedAchievements.length;
 
-  const progressList = [...sanitizedAchievements]
+  const progressList = sanitizedAchievements
     .sort((a, b) => {
-      const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-      const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-      return dateB - dateA;
+      // ISO 문자열 비교로 변경 (Date 객체 제거)
+      const dateA = a.completedAt || '';
+      const dateB = b.completedAt || '';
+      return dateB.localeCompare(dateA);
     })
     .slice(0, limit);
 

@@ -202,13 +202,14 @@ export default function ProfilePage() {
     error: achievementsError
   } = useAchievementOverview();
   const recentAchievements = useMemo(() => {
-    if (!allAchievements || allAchievements.length === 0) return [];
-    return [...allAchievements]
-      .filter((item) => item.isCompleted)
+    if (!Array.isArray(allAchievements) || allAchievements.length === 0) return [];
+    return allAchievements
+      .filter((item) => item?.isCompleted)
       .sort((a, b) => {
-        const aTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-        const bTime = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-        return bTime - aTime;
+        // ISO 문자열 비교로 변경 (Date 객체 제거)
+        const aTime = a.completedAt || '';
+        const bTime = b.completedAt || '';
+        return bTime.localeCompare(aTime);
       })
       .slice(0, 4);
   }, [allAchievements]);
