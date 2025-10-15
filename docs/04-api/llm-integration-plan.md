@@ -1,45 +1,45 @@
 # LLM 통합 구현 계획
 
 ## 📋 현재 상태
-- **화상 통화**: ✅ 기본 구현 완료 (WebRTC + Workers API)
+- **화상 통화**: ✅ 기본 구현 완료 (WebRTC + Cloudflare Workers)
 - **LLM 평가**: ❌ 미구현 (더미 데이터 사용 중)
 
 ## 🎯 LLM 통합이 필요한 기능
 
 ### 1. 레벨 테스트 평가
-```java
-// 필요한 구현 위치: 
-// /STUDYMATE-SERVER/src/main/java/com/studymate/domain/leveltest/service/impl/LevelTestServiceImpl.java
+```typescript
+// 필요한 구현 위치:
+// /workers/src/handlers/leveltest.ts
 
-@Service
-public class LevelTestServiceImpl {
-    
-    @Value("${openai.api.key}")
-    private String openaiApiKey;
-    
-    public LevelTestResponse processVoiceTest(UUID userId, Long testId) {
-        // 1. 음성을 텍스트로 변환 (Workers API - Whisper)
-        String transcript = workersApiClient.transcribeAudio(audioUrl);
-        
-        // 2. LLM으로 평가 요청
-        String evaluation = evaluateWithLLM(transcript, testQuestions);
-        
-        // 3. 결과 파싱 및 저장
-        return saveLevelTestResult(evaluation);
-    }
-    
-    private String evaluateWithLLM(String transcript, List<Question> questions) {
-        // OpenAI API 호출
-        ChatCompletionRequest request = ChatCompletionRequest.builder()
-            .model("gpt-4")
-            .messages(List.of(
-                new ChatMessage("system", EVALUATION_PROMPT),
-                new ChatMessage("user", transcript)
-            ))
-            .build();
-            
-        return openAIClient.createChatCompletion(request);
-    }
+export async function processVoiceTest(
+  env: Env,
+  userId: string,
+  testId: string
+): Promise<LevelTestResponse> {
+  // 1. 음성을 텍스트로 변환 (Cloudflare AI - Whisper)
+  const transcript = await transcribeAudio(env, audioUrl);
+
+  // 2. LLM으로 평가 요청 (Cloudflare AI Workers)
+  const evaluation = await evaluateWithLLM(env, transcript, testQuestions);
+
+  // 3. 결과 파싱 및 저장
+  return saveLevelTestResult(env, evaluation);
+}
+
+async function evaluateWithLLM(
+  env: Env,
+  transcript: string,
+  questions: Question[]
+): Promise<Evaluation> {
+  // Cloudflare AI Workers 호출
+  const response = await env.AI.run('@cf/meta/llama-2-7b-chat-int8', {
+    messages: [
+      { role: 'system', content: EVALUATION_PROMPT },
+      { role: 'user', content: `Transcript: ${transcript}` }
+    ]
+  });
+
+  return response;
 }
 ```
 
@@ -65,14 +65,14 @@ const handleRealtimeTranscript = async (transcript) => {
 
 ## 🔧 구현 방법
 
-### Option 1: Cloudflare Workers에 OpenAI 통합
-**장점**: 
-- 엣지 런타임에서 빠른 응답
-- 서버리스 모델로 운영 부담 감소
+### Option 1: Cloudflare AI Workers 통합 (추천)
+**장점**:
+- Cloudflare 인프라 내에서 실행 (낮은 레이턴시)
+- 자동 스케일링 및 비용 최적화
+- 별도 API 키 불필요
 
-**단점**: 
-- 외부 API 호출 시 네트워크 레이턴시 존재
-- Wrangler 기반 시크릿 관리 필요
+**단점**:
+- 제한된 모델 선택
 
 **구현**:
 ```ts
@@ -83,78 +83,71 @@ const llmRoutes = new Hono();
 
 llmRoutes.post('/chat', async (c) => {
   const body = await c.req.json();
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${c.env.OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: body.messages,
-      temperature: 0.3
-    })
+
+  // Cloudflare AI Workers 사용
+  const response = await c.env.AI.run('@cf/meta/llama-2-7b-chat-int8', {
+    messages: body.messages
   });
 
-  const result = await response.json();
-  return c.json({ success: true, data: result });
+  return c.json({ success: true, data: response });
 });
 
 export default llmRoutes;
 ```
 
+### Option 2: OpenAI API 통합
+**장점**:
+- 고품질 모델 (GPT-4)
+- 다양한 기능 지원
 
-### Option 2: Workers API에 LLM 통합 (추천)
-**장점**: 
-- 빠른 응답 (엣지 실행)
-- 자동 스케일링
-- 실시간 처리 최적화
-
-**단점**: 
-- 별도 API 키 관리 필요
+**단점**:
+- 외부 API 호출 레이턴시
+- 별도 비용 발생
 
 **구현**:
-```javascript
-// workers-api/src/handlers/ai.js
-export async function handleLevelTestEvaluation(request, env) {
-    const { transcript, questions } = await request.json();
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
+```typescript
+// workers/src/handlers/ai.ts
+export async function handleLevelTestEvaluation(
+  env: Env,
+  transcript: string,
+  questions: Question[]
+): Promise<Evaluation> {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: LEVEL_TEST_EVALUATION_PROMPT
         },
-        body: JSON.stringify({
-            model: 'gpt-4',
-            messages: [
-                {
-                    role: 'system',
-                    content: LEVEL_TEST_EVALUATION_PROMPT
-                },
-                {
-                    role: 'user',
-                    content: `Transcript: ${transcript}\nQuestions: ${questions}`
-                }
-            ],
-            temperature: 0.3,
-            response_format: { type: "json_object" }
-        })
-    });
-    
-    const result = await response.json();
-    
-    // 평가 결과 구조화
-    return {
-        level: extractLevel(result),
-        scores: {
-            pronunciation: extractScore(result, 'pronunciation'),
-            fluency: extractScore(result, 'fluency'),
-            grammar: extractScore(result, 'grammar'),
-            vocabulary: extractScore(result, 'vocabulary')
-        },
-        feedback: result.choices[0].message.content
-    };
+        {
+          role: 'user',
+          content: `Transcript: ${transcript}\nQuestions: ${questions}`
+        }
+      ],
+      temperature: 0.3,
+      response_format: { type: "json_object" }
+    })
+  });
+
+  const result = await response.json();
+
+  // 평가 결과 구조화
+  return {
+    level: extractLevel(result),
+    scores: {
+      pronunciation: extractScore(result, 'pronunciation'),
+      fluency: extractScore(result, 'fluency'),
+      grammar: extractScore(result, 'grammar'),
+      vocabulary: extractScore(result, 'vocabulary')
+    },
+    feedback: result.choices[0].message.content
+  };
 }
 ```
 
@@ -190,12 +183,12 @@ Return a JSON object with:
 ## 🚀 구현 우선순위
 
 ### Phase 1: 레벨 테스트 LLM 평가 (필수)
-1. Workers API에 OpenAI 통합
+1. Cloudflare Workers에 LLM 통합
 2. 평가 프롬프트 최적화
-3. 결과 구조화 및 저장
+3. 결과 구조화 및 D1 저장
 
 ### Phase 2: 실시간 피드백 (선택)
-1. 화상 통화 중 실시간 전사
+1. Durable Objects를 통한 실시간 전사
 2. 문법/발음 오류 감지
 3. 실시간 교정 제안
 
@@ -206,27 +199,32 @@ Return a JSON object with:
 
 ## 💰 비용 예상
 
-### OpenAI GPT-4 기준
+### Cloudflare AI Workers 기준
+- 무료 tier: 10,000 Neurons/day
+- 유료: $0.011 per 1,000 Neurons
+- 레벨 테스트 1회: 매우 저렴
+
+### OpenAI GPT-4 기준 (선택 시)
 - 입력: $0.03 / 1K tokens
 - 출력: $0.06 / 1K tokens
 - 레벨 테스트 1회: 약 $0.10-0.20
 
 ### 월간 예상 비용 (1000명 기준)
-- 레벨 테스트: $100-200
-- 실시간 피드백: $500-1000
+- Cloudflare AI: 거의 무료 ~ $10
+- OpenAI (선택): $100-200
 
 ## ⚠️ 주의사항
 
-1. **API 키 보안**
-   - 환경 변수 사용
+1. **환경 변수 관리**
+   - Wrangler secrets 사용
    - 키 로테이션 정책
 
 2. **Rate Limiting**
-   - 분당 요청 제한
+   - Cloudflare 기본 제한 확인
    - 재시도 로직 구현
 
 3. **비용 관리**
-   - 사용량 모니터링
+   - Cloudflare Analytics 모니터링
    - 예산 알림 설정
 
 4. **프롬프트 최적화**
@@ -235,7 +233,7 @@ Return a JSON object with:
 
 ## 📌 다음 단계
 
-1. **OpenAI API 키 발급**
-2. **Workers API에 LLM 핸들러 추가**
+1. **Cloudflare AI Workers 활성화**
+2. **Workers에 LLM 핸들러 추가**
 3. **레벨 테스트 플로우 연동**
 4. **테스트 및 프롬프트 튜닝**

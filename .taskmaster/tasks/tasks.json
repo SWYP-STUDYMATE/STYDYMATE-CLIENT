@@ -811,7 +811,7 @@
     "metadata": {
       "created": "2025-08-29T08:35:08.726Z",
       "updated": "2025-08-31T16:15:42.561Z",
-      "description": "STUDYMATE-SERVER 백엔드 API 개발 태스크"
+      "description": "Cloudflare Workers 백엔드 API 개발 태스크"
     }
   },
   "codebase-integrity": {

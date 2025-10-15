@@ -144,8 +144,8 @@ STUDYMATE-CLIENT 프론트엔드에서 필요로 하는 Cloudflare Workers 기�
 
 ## 8. 기술적 제약사항
 
-- 기존 STUDYMATE-SERVER 아키텍처 준수
+- Cloudflare Workers 아키텍처 준수 (Hono, Durable Objects, D1, KV, R2)
 - 기존 데이터베이스 스키마와 호환성 유지
-- Cloudflare Workers와 중복 기능 방지
+- Cloudflare Workers 기능과 일관성 유지
 - 프론트엔드 기존 디자인 시스템 준수
 - RESTful API 설계 원칙 준수

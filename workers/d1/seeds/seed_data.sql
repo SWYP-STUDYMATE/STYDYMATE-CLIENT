@@ -1,4 +1,4 @@
--- Initial data for STUDYMATE-SERVER
+-- Initial data for Cloudflare Workers D1 Database
 -- This file is executed automatically during Workers bootstrap
 
 -- MOTIVATION 테이블 초기 데이터

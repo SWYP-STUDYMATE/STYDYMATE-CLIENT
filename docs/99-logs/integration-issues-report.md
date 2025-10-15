@@ -20,10 +20,10 @@
 ### 현재 상황
 - **백엔드**: Cloudflare Workers 기반 서버리스 아키텍처 (`/workers` 디렉토리)
 - **프론트엔드**: React + Vite 기반 SPA
-- **STUDYMATE-SERVER**: 더 이상 존재하지 않음 (Workers로 완전 이전 완료)
+- **마이그레이션 완료**: Workers로 완전 이전 완료
 
 ### 주요 발견 사항
-클라이언트 코드에는 여전히 STUDYMATE-SERVER 참조가 일부 남아있었으나, **CLAUDE.md를 업데이트하여 Workers 경로로 정정 완료**
+**문서 정비 완료**: CLAUDE.md 및 모든 문서를 Workers 기반으로 업데이트 완료
 
 ---
 
@@ -458,7 +458,7 @@ export const API_ENDPOINTS = {
 
 ## 다음 단계
 
-1. ✅ **CLAUDE.md 업데이트 완료** - STUDYMATE-SERVER → Workers 경로 정정
+1. ✅ **CLAUDE.md 업데이트 완료** - Workers 경로 정정 완료
 2. 🔄 **matching.js 리팩토링** - 위의 권장사항 적용
 3. 🔍 **이미지 업로드 확인** - Workers 구현 검증
 4. 🔍 **WebSocket 통합 테스트** - 실제 연결 확인

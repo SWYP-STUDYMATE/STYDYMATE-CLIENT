@@ -43,15 +43,16 @@ function AppContent() {
     initializeNotificationServices();
   }, []);
 
+  // 자동 로그인 비활성화 시 브라우저 탭 종료 시에만 토큰 삭제
+  // 주의: beforeunload는 새로고침도 감지하므로 사용하지 않음
+  // 대신 sessionStorage는 탭 종료 시 자동으로 삭제됨
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (!isAutoLoginEnabled()) {
-        clearTokens();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    // 자동 로그인이 활성화되지 않은 경우 sessionStorage 사용
+    // sessionStorage는 탭이 닫힐 때 자동으로 삭제되므로 별도 처리 불필요
+    if (!isAutoLoginEnabled()) {
+      // 이미 tokenStorage.js에서 sessionStorage 사용 중
+      console.log('자동 로그인 비활성화: sessionStorage 사용 (탭 종료 시 자동 삭제)');
+    }
   }, []);
 
   // Route elements를 메모이제이션하여 매 렌더마다 재생성 방지

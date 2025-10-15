@@ -1,7 +1,7 @@
 # API 통합 가이드
 
 ## 개요
-이 문서는 STUDYMATE-CLIENT에서 STUDYMATE-SERVER API와의 안전한 통합을 위한 가이드입니다.
+이 문서는 STUDYMATE-CLIENT에서 Cloudflare Workers 백엔드 API와의 안전한 통합을 위한 가이드입니다.
 
 ## 타입 시스템
 

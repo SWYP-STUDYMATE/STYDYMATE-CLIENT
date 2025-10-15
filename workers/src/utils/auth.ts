@@ -13,10 +13,10 @@ export interface AuthUser {
   permissions?: string[];
 }
 
-// Verify JWT token from STUDYMATE-SERVER with signature verification
+// Verify JWT token with signature verification (HS512 algorithm)
 export async function verifyToken(token: string, secret: string): Promise<AuthUser | null> {
   try {
-    // 서버는 HS512로 서명하므로 동일 알고리즘으로 검증
+    // HS512 알고리즘으로 JWT 검증
     const payload: any = await verify(token, secret, 'HS512');
     // Verify expiration (verify already checks exp, but keep explicit guard)
     if (payload.exp && payload.exp < Date.now() / 1000) {
