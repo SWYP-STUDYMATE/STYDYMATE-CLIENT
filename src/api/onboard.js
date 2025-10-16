@@ -427,7 +427,7 @@ export const getLearningExpectations = async () => {
 //영어 이름 저장
 export const saveEnglishName = async ({ englishName }) => {
   try {
-    const response = await api.post("/user/english-name", { englishName });
+    const response = await api.post("/users/english-name", { englishName });
     return response.data;
   } catch (error) {
     console.error("Save English name error:", error);

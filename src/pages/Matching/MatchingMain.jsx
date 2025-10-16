@@ -33,6 +33,7 @@ export default function MatchingMain() {
         matchingFilters,
         startMatching,
         fetchRecommendedPartners,
+        fetchSentRequests,
         setMatchingFilters,
         searchPartners,
     } = useMatchingStore();
@@ -49,9 +50,15 @@ export default function MatchingMain() {
     }, [fetchRecommendedPartners]);
 
     useEffect(() => {
-        // 컴포넌트 마운트 시 추천 파트너 가져오기
-        loadRecommendedPartners();
-    }, [loadRecommendedPartners]);
+        // 컴포넌트 마운트 시 추천 파트너 및 보낸 요청 목록 가져오기
+        const initialize = async () => {
+            await Promise.all([
+                loadRecommendedPartners(),
+                fetchSentRequests('pending') // pending 상태의 보낸 요청만 조회
+            ]);
+        };
+        initialize();
+    }, [loadRecommendedPartners, fetchSentRequests]);
 
     const handleStartMatching = async () => {
         setIsLoading(true);

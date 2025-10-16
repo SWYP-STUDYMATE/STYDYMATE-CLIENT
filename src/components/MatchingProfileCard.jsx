@@ -10,8 +10,9 @@ import useToast from '../hooks/useToast.jsx';
 
 export default function MatchingProfileCard({ user, onClick, showActions = true, useModal = true }) {
     const navigate = useNavigate();
-    const { sendMatchRequest } = useMatchingStore();
+    const { sendMatchRequest, sentRequests } = useMatchingStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSending, setIsSending] = useState(false);
     const { showError, showSuccess, ToastContainer } = useToast();
 
     // 백엔드 필드명 매핑 (Workers API → 프론트엔드)
@@ -40,21 +41,46 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
         }
     };
 
+    // 중복 요청 여부 확인
+    const userId = mappedUser.id || mappedUser.userId;
+    const hasRequestSent = sentRequests?.some(req =>
+        (req.receiverId === userId || req.targetUserId === userId) && req.status === 'pending'
+    );
+
     const handleSendRequest = async (e) => {
         e.stopPropagation(); // 부모 클릭 이벤트 방지
+
+        // 이미 요청을 보낸 경우 경고
+        if (hasRequestSent) {
+            showError('이미 매칭 요청을 보낸 사용자입니다.');
+            return;
+        }
+
+        // 중복 클릭 방지
+        if (isSending) return;
+
         if (useModal) {
             setIsModalOpen(true);
             return;
         }
 
         try {
-            const userId = mappedUser.id || mappedUser.userId;
+            setIsSending(true);
             await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
-            // 성공 메시지 표시
             showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
         } catch (error) {
             console.error('매칭 요청 실패:', error);
-            showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+
+            // 에러 메시지 상세화
+            if (error.response?.status === 409) {
+                showError('이미 매칭 요청을 보낸 사용자입니다.');
+            } else if (error.response?.status === 400) {
+                showError('잘못된 요청입니다. 다시 시도해주세요.');
+            } else {
+                showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -242,12 +268,13 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                     </CommonButton>
                     <CommonButton
                         onClick={handleSendRequest}
-                        variant="success"
+                        variant={hasRequestSent ? "secondary" : "success"}
                         size="small"
                         className="flex-1"
-                        icon={<UserPlus />}
+                        icon={hasRequestSent ? <MessageCircle /> : <UserPlus />}
+                        disabled={isSending || hasRequestSent}
                     >
-                        매칭 요청
+                        {isSending ? '전송 중...' : hasRequestSent ? '요청 완료' : '매칭 요청'}
                     </CommonButton>
                 </div>
             )}

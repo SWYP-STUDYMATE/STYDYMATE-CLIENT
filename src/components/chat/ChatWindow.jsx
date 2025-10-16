@@ -43,17 +43,22 @@ export default function ChatWindow({
 
   useEffect(() => {
     if (isRoomMissing) return undefined;
-    
+
     const initializeChatRoom = async () => {
       try {
+        console.log('[ChatWindow] 채팅방 초기화 시작', room.roomId);
+
         // 채팅 히스토리 로드
         const history = await fetchChatHistory(room.roomId);
+        console.log('[ChatWindow] 채팅 히스토리 로드 완료', history.length);
         setMessages(history);
 
         // WebSocket 클라이언트 초기화
+        console.log('[ChatWindow] WebSocket 클라이언트 초기화 시작');
         clientRef.current = await initStompClient(
           room.roomId,
           (msg) => {
+            console.log('[ChatWindow] 새 메시지 수신', msg);
             setMessages((prev) => [...prev, msg]);
             onNewMessage({
               roomId: room.roomId,
@@ -62,12 +67,13 @@ export default function ChatWindow({
             });
           },
           (status, data) => {
-            console.log(`채팅방 ${room.roomId} WebSocket 상태:`, status, data);
+            console.log(`[ChatWindow] 채팅방 ${room.roomId} WebSocket 상태:`, status, data);
           },
           (type, error) => {
-            console.error(`채팅방 ${room.roomId} WebSocket 에러:`, type, error);
+            console.error(`[ChatWindow] 채팅방 ${room.roomId} WebSocket 에러:`, type, error);
           }
         );
+        console.log('[ChatWindow] WebSocket 클라이언트 초기화 완료', clientRef.current);
 
         // 타이핑 상태 구독
         typingSubscriptionRef.current = subscribeToTyping(room.roomId, (typingData) => {
@@ -206,36 +212,65 @@ export default function ChatWindow({
   };
 
   const sendMessage = async (text, images, audioData) => {
+    console.log('[ChatWindow] sendMessage 호출됨', { text, images, audioData });
+
     // 타이핑 상태 중단
     handleTypingStop();
-    
+
+    // WebSocket 연결 확인
+    if (!clientRef.current) {
+      console.error('[ChatWindow] WebSocket 클라이언트가 없습니다');
+      showError("채팅 연결이 끊어졌습니다. 페이지를 새로고침해주세요.");
+      return;
+    }
+
+    // 메시지가 비어있는지 확인
+    if (!text.trim() && !images.length && !audioData) {
+      console.warn('[ChatWindow] 빈 메시지 전송 시도');
+      return;
+    }
+
     let finalImageUrls = [];
     if (images.length) {
       try {
+        console.log('[ChatWindow] 이미지 업로드 시작', images.length);
         finalImageUrls = await uploadChatImages(room.roomId, images);
-      } catch {
+        console.log('[ChatWindow] 이미지 업로드 완료', finalImageUrls);
+      } catch (error) {
+        console.error('[ChatWindow] 이미지 업로드 실패', error);
         showError("이미지 업로드 실패");
         return;
       }
     }
 
-    clientRef.current.send(
-      "/pub/chat/message",
-      {},
-      JSON.stringify({
-        roomId: room.roomId,
-        message: text.trim(),
-        imageUrls: finalImageUrls,
-        audioData: audioData, // Base64 Data URL
-        messageType: audioData
-          ? "AUDIO"
-          : finalImageUrls.length
-            ? "IMAGE"
-            : text.trim()
-              ? "TEXT"
-              : "TEXT",
-      })
-    );
+    const messagePayload = {
+      roomId: room.roomId,
+      message: text.trim(),
+      imageUrls: finalImageUrls,
+      audioData: audioData, // Base64 Data URL
+      messageType: audioData
+        ? "AUDIO"
+        : finalImageUrls.length
+          ? "IMAGE"
+          : text.trim()
+            ? "TEXT"
+            : "TEXT",
+    };
+
+    console.log('[ChatWindow] WebSocket으로 메시지 전송', messagePayload);
+
+    try {
+      clientRef.current.send(
+        "/pub/chat/message",
+        {},
+        JSON.stringify(messagePayload)
+      );
+      console.log('[ChatWindow] 메시지 전송 완료');
+    } catch (error) {
+      console.error('[ChatWindow] 메시지 전송 실패', error);
+      showError("메시지 전송에 실패했습니다.");
+      return;
+    }
 
     setInput("");
     setSelectedImageFiles([]);

@@ -86,7 +86,7 @@ export default function GoogleCallback() {
       
       const fetchUserInfo = async () => {
         try {
-          const nameRes = await api.get("/user/name");
+          const nameRes = await api.get("/users/name");
           const setName = useProfileStore.getState().setName;
           const fetchedName = nameRes?.data?.name;
 
@@ -149,7 +149,7 @@ export default function GoogleCallback() {
             }
             
             try {
-              const nameRes = await api.get("/user/name");
+              const nameRes = await api.get("/users/name");
               const fetchedName = nameRes?.data?.name;
               const setName = useProfileStore.getState().setName;
 

@@ -171,7 +171,7 @@ const CategoryFilter = ({ selected, onSelect }) => (
   </div>
 );
 
-const AchievementsList = ({ achievements, loading, error }) => {
+const AchievementsList = ({ achievements = [], loading, error }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-24">
@@ -188,7 +188,7 @@ const AchievementsList = ({ achievements, loading, error }) => {
     );
   }
 
-  if (!achievements.length) {
+  if (!Array.isArray(achievements) || achievements.length === 0) {
     return (
       <div className="text-center py-12">
         <Trophy className="w-12 h-12 text-[#B5B5B5] mx-auto mb-4" />
@@ -252,11 +252,11 @@ const UpcomingAchievements = ({ stats }) => {
 
 const AchievementsPage = () => {
   const navigate = useNavigate();
-  const { achievements, stats, loading, error, refresh } = useAchievementOverview();
+  const { achievements = [], stats, loading, error, refresh } = useAchievementOverview();
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   const filteredAchievements = useMemo(() => {
-    if (!achievements) return [];
+    if (!Array.isArray(achievements)) return [];
     if (selectedCategory === 'ALL') return achievements;
     return achievements.filter((item) => item.achievement?.category === selectedCategory);
   }, [achievements, selectedCategory]);
@@ -277,7 +277,7 @@ const AchievementsPage = () => {
                 <div>
                   <h1 className="text-xl font-bold text-[#111111]">성취 & 배지</h1>
                   <p className="text-sm text-[#929292]">
-                    완료 {stats?.completedAchievements ?? 0}/{stats?.totalAchievements ?? achievements.length} · 총 XP {stats?.totalXpEarned ?? 0}
+                    완료 {stats?.completedAchievements ?? 0}/{stats?.totalAchievements ?? (Array.isArray(achievements) ? achievements.length : 0)} · 총 XP {stats?.totalXpEarned ?? 0}
                   </p>
                 </div>
                 <button

@@ -98,12 +98,18 @@ const useMatchingStore = create(
       
       // 매칭된 사용자 목록
       matchedUsers: [],
-      
+
       // 현재 선택된 매칭 파트너
       selectedPartner: null,
-      
+
       // 매칭 히스토리
       matchingHistory: [],
+
+      // 보낸 매칭 요청 목록
+      sentRequests: [],
+
+      // 받은 매칭 요청 목록
+      receivedRequests: [],
       
       // 액션들
       setMatchingStatus: (status) => set({ matchingStatus: status }),
@@ -326,6 +332,19 @@ const useMatchingStore = create(
       sendMatchRequest: async (partnerId, message = '') => {
         try {
           const result = await createMatchRequest(partnerId, message);
+
+          // sentRequests 상태 업데이트
+          const { sentRequests } = get();
+          set({
+            sentRequests: [...sentRequests, {
+              ...result,
+              receiverId: partnerId,
+              status: 'pending',
+              message,
+              createdAt: new Date().toISOString()
+            }]
+          });
+
           return result;
         } catch (error) {
           console.error('Send match request error:', error);
@@ -337,7 +356,9 @@ const useMatchingStore = create(
       fetchReceivedRequests: async (status = 'pending') => {
         try {
           const result = await getReceivedMatchRequests(status);
-          return extractPageContent(result);
+          const requests = extractPageContent(result);
+          set({ receivedRequests: requests });
+          return requests;
         } catch (error) {
           console.error('Fetch received requests error:', error);
           throw error;
@@ -348,7 +369,9 @@ const useMatchingStore = create(
       fetchSentRequests: async (status = 'pending') => {
         try {
           const result = await getSentMatchRequests(status);
-          return extractPageContent(result);
+          const requests = extractPageContent(result);
+          set({ sentRequests: requests });
+          return requests;
         } catch (error) {
           console.error('Fetch sent requests error:', error);
           throw error;

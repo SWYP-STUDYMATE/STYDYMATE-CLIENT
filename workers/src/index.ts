@@ -190,14 +190,12 @@ http_requests_total{method="GET",endpoint="/health"} 1
 // API v1 라우트 그룹
 const v1 = new Hono<{ Bindings: AppBindings; Variables: Variables }>();
 
-// v1 API 라우트 등록
+// v1 API 라우트 등록 (복수형 & kebab-case 표준)
 v1.route('/auth', authRoutes);
 v1.route('/login', authRoutes);  // OAuth login 경로 추가
 v1.route('/users', userRoutes);
-v1.route('/user', userRoutes);
 v1.route('/onboarding', onboardingRoutes);
 v1.route('/sessions', sessionsRoutes);
-v1.route('/session', sessionsRoutes);
 v1.route('/notifications', notificationsRoutes);
 v1.route('/group-sessions', groupSessionsRoutes);
 v1.route('/group-sessions/ai', groupSessionsAIRoutes);
@@ -207,7 +205,6 @@ v1.route('/achievements', achievementsRoutes);
 v1.route('/chat', chatRoutes);
 v1.route('/settings', settingsRoutes);
 v1.route('/level-test', levelTestRoutes);
-v1.route('/leveltest', levelTestRoutes);
 v1.route('/room', webrtcRoutes);
 v1.route('/upload', uploadRoutes);
 v1.route('/whisper', whisperRoutes);

@@ -26,7 +26,7 @@ export default function OnboardingInfo2() {
         console.log("🔍 [ObInfo2] Environment:", import.meta.env.MODE);
         console.log("🔍 [ObInfo2] VITE_API_URL:", import.meta.env.VITE_API_URL);
 
-        const response = await api.get("/user/locations");
+        const response = await api.get("/users/locations");
         console.log("🔍 [ObInfo2] Raw API Response:", response);
         console.log("🔍 [ObInfo2] Response status:", response.status);
         console.log("🔍 [ObInfo2] Response headers:", response.headers);

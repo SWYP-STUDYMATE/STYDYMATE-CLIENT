@@ -61,7 +61,7 @@ export default function SessionList() {
             setLoadingRooms(true);
             log.info('활성 룸 목록 조회 시작', null, 'SESSION_LIST');
 
-            const response = await api.get('/webrtc/active');
+            const response = await api.get('/room/active');
             const rooms = response?.data?.data || response?.data || [];
             setActiveRooms(Array.isArray(rooms) ? rooms : []);
             log.info('활성 룸 목록 조회 완료', { count: Array.isArray(rooms) ? rooms.length : 0 }, 'SESSION_LIST');

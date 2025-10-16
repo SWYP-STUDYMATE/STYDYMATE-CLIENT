@@ -467,4 +467,270 @@ export const API_ENDPOINTS = {
 ---
 
 **작성 완료**: 2025-10-12
+**최종 업데이트**: 2025-10-16
 **다음 리뷰**: matching.js 리팩토링 후
+
+---
+
+## 🔴 중복 매칭 요청 에러 (2025-10-16)
+
+### 문제 발견
+- **발생 위치**: `https://languagemate.kr/matching`
+- **에러 코드**: `500 Internal Server Error`
+- **재현 방법**: 매칭 페이지에서 동일한 사용자에게 매칭 요청을 2회 이상 전송
+
+### 에러 로그
+```javascript
+POST /matching/request - 500 (335ms)
+Internal Server Error
+서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+```
+
+### 원인 분석
+
+#### 1. 프론트엔드 검증 부재
+**위치**: `MatchingProfileCard.jsx:43-59`
+
+```javascript
+const handleSendRequest = async (e) => {
+    e.stopPropagation();
+    if (useModal) {
+        setIsModalOpen(true);
+        return;
+    }
+
+    try {
+        const userId = mappedUser.id || mappedUser.userId;
+        await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
+        showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
+    } catch (error) {
+        console.error('매칭 요청 실패:', error);
+        showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
+};
+```
+
+**문제점**:
+- ❌ 중복 요청 방지 로직 없음
+- ❌ 버튼 비활성화 상태 관리 없음
+- ❌ 로딩 상태 표시 없음
+- ❌ 이미 매칭 요청이 전송된 사용자인지 확인하지 않음
+
+#### 2. 백엔드 검증 불충분
+**위치**: `workers/src/routes/matching.ts` (추정)
+
+**문제점**:
+- ❌ DB 레벨에서 중복 매칭 요청 허용
+- ❌ 유니크 제약 조건 위반 시 500 에러 반환 (400 에러가 적절)
+- ❌ 명확한 에러 메시지 없음 ("이미 매칭 요청을 보낸 사용자입니다" 등)
+
+### 해결 방안
+
+#### ✅ 1. 프론트엔드 중복 요청 방지 (우선 적용)
+
+**파일**: `src/components/MatchingProfileCard.jsx`
+
+```javascript
+export default function MatchingProfileCard({ user, onClick, showActions = true, useModal = true }) {
+    const { sendMatchRequest, sentRequests } = useMatchingStore(); // ⭐ sentRequests 추가
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSending, setIsSending] = useState(false); // ⭐ 로딩 상태
+    const { showError, showSuccess, ToastContainer } = useToast();
+
+    // ⭐ 중복 요청 여부 확인
+    const userId = mappedUser.id || mappedUser.userId;
+    const hasRequestSent = sentRequests?.some(req =>
+        req.receiverId === userId && req.status === 'pending'
+    );
+
+    const handleSendRequest = async (e) => {
+        e.stopPropagation();
+
+        // ⭐ 이미 요청을 보낸 경우 경고
+        if (hasRequestSent) {
+            showError('이미 매칭 요청을 보낸 사용자입니다.');
+            return;
+        }
+
+        // ⭐ 중복 클릭 방지
+        if (isSending) return;
+
+        if (useModal) {
+            setIsModalOpen(true);
+            return;
+        }
+
+        try {
+            setIsSending(true); // ⭐ 로딩 시작
+            await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
+            showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
+        } catch (error) {
+            console.error('매칭 요청 실패:', error);
+
+            // ⭐ 에러 메시지 상세화
+            if (error.response?.status === 409) {
+                showError('이미 매칭 요청을 보낸 사용자입니다.');
+            } else if (error.response?.status === 400) {
+                showError('잘못된 요청입니다. 다시 시도해주세요.');
+            } else {
+                showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
+        } finally {
+            setIsSending(false); // ⭐ 로딩 종료
+        }
+    };
+
+    return (
+        <div className="...">
+            {/* ... */}
+
+            {/* 액션 버튼 */}
+            {showActions && (
+                <div className="flex gap-2 pt-3 mt-3 border-t border-[#E7E7E7]">
+                    <CommonButton
+                        onClick={handleViewProfile}
+                        variant="secondary"
+                        size="small"
+                        className="flex-1"
+                        icon={<Globe />}
+                    >
+                        프로필 보기
+                    </CommonButton>
+                    <CommonButton
+                        onClick={handleSendRequest}
+                        variant={hasRequestSent ? "secondary" : "success"} // ⭐ 스타일 변경
+                        size="small"
+                        className="flex-1"
+                        icon={hasRequestSent ? <MessageCircle /> : <UserPlus />} // ⭐ 아이콘 변경
+                        disabled={isSending || hasRequestSent} // ⭐ 비활성화
+                    >
+                        {isSending ? '전송 중...' : hasRequestSent ? '요청 완료' : '매칭 요청'}
+                    </CommonButton>
+                </div>
+            )}
+
+            <ToastContainer />
+        </div>
+    );
+}
+```
+
+#### ✅ 2. Zustand Store 업데이트 필요
+
+**파일**: `src/store/matchingStore.js`
+
+```javascript
+const useMatchingStore = create((set, get) => ({
+    matchedUsers: [],
+    sentRequests: [], // ⭐ 추가
+    receivedRequests: [], // ⭐ 추가
+
+    // ⭐ 보낸 요청 목록 가져오기
+    fetchSentRequests: async () => {
+        try {
+            const response = await api.get('/matching/requests/sent');
+            set({ sentRequests: response.data });
+        } catch (error) {
+            console.error('Failed to fetch sent requests:', error);
+        }
+    },
+
+    // 매칭 요청 전송 후 상태 업데이트
+    sendMatchRequest: async (targetUserId, message) => {
+        try {
+            const response = await api.post('/matching/request', {
+                targetUserId,
+                message
+            });
+
+            // ⭐ sentRequests 업데이트
+            const { sentRequests } = get();
+            set({
+                sentRequests: [...sentRequests, response.data]
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error('Send match request error:', error);
+            throw error;
+        }
+    },
+}));
+```
+
+#### ✅ 3. 백엔드 수정 권장사항 (Workers)
+
+**위치**: `workers/src/routes/matching.ts`
+
+```typescript
+// POST /matching/request
+matchingRoutes.post('/request', async (c) => {
+    const userId = c.get('userId');
+    const body = await c.req.json();
+    const { targetUserId, message } = body;
+
+    // ⭐ 중복 요청 검증
+    const existingRequest = await c.env.DB.prepare(
+        'SELECT id FROM matching_requests WHERE sender_id = ? AND receiver_id = ? AND status = ?'
+    ).bind(userId, targetUserId, 'pending').first();
+
+    if (existingRequest) {
+        return c.json({
+            success: false,
+            message: '이미 매칭 요청을 보낸 사용자입니다.'
+        }, 409); // ⭐ 409 Conflict
+    }
+
+    // ⭐ 자기 자신에게 요청 방지
+    if (userId === targetUserId) {
+        return c.json({
+            success: false,
+            message: '자기 자신에게는 매칭 요청을 보낼 수 없습니다.'
+        }, 400);
+    }
+
+    // 매칭 요청 생성
+    await createMatchingRequest(c.env, {
+        senderId: userId,
+        receiverId: targetUserId,
+        message
+    });
+
+    return successResponse(c, { message: '매칭 요청이 전송되었습니다.' });
+});
+```
+
+#### ✅ 4. DB 제약 조건 추가 권장 (Workers)
+
+**파일**: `workers/migrations/xxx_add_unique_constraint_matching_requests.sql`
+
+```sql
+-- 중복 매칭 요청 방지 유니크 제약 조건
+CREATE UNIQUE INDEX idx_matching_requests_unique
+ON matching_requests(sender_id, receiver_id, status)
+WHERE status = 'pending';
+```
+
+### 적용 우선순위
+
+1. **🔥 즉시 적용**: 프론트엔드 중복 요청 방지 (MatchingProfileCard.jsx)
+2. **⚡ 우선 적용**: Zustand Store에 sentRequests 추가
+3. **📋 권장 사항**: Workers 백엔드 검증 강화
+4. **🔒 선택 사항**: DB 유니크 제약 조건 추가
+
+### 테스트 체크리스트
+
+- [ ] 동일한 사용자에게 매칭 요청 2회 전송 시 경고 메시지 표시
+- [ ] 요청 전송 중 버튼 비활성화 확인
+- [ ] 이미 요청을 보낸 사용자에게는 "요청 완료" 버튼 표시
+- [ ] 백엔드에서 409 에러 발생 시 적절한 메시지 표시
+- [ ] 페이지 새로고침 후에도 요청 상태 유지
+
+### 관련 파일
+
+- `src/components/MatchingProfileCard.jsx:43-59`
+- `src/store/matchingStore.js`
+- `workers/src/routes/matching.ts`
+- `workers/src/db/matching.ts`
+
+---

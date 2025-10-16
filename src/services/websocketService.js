@@ -25,7 +25,7 @@ class WebSocketService {
    */
   connect(options = {}) {
     if (this.isConnecting || this.isConnected) {
-      console.log("WebSocket is already connecting or connected");
+      console.log("[WebSocketService] 이미 연결 중이거나 연결됨");
       return Promise.resolve();
     }
 
@@ -36,7 +36,7 @@ class WebSocketService {
     } = options;
 
     this.isConnecting = true;
-    
+
     const token = getToken("accessToken");
     const origin = import.meta.env.VITE_WS_URL
       || import.meta.env.VITE_API_URL
@@ -46,6 +46,12 @@ class WebSocketService {
       ? origin.replace(/^http/i, origin.startsWith('https') ? 'wss' : 'ws')
       : origin;
     const socketUrl = `${baseUrl}${endpoint}`;
+
+    console.log("[WebSocketService] WebSocket 연결 시작", {
+      socketUrl,
+      hasToken: !!token,
+      token: token ? token.substring(0, 20) + '...' : 'null'
+    });
 
     return new Promise((resolve, reject) => {
       try {
@@ -268,6 +274,13 @@ class WebSocketService {
    * @param {Object} headers - 전송 헤더
    */
   send(destination, message, headers = {}) {
+    console.log("[WebSocketService] send 호출", {
+      destination,
+      isConnected: this.isConnected,
+      hasClient: !!this.client,
+      messagePreview: JSON.stringify(message).substring(0, 100)
+    });
+
     if (this.isConnected && this.client) {
       try {
         this.client.publish({
@@ -275,19 +288,22 @@ class WebSocketService {
           body: JSON.stringify(message),
           headers
         });
+        console.log("[WebSocketService] 메시지 전송 성공");
       } catch (error) {
-        console.error("Failed to send message:", error);
+        console.error("[WebSocketService] 메시지 전송 실패:", error);
         // 연결이 끊어진 경우 큐에 추가
         this.messageQueue.push({ destination, message, headers });
       }
     } else {
+      console.warn("[WebSocketService] WebSocket 연결 안 됨. 메시지 큐에 추가");
       // 연결되지 않은 경우 메시지 큐에 추가
       this.messageQueue.push({ destination, message, headers });
-      
+
       // 연결되지 않은 경우 연결 시도
       if (!this.isConnecting) {
+        console.log("[WebSocketService] 재연결 시도");
         this.connect().catch(error => {
-          console.error("Failed to connect for message sending:", error);
+          console.error("[WebSocketService] 재연결 실패:", error);
         });
       }
     }

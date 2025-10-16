@@ -23,7 +23,7 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
     const [activeTab, setActiveTab] = useState('profile');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
-    const { sendMatchRequest } = useMatchingStore();
+    const { sendMatchRequest, sentRequests } = useMatchingStore();
     const { showError, showSuccess } = useAlert();
 
     if (!isOpen || !user) return null;
@@ -48,21 +48,44 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
         isOnline: user.onlineStatus === 'ONLINE' || user.isOnline,
     };
 
+    // 중복 요청 여부 확인
+    const userId = user?.id || user?.userId;
+    const hasRequestSent = sentRequests?.some(req =>
+        (req.receiverId === userId || req.targetUserId === userId) && req.status === 'pending'
+    );
+
     const handleSendRequest = async () => {
+        // 이미 요청을 보낸 경우 경고
+        if (hasRequestSent) {
+            showError('이미 매칭 요청을 보낸 사용자입니다.');
+            return;
+        }
+
         if (!message.trim()) {
             showError('메시지를 입력해주세요.');
             return;
         }
 
+        // 중복 클릭 방지
+        if (isLoading) return;
+
         setIsLoading(true);
         try {
-            await sendMatchRequest(user.id, message);
+            await sendMatchRequest(userId, message);
             showSuccess('매칭 요청을 보냈습니다!');
             setMessage('');
             onClose();
         } catch (error) {
             console.error('매칭 요청 실패:', error);
-            showError('매칭 요청을 보내는데 실패했습니다.');
+
+            // 에러 메시지 상세화
+            if (error.response?.status === 409) {
+                showError('이미 매칭 요청을 보낸 사용자입니다.');
+            } else if (error.response?.status === 400) {
+                showError('잘못된 요청입니다. 다시 시도해주세요.');
+            } else {
+                showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -352,13 +375,13 @@ export default function ProfileDetailModal({ user, isOpen, onClose }) {
                             </CommonButton>
                             <CommonButton
                                 onClick={handleSendRequest}
-                                variant="success"
+                                variant={hasRequestSent ? "secondary" : "success"}
                                 className="flex-1"
-                                disabled={isLoading || !message.trim()}
+                                disabled={isLoading || !message.trim() || hasRequestSent}
                                 loading={isLoading}
-                                icon={!isLoading ? <Heart /> : undefined}
+                                icon={!isLoading ? (hasRequestSent ? <CheckCircle /> : <Heart />) : undefined}
                             >
-                                {isLoading ? '전송 중...' : '요청 보내기'}
+                                {isLoading ? '전송 중...' : hasRequestSent ? '요청 완료' : '요청 보내기'}
                             </CommonButton>
                         </div>
                     )}
