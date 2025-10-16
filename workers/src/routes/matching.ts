@@ -117,18 +117,41 @@ matchingRoutes.post('/partners/advanced', async (c) => {
 matchingRoutes.post('/request', async (c) => {
   const userId = c.get('userId');
   if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
   const body = await c.req.json();
+  console.log('[POST /matching/request] Request body:', JSON.stringify({
+    targetUserId: body.targetUserId,
+    hasMessage: !!body.message,
+    userId
+  }));
+
   if (typeof body.targetUserId !== 'string') {
     throw new AppError('targetUserId is required', 400, 'INVALID_PAYLOAD');
   }
+
   try {
-    await createMatchingRequest(c.env, {
+    const result = await createMatchingRequest(c.env, {
       senderId: userId,
       receiverId: body.targetUserId,
       message: typeof body.message === 'string' ? body.message : undefined
     });
-    return successResponse(c, { success: true });
+    console.log('[POST /matching/request] Success:', result);
+    return successResponse(c, { success: true, requestId: result.requestId });
   } catch (error) {
+    console.error('[POST /matching/request] Error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      isAppError: error instanceof AppError,
+      userId,
+      targetUserId: body.targetUserId
+    });
+
+    // AppError는 그대로 throw (적절한 status code와 함께)
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // 기타 에러는 400으로 래핑
     throw new AppError(
       error instanceof Error ? error.message : 'Failed to send matching request',
       400,

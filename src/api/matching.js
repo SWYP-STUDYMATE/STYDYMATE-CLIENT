@@ -88,13 +88,30 @@ export async function findMatchingPartners(preferences) {
  */
 export async function createMatchRequest(targetUserId, message = '') {
   try {
+    console.log('[API] Creating match request:', {
+      targetUserId,
+      hasMessage: !!message,
+      messageLength: message?.length
+    });
+
     const response = await api.post('/matching/request', {
       targetUserId,
       message
     });
+
+    console.log('[API] Match request response:', {
+      status: response.status,
+      data: response.data
+    });
+
     return response.data?.data ?? response.data;
   } catch (error) {
-    console.error('Create match request error:', error);
+    console.error('[API] Create match request error:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data,
+      headers: error?.response?.headers
+    });
     throw error;
   }
 }

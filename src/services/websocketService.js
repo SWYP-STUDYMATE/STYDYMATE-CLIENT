@@ -14,6 +14,7 @@ class WebSocketService {
     this.messageQueue = [];
     this.connectionListeners = new Set();
     this.errorListeners = new Set();
+    this.connectPromise = null; // 현재 진행 중인 연결 Promise 저장
   }
 
   /**
@@ -24,9 +25,16 @@ class WebSocketService {
    * @param {boolean} options.debug - 디버그 모드
    */
   connect(options = {}) {
-    if (this.isConnecting || this.isConnected) {
-      console.log("[WebSocketService] 이미 연결 중이거나 연결됨");
+    // 이미 연결되어 있으면 즉시 반환
+    if (this.isConnected) {
+      console.log("[WebSocketService] 이미 연결됨");
       return Promise.resolve();
+    }
+
+    // 연결 시도 중이면 기존 Promise 반환
+    if (this.isConnecting && this.connectPromise) {
+      console.log("[WebSocketService] 연결 시도 중 - 기존 Promise 반환");
+      return this.connectPromise;
     }
 
     const {
@@ -53,7 +61,8 @@ class WebSocketService {
       token: token ? token.substring(0, 20) + '...' : 'null'
     });
 
-    return new Promise((resolve, reject) => {
+    // 새로운 연결 Promise 생성 및 저장
+    this.connectPromise = new Promise((resolve, reject) => {
       try {
         this.client = new Client({
           webSocketFactory: () => new WebSocket(socketUrl),
@@ -68,13 +77,14 @@ class WebSocketService {
             this.isConnecting = false;
             this.isConnected = true;
             this.reconnectAttempts = 0;
-            
+            this.connectPromise = null; // 연결 완료 후 Promise 정리
+
             // 대기 중인 메시지 전송
             this.flushMessageQueue();
-            
+
             // 기존 구독 재설정
             this.reestablishSubscriptions();
-            
+
             // 연결 리스너 호출
             this.connectionListeners.forEach(listener => {
               try {
@@ -83,7 +93,7 @@ class WebSocketService {
                 console.error("Connection listener error:", error);
               }
             });
-            
+
             resolve();
           },
           
@@ -91,7 +101,8 @@ class WebSocketService {
             console.error("STOMP Error:", frame);
             this.isConnecting = false;
             this.isConnected = false;
-            
+            this.connectPromise = null; // 에러 시 Promise 정리
+
             // 에러 리스너 호출
             this.errorListeners.forEach(listener => {
               try {
@@ -100,7 +111,7 @@ class WebSocketService {
                 console.error("Error listener error:", error);
               }
             });
-            
+
             this.handleReconnection();
             reject(new Error(`STOMP Error: ${frame.headers.message}`));
           },
@@ -129,7 +140,8 @@ class WebSocketService {
             console.error("WebSocket Error:", error);
             this.isConnecting = false;
             this.isConnected = false;
-            
+            this.connectPromise = null; // 에러 시 Promise 정리
+
             // 에러 리스너 호출
             this.errorListeners.forEach(listener => {
               try {
@@ -138,7 +150,7 @@ class WebSocketService {
                 console.error("Error listener error:", error);
               }
             });
-            
+
             this.handleReconnection();
             reject(error);
           }
@@ -148,10 +160,13 @@ class WebSocketService {
       } catch (error) {
         this.isConnecting = false;
         this.isConnected = false;
+        this.connectPromise = null; // 에러 시 Promise 정리
         console.error("Failed to create WebSocket client:", error);
         reject(error);
       }
     });
+
+    return this.connectPromise;
   }
 
   /**

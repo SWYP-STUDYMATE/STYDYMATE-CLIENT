@@ -331,7 +331,14 @@ const useMatchingStore = create(
       // 매칭 요청 보내기 (Workers API)
       sendMatchRequest: async (partnerId, message = '') => {
         try {
+          console.log('[matchingStore] Sending match request:', {
+            partnerId,
+            hasMessage: !!message
+          });
+
           const result = await createMatchRequest(partnerId, message);
+
+          console.log('[matchingStore] Match request result:', result);
 
           // sentRequests 상태 업데이트
           const { sentRequests } = get();
@@ -347,7 +354,12 @@ const useMatchingStore = create(
 
           return result;
         } catch (error) {
-          console.error('Send match request error:', error);
+          console.error('[matchingStore] Send match request error:', {
+            error,
+            message: error?.message,
+            response: error?.response?.data,
+            status: error?.response?.status
+          });
           throw error;
         }
       },

@@ -34,6 +34,8 @@ export default function ChatWindow({
   const [typingUsers, setTypingUsers] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connecting', 'connected', 'disconnected', 'reconnecting'
+  const [failedMessages, setFailedMessages] = useState([]); // 전송 실패한 메시지 목록
   const clientRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -55,6 +57,8 @@ export default function ChatWindow({
 
         // WebSocket 클라이언트 초기화
         console.log('[ChatWindow] WebSocket 클라이언트 초기화 시작');
+        setConnectionStatus('connecting');
+
         clientRef.current = await initStompClient(
           room.roomId,
           (msg) => {
@@ -68,11 +72,21 @@ export default function ChatWindow({
           },
           (status, data) => {
             console.log(`[ChatWindow] 채팅방 ${room.roomId} WebSocket 상태:`, status, data);
+            if (status === 'connected') {
+              setConnectionStatus('connected');
+            } else if (status === 'disconnected') {
+              setConnectionStatus('disconnected');
+              showError('채팅 연결이 끊어졌습니다. 재연결 중...');
+            }
           },
           (type, error) => {
             console.error(`[ChatWindow] 채팅방 ${room.roomId} WebSocket 에러:`, type, error);
+            setConnectionStatus('disconnected');
+            showError('채팅 연결에 문제가 발생했습니다.');
           }
         );
+
+        setConnectionStatus('connected');
         console.log('[ChatWindow] WebSocket 클라이언트 초기화 완료', clientRef.current);
 
         // 타이핑 상태 구독
@@ -260,21 +274,65 @@ export default function ChatWindow({
     console.log('[ChatWindow] WebSocket으로 메시지 전송', messagePayload);
 
     try {
+      // 연결 상태 확인
+      if (connectionStatus !== 'connected') {
+        throw new Error('WebSocket이 연결되지 않았습니다');
+      }
+
       clientRef.current.send(
         "/pub/chat/message",
         {},
         JSON.stringify(messagePayload)
       );
       console.log('[ChatWindow] 메시지 전송 완료');
+
+      // 입력 필드 초기화
+      setInput("");
+      setSelectedImageFiles([]);
+      setImagePreviews([]);
     } catch (error) {
       console.error('[ChatWindow] 메시지 전송 실패', error);
-      showError("메시지 전송에 실패했습니다.");
-      return;
-    }
 
-    setInput("");
-    setSelectedImageFiles([]);
-    setImagePreviews([]);
+      // 실패한 메시지를 목록에 추가
+      const failedMessage = {
+        id: Date.now(),
+        payload: messagePayload,
+        text: text.trim(),
+        images,
+        audioData,
+        error: error.message,
+      };
+      setFailedMessages(prev => [...prev, failedMessage]);
+
+      showError(
+        "메시지 전송에 실패했습니다. 네트워크 연결을 확인하고 재시도 버튼을 눌러주세요.",
+        { duration: 5000 }
+      );
+    }
+  };
+
+  // 실패한 메시지 재전송
+  const retryFailedMessage = async (failedMessageId) => {
+    const failedMessage = failedMessages.find(m => m.id === failedMessageId);
+    if (!failedMessage) return;
+
+    // 실패 목록에서 제거
+    setFailedMessages(prev => prev.filter(m => m.id !== failedMessageId));
+
+    // 재전송 시도
+    await sendMessage(failedMessage.text, failedMessage.images, failedMessage.audioData);
+  };
+
+  // 모든 실패한 메시지 재전송
+  const retryAllFailedMessages = async () => {
+    const messages = [...failedMessages];
+    setFailedMessages([]);
+
+    for (const failedMessage of messages) {
+      await sendMessage(failedMessage.text, failedMessage.images, failedMessage.audioData);
+      // 메시지 간 약간의 딜레이
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -310,13 +368,51 @@ export default function ChatWindow({
         messages={messages}
         onHighlightMessage={handleHighlightMessage}
       />
-      
+
       <ChatHeader
         room={room}
         currentUserId={currentUserId}
         onLeaveRoom={handleLeaveRoom}
         onSearchToggle={() => setIsSearchOpen(!isSearchOpen)}
       />
+
+      {/* 연결 상태 표시 */}
+      {connectionStatus !== 'connected' && (
+        <div className={`mx-6 mt-4 px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
+          connectionStatus === 'connecting' ? 'bg-blue-50 text-blue-700' :
+          connectionStatus === 'reconnecting' ? 'bg-yellow-50 text-yellow-700' :
+          'bg-red-50 text-red-700'
+        }`}>
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+          <span>
+            {connectionStatus === 'connecting' && '채팅방에 연결 중...'}
+            {connectionStatus === 'reconnecting' && '재연결 시도 중...'}
+            {connectionStatus === 'disconnected' && '채팅 연결이 끊어졌습니다'}
+          </span>
+        </div>
+      )}
+
+      {/* 실패한 메시지 재시도 */}
+      {failedMessages.length > 0 && (
+        <div className="mx-6 mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-red-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium">
+                {failedMessages.length}개의 메시지 전송 실패
+              </span>
+            </div>
+            <button
+              onClick={retryAllFailedMessages}
+              className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+            >
+              모두 재시도
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="border-b border-gray-200 mx-6 my-4" />
 

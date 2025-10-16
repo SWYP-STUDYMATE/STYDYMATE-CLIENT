@@ -331,59 +331,102 @@ function normalizePair(a: string, b: string): [string, string] {
 }
 
 export async function createMatchingRequest(env: Env, payload: RequestInsertPayload) {
-  if (payload.senderId === payload.receiverId) {
-    throw new Error('자기 자신에게는 매칭을 보낼 수 없습니다.');
-  }
+  try {
+    console.log('[createMatchingRequest] Starting with payload:', JSON.stringify({
+      senderId: payload.senderId,
+      receiverId: payload.receiverId,
+      hasMessage: !!payload.message
+    }));
 
-  const duplicate = await queryFirst<{ request_id: string }>(
-    env.DB,
-    `SELECT request_id FROM matching_requests
-       WHERE sender_id = ? AND receiver_id = ? AND status = ?
-       LIMIT 1`,
-    [payload.senderId, payload.receiverId, MATCHING_STATUS.PENDING]
-  );
+    if (payload.senderId === payload.receiverId) {
+      throw new AppError('자기 자신에게는 매칭을 보낼 수 없습니다.', 400, 'MATCHING_SELF_REQUEST');
+    }
 
-  if (duplicate) {
-    throw new Error('이미 대기 중인 매칭 요청이 있습니다.');
-  }
+    // 중복 요청 확인
+    console.log('[createMatchingRequest] Checking for duplicate requests');
+    const duplicate = await queryFirst<{ request_id: string }>(
+      env.DB,
+      `SELECT request_id FROM matching_requests
+         WHERE sender_id = ? AND receiver_id = ? AND status = ?
+         LIMIT 1`,
+      [payload.senderId, payload.receiverId, MATCHING_STATUS.PENDING]
+    );
 
-  const [user1, user2] = normalizePair(payload.senderId, payload.receiverId);
-  const existingMatch = await queryFirst<{ match_id: string; is_active: number }>(
-    env.DB,
-    `SELECT match_id, is_active FROM user_matches
-       WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
-       LIMIT 1`,
-    [user1, user2, user1, user2]
-  );
+    if (duplicate) {
+      console.log('[createMatchingRequest] Duplicate request found:', duplicate.request_id);
+      throw new AppError('이미 대기 중인 매칭 요청이 있습니다.', 400, 'MATCHING_DUPLICATE_REQUEST');
+    }
 
-  if (existingMatch?.is_active) {
-    throw new Error('이미 매칭된 사용자입니다.');
-  }
+    // 기존 매칭 확인
+    console.log('[createMatchingRequest] Checking for existing matches');
+    const [user1, user2] = normalizePair(payload.senderId, payload.receiverId);
+    const existingMatch = await queryFirst<{ match_id: string; is_active: number }>(
+      env.DB,
+      `SELECT match_id, is_active FROM user_matches
+         WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
+         LIMIT 1`,
+      [user1, user2, user1, user2]
+    );
 
-  const requestId = crypto.randomUUID();
-  const now = nowIso();
-  const expiresAt = addDays(MATCHING_DEFAULT_EXPIRE_DAYS);
+    if (existingMatch?.is_active) {
+      console.log('[createMatchingRequest] Active match found:', existingMatch.match_id);
+      throw new AppError('이미 매칭된 사용자입니다.', 400, 'MATCHING_ALREADY_MATCHED');
+    }
 
-  await execute(
-    env.DB,
-    `INSERT INTO matching_requests (
-        request_id, sender_id, receiver_id, message, status, response_message,
-        responded_at, expires_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
-    `,
-    [
+    // 매칭 요청 생성
+    const requestId = crypto.randomUUID();
+    const now = nowIso();
+    const expiresAt = addDays(MATCHING_DEFAULT_EXPIRE_DAYS);
+
+    console.log('[createMatchingRequest] Inserting new request:', {
       requestId,
-      payload.senderId,
-      payload.receiverId,
-      payload.message ?? null,
-      MATCHING_STATUS.PENDING,
-      expiresAt,
-      now,
-      now
-    ]
-  );
+      senderId: payload.senderId,
+      receiverId: payload.receiverId
+    });
 
-  return { requestId };
+    await execute(
+      env.DB,
+      `INSERT INTO matching_requests (
+          request_id, sender_id, receiver_id, message, status, response_message,
+          responded_at, expires_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
+      `,
+      [
+        requestId,
+        payload.senderId,
+        payload.receiverId,
+        payload.message ?? null,
+        MATCHING_STATUS.PENDING,
+        expiresAt,
+        now,
+        now
+      ]
+    );
+
+    console.log('[createMatchingRequest] Successfully created request:', requestId);
+    return { requestId };
+  } catch (error) {
+    console.error('[createMatchingRequest] Error occurred:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      payload: {
+        senderId: payload.senderId,
+        receiverId: payload.receiverId
+      }
+    });
+
+    // AppError는 그대로 throw
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // 기타 에러는 AppError로 변환
+    throw new AppError(
+      error instanceof Error ? error.message : '매칭 요청 생성 중 오류가 발생했습니다.',
+      500,
+      'MATCHING_REQUEST_CREATE_FAILED'
+    );
+  }
 }
 
 export async function listSentRequests(
