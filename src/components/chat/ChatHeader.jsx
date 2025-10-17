@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Phone, Video, Search, MoreVertical, LogOut } from "lucide-react";
+import { Phone, Video, Search, MoreVertical, LogOut, ChevronLeft } from "lucide-react";
 import OptimizedImage from '../OptimizedImage';
 import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
 
-export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchToggle }) {
+export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchToggle, onBack }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -36,6 +36,16 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchT
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center">
+        {/* 모바일 뒤로가기 버튼 */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="md:hidden p-2 -ml-2 mr-1 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="채팅방 목록으로 돌아가기"
+          >
+            <ChevronLeft className="w-6 h-6 text-[#111111]" />
+          </button>
+        )}
         <OptimizedImage
           src={partner.profileImage || DEFAULT_PROFILE_IMAGE}
           alt={partner.name}
@@ -44,52 +54,57 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchT
           height={40}
           loading="eager"
         />
-        <span className="ml-3 text-lg font-semibold">{room.roomName}</span>
+        <span className="ml-3 text-lg font-semibold text-[#111111]">{room.roomName}</span>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1 md:space-x-2">
+        {/* 데스크톱에서만 보이는 버튼들 */}
         <button
           onClick={() => {
             /* 전화 로직 */
           }}
-          className="p-2 hover:bg-gray-100 rounded-full"
+          className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
           title="음성 통화"
+          aria-label="음성 통화"
         >
-          <Phone className="w-5 h-5 text-gray-600" />
+          <Phone className="w-5 h-5 text-[#606060]" />
         </button>
         <button
           onClick={() => {
             /* 영상통화 로직 */
           }}
-          className="p-2 hover:bg-gray-100 rounded-full"
+          className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
           title="영상 통화"
+          aria-label="영상 통화"
         >
-          <Video className="w-5 h-5 text-gray-600" />
+          <Video className="w-5 h-5 text-[#606060]" />
         </button>
         <button
           onClick={onSearchToggle}
-          className="p-2 hover:bg-gray-100 rounded-full"
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           title="메시지 검색 (Ctrl+F)"
+          aria-label="메시지 검색"
         >
-          <Search className="w-5 h-5 text-gray-600" />
+          <Search className="w-5 h-5 text-[#606060]" />
         </button>
 
         {/* 메뉴 버튼 */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="메뉴 열기"
           >
-            <MoreVertical className="w-5 h-5 text-gray-600" />
+            <MoreVertical className="w-5 h-5 text-[#606060]" />
           </button>
 
           {/* 드롭다운 메뉴 */}
           {showMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-[#E7E7E7] z-50">
               <button
                 onClick={handleLeaveRoom}
-                className="w-full flex items-center px-4 py-3 text-left text-black hover:bg-gray-50 rounded-lg"
+                className="w-full flex items-center px-4 py-3 text-left text-[#111111] hover:bg-gray-50 rounded-lg transition-colors"
               >
-                <LogOut className="w-4 h-4 mr-3" />
+                <LogOut className="w-4 h-4 mr-3 text-[#606060]" />
                 채팅방 나가기
               </button>
             </div>

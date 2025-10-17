@@ -45,10 +45,23 @@ const formatDate = (dateString) => {
 };
 
 const AchievementCard = ({ item }) => {
-  const { achievement, isCompleted, progressPercentage, currentProgress, targetValue } = item;
-  const categoryLabel = CATEGORY_LABELS[achievement?.category] || achievement?.category || '기타';
-  const tierClass = TIER_COLORS[achievement?.tier] || 'text-[#929292]';
-  const progress = isCompleted ? 100 : Math.min(100, Math.max(0, progressPercentage ?? 0));
+  // 안전한 데이터 추출
+  const achievement = item?.achievement || {};
+  const isCompleted = item?.isCompleted ?? false;
+  const progressPercentage = item?.progressPercentage ?? 0;
+  const currentProgress = item?.currentProgress ?? 0;
+  const targetValue = item?.targetValue ?? null;
+
+  // 문자열 속성만 안전하게 추출
+  const title = typeof achievement.title === 'string' ? achievement.title : '이름 없는 업적';
+  const description = typeof achievement.description === 'string' ? achievement.description : '';
+  const category = typeof achievement.category === 'string' ? achievement.category : null;
+  const tier = typeof achievement.tier === 'string' ? achievement.tier : null;
+  const xpReward = typeof achievement.xpReward === 'number' ? achievement.xpReward : null;
+
+  const categoryLabel = category ? (CATEGORY_LABELS[category] || category) : '기타';
+  const tierClass = tier ? (TIER_COLORS[tier] || 'text-[#929292]') : 'text-[#929292]';
+  const progress = isCompleted ? 100 : Math.min(100, Math.max(0, progressPercentage));
 
   return (
     <div
@@ -63,16 +76,16 @@ const AchievementCard = ({ item }) => {
         <div className="flex-1">
           <div className="flex items-start justify-between mb-1">
             <h3 className={`font-bold text-[16px] ${isCompleted ? 'text-[#111111]' : 'text-[#606060]'}`}>
-              {achievement?.title || '이름 없는 업적'}
+              {title}
             </h3>
-            {achievement?.xpReward ? (
-              <span className="text-[14px] font-bold text-[#4285F4]">+{achievement.xpReward} XP</span>
+            {xpReward ? (
+              <span className="text-[14px] font-bold text-[#4285F4]">+{xpReward} XP</span>
             ) : null}
           </div>
-          <p className="text-[13px] text-[#929292] mb-2 line-clamp-2">{achievement?.description}</p>
+          <p className="text-[13px] text-[#929292] mb-2 line-clamp-2">{description}</p>
           <div className="flex items-center gap-3 text-[12px] text-[#929292] mb-2">
             <span className="px-2 py-1 bg-[#F8F9FA] rounded-full">{categoryLabel}</span>
-            {achievement?.tier && <span className={tierClass}>{achievement.tier}</span>}
+            {tier && <span className={tierClass}>{tier}</span>}
             {item.completedAt && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -84,7 +97,7 @@ const AchievementCard = ({ item }) => {
             <div className="flex items-center justify-between text-[12px] text-[#929292]">
               <span>{isCompleted ? '완료됨' : '진행중'}</span>
               <span>
-                {currentProgress ?? 0}
+                {currentProgress}
                 {targetValue ? ` / ${targetValue}` : ''}
               </span>
             </div>
@@ -199,9 +212,15 @@ const AchievementsList = ({ achievements = [], loading, error }) => {
 
   return (
     <div className="space-y-4">
-      {achievements.map((item) => (
-        <AchievementCard key={item.id ?? item.achievement?.id} item={item} />
-      ))}
+      {achievements.map((item, index) => {
+        // 안전한 key 생성: 문자열로 변환하여 객체 렌더링 에러 방지
+        const itemId = item?.id ?? item?.achievement?.id;
+        const safeKey = typeof itemId === 'object'
+          ? `achievement-${index}`
+          : String(itemId ?? `achievement-${index}`);
+
+        return <AchievementCard key={safeKey} item={item} />;
+      })}
     </div>
   );
 };

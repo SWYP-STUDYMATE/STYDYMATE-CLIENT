@@ -58,12 +58,21 @@ export default function CommonButton({
     }
 
     if (icon) {
-      const iconElement = React.cloneElement(icon, { 
-        className: `w-5 h-5 ${icon.props.className || ''}` 
+      const iconElement = React.cloneElement(icon, {
+        className: `w-5 h-5 ${icon.props.className || ''}`
       });
-      
+
       const buttonText = text || children;
-      
+
+      // 아이콘만 있고 텍스트가 없는 경우
+      if (!buttonText) {
+        return (
+          <span className="flex items-center justify-center">
+            {iconElement}
+          </span>
+        );
+      }
+
       if (iconPosition === "right") {
         return (
           <span className="flex items-center justify-center gap-2">
@@ -72,7 +81,7 @@ export default function CommonButton({
           </span>
         );
       }
-      
+
       return (
         <span className="flex items-center justify-center gap-2">
           {iconElement}

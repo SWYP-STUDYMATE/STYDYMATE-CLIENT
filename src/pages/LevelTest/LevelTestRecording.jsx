@@ -4,7 +4,7 @@ import CommonButton from '../../components/CommonButton';
 import AudioRecorder from '../../components/AudioRecorder';
 import CountdownTimer from '../../components/CountdownTimer';
 import useLevelTestStore from '../../store/levelTestStore';
-import { uploadVoiceRecording, analyzeVoiceTest } from '../../api/levelTest';
+import { uploadVoiceRecording } from '../../api/levelTest';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 
@@ -27,7 +27,6 @@ export default function LevelTestRecording() {
     loadQuestions,
     isSubmitting,
     setIsSubmitting,
-    setTestResult,
     currentRecording
   } = useLevelTestStore();
 
@@ -84,25 +83,18 @@ export default function LevelTestRecording() {
       try {
         setIsSubmitting(true);
 
-        // Submit current recording to Workers API
+        // Submit current recording to Workers API (업로드만 수행, 분석은 마지막에)
         const recordingBlob = recordingForCurrentQuestion?.blob || currentRecording?.blob;
         if (recordingBlob) {
-          
-          //업로드
+          // 녹음 파일만 업로드 (분석은 Complete 페이지에서 일괄 처리)
           await uploadVoiceRecording(testId, recordingBlob);
-
-          //분석
-          const analysis = await analyzeVoiceTest(testId);
-
-          //결과
-          setTestResult(analysis);
-
+          console.log(`Question ${currentQuestionIndex + 1} recording uploaded successfully`);
         }
 
         if (currentQuestionIndex < totalQuestions - 1) {
           nextQuestion();
         } else {
-          // All questions completed - navigate to complete page which will handle final submission
+          // All questions completed - navigate to complete page which will handle final analysis
           setTestStatus('processing');
           navigate('/level-test/complete');
         }

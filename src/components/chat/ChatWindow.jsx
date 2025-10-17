@@ -356,7 +356,7 @@ export default function ChatWindow({
 
   if (isRoomMissing) return null;
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col h-full w-full relative">
+    <div className="bg-white md:rounded-xl md:shadow-lg p-4 md:p-8 flex flex-col h-full w-full relative">
       {/* 메시지 검색 */}
       <MessageSearch
         roomId={room.roomId}
@@ -378,7 +378,7 @@ export default function ChatWindow({
 
       {/* 연결 상태 표시 */}
       {connectionStatus !== 'connected' && (
-        <div className={`mx-6 mt-4 px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
+        <div className={`mx-3 md:mx-6 mt-4 px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
           connectionStatus === 'connecting' ? 'bg-blue-50 text-blue-700' :
           connectionStatus === 'reconnecting' ? 'bg-yellow-50 text-yellow-700' :
           'bg-red-50 text-red-700'
@@ -394,7 +394,7 @@ export default function ChatWindow({
 
       {/* 실패한 메시지 재시도 */}
       {failedMessages.length > 0 && (
-        <div className="mx-6 mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mx-3 md:mx-6 mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-red-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,7 +406,7 @@ export default function ChatWindow({
             </div>
             <button
               onClick={retryAllFailedMessages}
-              className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+              className="px-3 py-1 bg-[#EA4335] text-white text-sm rounded-md hover:bg-red-700 transition-colors"
             >
               모두 재시도
             </button>
@@ -414,7 +414,7 @@ export default function ChatWindow({
         </div>
       )}
 
-      <div className="border-b border-gray-200 mx-6 my-4" />
+      <div className="border-b border-[#E7E7E7] mx-3 md:mx-6 my-4" />
 
       <div className="flex-1 min-h-0 flex flex-col">
         <ChatMessageList

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainHeader from "../../components/MainHeader";
 import Sidebar from "../../components/chat/Sidebar";
+import MobileTabBar from "../../components/MobileTabBar";
 import Calendar from "../../components/Calendar";
 import SessionScheduleList from "../../components/SessionScheduleList";
 import useSessionStore from "../../store/sessionStore";
@@ -82,14 +83,54 @@ export default function Schedule() {
     navigate('/session/schedule/new');
   };
 
+  // 모바일 탭 상태 (캘린더/리스트)
+  const [mobileTab, setMobileTab] = useState('list');
+
   return (
     <div className="bg-[#fafafa] min-h-screen flex flex-col">
       <MainHeader />
-      <div className="flex flex-1 p-6 space-x-6 overflow-hidden">
-        <Sidebar active="schedule" />
 
-        <div className="flex-1 flex space-x-6 overflow-y-auto">
-          <div className="w-[46%]">
+      {/* 모바일: 하단 탭바 */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <MobileTabBar active="schedule" />
+      </div>
+
+      <div className="flex flex-1 p-4 md:p-6 md:space-x-6 overflow-hidden pb-20 md:pb-0">
+        {/* 데스크탑: 사이드바 */}
+        <div className="hidden md:block">
+          <Sidebar active="schedule" />
+        </div>
+
+        {/* 모바일: 탭 네비게이션 */}
+        <div className="md:hidden w-full mb-4">
+          <div className="flex bg-white rounded-lg p-1 border border-[#E7E7E7]">
+            <button
+              onClick={() => setMobileTab('list')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
+                mobileTab === 'list'
+                  ? 'bg-[#00C471] text-white'
+                  : 'text-[#929292]'
+              }`}
+            >
+              세션 리스트
+            </button>
+            <button
+              onClick={() => setMobileTab('calendar')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
+                mobileTab === 'calendar'
+                  ? 'bg-[#00C471] text-white'
+                  : 'text-[#929292]'
+              }`}
+            >
+              캘린더
+            </button>
+          </div>
+        </div>
+
+        {/* 콘텐츠 영역 */}
+        <div className="flex-1 flex flex-col md:flex-row md:space-x-6 overflow-y-auto">
+          {/* 모바일: 조건부 렌더링, 데스크탑: 항상 표시 */}
+          <div className={`${mobileTab === 'calendar' ? 'block' : 'hidden'} md:block md:w-[46%] mb-4 md:mb-0`}>
             <Calendar
               events={calendarEvents}
               isLoading={calendarLoading}
@@ -100,7 +141,7 @@ export default function Schedule() {
             />
           </div>
 
-          <div className="w-[54%]">
+          <div className={`${mobileTab === 'list' ? 'block' : 'hidden'} md:block md:w-[54%]`}>
             <SessionScheduleList
               sessions={currentMonthSessions}
               currentMonthDate={currentMonthDate}

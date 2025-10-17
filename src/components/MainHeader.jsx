@@ -8,9 +8,9 @@ export default function MainHeader() {
 
   return (
     <>
-      <div className="bg-white border-b border-[var(--black-50)] h-[81px] w-full flex items-center justify-between px-10">
+      <div className="bg-white border-b border-[#E7E7E7] h-16 sm:h-20 lg:h-[81px] w-full flex items-center justify-between px-4 sm:px-6 lg:px-10">
         {/* 로고 */}
-        <div className="w-16 h-14 flex items-center justify-center">
+        <div className="w-12 h-10 sm:w-14 sm:h-12 lg:w-16 lg:h-14 flex items-center justify-center">
           <OptimizedImage
             src="/assets/image286.png"
             alt="Language MATES Logo"
@@ -22,19 +22,19 @@ export default function MainHeader() {
         </div>
 
         {/* 우측 알림 및 테스트 버튼들 */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {/* 개발 모드에서만 테스트 패널 버튼 표시 */}
           {import.meta.env.DEV && (
             <button
               onClick={() => setShowTestPanel(true)}
-              className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              className="px-2 py-1 text-xs bg-[#4285F4] text-white rounded hover:bg-[#3367d6] transition-colors"
             >
               알림 테스트
             </button>
           )}
-          
-          {/* 알림 아이콘 (임시) */}
-          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-[#111111]">
+
+          {/* 알림 아이콘 */}
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[#F1F3F5] text-[#111111] hover:bg-[#E7E7E7] transition-colors">
             <Bell className="w-5 h-5" />
           </div>
         </div>

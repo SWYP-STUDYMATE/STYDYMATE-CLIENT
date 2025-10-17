@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { query, queryFirst, execute, transaction } from '../utils/db';
 import { AppError } from '../utils/errors';
+import { createNotification } from './notifications';
 
 interface AchievementRow {
   achievement_id: number;
@@ -884,6 +885,29 @@ export async function checkAndCompleteAchievements(
 
     if (updated) {
       completed.push(mapUserAchievementRow(updated));
+
+      // 업적 달성 알림 전송
+      try {
+        const xpReward = updated.xp_reward || 0;
+        await createNotification(env, {
+          userId,
+          type: 'ACHIEVEMENT_UNLOCKED',
+          title: '🏆 업적 달성!',
+          content: `"${updated.title}" 업적을 달성했습니다! (${xpReward} XP 획득)`,
+          category: 'achievement',
+          priority: 2,
+          actionUrl: `/achievements`,
+          actionData: {
+            achievementId: updated.achievement_id,
+            achievementKey: updated.achievement_key,
+            title: updated.title,
+            tier: updated.tier,
+            xpReward
+          }
+        });
+      } catch (error) {
+        console.error(`Failed to send ACHIEVEMENT_UNLOCKED notification for achievement ${updated.achievement_id}:`, error);
+      }
     }
   }
 

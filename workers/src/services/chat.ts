@@ -9,6 +9,7 @@ import type {
 import { query, queryFirst, execute, transaction } from '../utils/db';
 import { AppError } from '../utils/errors';
 import { saveToR2, generateUniqueFileName } from './storage';
+import { createNotification } from './notifications';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -651,7 +652,80 @@ export async function createChatMessage(
   );
 
   const mappedFiles = files.map(mapFile);
-  return mapMessage(messageRow, images, mappedFiles);
+  const chatMessage = mapMessage(messageRow, images, mappedFiles);
+
+  // 채팅방의 다른 참여자들에게 알림 전송
+  try {
+    console.log('[createChatMessage] Sending notifications to room participants');
+
+    // 발신자 정보 조회
+    const senderInfo = await queryFirst<{
+      english_name: string | null;
+      name: string | null;
+    }>(
+      env.DB,
+      'SELECT english_name, name FROM users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+
+    const senderName = senderInfo?.english_name || senderInfo?.name || '익명의 사용자';
+
+    // 채팅방의 다른 참여자 ID 조회 (발신자 제외)
+    const otherParticipants = await query<{ user_id: string }>(
+      env.DB,
+      'SELECT user_id FROM chat_room_participant WHERE room_id = ? AND user_id != ?',
+      [roomId, userId]
+    );
+
+    // 메시지 내용 요약 (최대 50자)
+    let contentPreview = messageText || '';
+    if (!contentPreview && audioUrl) {
+      contentPreview = '음성 메시지';
+    } else if (!contentPreview && imageUrls.length > 0) {
+      contentPreview = '이미지';
+    }
+    if (contentPreview.length > 50) {
+      contentPreview = contentPreview.substring(0, 50) + '...';
+    }
+
+    // 각 참여자에게 알림 전송
+    for (const participant of otherParticipants) {
+      try {
+        await createNotification(env, {
+          userId: participant.user_id,
+          type: 'CHAT_MESSAGE',
+          title: `${room.room_name}`,
+          content: `${senderName}: ${contentPreview}`,
+          category: 'chat',
+          priority: 1,
+          actionUrl: `/chat/${roomId}`,
+          actionData: {
+            roomId,
+            messageId,
+            senderId: userId,
+            senderName
+          },
+          senderUserId: userId
+        });
+      } catch (notificationError) {
+        console.error('[createChatMessage] Failed to send notification to participant:', {
+          error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+          participantId: participant.user_id
+        });
+      }
+    }
+
+    console.log('[createChatMessage] Notifications sent to', otherParticipants.length, 'participants');
+  } catch (notificationError) {
+    // 알림 전송 실패는 로깅만 하고 메시지 생성은 성공 처리
+    console.error('[createChatMessage] Failed to send notifications:', {
+      error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+      roomId,
+      messageId
+    });
+  }
+
+  return chatMessage;
 }
 
 export async function markRoomMessagesAsRead(env: Env, roomId: number, userId: string): Promise<void> {

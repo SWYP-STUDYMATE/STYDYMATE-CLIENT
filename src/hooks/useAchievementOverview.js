@@ -26,7 +26,8 @@ export const useAchievementOverview = () => {
     }
 
     fetchAchievements();
-  }, [fetchAchievements]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 시 한 번만 실행 (fetchAchievements는 Zustand에서 안정적인 참조 제공)
 
   const refresh = useCallback((options = {}) => {
     if (typeof fetchAchievements !== 'function') {

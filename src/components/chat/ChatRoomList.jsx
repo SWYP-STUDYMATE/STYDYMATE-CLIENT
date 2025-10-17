@@ -45,20 +45,20 @@ export default function ChatRoomList({
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      <div className="flex items-center justify-center px-4">
-        <MessageCircle className="w-5 h-5 text-gray-700 mr-2" />
-        <span className="text-lg font-semibold text-gray-800">Chat</span>
+      <div className="flex items-center justify-center px-4 pt-2 md:pt-0">
+        <MessageCircle className="w-5 h-5 text-[#111111] mr-2" />
+        <span className="text-lg font-semibold text-[#111111]">Chat</span>
       </div>
 
       <div className="px-4">
-        <div className="flex items-center bg-white rounded-xl px-4 py-2 shadow-sm">
-          <Search className="w-4 h-4 text-gray-500 mr-2" />
+        <div className="flex items-center bg-white rounded-xl px-4 py-2 shadow-sm border border-[#E7E7E7]">
+          <Search className="w-4 h-4 text-[#929292] mr-2" />
           <input
             type="text"
             placeholder="채팅방을 검색해보세요"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-transparent focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1 text-sm text-gray-700"
+            className="flex-1 bg-transparent focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1 text-sm text-[#111111] placeholder-[#929292]"
             aria-label="채팅방 검색"
           />
         </div>
@@ -79,32 +79,32 @@ export default function ChatRoomList({
                 <button
                   key={room.roomId}
                   onClick={() => handleRoomClick(room)}
-                  className="w-full flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-lg border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors text-left"
+                  className="w-full flex items-center p-3 md:p-3 min-h-[64px] hover:bg-gray-50 cursor-pointer rounded-lg border border-[#E7E7E7] focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors text-left"
                   aria-label={`${name} 채팅방 ${isParticipating ? '열기' : '참여하기'}`}
                   type="button"
                 >
                   <img
                     src={other?.profileImage || "/assets/basicProfilePic.png"}
                     alt={`${name} 프로필 사진`}
-                    className="w-10 h-10 rounded-full mr-3"
+                    className="w-12 h-12 md:w-10 md:h-10 rounded-full mr-3 flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-gray-800 truncate">{name}</p>
+                      <p className="font-medium text-[#111111] truncate">{name}</p>
                       {isParticipating && room.unreadCount > 0 && (
-                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full ml-2">
+                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-[#EA4335] rounded-full ml-2 flex-shrink-0">
                           {room.unreadCount > 99 ? '99+' : room.unreadCount}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-sm text-[#929292] truncate mt-1">
                       {isParticipating
                         ? room.lastMessage || "메시지가 없습니다"
                         : `참여자 ${room.participants.length}명`}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end ml-2">
-                    <span className="text-xs text-gray-400">
+                  <div className="flex flex-col items-end ml-2 flex-shrink-0">
+                    <span className="text-xs text-[#929292]">
                       {isParticipating && room.lastMessageAt
                         ? new Date(room.lastMessageAt).toLocaleTimeString("ko-KR", {
                             hour: "2-digit",
@@ -121,7 +121,7 @@ export default function ChatRoomList({
               );
             })
           ) : (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center text-[#929292] py-8">
               채팅방이 없습니다
             </div>
           )}
@@ -129,11 +129,11 @@ export default function ChatRoomList({
           {/* 새 채팅방 생성 버튼 */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="w-full mt-4 py-2 bg-[#00C471] text-white text-sm font-medium rounded-full hover:bg-[#00b364] transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+            className="w-full mt-4 min-h-[48px] py-3 bg-[#00C471] text-white text-base font-bold rounded-lg hover:bg-[#00B267] transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
             aria-label="새 채팅방 만들기"
             type="button"
           >
-            <Plus className="w-4 h-4 mr-1" />새 채팅방
+            <Plus className="w-5 h-5 mr-2" />새 채팅방
           </button>
         </div>
       </div>

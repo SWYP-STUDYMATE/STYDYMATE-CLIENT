@@ -14,6 +14,7 @@ import {
   removeActiveSession,
   addRecentSession
 } from './groupSessionsState';
+import { createNotification } from './notifications';
 
 interface CreateGroupSessionPayload {
   title: string;
@@ -381,6 +382,14 @@ export async function joinGroupSession(env: Env, userId: string, sessionId: stri
     return session;
   }
 
+  // 참가자 정보 조회
+  const userInfo = await queryFirst<{
+    english_name: string | null;
+    name: string | null;
+  }>(env.DB, 'SELECT english_name, name FROM users WHERE user_id = ? LIMIT 1', [userId]);
+
+  const userName = userInfo?.english_name || userInfo?.name || '사용자';
+
   const now = nowIso();
   if (existing) {
     await execute(
@@ -408,6 +417,28 @@ export async function joinGroupSession(env: Env, userId: string, sessionId: stri
       WHERE session_id = ?`,
     [now, sessionId]
   );
+
+  // 호스트에게 참가 알림 전송
+  try {
+    await createNotification(env, {
+      userId: session.hostUserId,
+      type: 'GROUP_SESSION_JOINED',
+      title: '새로운 참가자',
+      content: `${userName}님이 "${session.title}" 그룹 세션에 참가했습니다.`,
+      category: 'group_session',
+      priority: 1,
+      actionUrl: `/group-sessions/${sessionId}`,
+      actionData: {
+        sessionId,
+        sessionTitle: session.title,
+        participantId: userId,
+        participantName: userName
+      },
+      senderUserId: userId
+    });
+  } catch (error) {
+    console.error('Failed to send GROUP_SESSION_JOINED notification:', error);
+  }
 
   await invalidateGroupSessionCache(env, sessionId);
   await addActiveSession(env, userId, sessionId);
@@ -460,6 +491,36 @@ export async function startGroupSession(env: Env, userId: string, sessionId: str
     'UPDATE group_sessions SET status = ?, started_at = ?, updated_at = ? WHERE session_id = ?',
     [GROUP_STATUS.ACTIVE, now, now, sessionId]
   );
+
+  // 모든 참가자에게 세션 시작 알림 전송
+  const participants = await query<{ user_id: string }>(
+    env.DB,
+    'SELECT user_id FROM group_session_participants WHERE session_id = ? AND status = ? AND user_id != ?',
+    [sessionId, PARTICIPANT_STATUS.JOINED, userId]
+  );
+
+  for (const participant of participants) {
+    try {
+      await createNotification(env, {
+        userId: participant.user_id,
+        type: 'GROUP_SESSION_STARTED',
+        title: '그룹 세션 시작',
+        content: `"${session.title}" 그룹 세션이 시작되었습니다. 지금 참여하세요!`,
+        category: 'group_session',
+        priority: 3, // 긴급 (세션이 시작되었으므로 즉시 알림 필요)
+        actionUrl: `/group-sessions/${sessionId}`,
+        actionData: {
+          sessionId,
+          sessionTitle: session.title,
+          hostUserId: userId
+        },
+        senderUserId: userId
+      });
+    } catch (error) {
+      console.error(`Failed to send GROUP_SESSION_STARTED notification to ${participant.user_id}:`, error);
+    }
+  }
+
   await invalidateGroupSessionCache(env, sessionId);
   return getGroupSessionById(env, sessionId, userId);
 }
@@ -480,6 +541,14 @@ export async function endGroupSession(env: Env, userId: string, sessionId: strin
 export async function cancelGroupSession(env: Env, userId: string, sessionId: string, reason?: string) {
   const session = await getGroupSessionById(env, sessionId);
   if (session.hostUserId !== userId) throw new Error('세션을 취소할 권한이 없습니다.');
+
+  // 모든 참가자 조회
+  const participants = await query<{ user_id: string }>(
+    env.DB,
+    'SELECT user_id FROM group_session_participants WHERE session_id = ? AND status = ? AND user_id != ?',
+    [sessionId, PARTICIPANT_STATUS.JOINED, userId]
+  );
+
   const now = nowIso();
   await execute(
     env.DB,
@@ -495,6 +564,31 @@ export async function cancelGroupSession(env: Env, userId: string, sessionId: st
       WHERE session_id = ? AND status = ?`,
     [PARTICIPANT_STATUS.LEFT, now, sessionId, PARTICIPANT_STATUS.JOINED]
   );
+
+  // 모든 참가자에게 취소 알림 전송
+  const reasonText = reason ? ` (사유: ${reason})` : '';
+  for (const participant of participants) {
+    try {
+      await createNotification(env, {
+        userId: participant.user_id,
+        type: 'GROUP_SESSION_CANCELLED',
+        title: '그룹 세션 취소',
+        content: `"${session.title}" 그룹 세션이 취소되었습니다${reasonText}.`,
+        category: 'group_session',
+        priority: 2,
+        actionUrl: `/group-sessions`,
+        actionData: {
+          sessionId,
+          sessionTitle: session.title,
+          hostUserId: userId,
+          reason
+        },
+        senderUserId: userId
+      });
+    } catch (error) {
+      console.error(`Failed to send GROUP_SESSION_CANCELLED notification to ${participant.user_id}:`, error);
+    }
+  }
 
   await invalidateGroupSessionCache(env, sessionId);
 }
@@ -653,6 +747,14 @@ export async function rateGroupSession(env: Env, userId: string, sessionId: stri
 export async function updateGroupSession(env: Env, hostUserId: string, sessionId: string, payload: CreateGroupSessionPayload) {
   const session = await getGroupSessionById(env, sessionId);
   if (session.hostUserId !== hostUserId) throw new Error('세션을 수정할 권한이 없습니다.');
+
+  // 모든 참가자 조회
+  const participants = await query<{ user_id: string }>(
+    env.DB,
+    'SELECT user_id FROM group_session_participants WHERE session_id = ? AND status = ? AND user_id != ?',
+    [sessionId, PARTICIPANT_STATUS.JOINED, hostUserId]
+  );
+
   const now = nowIso();
   await execute(
     env.DB,
@@ -685,13 +787,56 @@ export async function updateGroupSession(env: Env, hostUserId: string, sessionId
     ]
   );
 
+  // 세션 정보가 변경되었음을 참가자들에게 알림
+  let changeDetails = '';
+  if (session.title !== payload.title) {
+    changeDetails = '세션 제목이 변경되었습니다.';
+  } else if (session.scheduledAt !== payload.scheduledAt) {
+    changeDetails = '세션 일정이 변경되었습니다.';
+  } else {
+    changeDetails = '세션 정보가 업데이트되었습니다.';
+  }
+
+  for (const participant of participants) {
+    try {
+      await createNotification(env, {
+        userId: participant.user_id,
+        type: 'GROUP_SESSION_UPDATED',
+        title: '그룹 세션 변경',
+        content: `"${payload.title}" 그룹 세션 정보가 업데이트되었습니다. ${changeDetails}`,
+        category: 'group_session',
+        priority: 2,
+        actionUrl: `/group-sessions/${sessionId}`,
+        actionData: {
+          sessionId,
+          sessionTitle: payload.title,
+          hostUserId,
+          scheduledAt: payload.scheduledAt,
+          changes: changeDetails
+        },
+        senderUserId: hostUserId
+      });
+    } catch (error) {
+      console.error(`Failed to send GROUP_SESSION_UPDATED notification to ${participant.user_id}:`, error);
+    }
+  }
+
   await invalidateGroupSessionCache(env, sessionId);
 }
 
 export async function inviteToGroupSession(env: Env, hostUserId: string, sessionId: string, invitedUserIds: string[]) {
   const session = await getGroupSessionById(env, sessionId);
   if (session.hostUserId !== hostUserId) throw new Error('세션을 초대할 권한이 없습니다.');
+
+  // 호스트 정보 조회
+  const hostInfo = await queryFirst<{
+    english_name: string | null;
+    name: string | null;
+  }>(env.DB, 'SELECT english_name, name FROM users WHERE user_id = ? LIMIT 1', [hostUserId]);
+
+  const hostName = hostInfo?.english_name || hostInfo?.name || '사용자';
   const now = nowIso();
+
   for (const userId of invitedUserIds) {
     await execute(
       env.DB,
@@ -702,6 +847,29 @@ export async function inviteToGroupSession(env: Env, hostUserId: string, session
       [crypto.randomUUID(), sessionId, userId, PARTICIPANT_STATUS.INVITED, now, now]
     );
     await saveSessionInvitation(env, sessionId, userId, hostUserId);
+
+    // 초대 알림 전송
+    try {
+      await createNotification(env, {
+        userId,
+        type: 'GROUP_SESSION_INVITE',
+        title: '그룹 세션 초대',
+        content: `${hostName}님이 "${session.title}" 그룹 세션에 초대했습니다.`,
+        category: 'group_session',
+        priority: 2,
+        actionUrl: `/group-sessions/${sessionId}`,
+        actionData: {
+          sessionId,
+          sessionTitle: session.title,
+          hostUserId,
+          hostName,
+          scheduledAt: session.scheduledAt
+        },
+        senderUserId: hostUserId
+      });
+    } catch (error) {
+      console.error('Failed to send GROUP_SESSION_INVITE notification:', error);
+    }
   }
   await invalidateGroupSessionCache(env, sessionId);
   return getGroupSessionById(env, sessionId, hostUserId);

@@ -88,31 +88,35 @@ export default function SessionScheduleList({
   const today = new Date();
 
   return (
-    <div className="bg-[#00A398]/[0.03] rounded-[20px] p-8 w-full h-full">
-      <div className="text-center mb-8">
-        <h1 className="text-[48px] font-bold text-[#111111] mb-2">세션 스케줄</h1>
-        <p className="text-[16px] font-medium text-[#343a40]">
+    <div className="bg-[#00A398]/[0.03] rounded-[20px] p-4 md:p-8 w-full h-full">
+      <div className="text-center mb-4 md:mb-8">
+        <h1 className="text-2xl md:text-[48px] font-bold text-[#111111] mb-1 md:mb-2">
+          세션 스케줄
+        </h1>
+        <p className="text-sm md:text-[16px] font-medium text-[#343a40]">
           {formatMonthRange(currentMonthDate)}
         </p>
       </div>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center h-[360px] bg-white rounded-[16px] border border-[#e1e3e6]">
-          <p className="text-[16px] text-[#343a40] mb-4">세션 정보를 불러오지 못했습니다.</p>
+        <div className="flex flex-col items-center justify-center h-[240px] md:h-[360px] bg-white rounded-[16px] border border-[#e1e3e6]">
+          <p className="text-sm md:text-[16px] text-[#343a40] mb-4">
+            세션 정보를 불러오지 못했습니다.
+          </p>
           <button
             type="button"
             onClick={onRetry}
-            className="px-4 py-2 bg-[#00c471] text-white rounded-lg text-[14px]"
+            className="px-4 py-2 bg-[#00c471] text-white rounded-lg text-sm md:text-[14px] transition-colors duration-200 hover:bg-[#00B267]"
           >
             다시 시도
           </button>
         </div>
       ) : isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
-              className="bg-white rounded-[10px] p-6 border border-transparent animate-pulse"
+              className="bg-white rounded-lg md:rounded-[10px] p-4 md:p-6 border border-transparent animate-pulse"
             >
               <div className="h-4 bg-[#e9ecef] rounded w-1/3 mb-3" />
               <div className="h-4 bg-[#e9ecef] rounded w-1/2" />
@@ -120,18 +124,20 @@ export default function SessionScheduleList({
           ))}
         </div>
       ) : sessions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-[360px] bg-white rounded-[16px] border border-[#e1e3e6]">
-          <p className="text-[16px] text-[#343a40] mb-4">이번 달 예정된 세션이 없습니다.</p>
+        <div className="flex flex-col items-center justify-center h-[240px] md:h-[360px] bg-white rounded-[16px] border border-[#e1e3e6]">
+          <p className="text-sm md:text-[16px] text-[#343a40] mb-4">
+            이번 달 예정된 세션이 없습니다.
+          </p>
           <button
             type="button"
             onClick={onCreateSession}
-            className="px-4 py-2 bg-[#00c471] text-white rounded-lg text-[14px]"
+            className="px-4 py-2 bg-[#00c471] text-white rounded-lg text-sm md:text-[14px] transition-colors duration-200 hover:bg-[#00B267]"
           >
             세션 만들기
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {sessions.map((session) => {
             const startDate = session.start ? new Date(session.start) : null;
             const endDate = session.end ? new Date(session.end) : null;
@@ -152,29 +158,40 @@ export default function SessionScheduleList({
             return (
               <div
                 key={session.id || `${session.title}-${session.start}`}
-                className={`bg-white rounded-[10px] p-6 ${
+                className={`bg-white rounded-lg md:rounded-[10px] p-4 md:p-6 min-h-[72px] md:min-h-0 ${
                   isTodaySession ? "border-2 border-[#00c471]" : "border border-transparent"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col space-y-2">
-                    <span className="text-[18px] font-bold text-[#00c471]">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+                  <div className="flex flex-col space-y-1 md:space-y-2">
+                    <span className="text-base md:text-[18px] font-bold text-[#00c471]">
                       {startDate ? formatDayLabel(startDate) : "날짜 미정"} {formatTimeRange(startDate, endDate)}
                     </span>
-                    <span className="text-[18px] font-bold text-[#111111]">{session.title}</span>
-                    <span className="text-[16px] text-[#343a40]">{participantLabel}</span>
-                    <span className="text-[16px] text-[#343a40]">{languageLabel}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-[12px] font-semibold px-2 py-1 rounded-full ${statusStyle.className}`}>
+                    <span className="text-base md:text-[18px] font-bold text-[#111111]">
+                      {session.title}
+                    </span>
+                    <span className="text-sm md:text-[16px] text-[#343a40]">
+                      {participantLabel}
+                    </span>
+                    <span className="text-sm md:text-[16px] text-[#343a40]">
+                      {languageLabel}
+                    </span>
+                    <div className="flex items-center flex-wrap gap-2">
+                      <span className={`text-xs md:text-[12px] font-semibold px-2 py-1 rounded-full ${statusStyle.className}`}>
                         {statusStyle.text}
                       </span>
-                      <span className="text-[12px] text-[#6e7781]">
+                      <span className="text-xs md:text-[12px] text-[#6e7781]">
                         {session.isHost ? "내가 호스트" : "초대받은 세션"}
+                      </span>
+                      {/* 모바일: 세션 시간을 뱃지로 표시 */}
+                      <span className="md:hidden text-xs font-medium text-[#111111] bg-[#F1F3F5] px-2 py-1 rounded">
+                        {durationLabel}
                       </span>
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  {/* 데스크탑: 세션 시간을 우측에 표시 */}
+                  <div className="hidden md:block text-right">
                     <span className="text-[18px] font-bold text-[#111111]">
                       {durationLabel}
                     </span>

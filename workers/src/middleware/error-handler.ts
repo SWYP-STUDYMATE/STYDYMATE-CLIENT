@@ -2,6 +2,7 @@ import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ApiError, ApiResponse } from '../types';
 import { log } from '../utils/logger';
+import { AppError } from '../utils/errors';
 
 /**
  * 전역 에러 핸들링 미들웨어
@@ -22,6 +23,22 @@ export async function errorHandler(c: Context, next: Next) {
                 component: 'ERROR_HANDLER'
             }
         );
+
+        // AppError 처리 (utils/errors.ts에서 정의)
+        if (error instanceof AppError) {
+            return c.json<ApiResponse>({
+                success: false,
+                error: {
+                    message: error.message,
+                    code: error.errorCode,
+                    details: error.details
+                },
+                meta: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId')
+                }
+            }, error.statusCode as any);
+        }
 
         // API 에러 처리
         if (error instanceof ApiError) {

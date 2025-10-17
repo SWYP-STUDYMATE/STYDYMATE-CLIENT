@@ -370,8 +370,8 @@ export default function Main() {
   return (
     <>
       <MainHeader />
-      <div className="px-4 lg:px-6 py-6 space-y-6">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="px-4 sm:px-6 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-[1440px] mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <GreetingCard
             userName={displayName}
             age={userAge}
@@ -385,7 +385,7 @@ export default function Main() {
           />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <LanguageProfile
             loading={state.loading}
             profileData={state.languageProfile}

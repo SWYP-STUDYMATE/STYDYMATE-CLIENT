@@ -1030,3 +1030,129 @@ export async function createNotificationFromTemplate(
     ...options
   });
 }
+
+/**
+ * 학습 리마인더 알림 생성
+ * 매일 특정 시간에 사용자에게 학습 리마인더 전송
+ */
+export async function createStudyReminderNotifications(env: Env): Promise<number> {
+  try {
+    // 활성 사용자 중 오늘 학습하지 않은 사용자 조회
+    const users = await query<{ user_id: string; name: string; english_name: string | null }>(
+      env.DB,
+      `SELECT u.user_id, u.name, u.english_name
+       FROM users u
+       WHERE u.is_active = 1
+         AND u.user_id NOT IN (
+           SELECT DISTINCT gsp.user_id
+           FROM group_session_participants gsp
+           JOIN group_sessions gs ON gs.session_id = gsp.session_id
+           WHERE DATE(gs.started_at) = DATE('now')
+             AND gsp.status = 'JOINED'
+         )
+       LIMIT 1000`
+    );
+
+    let count = 0;
+    for (const user of users) {
+      const userName = user.english_name || user.name || '사용자';
+      try {
+        await createNotification(env, {
+          userId: user.user_id,
+          type: 'STUDY_REMINDER',
+          title: '📚 학습 리마인더',
+          content: `${userName}님, 오늘 아직 학습하지 않으셨어요! 지금 시작해보는 건 어떨까요?`,
+          category: 'reminder',
+          priority: 1,
+          actionUrl: '/group-sessions',
+          actionData: {
+            reminderType: 'daily_study'
+          }
+        });
+        count++;
+      } catch (error) {
+        console.error(`Failed to create STUDY_REMINDER for user ${user.user_id}:`, error);
+      }
+    }
+
+    return count;
+  } catch (error) {
+    console.error('Failed to create study reminder notifications:', error);
+    return 0;
+  }
+}
+
+/**
+ * 목표 진행률 알림 생성
+ * 주간/월간 목표 달성률에 따라 알림 전송
+ */
+export async function createGoalProgressNotifications(env: Env): Promise<number> {
+  try {
+    // 사용자별 이번 주 세션 수 조회
+    const userProgress = await query<{
+      user_id: string;
+      name: string;
+      english_name: string | null;
+      session_count: number;
+    }>(
+      env.DB,
+      `SELECT u.user_id, u.name, u.english_name, COUNT(gsp.participant_id) as session_count
+       FROM users u
+       LEFT JOIN group_session_participants gsp ON gsp.user_id = u.user_id
+       LEFT JOIN group_sessions gs ON gs.session_id = gsp.session_id
+       WHERE u.is_active = 1
+         AND (gs.started_at IS NULL OR DATE(gs.started_at) >= DATE('now', '-7 days'))
+         AND (gsp.status IS NULL OR gsp.status = 'JOINED')
+       GROUP BY u.user_id, u.name, u.english_name
+       HAVING session_count > 0 AND session_count < 10
+       LIMIT 1000`
+    );
+
+    let count = 0;
+    const weeklyGoal = 5; // 주간 목표: 5회 세션
+
+    for (const progress of userProgress) {
+      const userName = progress.english_name || progress.name || '사용자';
+      const sessionsCompleted = Number(progress.session_count);
+      const progressPercent = Math.round((sessionsCompleted / weeklyGoal) * 100);
+
+      let message = '';
+      let priority = 1;
+
+      if (progressPercent >= 80) {
+        message = `${userName}님, 이번 주 목표를 거의 달성했어요! 🎉 (${sessionsCompleted}/${weeklyGoal} 완료)`;
+        priority = 2;
+      } else if (progressPercent >= 50) {
+        message = `${userName}님, 이번 주 목표의 절반을 달성했어요! 💪 (${sessionsCompleted}/${weeklyGoal} 완료)`;
+      } else {
+        message = `${userName}님, 이번 주 목표 달성을 위해 조금만 더 노력해볼까요? 📈 (${sessionsCompleted}/${weeklyGoal} 완료)`;
+      }
+
+      try {
+        await createNotification(env, {
+          userId: progress.user_id,
+          type: 'GOAL_PROGRESS',
+          title: '🎯 주간 목표 진행률',
+          content: message,
+          category: 'goal',
+          priority,
+          actionUrl: '/achievements',
+          actionData: {
+            goalType: 'weekly',
+            currentProgress: sessionsCompleted,
+            targetGoal: weeklyGoal,
+            progressPercent
+          }
+        });
+        count++;
+      } catch (error) {
+        console.error(`Failed to create GOAL_PROGRESS for user ${progress.user_id}:`, error);
+      }
+    }
+
+    return count;
+  } catch (error) {
+    console.error('Failed to create goal progress notifications:', error);
+    return 0;
+  }
+}

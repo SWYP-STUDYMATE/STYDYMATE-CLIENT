@@ -33,7 +33,11 @@ import { analyticsMiddleware, errorTrackingMiddleware } from './middleware/analy
 import { successResponse } from './utils/response';
 import { Variables } from './types';
 import { setInactiveUsersOffline } from './services/userStatus';
-import { processScheduledNotifications } from './services/notifications';
+import {
+  processScheduledNotifications,
+  createStudyReminderNotifications,
+  createGoalProgressNotifications
+} from './services/notifications';
 import { handleNotificationWebSocket } from './websocket/notificationSocket';
 
 // Export Durable Object
@@ -73,6 +77,10 @@ export type Env = AppBindings;
 
 export const scheduled: ExportedHandler<AppBindings>['scheduled'] = async (controller, env, ctx) => {
   const job = (async () => {
+    const currentHour = new Date().getUTCHours();
+    const currentDay = new Date().getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+
+    // 1. 비활성 사용자 오프라인 처리 (매 5분마다)
     try {
       const changed = await setInactiveUsersOffline(env, 15);
       if (changed > 0) {
@@ -81,6 +89,8 @@ export const scheduled: ExportedHandler<AppBindings>['scheduled'] = async (contr
     } catch (error) {
       console.error('[presence-cron] Failed to update inactive users', error);
     }
+
+    // 2. 스케줄된 알림 처리 (매 5분마다)
     try {
       const delivered = await processScheduledNotifications(env);
       if (delivered > 0) {
@@ -88,6 +98,30 @@ export const scheduled: ExportedHandler<AppBindings>['scheduled'] = async (contr
       }
     } catch (error) {
       console.error('[notifications-cron] Failed to process scheduled notifications', error);
+    }
+
+    // 3. 학습 리마인더 알림 (매일 오후 8시 UTC = 한국시간 오전 5시)
+    if (currentHour === 20) {
+      try {
+        const created = await createStudyReminderNotifications(env);
+        if (created > 0) {
+          console.log(`[study-reminder-cron] Created ${created} study reminder notifications.`);
+        }
+      } catch (error) {
+        console.error('[study-reminder-cron] Failed to create study reminders', error);
+      }
+    }
+
+    // 4. 목표 진행률 알림 (매주 일요일 오후 9시 UTC = 한국시간 월요일 오전 6시)
+    if (currentDay === 0 && currentHour === 21) {
+      try {
+        const created = await createGoalProgressNotifications(env);
+        if (created > 0) {
+          console.log(`[goal-progress-cron] Created ${created} goal progress notifications.`);
+        }
+      } catch (error) {
+        console.error('[goal-progress-cron] Failed to create goal progress notifications', error);
+      }
     }
   })();
   ctx.waitUntil(job);

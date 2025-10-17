@@ -85,8 +85,11 @@ export default function ChatContainer() {
 
   return (
     <div className="flex h-full bg-[#FAFAFA]">
-      {/* 채팅방 목록 */}
-      <div className="w-80 flex-shrink-0 bg-white border-r border-[#E7E7E7]">
+      {/* 채팅방 목록 - 모바일: currentRoom 없을 때만, 데스크톱: 항상 표시 */}
+      <div className={`
+        ${currentRoom ? 'hidden md:flex' : 'flex'}
+        w-full md:w-80 flex-shrink-0 bg-white md:border-r border-[#E7E7E7]
+      `}>
         <ChatRoomList
           rooms={rooms}
           onSelectRoom={setCurrentRoom}
@@ -97,8 +100,11 @@ export default function ChatContainer() {
         />
       </div>
 
-      {/* 채팅 창 */}
-      <div className="flex-1">
+      {/* 채팅 창 - 모바일: currentRoom 있을 때만, 데스크톱: 항상 표시 */}
+      <div className={`
+        ${currentRoom ? 'flex' : 'hidden md:flex'}
+        flex-1 w-full
+      `}>
         {currentRoom ? (
           <ChatWindow
             room={currentRoom}

@@ -9,6 +9,7 @@ import type {
   CompatibilitySharedInsights,
   CompatibilityCategoryDetail
 } from '../types';
+import { createNotification } from './notifications';
 
 const MATCHING_DEFAULT_EXPIRE_DAYS = 7;
 
@@ -404,6 +405,49 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
     );
 
     console.log('[createMatchingRequest] Successfully created request:', requestId);
+
+    // 알림 전송
+    try {
+      console.log('[createMatchingRequest] Sending notification to receiver:', payload.receiverId);
+
+      // 발신자 정보 조회
+      const senderInfo = await queryFirst<{
+        english_name: string | null;
+        name: string | null;
+        profile_image: string | null;
+      }>(
+        env.DB,
+        'SELECT english_name, name, profile_image FROM users WHERE user_id = ? LIMIT 1',
+        [payload.senderId]
+      );
+
+      const senderName = senderInfo?.english_name || senderInfo?.name || '익명의 사용자';
+
+      await createNotification(env, {
+        userId: payload.receiverId,
+        type: 'MATCHING_REQUEST',
+        title: '새로운 매칭 요청',
+        content: `${senderName}님이 매칭을 요청했습니다.`,
+        category: 'matching',
+        priority: 2,
+        actionUrl: `/matching/requests/received`,
+        actionData: {
+          requestId,
+          senderId: payload.senderId,
+          senderName
+        },
+        senderUserId: payload.senderId
+      });
+
+      console.log('[createMatchingRequest] Notification sent successfully');
+    } catch (notificationError) {
+      // 알림 전송 실패는 로깅만 하고 요청 생성은 성공 처리
+      console.error('[createMatchingRequest] Failed to send notification:', {
+        error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+        receiverId: payload.receiverId
+      });
+    }
+
     return { requestId };
   } catch (error) {
     console.error('[createMatchingRequest] Error occurred:', {
@@ -577,15 +621,56 @@ export async function acceptMatchingRequest(env: Env, options: AcceptOptions) {
       params: [crypto.randomUUID(), user1, user2, now, now, now]
     }
   ]);
+
+  // 매칭 수락 알림을 발신자에게 전송
+  try {
+    console.log('[acceptMatchingRequest] Sending acceptance notification to sender:', request.sender_id);
+
+    // 수락한 사용자(receiver) 정보 조회
+    const receiverInfo = await queryFirst<{
+      english_name: string | null;
+      name: string | null;
+    }>(
+      env.DB,
+      'SELECT english_name, name FROM users WHERE user_id = ? LIMIT 1',
+      [request.receiver_id]
+    );
+
+    const receiverName = receiverInfo?.english_name || receiverInfo?.name || '익명의 사용자';
+
+    await createNotification(env, {
+      userId: request.sender_id,
+      type: 'MATCHING_ACCEPTED',
+      title: '매칭 수락',
+      content: `${receiverName}님이 매칭을 수락했습니다. 이제 채팅을 시작할 수 있습니다!`,
+      category: 'matching',
+      priority: 2,
+      actionUrl: `/chat`,
+      actionData: {
+        requestId: options.requestId,
+        partnerId: request.receiver_id,
+        partnerName: receiverName
+      },
+      senderUserId: request.receiver_id
+    });
+
+    console.log('[acceptMatchingRequest] Acceptance notification sent successfully');
+  } catch (notificationError) {
+    console.error('[acceptMatchingRequest] Failed to send acceptance notification:', {
+      error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+      senderId: request.sender_id
+    });
+  }
 }
 
 export async function rejectMatchingRequest(env: Env, options: RejectOptions) {
   const request = await queryFirst<{
+    sender_id: string;
     receiver_id: string;
     status: string;
   }>(
     env.DB,
-    'SELECT receiver_id, status FROM matching_requests WHERE request_id = ? LIMIT 1',
+    'SELECT sender_id, receiver_id, status FROM matching_requests WHERE request_id = ? LIMIT 1',
     [options.requestId]
   );
 
@@ -609,6 +694,46 @@ export async function rejectMatchingRequest(env: Env, options: RejectOptions) {
        WHERE request_id = ?`,
     [MATCHING_STATUS.REJECTED, options.responseMessage ?? null, now, now, options.requestId]
   );
+
+  // 매칭 거절 알림을 발신자에게 전송
+  try {
+    console.log('[rejectMatchingRequest] Sending rejection notification to sender:', request.sender_id);
+
+    // 거절한 사용자(receiver) 정보 조회
+    const receiverInfo = await queryFirst<{
+      english_name: string | null;
+      name: string | null;
+    }>(
+      env.DB,
+      'SELECT english_name, name FROM users WHERE user_id = ? LIMIT 1',
+      [request.receiver_id]
+    );
+
+    const receiverName = receiverInfo?.english_name || receiverInfo?.name || '익명의 사용자';
+
+    await createNotification(env, {
+      userId: request.sender_id,
+      type: 'MATCHING_REJECTED',
+      title: '매칭 거절',
+      content: `${receiverName}님이 매칭을 거절했습니다.`,
+      category: 'matching',
+      priority: 1,
+      actionUrl: `/matching`,
+      actionData: {
+        requestId: options.requestId,
+        partnerId: request.receiver_id,
+        partnerName: receiverName
+      },
+      senderUserId: request.receiver_id
+    });
+
+    console.log('[rejectMatchingRequest] Rejection notification sent successfully');
+  } catch (notificationError) {
+    console.error('[rejectMatchingRequest] Failed to send rejection notification:', {
+      error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+      senderId: request.sender_id
+    });
+  }
 }
 
 export async function listMatches(

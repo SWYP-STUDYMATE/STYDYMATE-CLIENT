@@ -102,15 +102,15 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
 
   if (isLoading) {
     return (
-      <div className="flex gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="flex-1 bg-white border border-[#e6f9f1] rounded-[10px] p-4 flex flex-col items-center justify-center min-h-[150px]"
+            className="bg-white border border-[#E6F9F1] rounded-[10px] p-3 sm:p-4 flex flex-col items-center justify-center min-h-[110px] sm:min-h-[130px] lg:min-h-[150px]"
           >
             <div className="text-center animate-pulse">
-              <div className="h-8 bg-[#e5e5e5] rounded mb-2 w-20"></div>
-              <div className="h-6 bg-[#e5e5e5] rounded w-24"></div>
+              <div className="h-6 sm:h-8 bg-[#E7E7E7] rounded mb-2 w-16 sm:w-20"></div>
+              <div className="h-5 sm:h-6 bg-[#E7E7E7] rounded w-20 sm:w-24"></div>
             </div>
           </div>
         ))}
@@ -120,9 +120,9 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
 
   if (error) {
     return (
-      <div className="flex gap-4">
-        <div className="flex-1 bg-white border border-[#e6f9f1] rounded-[10px] p-6 flex items-center justify-center min-h-[150px]">
-          <p className="text-center text-[#767676] text-base leading-[24px]">{error}</p>
+      <div className="grid grid-cols-1 gap-4">
+        <div className="bg-white border border-[#E6F9F1] rounded-[10px] p-6 flex items-center justify-center min-h-[110px] sm:min-h-[150px]">
+          <p className="text-center text-[#929292] text-sm sm:text-base leading-[20px] sm:leading-[24px]">{error}</p>
         </div>
       </div>
     );
@@ -130,31 +130,31 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
 
   if (!statsData) {
     return (
-      <div className="flex gap-4">
-        <div className="flex-1 bg-white border border-[#e6f9f1] rounded-[10px] p-6 flex items-center justify-center min-h-[150px]">
-          <p className="text-center text-[#767676] text-base leading-[24px]">표시할 학습 데이터가 없습니다.</p>
+      <div className="grid grid-cols-1 gap-4">
+        <div className="bg-white border border-[#E6F9F1] rounded-[10px] p-6 flex items-center justify-center min-h-[110px] sm:min-h-[150px]">
+          <p className="text-center text-[#929292] text-sm sm:text-base leading-[20px] sm:leading-[24px]">표시할 학습 데이터가 없습니다.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
       {stats.map((stat, index) => (
         <div
           key={index}
-          className="flex-1 bg-white border border-[#e6f9f1] rounded-[10px] p-4 flex flex-col items-center justify-center min-h-[150px] transition-all duration-300 hover:shadow-sm"
+          className="bg-white border border-[#E6F9F1] rounded-[10px] p-3 sm:p-4 flex flex-col items-center justify-center min-h-[110px] sm:min-h-[130px] lg:min-h-[150px] transition-all duration-200 hover:shadow-sm"
         >
           <div className="text-center">
-            <div 
-              className={`text-3xl font-bold mb-2 leading-[26px] transition-colors ${
-                isZeroValue(stat.value) ? 'text-[#e5e5e5]' : 'text-[#111111]'
+            <div
+              className={`text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2 leading-[24px] sm:leading-[26px] transition-colors ${
+                isZeroValue(stat.value) ? 'text-[#E7E7E7]' : 'text-[#111111]'
               }`}
             >
               {stat.value}
             </div>
-            <div 
-              className="text-xl text-[#212529] font-normal leading-[26px]"
+            <div
+              className="text-sm sm:text-base lg:text-xl text-[#111111] font-normal leading-[20px] sm:leading-[24px] lg:leading-[26px]"
             >
               {stat.label}
             </div>

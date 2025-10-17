@@ -52,6 +52,27 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
     animationRef.current = requestAnimationFrame(visualizeAudio);
   };
 
+  // 지원되는 MIME 타입 확인 (Safari/iOS 호환성)
+  const getSupportedMimeType = () => {
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/wav'
+    ];
+
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`Using audio format: ${type}`);
+        return type;
+      }
+    }
+
+    console.warn('No preferred audio format supported, using browser default');
+    return '';
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -71,14 +92,9 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       source.connect(analyserRef.current);
       analyserRef.current.fftSize = 256;
 
-      // Setup MediaRecorder
-      const options = {
-        mimeType: 'audio/webm;codecs=opus'
-      };
-
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options.mimeType = 'audio/webm';
-      }
+      // Setup MediaRecorder with best supported format
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : {};
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
       chunksRef.current = [];
@@ -90,7 +106,9 @@ const AudioRecorder = ({ onRecordingComplete, disabled = false }) => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        // 녹음된 MIME 타입 사용 (브라우저 호환성 보장)
+        const recordedMimeType = mediaRecorderRef.current?.mimeType || mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: recordedMimeType });
         storeStartRecording(blob);
 
         if (onRecordingComplete) {

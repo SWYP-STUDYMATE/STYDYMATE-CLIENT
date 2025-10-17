@@ -113,56 +113,65 @@ export default function Calendar({
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="flex-1 bg-white rounded-lg shadow-sm p-8 h-full">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex-1" />
-        <div className="flex items-center space-x-4">
-          <h1 className="text-4xl font-extrabold text-black text-center">
+    <div className="flex-1 bg-white rounded-lg shadow-sm p-4 md:p-8 h-full">
+      {/* 모바일: 세로 레이아웃, 데스크탑: 가로 레이아웃 */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-8">
+        {/* 모바일: 제목과 버튼을 세로로 배치 */}
+        <div className="flex items-center justify-between md:flex-1 mb-2 md:mb-0">
+          <div className="md:flex-1" />
+          <h1 className="text-lg md:text-4xl font-extrabold text-black text-center flex-1 md:flex-none">
             {formatMonthHeading(currentDate)}
           </h1>
-        </div>
-        <div className="flex-1 flex justify-end">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2">
             <button
               onClick={goToPreviousMonth}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1.5 md:p-2 hover:bg-gray-100 rounded-full transition-colors"
               aria-label="이전 달"
             >
-              <ChevronLeft className="w-6 h-6 text-black" />
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-black" />
             </button>
             <button
               onClick={goToNextMonth}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1.5 md:p-2 hover:bg-gray-100 rounded-full transition-colors"
               aria-label="다음 달"
             >
-              <ChevronRight className="w-6 h-6 text-black" />
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-black" />
             </button>
           </div>
         </div>
       </div>
 
       {error ? (
-        <div className="flex flex-col items-center justify-center h-[420px] bg-[#f8f9fa] rounded-lg">
-          <p className="text-[16px] text-[#343a40] mb-4">캘린더 데이터를 불러오는 중 문제가 발생했습니다.</p>
+        <div className="flex flex-col items-center justify-center h-[240px] md:h-[420px] bg-[#f8f9fa] rounded-lg">
+          <p className="text-sm md:text-[16px] text-[#343a40] mb-4">
+            캘린더 데이터를 불러오는 중 문제가 발생했습니다.
+          </p>
           <button
             type="button"
             onClick={onRetry}
-            className="px-4 py-2 bg-[#00c471] text-white rounded-lg text-[14px]"
+            className="px-4 py-2 bg-[#00c471] text-white rounded-lg text-sm md:text-[14px] transition-colors duration-200 hover:bg-[#00B267]"
           >
             다시 시도
           </button>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-7 gap-0 mb-6">
+          <div className="grid grid-cols-7 gap-0 mb-3 md:mb-6">
             {weekDays.map((day) => (
-              <div key={day} className="h-12 flex items-center justify-center">
-                <span className="text-[#6e7781] font-semibold text-xl">{day}</span>
+              <div key={day} className="h-8 md:h-12 flex items-center justify-center">
+                <span className="text-[#6e7781] font-semibold text-sm md:text-xl">{day}</span>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-1" style={{ rowGap: "70px" }}>
+          <div className="grid grid-cols-7 gap-1" style={{ rowGap: "40px" }}>
+            <style jsx>{`
+              @media (min-width: 768px) {
+                .grid {
+                  row-gap: 70px;
+                }
+              }
+            `}</style>
             {calendarDays.map((date) => {
               const dateKey = getDateKey(date);
               const dayEvents = eventsByDate.get(dateKey) ?? [];
@@ -174,21 +183,21 @@ export default function Calendar({
               return (
                 <div
                   key={dateKey}
-                  className={`h-[71px] flex flex-col items-center relative rounded-lg ${
+                  className={`h-[50px] md:h-[71px] flex flex-col items-center relative rounded-lg ${
                     !isCurrentMonth(date) ? "text-[#262d33] opacity-50" : "text-[#262d33]"
                   }`}
-                  style={{ minHeight: "71px" }}
+                  style={{ minHeight: "50px" }}
                 >
                   {highlight ? (
                     <div className="relative flex flex-col items-center h-full">
-                      <div className="relative w-[35px] h-[35px] flex items-center justify-center mt-2">
+                      <div className="relative w-[28px] h-[28px] md:w-[35px] md:h-[35px] flex items-center justify-center mt-1 md:mt-2">
                         <div className="absolute inset-0 bg-[#e6f9f1] rounded-full" />
-                        <span className="relative z-10 text-[#00c471] font-bold text-xl">
+                        <span className="relative z-10 text-[#00c471] font-bold text-base md:text-xl">
                           {date.getDate()}
                         </span>
                       </div>
                       {hasEvent && (
-                        <span className="relative z-10 text-xs mt-4 text-[#00c471] text-center">
+                        <span className="relative z-10 text-[10px] md:text-xs mt-2 md:mt-4 text-[#00c471] text-center leading-tight">
                           {formatTime(firstEvent?.start)}
                           {additionalCount > 0 ? ` 외 ${additionalCount}건` : ""}
                         </span>
@@ -196,13 +205,13 @@ export default function Calendar({
                     </div>
                   ) : (
                     <div className="flex flex-col items-center h-full">
-                      <span className={`font-normal text-xl mt-2 ${
+                      <span className={`font-normal text-base md:text-xl mt-1 md:mt-2 ${
                         isCurrentMonth(date) ? "text-[#262d33]" : "text-[#262d33] opacity-50"
                       }`}>
                         {date.getDate()}
                       </span>
                       {hasEvent && (
-                        <span className="text-xs mt-4 text-[#343A40] text-center">
+                        <span className="text-[10px] md:text-xs mt-2 md:mt-4 text-[#343A40] text-center leading-tight">
                           {formatTime(firstEvent?.start)}
                           {additionalCount > 0 ? ` 외 ${additionalCount}건` : ""}
                         </span>
@@ -215,7 +224,7 @@ export default function Calendar({
           </div>
 
           {isLoading && (
-            <div className="mt-6 text-center text-[14px] text-[#6e7781]">
+            <div className="mt-4 md:mt-6 text-center text-xs md:text-[14px] text-[#6e7781]">
               캘린더 데이터를 불러오는 중입니다...
             </div>
           )}

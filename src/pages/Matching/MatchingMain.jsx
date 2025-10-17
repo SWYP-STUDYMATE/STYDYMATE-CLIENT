@@ -196,18 +196,10 @@ export default function MatchingMain() {
                                 variant="primary"
                                 className="w-full"
                                 disabled={isLoading || isSearching}
+                                loading={isSearching}
+                                icon={!isSearching ? <Search /> : undefined}
                             >
-                                {isSearching ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        매칭 중...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Search className="w-5 h-5 mr-2" />
-                                        AI 매칭 시작
-                                    </>
-                                )}
+                                {isSearching ? '매칭 중...' : 'AI 매칭 시작'}
                             </CommonButton>
                         </div>
 
@@ -287,9 +279,8 @@ export default function MatchingMain() {
                                             variant="primary"
                                             disabled={isLoading || !searchQuery.trim()}
                                             className="px-6"
-                                        >
-                                            <Search className="w-5 h-5" />
-                                        </CommonButton>
+                                            icon={<Search />}
+                                        />
                                     </div>
                                 </div>
                             </div>
