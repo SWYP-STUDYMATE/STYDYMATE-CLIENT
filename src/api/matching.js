@@ -155,7 +155,7 @@ export async function rejectMatchRequest(requestId, responseMessage = '') {
 /**
  * [DEPRECATED] 이전 함수명 - acceptMatchRequest 사용 권장
  */
-export async function acceptMatch(matchId, partnerId) {
+export async function acceptMatch(matchId) {
   console.warn('acceptMatch는 deprecated되었습니다. acceptMatchRequest(requestId)를 사용하세요.');
   return acceptMatchRequest(matchId);
 }
@@ -163,7 +163,7 @@ export async function acceptMatch(matchId, partnerId) {
 /**
  * [DEPRECATED] 이전 함수명 - rejectMatchRequest 사용 권장
  */
-export async function rejectMatch(matchId, partnerId) {
+export async function rejectMatch(matchId) {
   console.warn('rejectMatch는 deprecated되었습니다. rejectMatchRequest(requestId)를 사용하세요.');
   return rejectMatchRequest(matchId);
 }

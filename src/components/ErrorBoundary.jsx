@@ -18,7 +18,7 @@ class ErrorBoundary extends React.Component {
     try {
       const matches = Array.from(
         errorInfo?.componentStack?.matchAll(/index\.js:(\d+):(\d+)/g) || []
-      ).map(([full, line, column]) => ({ line: Number(line), column: Number(column) }));
+      ).map(([, line, column]) => ({ line: Number(line), column: Number(column) }));
       if (matches.length > 0) {
         console.warn('[ErrorBoundary] mapped stack positions', JSON.stringify(matches));
       }

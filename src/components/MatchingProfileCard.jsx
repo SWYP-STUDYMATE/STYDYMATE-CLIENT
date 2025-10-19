@@ -212,12 +212,23 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
                 </div>
 
                 {/* 매칭 점수 */}
-                {mappedUser.matchScore && (
+                {mappedUser.matchScore !== undefined && (
                     <div className="text-center">
-                        <div className="text-[24px] font-bold text-[#006C3E]">
-                            {mappedUser.matchScore}%
+                        <div className={`text-[24px] font-bold ${
+                            mappedUser.matchScore >= 80 ? 'text-[#00C471]' :  // HIGH - green-500
+                            mappedUser.matchScore >= 60 ? 'text-[#008B50]' :  // MEDIUM - green-700
+                            'text-[#929292]'                                   // LOW - black-200
+                        }`}>
+                            {mappedUser.matchScore}
                         </div>
-                        <div className="text-[12px] text-[#606060]">매칭</div>
+                        <div className={`text-[10px] font-medium px-2 py-0.5 rounded-full mt-1 ${
+                            mappedUser.matchScore >= 80 ? 'bg-[#E6F9F1] text-[#006C3E]' :  // HIGH
+                            mappedUser.matchScore >= 60 ? 'bg-[#E6F9F1] text-[#008B50]' :  // MEDIUM
+                            'bg-[#E7E7E7] text-[#929292]'                                   // LOW
+                        }`}>
+                            {mappedUser.matchScore >= 80 ? '최적' :
+                             mappedUser.matchScore >= 60 ? '양호' : '보통'}
+                        </div>
                     </div>
                 )}
             </div>

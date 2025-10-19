@@ -165,17 +165,20 @@ export const combineStores = (stores) => {
 /**
  * Store 상태를 선택하는 헬퍼 함수 (리렌더링 최적화)
  *
- * @param {function} useStore - Store hook
+ * 주의: 이 함수는 React Hook 규칙을 준수하기 위해 사용되지 않습니다.
+ * 대신 컴포넌트 내에서 직접 useStore(selector) 형태로 사용하세요.
+ *
+ * @deprecated Use `useStore(selector)` directly in components instead
  * @param {function} selector - 상태 선택 함수
- * @returns {any} - 선택된 상태
+ * @returns {function} - Selector 함수
  *
  * @example
- * // 전체 상태 대신 필요한 부분만 선택
- * const count = selectStore(useCounterStore, (state) => state.count);
- * const increment = selectStore(useCounterStore, (state) => state.increment);
+ * // 올바른 사용법 (컴포넌트 내부에서)
+ * const count = useCounterStore((state) => state.count);
+ * const increment = useCounterStore((state) => state.increment);
  */
-export const selectStore = (useStore, selector) => {
-  return useStore(selector);
+export const selectStore = (selector) => {
+  return selector;
 };
 
 /**

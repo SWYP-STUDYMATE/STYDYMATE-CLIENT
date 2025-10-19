@@ -116,18 +116,9 @@ export async function recommendPartners(
 
   const where = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-  const totalRow = await queryFirst<{ count: number }>(
-    env.DB,
-    `SELECT COUNT(*) as count FROM users u ${where}`,
-    params
-  );
-
-  const total = totalRow?.count ?? 0;
-  const offset = (options.page - 1) * options.size;
-
-  const selectParams = [...params, options.size, offset];
-
-  const rows = await query<{
+  // 1단계: 필터링된 후보자 조회 (페이지네이션 없이 더 많이 가져오기)
+  const candidateLimit = Math.min(options.size * 5, 100); // 최대 100명 후보
+  const candidateRows = await query<{
     user_id: string;
     name: string | null;
     english_name: string | null;
@@ -173,62 +164,158 @@ export async function recommendPartners(
       LEFT JOIN languages nl ON nl.language_id = u.native_lang_id
       ${where}
       ORDER BY u.updated_at DESC, u.created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT ?
     `,
-    selectParams
+    [...params, candidateLimit]
   );
 
-  const userIds = rows.map((row) => row.user_id);
+  if (candidateRows.length === 0) {
+    return {
+      data: [],
+      page: options.page,
+      size: options.size,
+      total: 0
+    };
+  }
+
+  // 2단계: 현재 사용자 프로필 조회 (호환성 계산용)
+  const currentUserProfile = await loadCompatibilityProfile(env, userId);
+
+  // 3단계: 각 후보자와 호환성 점수 계산
+  const userIds = candidateRows.map((row) => row.user_id);
   const targetLanguagesMap = await loadTargetLanguages(env, userIds);
   const interestsMap = await loadInterests(env, userIds);
   const personalitiesMap = await loadPartnerPersonalities(env, userIds);
 
-  const partners: MatchingPartner[] = rows.map((row) => {
-    const birthyearNum = row.birthyear ? Number(row.birthyear) : undefined;
-    let age: number | undefined;
-    if (birthyearNum && Number.isFinite(birthyearNum)) {
-      const currentYear = new Date().getUTCFullYear();
-      age = currentYear - birthyearNum;
-    }
+  // 병렬로 호환성 점수 계산
+  const partnersWithScores = await Promise.all(
+    candidateRows.map(async (row) => {
+      const birthyearNum = row.birthyear ? Number(row.birthyear) : undefined;
+      let age: number | undefined;
+      if (birthyearNum && Number.isFinite(birthyearNum)) {
+        const currentYear = new Date().getUTCFullYear();
+        age = currentYear - birthyearNum;
+      }
 
-    const profileImageUrl = row.profile_image
-      ? `/api/v1/upload/file/${row.profile_image}`
-      : undefined;
+      const profileImageUrl = row.profile_image
+        ? `/api/v1/upload/file/${row.profile_image}`
+        : undefined;
 
-    return {
-      userId: row.user_id,
-      englishName: row.english_name ?? row.name ?? undefined,
-      profileImageUrl,
-      selfBio: row.self_bio ?? undefined,
-      age,
-      gender: row.gender ?? undefined,
-      location: row.location_country
-        ? row.location_city
-          ? `${row.location_country}, ${row.location_city}`
-          : row.location_country
-        : undefined,
-      nativeLanguage: row.native_language_name ?? undefined,
-      targetLanguages: targetLanguagesMap.get(row.user_id) ?? [],
-      interests: interestsMap.get(row.user_id) ?? [],
-      partnerPersonalities: personalitiesMap.get(row.user_id) ?? [],
-      compatibilityScore: calculateQuickCompatibilityScore(row.user_id, userId),
-      onlineStatus: row.status ?? 'OFFLINE',
-      lastActiveTime: row.last_seen_at ?? undefined
-    };
+      // 캐시에서 호환성 점수 조회
+      const cacheKey = `compatibility:${userId}:${row.user_id}`;
+      let compatibilityScore = 50; // 기본값
+      let compatibilityLevel: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM';
+
+      try {
+        const cached = await env.CACHE.get(cacheKey, { type: 'json' }) as { score: number; level: string } | null;
+        if (cached) {
+          compatibilityScore = cached.score;
+          compatibilityLevel = cached.level as 'HIGH' | 'MEDIUM' | 'LOW';
+        } else {
+          // 캐시 미스: 실시간 계산
+          const partnerProfile: CompatibilityProfile = {
+            userId: row.user_id,
+            nativeLanguageId: row.native_lang_id ?? undefined,
+            nativeLanguageCode: row.native_language_code ?? undefined,
+            nativeLanguageName: row.native_language_name ?? undefined,
+            targetLanguages: (targetLanguagesMap.get(row.user_id) ?? []).map((lang) => ({
+              languageName: lang.languageName,
+              currentLevel: lang.currentLevel,
+              targetLevel: lang.targetLevel
+            })) as TargetLanguageProfile[],
+            personalities: personalitiesMap.get(row.user_id) ?? [],
+            studyGoals: [],
+            interests: interestsMap.get(row.user_id) ?? []
+          };
+
+          const compatibility = calculateCompatibility(currentUserProfile, partnerProfile);
+          compatibilityScore = compatibility.overallScore;
+          compatibilityLevel = compatibility.compatibilityLevel;
+
+          // 캐시에 저장 (24시간 TTL)
+          await env.CACHE.put(
+            cacheKey,
+            JSON.stringify({ score: compatibilityScore, level: compatibilityLevel }),
+            { expirationTtl: 86400 }
+          ).catch(() => {
+            // 캐시 저장 실패해도 계속 진행
+          });
+        }
+      } catch (error) {
+        console.error('Compatibility calculation error:', error);
+        // 에러 발생 시 기본값 사용
+      }
+
+      return {
+        userId: row.user_id,
+        englishName: row.english_name ?? row.name ?? undefined,
+        profileImageUrl,
+        selfBio: row.self_bio ?? undefined,
+        age,
+        gender: row.gender ?? undefined,
+        location: row.location_country
+          ? row.location_city
+            ? `${row.location_country}, ${row.location_city}`
+            : row.location_country
+          : undefined,
+        nativeLanguage: row.native_language_name ?? undefined,
+        targetLanguages: targetLanguagesMap.get(row.user_id) ?? [],
+        interests: interestsMap.get(row.user_id) ?? [],
+        partnerPersonalities: personalitiesMap.get(row.user_id) ?? [],
+        compatibilityScore,
+        compatibilityLevel,
+        onlineStatus: row.status ?? 'OFFLINE',
+        lastActiveTime: row.last_seen_at ?? undefined
+      };
+    })
+  );
+
+  // 4단계: 호환성 점수 높은 순으로 정렬
+  const sortedPartners = partnersWithScores.sort((a, b) => {
+    // 온라인 상태 우선
+    if (a.onlineStatus === 'ONLINE' && b.onlineStatus !== 'ONLINE') return -1;
+    if (a.onlineStatus !== 'ONLINE' && b.onlineStatus === 'ONLINE') return 1;
+
+    // 호환성 점수로 정렬
+    return b.compatibilityScore - a.compatibilityScore;
   });
 
+  // 5단계: 페이지네이션 적용
+  const offset = (options.page - 1) * options.size;
+  const paginatedData = sortedPartners.slice(offset, offset + options.size);
+
   return {
-    data: partners,
+    data: paginatedData,
     page: options.page,
     size: options.size,
-    total
+    total: sortedPartners.length
   };
 }
 
-function calculateQuickCompatibilityScore(partnerId: string, currentUserId: string): number {
-  const base = partnerId.localeCompare(currentUserId);
-  const normalized = Math.abs(base) % 101;
-  return Math.round(normalized);
+// 간소화된 호환성 계산 (실시간 사용)
+function calculateCompatibility(
+  current: CompatibilityProfile,
+  partner: CompatibilityProfile
+): {
+  overallScore: number;
+  compatibilityLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+} {
+  const language = computeLanguageCompatibility(current, partner);
+  const personality = computePersonalityCompatibility(current, partner);
+  const goals = computeGoalCompatibility(current, partner);
+  const interests = computeInterestCompatibility(current, partner);
+
+  // 가중 평균 계산 (언어 30%, 성격 25%, 목표 25%, 관심사 20%)
+  const overallScore = Math.round(
+    (language.score * 0.3 + personality.score * 0.25 + goals.score * 0.25 + interests.score * 0.2) * 10
+  ) / 10;
+
+  const compatibilityLevel = determineCompatibilityLevel(overallScore);
+
+  return {
+    overallScore,
+    compatibilityLevel
+  };
 }
 
 async function loadTargetLanguages(env: Env, userIds: string[]) {

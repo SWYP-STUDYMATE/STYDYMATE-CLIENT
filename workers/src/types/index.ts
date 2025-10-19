@@ -198,6 +198,7 @@ export interface MatchingPartner {
     interests?: string[];
     partnerPersonalities?: string[];
     compatibilityScore: number;
+    compatibilityLevel?: 'HIGH' | 'MEDIUM' | 'LOW';
     onlineStatus?: string;
     lastActiveTime?: string;
 }

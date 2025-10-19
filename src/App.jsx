@@ -7,7 +7,7 @@ import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx'
 import { initializeNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect, useMemo } from 'react';
-import { getToken, isAutoLoginEnabled, clearTokens } from './utils/tokenStorage';
+import { getToken, isAutoLoginEnabled } from './utils/tokenStorage';
 import renderRoutes from './components/RouteRenderer';
 
 // AlertProvider를 포함한 AppContent 컴포넌트
