@@ -213,11 +213,11 @@ const AchievementsList = ({ achievements = [], loading, error }) => {
   return (
     <div className="space-y-4">
       {achievements.map((item, index) => {
-        // 안전한 key 생성: 문자열로 변환하여 객체 렌더링 에러 방지
+        // 안전한 key 생성: ID 우선, 없으면 인덱스 사용
         const itemId = item?.id ?? item?.achievement?.id;
-        const safeKey = typeof itemId === 'object'
-          ? `achievement-${index}`
-          : String(itemId ?? `achievement-${index}`);
+        const safeKey = (itemId != null && typeof itemId !== 'object')
+          ? `achievement-${itemId}`
+          : `achievement-idx-${index}`;
 
         return <AchievementCard key={safeKey} item={item} />;
       })}
@@ -271,11 +271,11 @@ const UpcomingAchievements = ({ stats }) => {
 
 const AchievementsPage = () => {
   const navigate = useNavigate();
-  const { achievements = [], stats, loading, error, refresh } = useAchievementOverview();
+  const { achievements, stats, loading, error, refresh } = useAchievementOverview();
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   const filteredAchievements = useMemo(() => {
-    if (!Array.isArray(achievements)) return [];
+    // achievements는 이미 훅에서 배열 보장
     if (selectedCategory === 'ALL') return achievements;
     return achievements.filter((item) => item.achievement?.category === selectedCategory);
   }, [achievements, selectedCategory]);

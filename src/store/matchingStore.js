@@ -382,10 +382,13 @@ const useMatchingStore = create(
         try {
           const result = await getSentMatchRequests(status);
           const requests = extractPageContent(result);
+
+          // 로컬 스토리지와 서버 데이터 병합 (서버가 최신 상태)
           set({ sentRequests: requests });
           return requests;
         } catch (error) {
           console.error('Fetch sent requests error:', error);
+          // 에러 발생 시 로컬 스토리지 데이터 유지
           throw error;
         }
       },
@@ -428,6 +431,7 @@ const useMatchingStore = create(
         // 지속성이 필요한 상태만 저장
         matchingFilters: state.matchingFilters,
         matchingHistory: state.matchingHistory,
+        sentRequests: state.sentRequests, // 보낸 매칭 요청 상태 유지
       }),
     }
   )

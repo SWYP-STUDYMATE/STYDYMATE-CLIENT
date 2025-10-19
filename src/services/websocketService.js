@@ -46,13 +46,18 @@ class WebSocketService {
     this.isConnecting = true;
 
     const token = getToken("accessToken");
-    const origin = import.meta.env.VITE_WS_URL
-      || import.meta.env.VITE_API_URL
+    // WebSocket URL 우선순위: WORKERS_WS_URL > WS_URL > WORKERS_API_URL > API_URL
+    const wsUrl = import.meta.env.VITE_WORKERS_WS_URL
+      || import.meta.env.VITE_WS_URL
       || import.meta.env.VITE_WORKERS_API_URL
+      || import.meta.env.VITE_API_URL
       || "https://api.languagemate.kr";
-    const baseUrl = origin.startsWith('http')
-      ? origin.replace(/^http/i, origin.startsWith('https') ? 'wss' : 'ws')
-      : origin;
+
+    // HTTP(S) -> WS(S) 프로토콜 변환
+    const baseUrl = wsUrl.startsWith('http')
+      ? wsUrl.replace(/^http/i, wsUrl.startsWith('https') ? 'wss' : 'ws')
+      : wsUrl;
+
     const socketUrl = `${baseUrl}${endpoint}`;
 
     console.log("[WebSocketService] WebSocket 연결 시작", {

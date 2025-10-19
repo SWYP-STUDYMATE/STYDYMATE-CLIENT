@@ -12,12 +12,15 @@ const selectAchievementOverview = (state) => ({
 
 export const useAchievementOverview = () => {
   const {
-    achievements,
+    achievements: rawAchievements,
     stats,
     loading,
     error,
     fetchAchievements
   } = useAchievementStore(selectAchievementOverview, shallow);
+
+  // 안전한 배열 반환 보장 (무한 재렌더링 방지)
+  const achievements = Array.isArray(rawAchievements) ? rawAchievements : [];
 
   useEffect(() => {
     if (typeof fetchAchievements !== 'function') {

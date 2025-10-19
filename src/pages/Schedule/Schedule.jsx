@@ -95,61 +95,64 @@ export default function Schedule() {
         <MobileTabBar active="schedule" />
       </div>
 
-      <div className="flex flex-1 p-4 md:p-6 md:space-x-6 overflow-hidden pb-20 md:pb-0">
+      <div className="flex flex-1 overflow-hidden pb-20 md:pb-0">
         {/* 데스크탑: 사이드바 */}
-        <div className="hidden md:block">
+        <div className="hidden md:block p-6">
           <Sidebar active="schedule" />
         </div>
 
-        {/* 모바일: 탭 네비게이션 */}
-        <div className="md:hidden w-full mb-4">
-          <div className="flex bg-white rounded-lg p-1 border border-[#E7E7E7]">
-            <button
-              onClick={() => setMobileTab('list')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
-                mobileTab === 'list'
-                  ? 'bg-[#00C471] text-white'
-                  : 'text-[#929292]'
-              }`}
-            >
-              세션 리스트
-            </button>
-            <button
-              onClick={() => setMobileTab('calendar')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
-                mobileTab === 'calendar'
-                  ? 'bg-[#00C471] text-white'
-                  : 'text-[#929292]'
-              }`}
-            >
-              캘린더
-            </button>
-          </div>
-        </div>
-
-        {/* 콘텐츠 영역 */}
-        <div className="flex-1 flex flex-col md:flex-row md:space-x-6 overflow-y-auto">
-          {/* 모바일: 조건부 렌더링, 데스크탑: 항상 표시 */}
-          <div className={`${mobileTab === 'calendar' ? 'block' : 'hidden'} md:block md:w-[46%] mb-4 md:mb-0`}>
-            <Calendar
-              events={calendarEvents}
-              isLoading={calendarLoading}
-              currentMonthDate={currentMonthDate}
-              onMonthChange={handleMonthChange}
-              onRetry={handleRetry}
-              error={calendarError}
-            />
+        {/* 메인 콘텐츠 영역 */}
+        <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
+          {/* 모바일: 탭 네비게이션 */}
+          <div className="md:hidden w-full mb-4 flex-shrink-0">
+            <div className="flex bg-white rounded-lg p-1 border border-[#E7E7E7]">
+              <button
+                onClick={() => setMobileTab('list')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
+                  mobileTab === 'list'
+                    ? 'bg-[#00C471] text-white'
+                    : 'text-[#929292]'
+                }`}
+              >
+                세션 리스트
+              </button>
+              <button
+                onClick={() => setMobileTab('calendar')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors duration-200 ${
+                  mobileTab === 'calendar'
+                    ? 'bg-[#00C471] text-white'
+                    : 'text-[#929292]'
+                }`}
+              >
+                캘린더
+              </button>
+            </div>
           </div>
 
-          <div className={`${mobileTab === 'list' ? 'block' : 'hidden'} md:block md:w-[54%]`}>
-            <SessionScheduleList
-              sessions={currentMonthSessions}
-              currentMonthDate={currentMonthDate}
-              isLoading={calendarLoading}
-              error={calendarError}
-              onRetry={handleRetry}
-              onCreateSession={handleCreateSession}
-            />
+          {/* 콘텐츠 영역 */}
+          <div className="flex-1 flex md:space-x-6 overflow-hidden">
+            {/* 모바일: 조건부 렌더링, 데스크탑: 항상 표시 */}
+            <div className={`${mobileTab === 'calendar' ? 'block' : 'hidden'} md:block md:w-[46%] overflow-y-auto`}>
+              <Calendar
+                events={calendarEvents}
+                isLoading={calendarLoading}
+                currentMonthDate={currentMonthDate}
+                onMonthChange={handleMonthChange}
+                onRetry={handleRetry}
+                error={calendarError}
+              />
+            </div>
+
+            <div className={`${mobileTab === 'list' ? 'block' : 'hidden'} md:block md:w-[54%] overflow-y-auto`}>
+              <SessionScheduleList
+                sessions={currentMonthSessions}
+                currentMonthDate={currentMonthDate}
+                isLoading={calendarLoading}
+                error={calendarError}
+                onRetry={handleRetry}
+                onCreateSession={handleCreateSession}
+              />
+            </div>
           </div>
         </div>
       </div>

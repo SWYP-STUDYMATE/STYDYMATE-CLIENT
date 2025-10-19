@@ -206,9 +206,9 @@ export default function ProfilePage() {
     return allAchievements
       .filter((item) => item?.isCompleted)
       .sort((a, b) => {
-        // ISO 문자열 비교로 변경 (Date 객체 제거)
-        const aTime = a.completedAt || '';
-        const bTime = b.completedAt || '';
+        // ISO 문자열 직접 비교 (Date 객체 제거로 React Error #185 방지)
+        const aTime = String(a.completedAt || '');
+        const bTime = String(b.completedAt || '');
         return bTime.localeCompare(aTime);
       })
       .slice(0, 4);
