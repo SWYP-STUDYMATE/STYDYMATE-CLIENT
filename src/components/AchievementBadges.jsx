@@ -132,7 +132,8 @@ export default function AchievementBadges({
   const completedCount = Number.isFinite(completedCountRaw) ? completedCountRaw : 0;
   const totalCount = Number.isFinite(totalCountRaw) ? totalCountRaw : sanitizedAchievements.length;
 
-  const progressList = sanitizedAchievements
+  // 배열 불변성 유지 (React Error #185 방지)
+  const progressList = [...sanitizedAchievements]
     .sort((a, b) => {
       // ISO 문자열 비교로 변경 (Date 객체 제거)
       const dateA = a.completedAt || '';

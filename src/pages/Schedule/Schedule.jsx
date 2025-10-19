@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainHeader from "../../components/MainHeader";
-import Sidebar from "../../components/chat/Sidebar";
 import MobileTabBar from "../../components/MobileTabBar";
 import Calendar from "../../components/Calendar";
 import SessionScheduleList from "../../components/SessionScheduleList";
@@ -96,13 +95,8 @@ export default function Schedule() {
       </div>
 
       <div className="flex flex-1 overflow-hidden pb-20 md:pb-0">
-        {/* 데스크탑: 사이드바 */}
-        <div className="hidden md:block p-6">
-          <Sidebar active="schedule" />
-        </div>
-
         {/* 메인 콘텐츠 영역 */}
-        <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
+        <div className="flex-1 flex flex-col px-4 py-4 md:px-8 md:py-6 max-w-[1280px] mx-auto w-full overflow-hidden">
           {/* 모바일: 탭 네비게이션 */}
           <div className="md:hidden w-full mb-4 flex-shrink-0">
             <div className="flex bg-white rounded-lg p-1 border border-[#E7E7E7]">
@@ -130,9 +124,9 @@ export default function Schedule() {
           </div>
 
           {/* 콘텐츠 영역 */}
-          <div className="flex-1 flex md:space-x-6 overflow-hidden">
+          <div className="flex-1 flex md:gap-6 overflow-hidden">
             {/* 모바일: 조건부 렌더링, 데스크탑: 항상 표시 */}
-            <div className={`${mobileTab === 'calendar' ? 'block' : 'hidden'} md:block md:w-[46%] overflow-y-auto`}>
+            <div className={`w-full ${mobileTab === 'calendar' ? 'block' : 'hidden'} md:block md:w-[46%] overflow-y-auto`}>
               <Calendar
                 events={calendarEvents}
                 isLoading={calendarLoading}
@@ -143,7 +137,7 @@ export default function Schedule() {
               />
             </div>
 
-            <div className={`${mobileTab === 'list' ? 'block' : 'hidden'} md:block md:w-[54%] overflow-y-auto`}>
+            <div className={`w-full ${mobileTab === 'list' ? 'block' : 'hidden'} md:block md:w-[54%] overflow-y-auto`}>
               <SessionScheduleList
                 sessions={currentMonthSessions}
                 currentMonthDate={currentMonthDate}

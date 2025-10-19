@@ -203,7 +203,8 @@ export default function ProfilePage() {
   } = useAchievementOverview();
   const recentAchievements = useMemo(() => {
     if (!Array.isArray(allAchievements) || allAchievements.length === 0) return [];
-    return allAchievements
+    // 배열 불변성 유지 (React Error #185 방지)
+    return [...allAchievements]
       .filter((item) => item?.isCompleted)
       .sort((a, b) => {
         // ISO 문자열 직접 비교 (Date 객체 제거로 React Error #185 방지)

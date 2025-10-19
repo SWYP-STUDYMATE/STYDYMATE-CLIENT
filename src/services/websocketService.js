@@ -33,9 +33,19 @@ class WebSocketService {
 
     // 연결 시도 중이면 기존 Promise 반환
     if (this.isConnecting && this.connectPromise) {
-      console.log("[WebSocketService] 연결 시도 중 - 기존 Promise 반환");
+      console.log("[WebSocketService] 연결 시도 중 - 기존 Promise 반환", {
+        promiseExists: !!this.connectPromise,
+        isConnecting: this.isConnecting,
+        isConnected: this.isConnected
+      });
       return this.connectPromise;
     }
+
+    console.log("[WebSocketService] 새 연결 시작", {
+      isConnecting: this.isConnecting,
+      isConnected: this.isConnected,
+      hasClient: !!this.client
+    });
 
     const {
       endpoint = "/ws/chat",
@@ -62,8 +72,11 @@ class WebSocketService {
 
     console.log("[WebSocketService] WebSocket 연결 시작", {
       socketUrl,
+      baseUrl,
+      endpoint,
       hasToken: !!token,
-      token: token ? token.substring(0, 20) + '...' : 'null'
+      token: token ? token.substring(0, 20) + '...' : 'null',
+      options
     });
 
     // 새로운 연결 Promise 생성 및 저장
@@ -76,9 +89,14 @@ class WebSocketService {
             ...headers
           },
           debug: debug ? (str) => console.log("STOMP Debug:", str) : undefined,
-          
+
           onConnect: (frame) => {
-            console.log("WebSocket Connected:", frame);
+            console.log("[WebSocketService] ✅ WebSocket CONNECTED", {
+              frame,
+              socketUrl,
+              messageQueueLength: this.messageQueue.length,
+              subscriptionsCount: this.subscriptions.size
+            });
             this.isConnecting = false;
             this.isConnected = true;
             this.reconnectAttempts = 0;
@@ -103,7 +121,11 @@ class WebSocketService {
           },
           
           onStompError: (frame) => {
-            console.error("STOMP Error:", frame);
+            console.error("[WebSocketService] ❌ STOMP Error", {
+              frame,
+              message: frame.headers?.message,
+              socketUrl
+            });
             this.isConnecting = false;
             this.isConnected = false;
             this.connectPromise = null; // 에러 시 Promise 정리
@@ -120,12 +142,17 @@ class WebSocketService {
             this.handleReconnection();
             reject(new Error(`STOMP Error: ${frame.headers.message}`));
           },
-          
+
           onWebSocketClose: (event) => {
-            console.log("WebSocket Closed:", event);
+            console.log("[WebSocketService] 🔌 WebSocket Closed", {
+              code: event.code,
+              reason: event.reason,
+              wasClean: event.wasClean,
+              socketUrl
+            });
             this.isConnecting = false;
             this.isConnected = false;
-            
+
             // 연결 리스너 호출
             this.connectionListeners.forEach(listener => {
               try {
@@ -134,15 +161,19 @@ class WebSocketService {
                 console.error("Connection listener error:", error);
               }
             });
-            
+
             // 정상 종료가 아닌 경우 재연결 시도
             if (!event.wasClean) {
               this.handleReconnection();
             }
           },
-          
+
           onWebSocketError: (error) => {
-            console.error("WebSocket Error:", error);
+            console.error("[WebSocketService] ❌ WebSocket Error", {
+              error,
+              errorMessage: error?.message,
+              socketUrl
+            });
             this.isConnecting = false;
             this.isConnected = false;
             this.connectPromise = null; // 에러 시 Promise 정리
@@ -161,12 +192,14 @@ class WebSocketService {
           }
         });
 
+        console.log("[WebSocketService] 🚀 STOMP 클라이언트 활성화 시작");
         this.client.activate();
+        console.log("[WebSocketService] 🚀 STOMP 클라이언트 활성화 완료 - 연결 대기 중");
       } catch (error) {
         this.isConnecting = false;
         this.isConnected = false;
         this.connectPromise = null; // 에러 시 Promise 정리
-        console.error("Failed to create WebSocket client:", error);
+        console.error("[WebSocketService] ❌ WebSocket 클라이언트 생성 실패:", error);
         reject(error);
       }
     });

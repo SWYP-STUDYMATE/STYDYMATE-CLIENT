@@ -66,18 +66,51 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
 
         try {
             setIsSending(true);
+            console.log('[MatchingProfileCard] Sending match request to:', userId);
             await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
             showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
         } catch (error) {
-            console.error('매칭 요청 실패:', error);
+            console.error('[MatchingProfileCard] 매칭 요청 실패:', {
+                error,
+                userId,
+                status: error?.response?.status,
+                data: error?.response?.data,
+                message: error?.message
+            });
 
             // 에러 메시지 상세화
-            if (error.response?.status === 409) {
+            const status = error?.response?.status;
+            const errorData = error?.response?.data;
+            const errorMessage =
+                (typeof errorData === 'string' ? errorData : errorData?.message) ||
+                error?.message;
+
+            if (status === 409 || errorMessage?.includes('중복') || errorMessage?.includes('duplicate') || errorMessage?.includes('DUPLICATE')) {
                 showError('이미 매칭 요청을 보낸 사용자입니다.');
-            } else if (error.response?.status === 400) {
-                showError('잘못된 요청입니다. 다시 시도해주세요.');
+            } else if (status === 400) {
+                if (errorMessage?.includes('자기 자신') || errorMessage?.includes('SELF')) {
+                    showError('자기 자신에게는 매칭 요청을 보낼 수 없습니다.');
+                } else if (errorMessage?.includes('매칭된') || errorMessage?.includes('ALREADY_MATCHED')) {
+                    showError('이미 매칭된 사용자입니다.');
+                } else if (errorMessage?.includes('대기 중') || errorMessage?.includes('PENDING')) {
+                    showError('이미 대기 중인 매칭 요청이 있습니다.');
+                } else {
+                    showError(errorMessage || '잘못된 요청입니다. 다시 시도해주세요.');
+                }
+            } else if (status === 500) {
+                showError('서버에서 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                // 500 에러 발생 시 보낸 요청 목록 재조회하여 동기화
+                console.log('[MatchingProfileCard] Refreshing sent requests after 500 error');
+                try {
+                    const { fetchSentRequests } = useMatchingStore.getState();
+                    await fetchSentRequests('pending');
+                } catch (refreshError) {
+                    console.error('[MatchingProfileCard] Failed to refresh sent requests:', refreshError);
+                }
+            } else if (error?.code === 'ERR_NETWORK') {
+                showError('네트워크 연결을 확인해주세요.');
             } else {
-                showError('매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+                showError(errorMessage || '매칭 요청을 보내는데 실패했습니다. 잠시 후 다시 시도해주세요.');
             }
         } finally {
             setIsSending(false);
