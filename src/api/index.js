@@ -4,6 +4,7 @@ import { log } from '../utils/logger';
 import { handleApiError } from '../utils/errorHandler';
 import { toast } from '../components/toast-manager.jsx';
 import { getToken, setToken, removeToken } from "../utils/tokenStorage";
+import { getUserFriendlyErrorMessage, shouldLogError, isRetryableError } from '../utils/errorMessages';
 
 const api = axios.create({
   // 개발: vite.proxy('/api' → 워커 로컬)에서 /api 제거됨
@@ -107,6 +108,9 @@ api.interceptors.response.use(
       log.error(`네트워크 오류: ${method} ${url}`, error, 'API');
     }
 
+    // 사용자 친화적 에러 메시지 가져오기
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+
     // 403 Forbidden 오류 처리
     if (error.response && error.response.status === 403) {
       log.warn("403 Forbidden: 권한이 없습니다. 토큰 재발급을 시도합니다.", null, 'AUTH');
@@ -174,7 +178,7 @@ api.interceptors.response.use(
       
       // 사용자 친화적 에러 메시지 표시
       if (typeof window !== 'undefined') {
-        toast.error("권한 오류", "접근 권한이 없습니다. 다시 로그인해주세요.");
+        toast.error("권한 오류", friendlyMessage);
       }
       
       // 토큰을 삭제하고 로그인 페이지로 리다이렉트
@@ -203,7 +207,7 @@ api.interceptors.response.use(
           removeToken("accessToken");
           removeToken("refreshToken");
 
-          toast.error("로그인 필요", "로그인이 필요한 서비스입니다.");
+          toast.error("로그인 필요", friendlyMessage);
 
           setTimeout(() => {
             window.location.href = "/";
@@ -277,7 +281,7 @@ api.interceptors.response.use(
         removeToken("refreshToken");
         
         // 사용자 친화적 메시지
-        toast.error("세션 만료", "로그인이 만료되었습니다. 다시 로그인해주세요.");
+        toast.error("세션 만료", friendlyMessage);
         
         setTimeout(() => {
           window.location.href = "/";
@@ -291,14 +295,20 @@ api.interceptors.response.use(
     try {
       handleApiError(error, `${method} ${url}`);
     } catch (handledError) {
-      // handleApiError에서 처리된 에러를 사용자에게 표시
-      if (typeof window !== 'undefined' && handledError.message) {
+      // 사용자 친화적 에러 메시지 표시
+      if (typeof window !== 'undefined') {
         const errorTitle = handledError.type === 'NETWORK_ERROR' ? '네트워크 오류' : 'API 오류';
-        toast.error(errorTitle, handledError.message, { duration: 6000 });
+        toast.error(errorTitle, friendlyMessage, { duration: 6000 });
       }
+
+      // 로깅 여부 결정
+      if (shouldLogError(error)) {
+        log.error(`API 오류: ${method} ${url}`, error, 'API');
+      }
+
       return Promise.reject(handledError);
     }
-    
+
     return Promise.reject(error);
   }
 );

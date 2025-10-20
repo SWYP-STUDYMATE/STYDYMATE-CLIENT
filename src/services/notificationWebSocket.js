@@ -9,7 +9,9 @@ class NotificationWebSocketService {
     this.isConnected = false;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 3000;
+    this.reconnectDelayBase = 2000; // 초기 재연결 지연 시간 (2초)
+    this.reconnectDelayMax = 60000; // 최대 재연결 지연 시간 (60초)
+    this.reconnectTimeout = null; // 재연결 타임아웃 관리
     this.subscriptions = new Map();
     this.messageHandlers = new Map();
     this.fallbackInterval = null;
@@ -288,8 +290,14 @@ class NotificationWebSocketService {
     }
   }
 
-  // 재연결 처리
+  // 재연결 처리 - 지수 백오프(Exponential Backoff) 적용
   handleReconnection() {
+    // 이미 재연결 시도 중이면 무시
+    if (this.reconnectTimeout) {
+      console.log("Reconnection already in progress, skipping...");
+      return;
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error("Max reconnection attempts reached for notification WebSocket");
       this.startFallbackPolling();
@@ -297,26 +305,43 @@ class NotificationWebSocketService {
     }
 
     this.reconnectAttempts++;
-    console.log(`Attempting to reconnect notification WebSocket... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
-    setTimeout(() => {
+    // 지수 백오프: delay = min(base * 2^attempts, max)
+    const exponentialDelay = Math.min(
+      this.reconnectDelayBase * Math.pow(2, this.reconnectAttempts - 1),
+      this.reconnectDelayMax
+    );
+
+    console.log(
+      `Attempting to reconnect notification WebSocket in ${exponentialDelay / 1000}s... ` +
+      `(${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+    );
+
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
       this.connect().catch((error) => {
         console.error("Reconnection failed:", error);
       });
-    }, this.reconnectDelay * this.reconnectAttempts);
+    }, exponentialDelay);
   }
 
   // 연결 해제
   disconnect() {
+    // 재연결 타임아웃 취소
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
     if (this.client) {
       console.log("Disconnecting notification WebSocket");
-      
+
       // 모든 구독 해제
       this.subscriptions.forEach((subscription) => {
         subscription.unsubscribe();
       });
       this.subscriptions.clear();
-      
+
       this.client.deactivate();
       this.client = null;
       this.isConnected = false;

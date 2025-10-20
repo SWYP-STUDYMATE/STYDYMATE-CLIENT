@@ -11,8 +11,12 @@ import {
   refreshTokens,
   logoutUser
 } from '../services/auth';
+import { endpointRateLimit } from '../middleware/rateLimit';
 
 const authRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+// Auth 엔드포인트에 Rate Limiting 적용
+authRoutes.use('*', endpointRateLimit('auth'));
 
 const wrapAuthError = (error: unknown): AppError => {
   if (error instanceof AppError) {

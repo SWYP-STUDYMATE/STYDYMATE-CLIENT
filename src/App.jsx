@@ -1,10 +1,11 @@
-import { Routes } from 'react-router-dom';
+import { Routes, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastManager } from './components/toast-manager.jsx';
 // import NotificationToastManager from './components/NotificationToastManager';
 import ServerStatusIndicator from './components/ServerStatusIndicator';
 import { AlertProvider, useAlert, setupGlobalAlert } from './hooks/useAlert.jsx';
-import { initializeNotificationWebSocket } from './services/notificationWebSocket';
+import { initializeNotificationWebSocket, disconnectNotificationWebSocket } from './services/notificationWebSocket';
 import { initializePushNotifications } from './services/pushNotificationService';
 import { useEffect, useMemo } from 'react';
 import { getToken, isAutoLoginEnabled } from './utils/tokenStorage';
@@ -13,27 +14,47 @@ import renderRoutes from './components/RouteRenderer';
 // AlertProvider를 포함한 AppContent 컴포넌트
 function AppContent() {
   const alertHook = useAlert();
-
+  const location = useLocation();
 
   // 전역 alert 함수 설정
   useEffect(() => {
     setupGlobalAlert(alertHook);
   }, [alertHook]);
 
-  // 알림 시스템 초기화
+  // 알림 시스템 초기화 - 조건부 연결
   useEffect(() => {
     const initializeNotificationServices = async () => {
       try {
         // 로그인된 사용자인 경우에만 초기화
         const accessToken = getToken('accessToken');
-        if (accessToken) {
+
+        // WebSocket 연결이 필요한 페이지 목록
+        const notificationRequiredPages = [
+          '/main',
+          '/chat',
+          '/matching',
+          '/profile',
+          '/group-session',
+          '/onboarding-info'
+        ];
+
+        // 현재 페이지가 알림이 필요한 페이지인지 확인
+        const needsNotifications = notificationRequiredPages.some(
+          path => location.pathname.startsWith(path)
+        );
+
+        if (accessToken && needsNotifications) {
           // WebSocket 알림 서비스 초기화
           await initializeNotificationWebSocket();
-          console.log('Notification WebSocket initialized');
+          console.log('Notification WebSocket initialized for:', location.pathname);
 
           // 푸시 알림 서비스 초기화
           await initializePushNotifications();
           console.log('Push notification service initialized');
+        } else if (!needsNotifications) {
+          // 알림이 필요 없는 페이지로 이동 시 연결 해제
+          disconnectNotificationWebSocket();
+          console.log('Notification WebSocket disconnected (not needed on this page)');
         }
       } catch (error) {
         console.error('Failed to initialize notification services:', error);
@@ -41,7 +62,12 @@ function AppContent() {
     };
 
     initializeNotificationServices();
-  }, []);
+
+    // 컴포넌트 언마운트 시 연결 해제
+    return () => {
+      disconnectNotificationWebSocket();
+    };
+  }, [location.pathname]); // pathname 변경 시마다 실행
 
   // 자동 로그인 비활성화 시 브라우저 탭 종료 시에만 토큰 삭제
   // 주의: beforeunload는 새로고침도 감지하므로 사용하지 않음
@@ -68,11 +94,13 @@ function AppContent() {
   );
 }
 
-// 메인 App 컴포넌트 - AlertProvider로 래핑
+// 메인 App 컴포넌트 - HelmetProvider와 AlertProvider로 래핑
 export default function App() {
   return (
-    <AlertProvider>
-      <AppContent />
-    </AlertProvider>
+    <HelmetProvider>
+      <AlertProvider>
+        <AppContent />
+      </AlertProvider>
+    </HelmetProvider>
   );
 }

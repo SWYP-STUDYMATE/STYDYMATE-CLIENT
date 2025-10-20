@@ -1,4 +1,6 @@
 import api from './index.js';
+import { getUserFriendlyErrorMessage } from '../utils/errorMessages';
+import useToastStore from '../store/toastStore';
 
 // OAuth 로그인 함수들은 실제로 사용되지 않음 - window.location.href로 직접 리다이렉트
 // 아래 함수들은 향후 필요시 활용할 수 있도록 주석 처리
@@ -41,6 +43,8 @@ export const refreshAccessToken = async (refreshToken) => {
     return response.data;
   } catch (error) {
     console.error('Refresh token error:', error);
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+    useToastStore.getState().error(friendlyMessage);
     throw error;
   }
 };
@@ -52,6 +56,8 @@ export const logout = async () => {
     return response.data;
   } catch (error) {
     console.error('Logout error:', error);
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+    useToastStore.getState().error(friendlyMessage);
     throw error;
   }
 };
@@ -63,6 +69,8 @@ export const verifyToken = async () => {
     return response.data;
   } catch (error) {
     console.error('Verify token error:', error);
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+    useToastStore.getState().error(friendlyMessage);
     throw error;
   }
 };
@@ -74,6 +82,8 @@ export const getMe = async () => {
     return response.data;
   } catch (error) {
     console.error('Get me error:', error);
+    const friendlyMessage = getUserFriendlyErrorMessage(error);
+    useToastStore.getState().error(friendlyMessage);
     throw error;
   }
 };

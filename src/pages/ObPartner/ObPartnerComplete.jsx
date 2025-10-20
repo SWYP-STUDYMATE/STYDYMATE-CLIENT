@@ -9,7 +9,7 @@ export default function ObPartnerComplete() {
   return (
     <CompleteOnboarding
       userName={userName}
-      onboarding="소통&파트너 작d성"
+      onboarding="소통&파트너 작성"
       subText="4 번째 단계"
       step={4}
       totalSteps={5}

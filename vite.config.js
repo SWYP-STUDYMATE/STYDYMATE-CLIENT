@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import { imagetools } from 'vite-imagetools'
 import path from 'node:path'
 
 // https://vite.dev/config/
@@ -16,6 +17,16 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      imagetools({
+        defaultDirectives: (url) => {
+          // 자동으로 WebP 및 AVIF 변환, 리사이징
+          return new URLSearchParams({
+            format: 'webp;avif;jpg',
+            quality: '80',
+            w: '800;400;200', // 반응형 이미지 생성
+          });
+        },
+      }),
       process.env.ANALYZE === 'true' && visualizer({
         open: true,
         filename: 'dist/stats.html',
@@ -191,20 +202,62 @@ export default defineConfig(({ mode }) => {
             const info = assetInfo.name.split('.');
             const ext = info[info.length - 1];
             if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico|webp)$/i.test(assetInfo.name)) {
-              return `images/[name].${ext}`;
+              return `images/[name]-[hash].${ext}`;
             }
             if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name)) {
-              return `fonts/[name].${ext}`;
+              return `fonts/[name]-[hash].${ext}`;
             }
             if (/\.css$/i.test(assetInfo.name)) {
-              return `css/[name].${ext}`;
+              return `css/[name]-[hash].${ext}`;
             }
-            return `assets/[name].${ext}`;
+            return `assets/[name]-[hash].${ext}`;
           },
-          inlineDynamicImports: true,
-          // 디버깅 편의를 위해 기본 청크 네이밍으로 되돌린다.
-          chunkFileNames: 'js/[name].js',
-          entryFileNames: 'js/[name].js'
+          // 번들 크기 감소를 위해 코드 분할 활성화
+          inlineDynamicImports: false,
+          // 청크 분할 전략
+          manualChunks: (id) => {
+            // node_modules 패키지별 분할
+            if (id.includes('node_modules')) {
+              // React 관련
+              if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+                return 'vendor-react';
+              }
+              // React Router
+              if (id.includes('react-router')) {
+                return 'vendor-router';
+              }
+              // 차트 라이브러리
+              if (id.includes('chart.js') || id.includes('react-chartjs')) {
+                return 'vendor-charts';
+              }
+              // Zustand
+              if (id.includes('zustand')) {
+                return 'vendor-zustand';
+              }
+              // Axios
+              if (id.includes('axios')) {
+                return 'vendor-axios';
+              }
+              // WebRTC 관련
+              if (id.includes('sockjs') || id.includes('stomp')) {
+                return 'vendor-websocket';
+              }
+              // 기타 vendor
+              return 'vendor-misc';
+            }
+            // 큰 페이지는 별도 청크로
+            if (id.includes('/pages/Session/')) {
+              return 'pages-session';
+            }
+            if (id.includes('/pages/Chat/')) {
+              return 'pages-chat';
+            }
+            if (id.includes('/pages/LevelTest/')) {
+              return 'pages-leveltest';
+            }
+          },
+          chunkFileNames: 'js/[name]-[hash].js',
+          entryFileNames: 'js/[name]-[hash].js'
         }
       },
       cssCodeSplit: true,
