@@ -214,48 +214,8 @@ export default defineConfig(({ mode }) => {
           },
           // 번들 크기 감소를 위해 코드 분할 활성화
           inlineDynamicImports: false,
-          // 청크 분할 전략
-          manualChunks: (id) => {
-            // node_modules 패키지별 분할
-            if (id.includes('node_modules')) {
-              // React 관련
-              if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
-                return 'vendor-react';
-              }
-              // React Router
-              if (id.includes('react-router')) {
-                return 'vendor-router';
-              }
-              // 차트 라이브러리
-              if (id.includes('chart.js') || id.includes('react-chartjs')) {
-                return 'vendor-charts';
-              }
-              // Zustand
-              if (id.includes('zustand')) {
-                return 'vendor-zustand';
-              }
-              // Axios
-              if (id.includes('axios')) {
-                return 'vendor-axios';
-              }
-              // WebRTC 관련
-              if (id.includes('sockjs') || id.includes('stomp')) {
-                return 'vendor-websocket';
-              }
-              // 기타 vendor
-              return 'vendor-misc';
-            }
-            // 큰 페이지는 별도 청크로
-            if (id.includes('/pages/Session/')) {
-              return 'pages-session';
-            }
-            if (id.includes('/pages/Chat/')) {
-              return 'pages-chat';
-            }
-            if (id.includes('/pages/LevelTest/')) {
-              return 'pages-leveltest';
-            }
-          },
+          // 청크 분할 전략 - 순환 참조 방지를 위해 단순화
+          manualChunks: undefined,
           chunkFileNames: 'js/[name]-[hash].js',
           entryFileNames: 'js/[name]-[hash].js'
         }
