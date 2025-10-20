@@ -4,6 +4,8 @@ import type { AppBindings as Env } from '../index';
 import { authMiddleware } from '../utils/auth';
 import { getAggregatedMetrics } from '../middleware/analytics';
 import { successResponse, errorResponse } from '../utils/response';
+import { analyzeLearningPattern } from '../services/learningAnalytics';
+import { AppError } from '../utils/errors';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -320,6 +322,80 @@ app.post('/events', async (c) => {
     } catch (error) {
         console.error('Events recording error:', error);
         return errorResponse(c, 'Failed to record events');
+    }
+});
+
+// 학습 패턴 분석 엔드포인트
+app.get('/learning-pattern', authMiddleware as any, async (c) => {
+    try {
+        const userId = c.get('userId') as string | undefined;
+        if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
+        const monthsBack = parseInt(c.req.query('monthsBack') || '3');
+
+        if (monthsBack < 1 || monthsBack > 12) {
+            throw new AppError('monthsBack must be between 1 and 12', 400, 'INVALID_MONTHS_BACK');
+        }
+
+        const pattern = await analyzeLearningPattern(c.env, userId, monthsBack);
+        return successResponse(c, pattern);
+    } catch (error) {
+        if (error instanceof AppError) {
+            return errorResponse(c, error.message, error.statusCode);
+        }
+        console.error('Learning pattern analysis error:', error);
+        return errorResponse(c, 'Learning pattern analysis failed');
+    }
+});
+
+// 학습 진행 상황 요약
+app.get('/progress-summary', authMiddleware as any, async (c) => {
+    try {
+        const userId = c.get('userId') as string | undefined;
+        if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
+        const pattern = await analyzeLearningPattern(c.env, userId, 1);
+
+        return successResponse(c, {
+            currentLevel: pattern.progress.currentLevel,
+            sessionsThisWeek: Math.round(pattern.studyHabits.sessionsPerWeek),
+            consistency: pattern.studyHabits.consistency,
+            nextMilestone: pattern.insights.milestones[0] || null,
+            topStrength: pattern.strengths[0]?.area || null,
+            topWeakness: pattern.weaknesses[0]?.area || null
+        });
+    } catch (error) {
+        if (error instanceof AppError) {
+            return errorResponse(c, error.message, error.statusCode);
+        }
+        console.error('Progress summary error:', error);
+        return errorResponse(c, 'Progress summary failed');
+    }
+});
+
+// 맞춤형 학습 추천사항
+app.get('/recommendations', authMiddleware as any, async (c) => {
+    try {
+        const userId = c.get('userId') as string | undefined;
+        if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
+        const pattern = await analyzeLearningPattern(c.env, userId, 3);
+
+        return successResponse(c, {
+            recommendations: pattern.insights.recommendations,
+            personalizedPath: pattern.personalizedPath,
+            weaknessesWithSolutions: pattern.weaknesses.map(w => ({
+                area: w.area,
+                score: w.score,
+                recommendations: w.recommendations
+            }))
+        });
+    } catch (error) {
+        if (error instanceof AppError) {
+            return errorResponse(c, error.message, error.statusCode);
+        }
+        console.error('Recommendations error:', error);
+        return errorResponse(c, 'Recommendations generation failed');
     }
 });
 
