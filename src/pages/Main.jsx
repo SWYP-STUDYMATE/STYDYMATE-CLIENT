@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Sparkles, TrendingUp, Target, Brain, ChevronRight } from "lucide-react";
 
 import MainHeader from "../components/MainHeader";
 import GreetingCard from "../components/GreetingCard";
@@ -8,7 +9,7 @@ import LanguageProfile from "../components/LanguageProfile";
 import LanguageExchangeMates from "../components/LanguageExchangeMates";
 import MainAchievementsSection from "../components/MainAchievementsSection";
 
-import { getStudyStats } from "../api/analytics";
+import { getStudyStats, getProgressSummary } from "../api/analytics";
 import { getOnboardingData } from "../api/onboarding";
 import { getMatches } from "../api/matching";
 import { getUserProfile, getUserInfo } from "../api/user";
@@ -102,6 +103,8 @@ const INITIAL_MAIN_STATE = {
   achievementsStats: null,
   achievementsError: null,
   achievementsLoading: false,
+  progressSummary: null,
+  progressSummaryLoading: false,
 };
 
 const buildProfileSnapshot = (userInfo, userProfile) => {
@@ -324,6 +327,29 @@ export default function Main() {
     initializeMainData();
   }, [initializeMainData]);
 
+  useEffect(() => {
+    const loadProgressSummary = async () => {
+      setState((prev) => ({ ...prev, progressSummaryLoading: true }));
+      try {
+        const summary = await getProgressSummary();
+        if (isMountedRef.current) {
+          setState((prev) => ({
+            ...prev,
+            progressSummary: summary,
+            progressSummaryLoading: false,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load progress summary:', error);
+        if (isMountedRef.current) {
+          setState((prev) => ({ ...prev, progressSummaryLoading: false }));
+        }
+      }
+    };
+
+    loadProgressSummary();
+  }, []);
+
   const handleRefreshAchievements = useCallback(async () => {
     setState((prev) => ({ ...prev, achievementsLoading: true }));
     const achievementsResult = await loadAchievementsSection();
@@ -384,6 +410,66 @@ export default function Main() {
             errorMessage={state.studyStatsError}
           />
         </div>
+
+        {/* AI Learning Summary Card */}
+        {state.progressSummary && !state.progressSummaryLoading && (
+          <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471]">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Sparkles className="w-6 h-6 text-[#00C471] mr-2" />
+                <h3 className="text-[18px] font-bold text-[#111111]">AI 학습 인사이트</h3>
+              </div>
+              <button
+                onClick={() => navigate('/profile')}
+                className="text-[14px] text-[#00C471] font-medium flex items-center"
+              >
+                자세히 보기
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-[10px] p-4">
+                <div className="flex items-center mb-2">
+                  <TrendingUp className="w-5 h-5 text-[#00C471] mr-2" />
+                  <span className="text-[14px] text-[#929292]">현재 레벨</span>
+                </div>
+                <p className="text-[24px] font-bold text-[#111111]">
+                  {state.progressSummary.currentLevel || '-'}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-[10px] p-4">
+                <div className="flex items-center mb-2">
+                  <Target className="w-5 h-5 text-[#00C471] mr-2" />
+                  <span className="text-[14px] text-[#929292]">이번 주 세션</span>
+                </div>
+                <p className="text-[24px] font-bold text-[#111111]">
+                  {state.progressSummary.sessionsThisWeek || 0}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-[10px] p-4">
+                <div className="flex items-center mb-2">
+                  <Brain className="w-5 h-5 text-[#00C471] mr-2" />
+                  <span className="text-[14px] text-[#929292]">학습 일관성</span>
+                </div>
+                <p className="text-[24px] font-bold text-[#111111]">
+                  {state.progressSummary.consistency ? `${Math.round(state.progressSummary.consistency * 100)}%` : '-'}
+                </p>
+              </div>
+            </div>
+
+            {state.progressSummary.nextMilestone && (
+              <div className="mt-4 bg-white bg-opacity-50 rounded-[10px] p-4">
+                <p className="text-[14px] text-[#666666] mb-1">다음 목표</p>
+                <p className="text-[16px] font-semibold text-[#111111]">
+                  {state.progressSummary.nextMilestone}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <LanguageProfile

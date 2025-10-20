@@ -6,13 +6,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Edit
+  Edit,
+  Sparkles
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import LanguageProfile from '../../components/LanguageProfile';
 import AchievementBadges from '../../components/AchievementBadges';
 import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
 import LanguageLevelProgress from '../../components/profile/LanguageLevelProgress';
+import LearningPatternDashboard from '../../components/LearningPatternDashboard';
 import ProfileImageUpload from '../../components/ProfileImageUpload';
 import ProfileEditor from '../../components/ProfileEditor';
 import FileManager from '../../components/FileManager';
@@ -562,6 +564,18 @@ export default function ProfilePage() {
 
         {activeTab === 'stats' && (
           <div className="space-y-6">
+            <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471]">
+              <div className="flex items-center mb-3">
+                <Sparkles className="w-6 h-6 text-[#00C471] mr-2" />
+                <h3 className="text-[18px] font-bold text-[#111111]">AI 학습 패턴 분석</h3>
+              </div>
+              <p className="text-[14px] text-[#666666] mb-4">
+                당신의 학습 습관과 패턴을 AI가 분석하여 맞춤형 학습 전략을 제안합니다.
+              </p>
+            </div>
+
+            <LearningPatternDashboard monthsBack={3} />
+
             <WeeklyActivityChart data={weeklyActivity} loading={statsLoading} error={statsError} />
 
             {primaryLanguage ? (

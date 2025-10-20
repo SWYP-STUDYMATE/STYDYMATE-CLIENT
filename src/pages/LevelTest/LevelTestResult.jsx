@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import useLevelTestStore from '../../store/levelTestStore';
 import RadarChart from '../../components/RadarChart';
 import CommonButton from '../../components/CommonButton';
-import { getLevelTestResult, getVoiceTestResult } from '../../api/levelTest';
-import { Trophy, Target, BookOpen, Users, Calendar, ChevronRight } from 'lucide-react';
+import ComprehensiveEvaluationDisplay from '../../components/ComprehensiveEvaluationDisplay';
+import { getLevelTestResult, getVoiceTestResult, getDetailedEvaluation } from '../../api/levelTest';
+import { Trophy, Target, BookOpen, Users, Calendar, ChevronRight, Sparkles } from 'lucide-react';
 
 const LEVEL_DESCRIPTIONS = {
   A1: {
@@ -74,6 +75,9 @@ export default function LevelTestResult() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [detailedEvaluation, setDetailedEvaluation] = useState(null);
+  const [isLoadingDetailed, setIsLoadingDetailed] = useState(false);
+  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
   const testResult = useLevelTestStore((state) => state.testResult);
   const resetTest = useLevelTestStore((state) => state.resetTest);
@@ -138,6 +142,24 @@ export default function LevelTestResult() {
       return;
     }
     loadResult();
+  };
+
+  const handleLoadDetailedAnalysis = async () => {
+    if (!testId || !testResult) return;
+
+    setIsLoadingDetailed(true);
+    try {
+      // 첫 번째 질문의 상세 평가를 가져옴 (testResult에 questionId 정보가 있다고 가정)
+      const questionId = 1; // 실제로는 testResult에서 질문 ID를 가져와야 함
+      const detailed = await getDetailedEvaluation(testId, questionId);
+      setDetailedEvaluation(detailed);
+      setShowDetailedAnalysis(true);
+    } catch (error) {
+      console.error('Failed to load detailed evaluation:', error);
+      alert('상세 분석을 불러오는데 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLoadingDetailed(false);
+    }
   };
 
   if (isLoading) {
@@ -333,6 +355,46 @@ export default function LevelTestResult() {
                 </ul>
               </div>
             )}
+          </div>
+        )}
+
+        {!showDetailedAnalysis && (
+          <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471] mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <Sparkles className="w-6 h-6 text-[#00C471] mr-2" />
+                <h3 className="text-[18px] font-bold text-[#111111]">
+                  AI 상세 분석
+                </h3>
+              </div>
+            </div>
+            <p className="text-[14px] text-[#666666] mb-4">
+              CEFR 기준에 따른 6차원 상세 평가, 발음 분석, 문법 분석, 어휘 분석, 학습 계획을 확인하세요.
+            </p>
+            <CommonButton
+              onClick={handleLoadDetailedAnalysis}
+              variant="primary"
+              className="w-full"
+              disabled={isLoadingDetailed}
+            >
+              {isLoadingDetailed ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                  분석 중...
+                </div>
+              ) : (
+                <>
+                  AI 상세 분석 보기
+                  <Sparkles className="w-5 h-5 ml-2" />
+                </>
+              )}
+            </CommonButton>
+          </div>
+        )}
+
+        {showDetailedAnalysis && detailedEvaluation && (
+          <div className="mb-6">
+            <ComprehensiveEvaluationDisplay evaluation={detailedEvaluation.evaluation?.comprehensiveData} />
           </div>
         )}
 

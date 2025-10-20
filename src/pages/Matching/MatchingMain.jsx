@@ -9,13 +9,16 @@ import {
     Globe,
     Target,
     ChevronRight,
-    Filter
+    Filter,
+    Sparkles
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import MatchingProfileCard from '../../components/MatchingProfileCard';
+import AIMatchingResults from '../../components/AIMatchingResults';
 import FilterPanel from '../../components/FilterPanel';
 import useMatchingStore from '../../store/matchingStore';
 import useToast from '../../hooks/useToast.jsx';
+import { getAIBestMatches } from '../../api/matching';
 
 export default function MatchingMain() {
     const navigate = useNavigate();
@@ -25,6 +28,9 @@ export default function MatchingMain() {
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [aiMatches, setAiMatches] = useState([]);
+    const [isLoadingAI, setIsLoadingAI] = useState(false);
+    const [showAIResults, setShowAIResults] = useState(false);
 
     const {
         matchedUsers,
@@ -96,7 +102,7 @@ export default function MatchingMain() {
 
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
-        
+
         setIsLoading(true);
         try {
             // Workers API를 통한 파트너 검색
@@ -110,6 +116,41 @@ export default function MatchingMain() {
             showError('매칭 파트너 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleAIMatching = async () => {
+        setIsLoadingAI(true);
+        try {
+            const preferences = {
+                languageWeight: 0.25,
+                levelWeight: 0.15,
+                semanticWeight: 0.15,
+                scheduleWeight: 0.15,
+                goalsWeight: 0.10,
+                personalityWeight: 0.10,
+                topicsWeight: 0.10
+            };
+            const matches = await getAIBestMatches(preferences, 5);
+            setAiMatches(matches.matches || []);
+            setShowAIResults(true);
+            showSuccess('AI 매칭이 완료되었습니다!');
+        } catch (error) {
+            console.error('AI matching error:', error);
+            showError('AI 매칭 중 오류가 발생했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsLoadingAI(false);
+        }
+    };
+
+    const handleRequestMatch = async (partnerId) => {
+        try {
+            // 기존 매칭 요청 로직 사용
+            await startMatching();
+            showSuccess('매칭 요청을 보냈습니다.');
+        } catch (error) {
+            console.error('Match request error:', error);
+            showError('매칭 요청 중 오류가 발생했습니다.');
         }
     };
 
@@ -191,17 +232,62 @@ export default function MatchingMain() {
                             <p className="text-[14px] text-[#666666] mb-4">
                                 AI가 당신에게 맞는 완벽한 언어 교환 파트너를 찾아드려요.
                             </p>
-                            <CommonButton
-                                onClick={handleStartMatching}
-                                variant="primary"
-                                className="w-full"
-                                disabled={isLoading || isSearching}
-                                loading={isSearching}
-                                icon={!isSearching ? <Search /> : undefined}
-                            >
-                                {isSearching ? '매칭 중...' : 'AI 매칭 시작'}
-                            </CommonButton>
+                            <div className="space-y-3">
+                                <CommonButton
+                                    onClick={handleStartMatching}
+                                    variant="primary"
+                                    className="w-full"
+                                    disabled={isLoading || isSearching}
+                                    loading={isSearching}
+                                    icon={!isSearching ? <Search /> : undefined}
+                                >
+                                    {isSearching ? '매칭 중...' : '일반 매칭'}
+                                </CommonButton>
+                                <CommonButton
+                                    onClick={handleAIMatching}
+                                    variant="secondary"
+                                    className="w-full bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] hover:from-[#B0EDD3] hover:to-[#8AE4BE] text-[#111111] border-[#00C471]"
+                                    disabled={isLoadingAI}
+                                    icon={!isLoadingAI ? <Sparkles /> : undefined}
+                                >
+                                    {isLoadingAI ? (
+                                        <div className="flex items-center justify-center">
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#00C471] mr-2" />
+                                            AI 분석 중...
+                                        </div>
+                                    ) : (
+                                        'AI 고급 매칭'
+                                    )}
+                                </CommonButton>
+                            </div>
                         </div>
+
+                        {/* AI Matching Results */}
+                        {showAIResults && aiMatches.length > 0 && (
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center">
+                                        <Sparkles className="w-5 h-5 text-[#00C471] mr-2" />
+                                        <h2 className="text-[18px] font-bold text-[#111111]">AI 추천 매칭</h2>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowAIResults(false)}
+                                        className="text-[14px] text-[#929292]"
+                                    >
+                                        닫기
+                                    </button>
+                                </div>
+                                <div className="space-y-4">
+                                    {aiMatches.map((match) => (
+                                        <AIMatchingResults
+                                            key={match.partner.id}
+                                            match={match}
+                                            onRequestMatch={handleRequestMatch}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Recommended Partners */}
                         <div className="mb-6">
