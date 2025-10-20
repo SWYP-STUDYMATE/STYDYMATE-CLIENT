@@ -81,6 +81,7 @@ matchingRoutes.get('/partners', async (c) => {
       total: result.total
     });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       error instanceof Error ? error.message : 'Failed to load partners',
       500,
@@ -112,6 +113,7 @@ matchingRoutes.post('/partners/advanced', async (c) => {
       total: result.total
     });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       error instanceof Error ? error.message : 'Failed to search partners',
       500,
@@ -203,6 +205,7 @@ matchingRoutes.post('/accept/:requestId', async (c) => {
     });
     return successResponse(c, { success: true });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       error instanceof Error ? error.message : 'Failed to accept matching request',
       400,
@@ -224,6 +227,7 @@ matchingRoutes.post('/reject/:requestId', async (c) => {
     });
     return successResponse(c, { success: true });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       error instanceof Error ? error.message : 'Failed to reject matching request',
       400,
@@ -406,6 +410,12 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       analyzedCandidates: candidates.data.length,
     });
   } catch (error) {
+    // AppError는 그대로 throw (원래 상태 코드 유지)
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // 기타 에러는 500으로 래핑
     throw new AppError(
       error instanceof Error ? error.message : 'AI matching failed',
       500,
@@ -457,6 +467,12 @@ matchingRoutes.post('/ai/compatibility/:partnerId', async (c) => {
       compatibility
     });
   } catch (error) {
+    // AppError는 그대로 throw (원래 상태 코드 유지)
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // 기타 에러는 500으로 래핑
     throw new AppError(
       error instanceof Error ? error.message : 'AI compatibility calculation failed',
       500,

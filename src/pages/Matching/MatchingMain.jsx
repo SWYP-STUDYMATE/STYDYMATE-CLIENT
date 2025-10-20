@@ -37,6 +37,7 @@ export default function MatchingMain() {
         matchingStatus,
         isSearching,
         matchingFilters,
+        sentRequests,
         startMatching,
         fetchRecommendedPartners,
         fetchSentRequests,
@@ -207,6 +208,24 @@ export default function MatchingMain() {
                         </div>
                     </button>
                     <button
+                        onClick={() => setActiveTab('sent')}
+                        className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
+                            activeTab === 'sent'
+                                ? 'text-[#00C471] border-[#00C471]'
+                                : 'text-[#929292] border-transparent'
+                        }`}
+                    >
+                        <div className="flex items-center justify-center space-x-1">
+                            <Users className="w-4 h-4" />
+                            <span>보낸 요청</span>
+                            {sentRequests.length > 0 && (
+                                <span className="ml-1 px-1.5 py-0.5 bg-[#00C471] text-white text-[10px] rounded-full">
+                                    {sentRequests.length}
+                                </span>
+                            )}
+                        </div>
+                    </button>
+                    <button
                         onClick={() => setActiveTab('search')}
                         className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
                             activeTab === 'search'
@@ -225,6 +244,7 @@ export default function MatchingMain() {
             {/* Content */}
             <div className="p-6">
                 {activeTab === 'recommended' ? (
+                    // 추천 탭
                     <>
                         {/* Quick Actions */}
                         <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
@@ -336,8 +356,100 @@ export default function MatchingMain() {
                             )}
                         </div>
                     </>
+                ) : activeTab === 'sent' ? (
+                    // 보낸 요청 탭
+                    <>
+                        <div className="mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-[18px] font-bold text-[#111111]">보낸 매칭 요청</h2>
+                                <button
+                                    onClick={() => fetchSentRequests('pending')}
+                                    className="text-[14px] text-[#00C471] font-medium"
+                                    disabled={isLoading}
+                                >
+                                    새로고침
+                                </button>
+                            </div>
+
+                            {isLoading ? (
+                                <div className="text-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00C471] mx-auto mb-4"></div>
+                                    <p className="text-[14px] text-[#666666]">요청 목록을 불러오는 중...</p>
+                                </div>
+                            ) : sentRequests.length > 0 ? (
+                                <div className="space-y-4">
+                                    {sentRequests.map((request) => (
+                                        <div
+                                            key={request.id || request.requestId}
+                                            className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]"
+                                        >
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center">
+                                                    <img
+                                                        src={request.receiverProfileImage || '/default-avatar.png'}
+                                                        alt={request.receiverName || '파트너'}
+                                                        className="w-12 h-12 rounded-full object-cover mr-3"
+                                                    />
+                                                    <div>
+                                                        <h3 className="text-[16px] font-bold text-[#111111]">
+                                                            {request.receiverName || '파트너'}
+                                                        </h3>
+                                                        <p className="text-[12px] text-[#929292]">
+                                                            {new Date(request.createdAt).toLocaleDateString('ko-KR', {
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric'
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    {request.status === 'pending' && (
+                                                        <span className="px-3 py-1 bg-[#E6F9F1] text-[#00C471] text-[12px] font-medium rounded-full">
+                                                            대기 중
+                                                        </span>
+                                                    )}
+                                                    {request.status === 'accepted' && (
+                                                        <span className="px-3 py-1 bg-[#E6F9F1] text-[#00C471] text-[12px] font-medium rounded-full">
+                                                            수락됨
+                                                        </span>
+                                                    )}
+                                                    {request.status === 'rejected' && (
+                                                        <span className="px-3 py-1 bg-[#F1F3F5] text-[#929292] text-[12px] font-medium rounded-full">
+                                                            거절됨
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {request.message && (
+                                                <div className="mt-3 p-3 bg-[#F1F3F5] rounded-lg">
+                                                    <p className="text-[14px] text-[#666666]">{request.message}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-[20px] p-8 border border-[#E7E7E7] text-center">
+                                    <Users className="w-12 h-12 text-[#929292] mx-auto mb-4" />
+                                    <h3 className="text-[16px] font-bold text-[#111111] mb-2">
+                                        보낸 매칭 요청이 없습니다
+                                    </h3>
+                                    <p className="text-[14px] text-[#666666] mb-4">
+                                        추천 탭에서 파트너를 찾아 매칭 요청을 보내보세요!
+                                    </p>
+                                    <CommonButton
+                                        onClick={() => setActiveTab('recommended')}
+                                        variant="secondary"
+                                    >
+                                        파트너 찾기
+                                    </CommonButton>
+                                </div>
+                            )}
+                        </div>
+                    </>
                 ) : (
-                    /* Search Tab */
+                    // 검색 탭
                     <>
                         {/* Search Form */}
                         <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">

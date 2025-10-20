@@ -56,6 +56,14 @@ class WebSocketService {
     this.isConnecting = true;
 
     const token = getToken("accessToken");
+
+    if (!token) {
+      const errorMsg = "액세스 토큰이 없습니다. 로그인이 필요합니다.";
+      console.error("[WebSocketService]", errorMsg);
+      this.isConnecting = false;
+      return Promise.reject(new Error(errorMsg));
+    }
+
     // WebSocket URL 우선순위: WORKERS_WS_URL > WS_URL > WORKERS_API_URL > API_URL
     const wsUrl = import.meta.env.VITE_WORKERS_WS_URL
       || import.meta.env.VITE_WS_URL
@@ -64,9 +72,15 @@ class WebSocketService {
       || "https://api.languagemate.kr";
 
     // HTTP(S) -> WS(S) 프로토콜 변환
-    const baseUrl = wsUrl.startsWith('http')
-      ? wsUrl.replace(/^http/i, wsUrl.startsWith('https') ? 'wss' : 'ws')
-      : wsUrl;
+    let baseUrl = wsUrl;
+    if (wsUrl.startsWith('https://')) {
+      baseUrl = 'wss://' + wsUrl.substring(8);
+    } else if (wsUrl.startsWith('http://')) {
+      baseUrl = 'ws://' + wsUrl.substring(7);
+    } else if (!wsUrl.startsWith('ws://') && !wsUrl.startsWith('wss://')) {
+      // 프로토콜이 없는 경우 기본값 추가
+      baseUrl = 'wss://' + wsUrl;
+    }
 
     const socketUrl = `${baseUrl}${endpoint}`;
 
@@ -75,8 +89,11 @@ class WebSocketService {
       baseUrl,
       endpoint,
       hasToken: !!token,
-      token: token ? token.substring(0, 20) + '...' : 'null',
-      options
+      tokenPreview: token.substring(0, 20) + '...',
+      envVars: {
+        VITE_WORKERS_WS_URL: import.meta.env.VITE_WORKERS_WS_URL || 'undefined',
+        VITE_WS_URL: import.meta.env.VITE_WS_URL || 'undefined'
+      }
     });
 
     // 새로운 연결 Promise 생성 및 저장
@@ -212,7 +229,18 @@ class WebSocketService {
    */
   handleReconnection() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("Max reconnection attempts reached");
+      console.error("[WebSocketService] 최대 재연결 시도 횟수 초과", {
+        attempts: this.reconnectAttempts,
+        max: this.maxReconnectAttempts
+      });
+      // 모든 에러 리스너에 최종 실패 알림
+      this.errorListeners.forEach(listener => {
+        try {
+          listener('max_reconnect_failed', { attempts: this.reconnectAttempts });
+        } catch (error) {
+          console.error("[WebSocketService] Error listener failed:", error);
+        }
+      });
       return;
     }
 
@@ -223,14 +251,26 @@ class WebSocketService {
     );
 
     console.log(
-      `Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`
+      `[WebSocketService] 재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts} (${delay}ms 후)`
     );
+
+    // 연결 리스너에 재연결 시도 알림
+    this.connectionListeners.forEach(listener => {
+      try {
+        listener('reconnecting', { attempt: this.reconnectAttempts, delay });
+      } catch (error) {
+        console.error("[WebSocketService] Connection listener error:", error);
+      }
+    });
 
     setTimeout(() => {
       if (!this.isConnected && !this.isConnecting) {
+        console.log(`[WebSocketService] 재연결 실행 중... (시도 ${this.reconnectAttempts})`);
         this.connect().catch(error => {
-          console.error("Reconnection failed:", error);
+          console.error("[WebSocketService] 재연결 실패:", error);
         });
+      } else {
+        console.log("[WebSocketService] 재연결 취소 (이미 연결됨 또는 연결 시도 중)");
       }
     }, delay);
   }
