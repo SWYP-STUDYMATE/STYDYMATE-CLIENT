@@ -5,6 +5,7 @@ import { auth } from '../middleware/auth';
 import { AppError } from '../utils/errors';
 import { successResponse } from '../utils/response';
 import { processAudio, evaluateLanguageLevel, generateLevelFeedback } from '../services/ai';
+import { performComprehensiveEvaluation } from '../services/advancedLevelEvaluation';
 import { saveToR2, getFromR2 } from '../services/storage';
 import { log } from '../utils/logger';
 
@@ -349,22 +350,68 @@ async function evaluateSession(env: Env, session: LevelTestSession): Promise<Lev
     }
 
     if (!answer.evaluation) {
-      const evaluation = await evaluateLanguageLevel(env.AI, answer.transcription, question.text);
-      const scores: Record<ScoreKey, number> = {
-        pronunciation: pickScore(evaluation?.scores?.pronunciation) ?? 0,
-        fluency: pickScore(evaluation?.scores?.fluency) ?? 0,
-        grammar: pickScore(evaluation?.scores?.grammar) ?? 0,
-        vocabulary: pickScore(evaluation?.scores?.vocabulary) ?? 0,
-        coherence: pickScore(evaluation?.scores?.coherence) ?? 0,
-        interaction: pickScore(evaluation?.scores?.interaction) ?? 0
-      };
+      // Use comprehensive evaluation for detailed CEFR analysis
+      try {
+        const comprehensiveEval = await performComprehensiveEvaluation(
+          env.AI,
+          answer.transcription,
+          question.text,
+          'good', // audioQuality - default to 'good', can be enhanced later
+          0      // responseTime - can be calculated from answer metadata
+        );
 
-      answer.evaluation = {
-        scores,
-        feedback: evaluation?.feedback ?? '',
-        suggestions: Array.isArray(evaluation?.suggestions) ? evaluation.suggestions.filter(Boolean) : [],
-        estimatedLevel: evaluation?.estimatedLevel
-      };
+        const scores: Record<ScoreKey, number> = {
+          pronunciation: comprehensiveEval.detailedScores.pronunciation,
+          fluency: comprehensiveEval.detailedScores.fluency,
+          grammar: comprehensiveEval.detailedScores.grammar,
+          vocabulary: comprehensiveEval.detailedScores.vocabulary,
+          coherence: comprehensiveEval.detailedScores.coherence,
+          interaction: comprehensiveEval.detailedScores.coherence  // Use coherence for interaction
+        };
+
+        // Generate feedback from comprehensive analysis
+        const feedback = `Overall Level: ${comprehensiveEval.overallLevel} (${comprehensiveEval.subLevel})
+Confidence: ${Math.round(comprehensiveEval.confidenceScore)}%
+
+Pronunciation: ${comprehensiveEval.pronunciationAnalysis.overallScore}/100 - ${comprehensiveEval.pronunciationAnalysis.clarity} clarity
+Grammar: ${comprehensiveEval.grammarAnalysis.accuracyScore}/100 - ${comprehensiveEval.grammarAnalysis.complexity} complexity
+Vocabulary: ${comprehensiveEval.vocabularyAnalysis.rangeScore}/100 - ${comprehensiveEval.vocabularyAnalysis.sophisticationLevel} level
+Fluency: ${comprehensiveEval.fluencyAnalysis.overallScore}/100 - ${comprehensiveEval.fluencyAnalysis.speedLevel} speed`;
+
+        const suggestions: string[] = [
+          ...comprehensiveEval.pronunciationAnalysis.improvementAreas.map(area => `Pronunciation: ${area}`),
+          ...comprehensiveEval.grammarAnalysis.commonErrors.slice(0, 2).map(err => `Grammar: ${err}`),
+          ...comprehensiveEval.studyPlan.shortTerm.slice(0, 2)
+        ];
+
+        answer.evaluation = {
+          scores,
+          feedback,
+          suggestions,
+          estimatedLevel: comprehensiveEval.overallLevel,
+          // Store comprehensive data for later use
+          comprehensiveData: comprehensiveEval
+        };
+      } catch (error) {
+        // Fallback to basic evaluation
+        log.warn('Comprehensive evaluation failed, using basic evaluation:', error);
+        const evaluation = await evaluateLanguageLevel(env.AI, answer.transcription, question.text);
+        const scores: Record<ScoreKey, number> = {
+          pronunciation: pickScore(evaluation?.scores?.pronunciation) ?? 0,
+          fluency: pickScore(evaluation?.scores?.fluency) ?? 0,
+          grammar: pickScore(evaluation?.scores?.grammar) ?? 0,
+          vocabulary: pickScore(evaluation?.scores?.vocabulary) ?? 0,
+          coherence: pickScore(evaluation?.scores?.coherence) ?? 0,
+          interaction: pickScore(evaluation?.scores?.interaction) ?? 0
+        };
+
+        answer.evaluation = {
+          scores,
+          feedback: evaluation?.feedback ?? '',
+          suggestions: Array.isArray(evaluation?.suggestions) ? evaluation.suggestions.filter(Boolean) : [],
+          estimatedLevel: evaluation?.estimatedLevel
+        };
+      }
     }
 
     evaluations.push({
@@ -824,6 +871,33 @@ levelTestRoutes.get('/:testId', auth(), async (c) => {
   const session = await requireSession(env, testId);
   ensureOwnership(session, userId);
   return successResponse(c, sanitizeSession(session));
+});
+
+// Get comprehensive evaluation details for a specific answer
+levelTestRoutes.get('/:testId/answer/:questionId/detailed', auth(), async (c) => {
+  const env: Env = c.env;
+  const userId = getUserIdOrThrow(c);
+  const testId = c.req.param('testId');
+  const questionId = c.req.param('questionId');
+
+  const session = await requireSession(env, testId);
+  ensureOwnership(session, userId);
+
+  const answer = session.answers.find(a => a.questionId === questionId);
+  if (!answer) {
+    throw new AppError('Answer not found', 404, 'ANSWER_NOT_FOUND');
+  }
+
+  // Return comprehensive evaluation data if available
+  if (answer.evaluation && 'comprehensiveData' in answer.evaluation) {
+    return successResponse(c, {
+      questionId,
+      transcription: answer.transcription,
+      evaluation: answer.evaluation.comprehensiveData
+    });
+  }
+
+  throw new AppError('Detailed evaluation not available', 404, 'DETAILED_EVALUATION_NOT_FOUND');
 });
 
 export { levelTestRoutes };

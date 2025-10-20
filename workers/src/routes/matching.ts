@@ -19,6 +19,12 @@ import {
   recordFeedback,
   calculateCompatibilityAnalysis
 } from '../services/matching';
+import {
+  findBestMatches,
+  calculateAIMatchScore,
+  type MatchingPreferences
+} from '../services/aiMatching';
+import { getUserProfile } from '../services/user';
 
 const matchingRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -350,6 +356,113 @@ matchingRoutes.patch('/settings', async (c) => {
   };
   await c.env.CACHE.put(`matching:settings:${userId}`, JSON.stringify(merged));
   return successResponse(c, merged);
+});
+
+// AI-powered matching endpoints
+matchingRoutes.post('/ai/best-matches', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const limit = typeof body.limit === 'number' ? Math.min(body.limit, 50) : 10;
+
+    // Get user's profile
+    const userProfile = await getUserProfile(c.env, userId);
+    if (!userProfile) {
+      throw new AppError('User profile not found', 404, 'USER_NOT_FOUND');
+    }
+
+    // Get candidate profiles (from existing recommendPartners logic)
+    const candidates = await recommendPartners(c.env, userId, {
+      page: 1,
+      size: 100 // Get more candidates for AI to analyze
+    });
+
+    // Get matching preferences from body or use defaults
+    const preferences: MatchingPreferences = {
+      languageWeight: typeof body.languageWeight === 'number' ? body.languageWeight : 0.25,
+      levelWeight: typeof body.levelWeight === 'number' ? body.levelWeight : 0.15,
+      semanticWeight: typeof body.semanticWeight === 'number' ? body.semanticWeight : 0.15,
+      scheduleWeight: typeof body.scheduleWeight === 'number' ? body.scheduleWeight : 0.15,
+      goalsWeight: typeof body.goalsWeight === 'number' ? body.goalsWeight : 0.10,
+      personalityWeight: typeof body.personalityWeight === 'number' ? body.personalityWeight : 0.10,
+      topicsWeight: typeof body.topicsWeight === 'number' ? body.topicsWeight : 0.10,
+    };
+
+    // Find best matches using AI
+    const matches = await findBestMatches(
+      c.env.AI,
+      userProfile,
+      candidates.data,
+      preferences,
+      c.env,
+      limit
+    );
+
+    return successResponse(c, {
+      matches,
+      totalCandidates: candidates.total,
+      analyzedCandidates: candidates.data.length,
+    });
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'AI matching failed',
+      500,
+      'AI_MATCHING_FAILED'
+    );
+  }
+});
+
+matchingRoutes.post('/ai/compatibility/:partnerId', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+  const partnerId = c.req.param('partnerId');
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+
+    // Get both profiles
+    const [userProfile, partnerProfile] = await Promise.all([
+      getUserProfile(c.env, userId),
+      getUserProfile(c.env, partnerId)
+    ]);
+
+    if (!userProfile || !partnerProfile) {
+      throw new AppError('User or partner profile not found', 404, 'PROFILE_NOT_FOUND');
+    }
+
+    // Get matching preferences
+    const preferences: MatchingPreferences = {
+      languageWeight: typeof body.languageWeight === 'number' ? body.languageWeight : 0.25,
+      levelWeight: typeof body.levelWeight === 'number' ? body.levelWeight : 0.15,
+      semanticWeight: typeof body.semanticWeight === 'number' ? body.semanticWeight : 0.15,
+      scheduleWeight: typeof body.scheduleWeight === 'number' ? body.scheduleWeight : 0.15,
+      goalsWeight: typeof body.goalsWeight === 'number' ? body.goalsWeight : 0.10,
+      personalityWeight: typeof body.personalityWeight === 'number' ? body.personalityWeight : 0.10,
+      topicsWeight: typeof body.topicsWeight === 'number' ? body.topicsWeight : 0.10,
+    };
+
+    // Calculate AI-powered compatibility score
+    const compatibility = await calculateAIMatchScore(
+      c.env.AI,
+      userProfile,
+      partnerProfile,
+      preferences,
+      c.env
+    );
+
+    return successResponse(c, {
+      partnerId,
+      compatibility
+    });
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'AI compatibility calculation failed',
+      500,
+      'AI_COMPATIBILITY_FAILED'
+    );
+  }
 });
 
 export default matchingRoutes;
