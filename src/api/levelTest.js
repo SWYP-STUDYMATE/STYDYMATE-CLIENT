@@ -239,6 +239,24 @@ export const getLevelTestStats = async () => {
   }
 };
 
+// ===== AI 고도화 기능 =====
+
+/**
+ * 상세 평가 결과 조회 (Comprehensive Evaluation)
+ * @param {number|string} testId - 테스트 ID
+ * @param {number|string} questionId - 질문 ID
+ * @returns {Promise<Object>} 상세 평가 결과 (CEFR 기반)
+ */
+export const getDetailedEvaluation = async (testId, questionId) => {
+  try {
+    const response = await api.get(`${API_CONFIG.MAIN_SERVER}${API_CONFIG.API_VERSION}/level-test/${testId}/answer/${questionId}/detailed`);
+    return unwrap(response);
+  } catch (error) {
+    console.error('Get detailed evaluation error:', error);
+    throw error;
+  }
+};
+
 // 기본 내보내기
 export default {
   // 주요 함수들

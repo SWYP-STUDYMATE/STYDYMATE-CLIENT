@@ -364,3 +364,64 @@ export const connectToMetricsStream = (onMessage, onError) => {
     throw error;
   }
 };
+
+// ===== AI 학습 분석 기능 =====
+
+/**
+ * 학습 패턴 분석 조회
+ * @param {number} monthsBack - 분석할 개월 수 (1-12, 기본: 3)
+ * @returns {Promise<Object>} 학습 패턴 분석 결과
+ */
+export const getLearningPattern = async (monthsBack = 3) => {
+  try {
+    log.info('학습 패턴 분석 조회 시작', { monthsBack }, 'ANALYTICS');
+
+    const params = new URLSearchParams({
+      monthsBack: Math.min(12, Math.max(1, monthsBack)).toString()
+    });
+
+    const response = await workersApi.get(`/api/v1/analytics/learning-pattern?${params}`);
+
+    log.info('학습 패턴 분석 조회 성공', response.data, 'ANALYTICS');
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    log.error('학습 패턴 분석 조회 실패', error, 'ANALYTICS');
+    throw error;
+  }
+};
+
+/**
+ * 학습 진행 상황 요약 조회
+ * @returns {Promise<Object>} 진행 상황 요약
+ */
+export const getProgressSummary = async () => {
+  try {
+    log.info('학습 진행 상황 요약 조회 시작', null, 'ANALYTICS');
+
+    const response = await workersApi.get('/api/v1/analytics/progress-summary');
+
+    log.info('학습 진행 상황 요약 조회 성공', response.data, 'ANALYTICS');
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    log.error('학습 진행 상황 요약 조회 실패', error, 'ANALYTICS');
+    throw error;
+  }
+};
+
+/**
+ * 맞춤형 학습 추천사항 조회
+ * @returns {Promise<Object>} 학습 추천사항
+ */
+export const getLearningRecommendations = async () => {
+  try {
+    log.info('학습 추천사항 조회 시작', null, 'ANALYTICS');
+
+    const response = await workersApi.get('/api/v1/analytics/recommendations');
+
+    log.info('학습 추천사항 조회 성공', response.data, 'ANALYTICS');
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    log.error('학습 추천사항 조회 실패', error, 'ANALYTICS');
+    throw error;
+  }
+};

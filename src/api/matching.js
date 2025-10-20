@@ -312,6 +312,61 @@ export async function analyzeCompatibility(partnerId) {
   }
 }
 
+// ===== AI-Powered Matching =====
+
+/**
+ * AI 기반 최적 매칭 파트너 찾기
+ * @param {Object} preferences - 매칭 선호도 가중치
+ * @param {number} limit - 결과 제한 (기본: 10)
+ * @returns {Promise<Object>} AI 매칭 결과
+ */
+export async function getAIBestMatches(preferences = {}, limit = 10) {
+  try {
+    const response = await api.post('/matching/ai/best-matches', {
+      preferences: {
+        languageWeight: preferences.languageWeight ?? 0.25,
+        levelWeight: preferences.levelWeight ?? 0.15,
+        semanticWeight: preferences.semanticWeight ?? 0.15,
+        scheduleWeight: preferences.scheduleWeight ?? 0.15,
+        goalsWeight: preferences.goalsWeight ?? 0.10,
+        personalityWeight: preferences.personalityWeight ?? 0.10,
+        topicsWeight: preferences.topicsWeight ?? 0.10
+      },
+      limit
+    });
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('AI best matches error:', error);
+    throw error;
+  }
+}
+
+/**
+ * AI 기반 파트너 호환성 분석
+ * @param {string} partnerId - 분석할 파트너 ID
+ * @param {Object} preferences - 매칭 선호도 가중치
+ * @returns {Promise<Object>} AI 호환성 분석 결과
+ */
+export async function getAICompatibility(partnerId, preferences = {}) {
+  try {
+    const response = await api.post(`/matching/ai/compatibility/${partnerId}`, {
+      preferences: {
+        languageWeight: preferences.languageWeight ?? 0.25,
+        levelWeight: preferences.levelWeight ?? 0.15,
+        semanticWeight: preferences.semanticWeight ?? 0.15,
+        scheduleWeight: preferences.scheduleWeight ?? 0.15,
+        goalsWeight: preferences.goalsWeight ?? 0.10,
+        personalityWeight: preferences.personalityWeight ?? 0.10,
+        topicsWeight: preferences.topicsWeight ?? 0.10
+      }
+    });
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('AI compatibility error:', error);
+    throw error;
+  }
+}
+
 // ===== 매칭 설정 관리 =====
 
 /**
