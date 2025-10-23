@@ -7,13 +7,30 @@ pages_build_output_dir = "dist"
 # 환경 변수 (프로덕션)
 [env.production]
 [env.production.vars]
+# API URLs - 실제 사용 중인 프로덕션 URL
 VITE_API_URL = "https://api.languagemate.kr"
 VITE_WS_URL = "wss://api.languagemate.kr"
 VITE_WORKERS_API_URL = "https://api.languagemate.kr"
 VITE_WORKERS_WS_URL = "wss://api.languagemate.kr/ws"
 VITE_WORKERS_BASE_URL = "https://api.languagemate.kr"
 
-# 환경 변수 (프리뷰)
+# Site URL
+VITE_SITE_URL = "https://languagemate.kr"
+
+# OAuth Client IDs (Public Keys - 프론트엔드에서 사용)
+VITE_NAVER_CLIENT_ID = "EzXpYAkIVhX1ViFQ5edo"
+VITE_GOOGLE_CLIENT_ID = "1068056726433-kf4s0t3jj6iis0aep2kvtgfcebfmfquj.apps.googleusercontent.com"
+
+# Push Notification - 실제 사용 중인 VAPID Public Key
+VITE_VAPID_PUBLIC_KEY = "BEl62iUYgUivxIkv69yViEuiBIa40HI9stpCmHYWFiOqGdALABdJDgMAuWr6z-xIgXm6Z96hMkgp3XOKx5yHNO4"
+
+# Feature Flags
+VITE_ENABLE_LEVEL_TEST = "true"
+VITE_ENABLE_VIDEO_CALL = "true"
+VITE_ENABLE_GROUP_CALL = "true"
+VITE_MOCK_MODE = "false"
+
+# 환경 변수 (프리뷰/스테이징) - 프로덕션과 동일한 API 사용
 [env.preview]
 [env.preview.vars]
 VITE_API_URL = "https://api.languagemate.kr"
@@ -21,3 +38,11 @@ VITE_WS_URL = "wss://api.languagemate.kr"
 VITE_WORKERS_API_URL = "https://api.languagemate.kr"
 VITE_WORKERS_WS_URL = "wss://api.languagemate.kr/ws"
 VITE_WORKERS_BASE_URL = "https://api.languagemate.kr"
+VITE_SITE_URL = "https://preview.languagemate.kr"
+VITE_NAVER_CLIENT_ID = "EzXpYAkIVhX1ViFQ5edo"
+VITE_GOOGLE_CLIENT_ID = "1068056726433-kf4s0t3jj6iis0aep2kvtgfcebfmfquj.apps.googleusercontent.com"
+VITE_VAPID_PUBLIC_KEY = "BEl62iUYgUivxIkv69yViEuiBIa40HI9stpCmHYWFiOqGdALABdJDgMAuWr6z-xIgXm6Z96hMkgp3XOKx5yHNO4"
+VITE_ENABLE_LEVEL_TEST = "true"
+VITE_ENABLE_VIDEO_CALL = "true"
+VITE_ENABLE_GROUP_CALL = "true"
+VITE_MOCK_MODE = "false"

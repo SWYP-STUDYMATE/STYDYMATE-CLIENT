@@ -205,14 +205,17 @@ export default function ProfilePage() {
   } = useAchievementOverview();
   const recentAchievements = useMemo(() => {
     if (!Array.isArray(allAchievements) || allAchievements.length === 0) return [];
-    // 배열 불변성 유지 (React Error #185 방지)
+    // 배열 불변성 유지 및 안전한 정렬 (React Error #185 방지)
     return [...allAchievements]
       .filter((item) => item?.isCompleted)
       .sort((a, b) => {
-        // ISO 문자열 직접 비교 (Date 객체 제거로 React Error #185 방지)
-        const aTime = String(a.completedAt || '');
-        const bTime = String(b.completedAt || '');
-        return bTime.localeCompare(aTime);
+        // 안전한 문자열 비교 (null/undefined 처리)
+        const aTime = a?.completedAt ?? '';
+        const bTime = b?.completedAt ?? '';
+        if (typeof aTime === 'string' && typeof bTime === 'string') {
+          return bTime.localeCompare(aTime);
+        }
+        return 0;
       })
       .slice(0, 4);
   }, [allAchievements]);

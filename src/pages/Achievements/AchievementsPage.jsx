@@ -274,11 +274,14 @@ const AchievementsPage = () => {
   const { achievements, stats, loading, error, refresh } = useAchievementOverview();
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
+  // 안전한 배열 보장
+  const safeAchievements = Array.isArray(achievements) ? achievements : [];
+
   const filteredAchievements = useMemo(() => {
-    // achievements는 이미 훅에서 배열 보장
-    if (selectedCategory === 'ALL') return achievements;
-    return achievements.filter((item) => item.achievement?.category === selectedCategory);
-  }, [achievements, selectedCategory]);
+    // safeAchievements 사용으로 안전성 보장
+    if (selectedCategory === 'ALL') return safeAchievements;
+    return safeAchievements.filter((item) => item.achievement?.category === selectedCategory);
+  }, [safeAchievements, selectedCategory]);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
@@ -296,7 +299,7 @@ const AchievementsPage = () => {
                 <div>
                   <h1 className="text-xl font-bold text-[#111111]">성취 & 배지</h1>
                   <p className="text-sm text-[#929292]">
-                    완료 {stats?.completedAchievements ?? 0}/{stats?.totalAchievements ?? (Array.isArray(achievements) ? achievements.length : 0)} · 총 XP {stats?.totalXpEarned ?? 0}
+                    완료 {stats?.completedAchievements ?? 0}/{stats?.totalAchievements ?? safeAchievements.length} · 총 XP {stats?.totalXpEarned ?? 0}
                   </p>
                 </div>
                 <button

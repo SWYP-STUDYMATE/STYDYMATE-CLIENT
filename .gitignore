@@ -10,8 +10,9 @@ yarn-debug.log*
 yarn-error.log*
 dev-debug.log
 # Dependency directories
-# Environment variables
-.env
+# Environment variables (모든 .env 파일 무시, 단 .env.example은 제외)
+.env*
+!.env.example
 # Editor directories and files
 .idea
 .vscode

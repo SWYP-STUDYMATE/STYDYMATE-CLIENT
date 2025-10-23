@@ -15,6 +15,8 @@ class WebSocketService {
     this.connectionListeners = new Set();
     this.errorListeners = new Set();
     this.connectPromise = null; // 현재 진행 중인 연결 Promise 저장
+    this.connectionTimeout = null; // 연결 타임아웃 타이머
+    this.connectionTimeoutMs = 30000; // 연결 타임아웃 시간 (30초)
   }
 
   /**
@@ -61,6 +63,7 @@ class WebSocketService {
       const errorMsg = "액세스 토큰이 없습니다. 로그인이 필요합니다.";
       console.error("[WebSocketService]", errorMsg);
       this.isConnecting = false;
+      this.connectPromise = null;
       return Promise.reject(new Error(errorMsg));
     }
 
@@ -98,6 +101,40 @@ class WebSocketService {
 
     // 새로운 연결 Promise 생성 및 저장
     this.connectPromise = new Promise((resolve, reject) => {
+      // 연결 타임아웃 설정
+      this.connectionTimeout = setTimeout(() => {
+        console.error("[WebSocketService] ❌ 연결 타임아웃", {
+          socketUrl,
+          timeoutMs: this.connectionTimeoutMs
+        });
+
+        this.isConnecting = false;
+        this.isConnected = false;
+        this.connectPromise = null;
+
+        // 클라이언트 정리
+        if (this.client) {
+          try {
+            this.client.deactivate();
+          } catch (e) {
+            console.error("[WebSocketService] 타임아웃 중 클라이언트 정리 실패:", e);
+          }
+        }
+
+        // 에러 리스너 호출
+        this.errorListeners.forEach(listener => {
+          try {
+            listener('connection_timeout', { timeout: this.connectionTimeoutMs });
+          } catch (error) {
+            console.error("[WebSocketService] Error listener error:", error);
+          }
+        });
+
+        const error = new Error(`WebSocket 연결 타임아웃 (${this.connectionTimeoutMs}ms)`);
+        reject(error);
+        this.handleReconnection();
+      }, this.connectionTimeoutMs);
+
       try {
         this.client = new Client({
           webSocketFactory: () => new WebSocket(socketUrl),
@@ -105,7 +142,11 @@ class WebSocketService {
             Authorization: `Bearer ${token}`,
             ...headers
           },
-          debug: debug ? (str) => console.log("STOMP Debug:", str) : undefined,
+          debug: (str) => {
+            if (debug) {
+              console.log("STOMP Debug:", str);
+            }
+          },
 
           onConnect: (frame) => {
             console.log("[WebSocketService] ✅ WebSocket CONNECTED", {
@@ -114,6 +155,13 @@ class WebSocketService {
               messageQueueLength: this.messageQueue.length,
               subscriptionsCount: this.subscriptions.size
             });
+
+            // 타임아웃 타이머 클리어
+            if (this.connectionTimeout) {
+              clearTimeout(this.connectionTimeout);
+              this.connectionTimeout = null;
+            }
+
             this.isConnecting = false;
             this.isConnected = true;
             this.reconnectAttempts = 0;
@@ -143,6 +191,13 @@ class WebSocketService {
               message: frame.headers?.message,
               socketUrl
             });
+
+            // 타임아웃 타이머 클리어
+            if (this.connectionTimeout) {
+              clearTimeout(this.connectionTimeout);
+              this.connectionTimeout = null;
+            }
+
             this.isConnecting = false;
             this.isConnected = false;
             this.connectPromise = null; // 에러 시 Promise 정리
@@ -167,6 +222,13 @@ class WebSocketService {
               wasClean: event.wasClean,
               socketUrl
             });
+
+            // 타임아웃 타이머 클리어
+            if (this.connectionTimeout) {
+              clearTimeout(this.connectionTimeout);
+              this.connectionTimeout = null;
+            }
+
             this.isConnecting = false;
             this.isConnected = false;
 
@@ -191,6 +253,13 @@ class WebSocketService {
               errorMessage: error?.message,
               socketUrl
             });
+
+            // 타임아웃 타이머 클리어
+            if (this.connectionTimeout) {
+              clearTimeout(this.connectionTimeout);
+              this.connectionTimeout = null;
+            }
+
             this.isConnecting = false;
             this.isConnected = false;
             this.connectPromise = null; // 에러 시 Promise 정리
@@ -213,6 +282,12 @@ class WebSocketService {
         this.client.activate();
         console.log("[WebSocketService] 🚀 STOMP 클라이언트 활성화 완료 - 연결 대기 중");
       } catch (error) {
+        // 타임아웃 타이머 클리어
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout);
+          this.connectionTimeout = null;
+        }
+
         this.isConnecting = false;
         this.isConnected = false;
         this.connectPromise = null; // 에러 시 Promise 정리
@@ -448,6 +523,12 @@ class WebSocketService {
    * WebSocket 연결 해제
    */
   disconnect() {
+    // 타임아웃 타이머 클리어
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
     if (this.client) {
       try {
         // 모든 구독 해제
@@ -457,18 +538,19 @@ class WebSocketService {
           }
         });
         this.subscriptions.clear();
-        
+
         // 클라이언트 비활성화
         this.client.deactivate();
       } catch (error) {
         console.error("Error during disconnect:", error);
       }
     }
-    
+
     this.client = null;
     this.isConnecting = false;
     this.isConnected = false;
     this.reconnectAttempts = 0;
+    this.connectPromise = null;
     this.messageQueue = [];
     this.connectionListeners.clear();
     this.errorListeners.clear();

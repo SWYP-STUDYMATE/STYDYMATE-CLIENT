@@ -7,7 +7,8 @@ const selectAchievementOverview = (state) => ({
   stats: state.stats,
   loading: state.loading,
   error: state.error,
-  fetchAchievements: state.fetchAchievements
+  fetchAchievements: state.fetchAchievements,
+  _hasHydrated: state._hasHydrated
 });
 
 export const useAchievementOverview = () => {
@@ -16,13 +17,17 @@ export const useAchievementOverview = () => {
     stats,
     loading,
     error,
-    fetchAchievements
+    fetchAchievements,
+    _hasHydrated
   } = useAchievementStore(selectAchievementOverview, shallow);
 
   // 안전한 배열 반환 보장 (무한 재렌더링 방지)
   const achievements = Array.isArray(rawAchievements) ? rawAchievements : [];
 
   useEffect(() => {
+    // Hydration이 완료된 후에만 fetchAchievements 호출
+    if (!_hasHydrated) return;
+
     if (typeof fetchAchievements !== 'function') {
       console.warn('[useAchievementOverview] fetchAchievements is not available');
       return;
@@ -30,7 +35,7 @@ export const useAchievementOverview = () => {
 
     fetchAchievements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 마운트 시 한 번만 실행 (fetchAchievements는 Zustand에서 안정적인 참조 제공)
+  }, [_hasHydrated]); // Hydration 완료 시 한 번만 실행
 
   const refresh = useCallback((options = {}) => {
     if (typeof fetchAchievements !== 'function') {

@@ -48,21 +48,36 @@ export default function ChatWindow({
 
     const initializeChatRoom = async () => {
       try {
-        console.log('[ChatWindow] 채팅방 초기화 시작', room.roomId);
+        console.log('[ChatWindow] 📍 채팅방 초기화 시작', {
+          roomId: room.roomId,
+          roomName: room.roomName,
+          timestamp: new Date().toISOString()
+        });
 
         // 채팅 히스토리 로드
+        console.log('[ChatWindow] 📥 채팅 히스토리 로드 시작...');
         const history = await fetchChatHistory(room.roomId);
-        console.log('[ChatWindow] 채팅 히스토리 로드 완료', history.length);
+        console.log('[ChatWindow] ✅ 채팅 히스토리 로드 완료', {
+          messageCount: history.length,
+          roomId: room.roomId
+        });
         setMessages(history);
 
         // WebSocket 클라이언트 초기화
-        console.log('[ChatWindow] WebSocket 클라이언트 초기화 시작');
+        console.log('[ChatWindow] 🔌 WebSocket 클라이언트 초기화 시작', {
+          roomId: room.roomId,
+          currentTime: new Date().toISOString()
+        });
         setConnectionStatus('connecting');
 
         clientRef.current = await initStompClient(
           room.roomId,
           (msg) => {
-            console.log('[ChatWindow] 새 메시지 수신', msg);
+            console.log('[ChatWindow] 📨 새 메시지 수신', {
+              messageId: msg.messageId,
+              senderId: msg.senderId,
+              roomId: room.roomId
+            });
             setMessages((prev) => [...prev, msg]);
             onNewMessage({
               roomId: room.roomId,
@@ -71,25 +86,52 @@ export default function ChatWindow({
             });
           },
           (status, data) => {
-            console.log(`[ChatWindow] 채팅방 ${room.roomId} WebSocket 상태:`, status, data);
+            console.log(`[ChatWindow] 🔄 채팅방 ${room.roomId} WebSocket 상태 변경:`, {
+              status,
+              data,
+              timestamp: new Date().toISOString()
+            });
             if (status === 'connected') {
               setConnectionStatus('connected');
+              console.log('[ChatWindow] ✅ WebSocket 연결 완료');
             } else if (status === 'disconnected') {
               setConnectionStatus('disconnected');
               showError('채팅 연결이 끊어졌습니다. 재연결 중...');
+            } else if (status === 'reconnecting') {
+              setConnectionStatus('reconnecting');
             }
           },
           (type, error) => {
-            console.error(`[ChatWindow] 채팅방 ${room.roomId} WebSocket 에러:`, type, error);
+            console.error(`[ChatWindow] ❌ 채팅방 ${room.roomId} WebSocket 에러:`, {
+              type,
+              error,
+              errorMessage: error?.message,
+              timestamp: new Date().toISOString()
+            });
             setConnectionStatus('disconnected');
-            showError('채팅 연결에 문제가 발생했습니다.');
+
+            // 에러 타입에 따른 메시지 표시
+            let errorMessage = '채팅 연결에 문제가 발생했습니다.';
+            if (type === 'connection_timeout') {
+              errorMessage = '채팅 서버 연결 시간이 초과되었습니다. 재시도 중...';
+            } else if (type === 'connection_failed') {
+              errorMessage = '채팅 서버에 연결할 수 없습니다. 네트워크를 확인해주세요.';
+            } else if (type === 'max_reconnect_failed') {
+              errorMessage = '채팅 서버 재연결에 실패했습니다. 페이지를 새로고침해주세요.';
+            }
+            showError(errorMessage);
           }
         );
 
         setConnectionStatus('connected');
-        console.log('[ChatWindow] WebSocket 클라이언트 초기화 완료', clientRef.current);
+        console.log('[ChatWindow] ✅ WebSocket 클라이언트 초기화 완료', {
+          roomId: room.roomId,
+          clientExists: !!clientRef.current,
+          isConnected: clientRef.current?.isConnected()
+        });
 
         // 타이핑 상태 구독
+        console.log('[ChatWindow] 👤 타이핑 상태 구독 시작...');
         typingSubscriptionRef.current = subscribeToTyping(room.roomId, (typingData) => {
           const { userId, userName, userProfileImage, isTyping } = typingData;
           
@@ -119,12 +161,28 @@ export default function ChatWindow({
 
         // 채팅방 입장 시 메시지를 읽음 처리
         try {
+          console.log('[ChatWindow] 📖 메시지 읽음 처리 시작...');
           await markMessagesAsRead(room.roomId);
+          console.log('[ChatWindow] ✅ 메시지 읽음 처리 완료');
         } catch (error) {
-          console.error("메시지 읽음 처리 실패:", error);
+          console.error('[ChatWindow] ❌ 메시지 읽음 처리 실패:', error);
         }
+
+        console.log('[ChatWindow] 🎉 채팅방 초기화 전체 완료', {
+          roomId: room.roomId,
+          messageCount: messages.length,
+          isConnected: clientRef.current?.isConnected()
+        });
       } catch (error) {
-        console.error("채팅방 초기화 실패:", error);
+        console.error('[ChatWindow] ❌ 채팅방 초기화 실패:', {
+          error,
+          errorMessage: error?.message,
+          errorStack: error?.stack,
+          roomId: room.roomId,
+          timestamp: new Date().toISOString()
+        });
+        setConnectionStatus('disconnected');
+        showError('채팅방 초기화에 실패했습니다. 페이지를 새로고침해주세요.');
       }
     };
 

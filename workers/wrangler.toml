@@ -44,7 +44,6 @@ bucket_name = "studymate-storage-dev"
 [[kv_namespaces]]
 binding = "CACHE"
 id = "997f23f600f34a3eb5b402919078933e"
-preview_id = "dev-cache-preview-id"
 
 # D1 Database (development)
 [[d1_databases]]
@@ -55,30 +54,31 @@ database_id = "local-studymate-dev"
 # Development Environment Variables
 [vars]
 ENVIRONMENT = "development"
-CORS_ORIGIN = "http://localhost:3000"
+CORS_ORIGIN = "https://languagemate.kr,http://localhost:3000"
 LOG_LEVEL = "debug"
 API_VERSION = "v1"
-NAVER_CLIENT_ID = "dev-naver-client-id"
-NAVER_CLIENT_SECRET = "dev-naver-client-secret"
-NAVER_REDIRECT_URI = "http://localhost:8787/api/v1/auth/callback/naver"
-GOOGLE_CLIENT_ID = "dev-google-client-id"
-GOOGLE_CLIENT_SECRET = "dev-google-client-secret"
+API_BASE_URL = "https://api.languagemate.kr"
+FRONTEND_URL = "https://languagemate.kr"
+
+# OAuth - Naver (실제 프로덕션 값 사용)
+NAVER_CLIENT_ID = "EzXpYAkIVhX1ViFQ5edo"
+NAVER_CLIENT_SECRET = "Zml5tphcOJ"
+NAVER_REDIRECT_URI = "https://api.languagemate.kr/login/oauth2/code/naver"
+
+# OAuth - Google (실제 프로덕션 값 사용)
+GOOGLE_CLIENT_ID = "1068056726433-kf4s0t3jj6iis0aep2kvtgfcebfmfquj.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
 GOOGLE_REDIRECT_URI = "https://api.languagemate.kr/login/oauth2/code/google"
-API_BASE_URL = "http://localhost:8787"
-INTERNAL_SECRET = "studymate-internal-secret-2024"
-WORKERS_INTERNAL_SECRET = "studymate-internal-secret-2024"
-JWT_SECRET = "c3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRl"
+
+# JWT Configuration
+JWT_ISSUER = "https://api.languagemate.kr"
 ACCESS_TOKEN_TTL_SECONDS = "86400"
 REFRESH_TOKEN_TTL_SECONDS = "604800"
-JWT_ISSUER = "http://localhost:8787"
 
-# Secrets (set via wrangler secret put):
-# - JWT_SECRET
-# - INTERNAL_SECRET
-# - CF_IMAGES_API_TOKEN
-# - CF_ACCOUNT_HASH
-
-## (Removed) Staging 환경: 본 프로젝트는 staging 환경을 사용하지 않습니다.
+# Secrets (개발 환경용)
+JWT_SECRET = "c3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRl"
+INTERNAL_SECRET = "studymate-internal-secret-2024"
+WORKERS_INTERNAL_SECRET = "studymate-internal-secret-2024"
 
 # Production 환경
 [env.production]
@@ -111,7 +111,7 @@ bucket_name = "studymate-storage"
 binding = "CACHE"
 id = "42a956e075ea4bda84dade92a95a0756"
 
-# Production D1 Database (실제 ID로 교체 필요)
+# Production D1 Database
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "studymate-db"
@@ -128,20 +128,29 @@ CORS_ORIGIN = "https://languagemate.kr,https://www.languagemate.kr"
 LOG_LEVEL = "error"
 API_VERSION = "v1"
 API_BASE_URL = "https://api.languagemate.kr"
+FRONTEND_URL = "https://languagemate.kr"
+
+# OAuth - Naver (실제 프로덕션 값)
 NAVER_CLIENT_ID = "EzXpYAkIVhX1ViFQ5edo"
 NAVER_CLIENT_SECRET = "Zml5tphcOJ"
 NAVER_REDIRECT_URI = "https://api.languagemate.kr/login/oauth2/code/naver"
+
+# OAuth - Google (실제 프로덕션 값)
 GOOGLE_CLIENT_ID = "1068056726433-kf4s0t3jj6iis0aep2kvtgfcebfmfquj.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
 GOOGLE_REDIRECT_URI = "https://api.languagemate.kr/login/oauth2/code/google"
-INTERNAL_SECRET = "studymate-internal-secret-2024"
-WORKERS_INTERNAL_SECRET = "studymate-internal-secret-2024"
-JWT_SECRET = "c3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRl"
+
+# JWT Configuration
+JWT_ISSUER = "https://api.languagemate.kr"
 ACCESS_TOKEN_TTL_SECONDS = "86400"
 REFRESH_TOKEN_TTL_SECONDS = "604800"
-JWT_ISSUER = "https://api.languagemate.kr"
 
-# Production Routes - api.languagemate.kr로 전환
+# Secrets (프로덕션 환경용)
+JWT_SECRET = "c3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRl"
+INTERNAL_SECRET = "studymate-internal-secret-2024"
+WORKERS_INTERNAL_SECRET = "studymate-internal-secret-2024"
+
+# Production Routes
 [[env.production.routes]]
 pattern = "api.languagemate.kr/*"
 zone_name = "languagemate.kr"
@@ -164,21 +173,9 @@ upstream_protocol = "https"
 
 # Limits
 [limits]
-cpu_ms = 50  # 50ms CPU time per request
-startup_cpu_ms = 100  # 100ms CPU time for startup
+cpu_ms = 50
+startup_cpu_ms = 100
 
 # Analytics Engine binding
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
-
-
-
-# Tail Workers (optional, for logging)
-# [[tail_consumers]]
-# service = "studymate-logger"
-
-# Service bindings to other Workers (if needed)
-# [[services]]
-# binding = "AUTH_SERVICE"
-# service = "studymate-auth"
-# environment = "production"

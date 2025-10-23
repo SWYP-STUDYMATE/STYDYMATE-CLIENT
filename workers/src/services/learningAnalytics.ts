@@ -130,9 +130,9 @@ async function collectUserSessionData(
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - monthsBack);
 
-  // 실제 세션 데이터 조회 (예시 - 실제 DB 스키마에 맞게 조정 필요)
+  // 실제 세션 데이터 조회 - host 또는 guest로 참여한 세션 모두 조회
   const sessions = await query<{
-    session_id: string;
+    session_id: number;
     created_at: string;
     duration_minutes: number | null;
     session_type: string | null;
@@ -144,18 +144,21 @@ async function collectUserSessionData(
       s.created_at,
       s.duration_minutes,
       s.session_type,
-      s.partner_id
+      CASE
+        WHEN s.host_user_id = ? THEN s.guest_user_id
+        ELSE s.host_user_id
+      END as partner_id
     FROM sessions s
-    WHERE s.user_id = ?
+    WHERE (s.host_user_id = ? OR s.guest_user_id = ?)
       AND s.created_at >= ?
       AND s.status = 'completed'
     ORDER BY s.created_at DESC
     LIMIT 100`,
-    [userId, startDate.toISOString()]
+    [userId, userId, userId, startDate.toISOString()]
   );
 
   return sessions.map(s => ({
-    sessionId: s.session_id,
+    sessionId: String(s.session_id),
     date: s.created_at,
     duration: s.duration_minutes || 30,
     type: s.session_type || 'video',

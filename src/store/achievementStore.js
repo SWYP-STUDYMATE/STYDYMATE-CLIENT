@@ -29,6 +29,9 @@ const resolveNumber = (payload, key, fallback) => {
 const useAchievementStore = create(
   persist(
     (set, get) => ({
+      // Hydration 완료 플래그
+      _hasHydrated: false,
+      setHasHydrated: (hasHydrated) => set({ _hasHydrated: hasHydrated }),
       // Achievement 상태
       achievements: [],
       userAchievements: [],
@@ -214,7 +217,11 @@ const useAchievementStore = create(
         recentAchievements: state.recentAchievements,
         stats: state.stats,
         lastFetchedAt: state.lastFetchedAt
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Hydration 완료 시 플래그 설정
+        state?.setHasHydrated(true);
+      }
     }
   )
 );
