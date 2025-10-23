@@ -354,6 +354,20 @@ app.get('/progress-summary', authMiddleware as any, async (c) => {
         const userId = c.get('userId') as string | undefined;
         if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
 
+        // AI 바인딩이 없는 경우 기본값 반환
+        if (!c.env.AI) {
+            console.warn('AI binding not available, returning default progress summary');
+            return successResponse(c, {
+                currentLevel: 'A1',
+                sessionsThisWeek: 0,
+                consistency: 0,
+                nextMilestone: null,
+                topStrength: null,
+                topWeakness: null,
+                fallback: true
+            });
+        }
+
         const pattern = await analyzeLearningPattern(c.env, userId, 1);
 
         return successResponse(c, {
@@ -369,7 +383,18 @@ app.get('/progress-summary', authMiddleware as any, async (c) => {
             return errorResponse(c, error.message, error.statusCode);
         }
         console.error('Progress summary error:', error);
-        return errorResponse(c, 'Progress summary failed');
+
+        // 에러 발생 시 기본값 반환 (500 에러 대신)
+        return successResponse(c, {
+            currentLevel: 'A1',
+            sessionsThisWeek: 0,
+            consistency: 0,
+            nextMilestone: null,
+            topStrength: null,
+            topWeakness: null,
+            fallback: true,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 

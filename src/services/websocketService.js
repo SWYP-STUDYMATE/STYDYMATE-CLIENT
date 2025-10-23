@@ -85,7 +85,13 @@ class WebSocketService {
       baseUrl = 'wss://' + wsUrl;
     }
 
-    const socketUrl = `${baseUrl}${endpoint}`;
+    // baseUrl에 이미 /ws가 포함되어 있으면 중복 방지
+    let cleanBaseUrl = baseUrl;
+    if (baseUrl.endsWith('/ws') && endpoint.startsWith('/ws')) {
+      cleanBaseUrl = baseUrl.slice(0, -3); // 마지막 /ws 제거
+    }
+
+    const socketUrl = `${cleanBaseUrl}${endpoint}`;
 
     console.log("[WebSocketService] WebSocket 연결 시작", {
       socketUrl,
