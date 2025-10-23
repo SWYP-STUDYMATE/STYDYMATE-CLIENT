@@ -62,9 +62,14 @@ else
     log_warning "린트 경고가 있지만 배포를 계속 진행합니다"
 fi
 
-# 4. 프로덕션 빌드
-log_info "4단계: 프로덕션 빌드 실행 중..."
-if npm run build; then
+# 4. 프로덕션 빌드 (환경 변수 명시)
+log_info "4단계: 프로덕션 빌드 실행 중 (환경 변수 설정)..."
+if VITE_API_URL=https://api.languagemate.kr \
+   VITE_WS_URL=wss://api.languagemate.kr \
+   VITE_WORKERS_API_URL=https://api.languagemate.kr \
+   VITE_WORKERS_WS_URL=wss://api.languagemate.kr \
+   VITE_WORKERS_BASE_URL=https://api.languagemate.kr \
+   npm run build; then
     log_success "프로덕션 빌드 완료"
 else
     log_error "프로덕션 빌드 실패"

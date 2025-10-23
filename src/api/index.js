@@ -164,6 +164,13 @@ api.interceptors.response.use(
               setToken("refreshToken", newRefreshToken);
               console.log("🔍 ✅ New refreshToken saved (403 handling)");
             }
+
+            // 🔄 토큰 갱신 성공 시 WebSocket 재연결
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('token-refreshed'));
+              console.log("🔄 token-refreshed event dispatched for WebSocket reconnection (403 handling)");
+            }
+
             originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
             return api(originalRequest);
@@ -269,6 +276,13 @@ api.interceptors.response.use(
             setToken("refreshToken", newRefreshToken);
             console.log("🔍 ✅ New refreshToken saved");
           }
+
+          // 🔄 토큰 갱신 성공 시 WebSocket 재연결
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('token-refreshed'));
+            console.log("🔄 token-refreshed event dispatched for WebSocket reconnection");
+          }
+
           // 원래 요청 헤더에 새 토큰 적용
           originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
           return api(originalRequest);

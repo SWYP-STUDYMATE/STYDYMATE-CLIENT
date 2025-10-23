@@ -22,6 +22,31 @@ class NotificationWebSocketService {
       || "https://api.languagemate.kr";
 
     this.wsBase = this.normalizeWebSocketBase(origin);
+
+    // 🔄 토큰 갱신 이벤트 리스너 등록
+    if (typeof window !== 'undefined') {
+      window.addEventListener('token-refreshed', this.handleTokenRefresh.bind(this));
+      console.log("🔄 WebSocket: token-refreshed event listener registered");
+    }
+  }
+
+  // 🔄 토큰 갱신 시 WebSocket 재연결
+  handleTokenRefresh() {
+    console.log("🔄 WebSocket: Token refreshed, reconnecting...");
+
+    // 기존 연결이 있다면 정리
+    if (this.client && this.isConnected) {
+      console.log("🔄 WebSocket: Disconnecting old connection");
+      this.disconnect();
+    }
+
+    // 재연결 시도 카운트 초기화
+    this.reconnectAttempts = 0;
+
+    // 새 토큰으로 재연결
+    this.connect().catch((error) => {
+      console.error("🔄 WebSocket: Failed to reconnect after token refresh", error);
+    });
   }
 
   normalizeWebSocketBase(origin) {
@@ -51,18 +76,24 @@ class NotificationWebSocketService {
     }
 
     return new Promise((resolve, reject) => {
-      const token = getToken("accessToken");
-      if (!token) {
-        reject(new Error("No access token found"));
-        return;
-      }
-
-      const socketUrl = this.buildSocketUrl(token);
-
+      // 토큰은 webSocketFactory 내부에서 매번 동적으로 가져옴
       this.client = new Client({
-        webSocketFactory: () => this.createTransport(socketUrl),
+        webSocketFactory: () => {
+          // 매 연결 시마다 최신 토큰으로 URL 생성
+          const token = getToken("accessToken");
+          if (!token) {
+            throw new Error("No access token found");
+          }
+          const socketUrl = this.buildSocketUrl(token);
+          console.log("🔄 Creating WebSocket with fresh token");
+          return this.createTransport(socketUrl);
+        },
         connectHeaders: {
-          Authorization: `Bearer ${token}`
+          get Authorization() {
+            // 연결 헤더도 동적으로 토큰 가져옴
+            const token = getToken("accessToken");
+            return token ? `Bearer ${token}` : "";
+          }
         },
         debug: (str) => {
           console.log("Notification STOMP Debug:", str);
