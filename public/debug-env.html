@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Variables Debug</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .var {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2a2a2a;
+            border-left: 3px solid #00ff00;
+        }
+        .var-name {
+            color: #00aaff;
+            font-weight: bold;
+        }
+        .var-value {
+            color: #ffaa00;
+        }
+        h1 {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Cloudflare Pages Environment Variables</h1>
+    <div id="env-vars"></div>
+
+    <script type="module">
+        const envVars = {
+            'VITE_API_URL': import.meta.env.VITE_API_URL,
+            'VITE_WS_URL': import.meta.env.VITE_WS_URL,
+            'VITE_WORKERS_API_URL': import.meta.env.VITE_WORKERS_API_URL,
+            'VITE_WORKERS_WS_URL': import.meta.env.VITE_WORKERS_WS_URL,
+            'VITE_WORKERS_BASE_URL': import.meta.env.VITE_WORKERS_BASE_URL,
+            'MODE': import.meta.env.MODE,
+            'PROD': import.meta.env.PROD,
+        };
+
+        const container = document.getElementById('env-vars');
+
+        Object.entries(envVars).forEach(([key, value]) => {
+            const div = document.createElement('div');
+            div.className = 'var';
+            div.innerHTML = `
+                <span class="var-name">${key}:</span>
+                <span class="var-value">${value || 'undefined'}</span>
+            `;
+            container.appendChild(div);
+        });
+
+        console.log('=== Environment Variables ===');
+        console.log(envVars);
+    </script>
+</body>
+</html>

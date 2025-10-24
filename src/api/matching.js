@@ -323,15 +323,13 @@ export async function analyzeCompatibility(partnerId) {
 export async function getAIBestMatches(preferences = {}, limit = 10) {
   try {
     const response = await api.post('/matching/ai/best-matches', {
-      preferences: {
-        languageWeight: preferences.languageWeight ?? 0.25,
-        levelWeight: preferences.levelWeight ?? 0.15,
-        semanticWeight: preferences.semanticWeight ?? 0.15,
-        scheduleWeight: preferences.scheduleWeight ?? 0.15,
-        goalsWeight: preferences.goalsWeight ?? 0.10,
-        personalityWeight: preferences.personalityWeight ?? 0.10,
-        topicsWeight: preferences.topicsWeight ?? 0.10
-      },
+      languageWeight: preferences.languageWeight ?? 0.25,
+      levelWeight: preferences.levelWeight ?? 0.15,
+      semanticWeight: preferences.semanticWeight ?? 0.15,
+      scheduleWeight: preferences.scheduleWeight ?? 0.15,
+      goalsWeight: preferences.goalsWeight ?? 0.10,
+      personalityWeight: preferences.personalityWeight ?? 0.10,
+      topicsWeight: preferences.topicsWeight ?? 0.10,
       limit
     });
     return response.data?.data ?? response.data;
@@ -350,15 +348,13 @@ export async function getAIBestMatches(preferences = {}, limit = 10) {
 export async function getAICompatibility(partnerId, preferences = {}) {
   try {
     const response = await api.post(`/matching/ai/compatibility/${partnerId}`, {
-      preferences: {
-        languageWeight: preferences.languageWeight ?? 0.25,
-        levelWeight: preferences.levelWeight ?? 0.15,
-        semanticWeight: preferences.semanticWeight ?? 0.15,
-        scheduleWeight: preferences.scheduleWeight ?? 0.15,
-        goalsWeight: preferences.goalsWeight ?? 0.10,
-        personalityWeight: preferences.personalityWeight ?? 0.10,
-        topicsWeight: preferences.topicsWeight ?? 0.10
-      }
+      languageWeight: preferences.languageWeight ?? 0.25,
+      levelWeight: preferences.levelWeight ?? 0.15,
+      semanticWeight: preferences.semanticWeight ?? 0.15,
+      scheduleWeight: preferences.scheduleWeight ?? 0.15,
+      goalsWeight: preferences.goalsWeight ?? 0.10,
+      personalityWeight: preferences.personalityWeight ?? 0.10,
+      topicsWeight: preferences.topicsWeight ?? 0.10
     });
     return response.data?.data ?? response.data;
   } catch (error) {

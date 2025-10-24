@@ -129,11 +129,10 @@ class NotificationWebSocketService {
 
   buildSocketUrl(token) {
     const rawBase = this.wsBase || '';
-    const trimmedBase = rawBase.replace(/\/$/, '');
-    const urlBase = trimmedBase.endsWith('/ws')
-      ? trimmedBase
-      : `${trimmedBase}/ws`;
-    const url = `${urlBase}/notifications`;
+    // 환경 변수에 잘못 /ws가 포함된 경우 제거
+    const trimmedBase = rawBase.replace(/\/$/, '').replace(/\/ws\/?$/, '');
+    // 항상 /ws/notifications로 통일
+    const url = `${trimmedBase}/ws/notifications`;
     return url.includes('?') ? `${url}&token=${token}` : `${url}?token=${token}`;
   }
 
@@ -156,21 +155,28 @@ class NotificationWebSocketService {
       return;
     }
 
+    // STOMP 클라이언트가 완전히 활성화될 때까지 대기
+    if (!this.client.connected) {
+      console.warn("STOMP client not fully connected, retrying in 100ms");
+      setTimeout(() => this.setupDefaultSubscriptions(), 100);
+      return;
+    }
+
     // 개인 알림 구독
     this.subscribe('/user/queue/notifications', this.handlePersonalNotification.bind(this));
-    
+
     // 시스템 알림 구독
     this.subscribe('/sub/system-notifications', this.handleSystemNotification.bind(this));
-    
+
     // 긴급 알림 구독
     this.subscribe('/sub/urgent-notifications', this.handleUrgentNotification.bind(this));
-    
+
     // 매칭 관련 알림 구독
     this.subscribe('/user/queue/matching-notifications', this.handleMatchingNotification.bind(this));
-    
+
     // 세션 관련 알림 구독
     this.subscribe('/user/queue/session-notifications', this.handleSessionNotification.bind(this));
-    
+
     // 채팅 관련 알림 구독 (채팅방 외부에서)
     this.subscribe('/user/queue/chat-notifications', this.handleChatNotification.bind(this));
   }

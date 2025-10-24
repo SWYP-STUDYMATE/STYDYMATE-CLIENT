@@ -205,19 +205,29 @@ export default function ProfilePage() {
   } = useAchievementOverview();
   const recentAchievements = useMemo(() => {
     if (!Array.isArray(allAchievements) || allAchievements.length === 0) return [];
-    // 배열 불변성 유지 및 안전한 정렬 (React Error #185 방지)
-    return [...allAchievements]
-      .filter((item) => item?.isCompleted)
-      .sort((a, b) => {
-        // 안전한 문자열 비교 (null/undefined 처리)
+
+    try {
+      // 배열 불변성 유지 및 안전한 정렬 (React Error #185 방지)
+      const completed = allAchievements.filter((item) => item?.isCompleted === true);
+
+      if (completed.length === 0) return [];
+
+      // 정렬 전 새 배열 생성 (깊은 복사 불필요, 얕은 복사로 충분)
+      const sorted = [...completed].sort((a, b) => {
         const aTime = a?.completedAt ?? '';
         const bTime = b?.completedAt ?? '';
-        if (typeof aTime === 'string' && typeof bTime === 'string') {
-          return bTime.localeCompare(aTime);
-        }
-        return 0;
-      })
-      .slice(0, 4);
+
+        // 둘 다 문자열이 아니면 정렬하지 않음
+        if (typeof aTime !== 'string' || typeof bTime !== 'string') return 0;
+
+        return bTime.localeCompare(aTime);
+      });
+
+      return sorted.slice(0, 4);
+    } catch (error) {
+      console.error('[ProfilePage] recentAchievements 처리 오류:', error);
+      return [];
+    }
   }, [allAchievements]);
 
   useEffect(() => {

@@ -219,8 +219,12 @@ const useAchievementStore = create(
         lastFetchedAt: state.lastFetchedAt
       }),
       onRehydrateStorage: () => (state) => {
-        // Hydration 완료 시 플래그 설정
-        state?.setHasHydrated(true);
+        // Hydration 완료 시 플래그 설정 (비동기로 처리)
+        if (state?.setHasHydrated) {
+          setTimeout(() => {
+            state.setHasHydrated(true);
+          }, 0);
+        }
       }
     }
   )

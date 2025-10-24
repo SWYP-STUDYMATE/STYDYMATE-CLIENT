@@ -68,11 +68,14 @@ class WebSocketService {
     }
 
     // WebSocket URL 우선순위: WORKERS_WS_URL > WS_URL > WORKERS_API_URL > API_URL
-    const wsUrl = import.meta.env.VITE_WORKERS_WS_URL
+    let wsUrl = import.meta.env.VITE_WORKERS_WS_URL
       || import.meta.env.VITE_WS_URL
       || import.meta.env.VITE_WORKERS_API_URL
       || import.meta.env.VITE_API_URL
       || "https://api.languagemate.kr";
+
+    // 환경 변수에 잘못 /ws가 포함된 경우 제거
+    wsUrl = wsUrl.replace(/\/ws\/?$/, '');
 
     // HTTP(S) -> WS(S) 프로토콜 변환
     let baseUrl = wsUrl;
@@ -85,13 +88,7 @@ class WebSocketService {
       baseUrl = 'wss://' + wsUrl;
     }
 
-    // baseUrl에 이미 /ws가 포함되어 있으면 중복 방지
-    let cleanBaseUrl = baseUrl;
-    if (baseUrl.endsWith('/ws') && endpoint.startsWith('/ws')) {
-      cleanBaseUrl = baseUrl.slice(0, -3); // 마지막 /ws 제거
-    }
-
-    const socketUrl = `${cleanBaseUrl}${endpoint}`;
+    const socketUrl = `${baseUrl}${endpoint}`;
 
     console.log("[WebSocketService] WebSocket 연결 시작", {
       socketUrl,

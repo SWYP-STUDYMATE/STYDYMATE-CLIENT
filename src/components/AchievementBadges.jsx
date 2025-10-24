@@ -133,14 +133,26 @@ export default function AchievementBadges({
   const totalCount = Number.isFinite(totalCountRaw) ? totalCountRaw : sanitizedAchievements.length;
 
   // 배열 불변성 유지 (React Error #185 방지)
-  const progressList = [...sanitizedAchievements]
-    .sort((a, b) => {
-      // ISO 문자열 비교로 변경 (Date 객체 제거)
-      const dateA = a.completedAt || '';
-      const dateB = b.completedAt || '';
-      return dateB.localeCompare(dateA);
-    })
-    .slice(0, limit);
+  const progressList = useMemo(() => {
+    if (!Array.isArray(sanitizedAchievements) || sanitizedAchievements.length === 0) return [];
+
+    try {
+      return [...sanitizedAchievements]
+        .sort((a, b) => {
+          // 안전한 문자열 비교
+          const dateA = a?.completedAt ?? '';
+          const dateB = b?.completedAt ?? '';
+
+          if (typeof dateA !== 'string' || typeof dateB !== 'string') return 0;
+
+          return dateB.localeCompare(dateA);
+        })
+        .slice(0, limit);
+    } catch (error) {
+      console.error('[AchievementBadges] progressList 처리 오류:', error);
+      return [];
+    }
+  }, [sanitizedAchievements, limit]);
 
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
@@ -167,9 +179,11 @@ export default function AchievementBadges({
         <p className="text-[14px] text-[#929292] text-center">아직 획득한 배지가 없습니다. 첫 성취를 달성해보세요!</p>
       ) : (
         <div className="flex flex-wrap justify-center gap-4">
-          {progressList.map((item) => (
-            <AchievementBadgeCard key={item.id ?? item.achievement?.id} item={item} />
-          ))}
+          {progressList.map((item, index) => {
+            // 안전한 key 생성: id 우선, 없으면 achievement.id, 둘 다 없으면 index 사용
+            const safeKey = item?.id ?? item?.achievement?.id ?? `achievement-${index}`;
+            return <AchievementBadgeCard key={safeKey} item={item} />;
+          })}
         </div>
       )}
     </div>

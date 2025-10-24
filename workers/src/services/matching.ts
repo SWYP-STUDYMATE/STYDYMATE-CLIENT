@@ -426,11 +426,28 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
       hasMessage: !!payload.message
     }));
 
+    // 1. 입력 검증
+    if (!payload.senderId || !payload.receiverId) {
+      throw new AppError('senderId와 receiverId가 필요합니다.', 400, 'MATCHING_INVALID_INPUT');
+    }
+
     if (payload.senderId === payload.receiverId) {
       throw new AppError('자기 자신에게는 매칭을 보낼 수 없습니다.', 400, 'MATCHING_SELF_REQUEST');
     }
 
-    // 중복 요청 확인
+    // 2. 수신자 존재 여부 확인
+    console.log('[createMatchingRequest] Checking if receiver exists');
+    const receiverExists = await queryFirst<{ user_id: string }>(
+      env.DB,
+      'SELECT user_id FROM users WHERE user_id = ? LIMIT 1',
+      [payload.receiverId]
+    );
+
+    if (!receiverExists) {
+      throw new AppError('존재하지 않는 사용자입니다.', 404, 'MATCHING_USER_NOT_FOUND');
+    }
+
+    // 3. 중복 요청 확인
     console.log('[createMatchingRequest] Checking for duplicate requests');
     const duplicate = await queryFirst<{ request_id: string }>(
       env.DB,
@@ -445,7 +462,7 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
       throw new AppError('이미 대기 중인 매칭 요청이 있습니다.', 400, 'MATCHING_DUPLICATE_REQUEST');
     }
 
-    // 기존 매칭 확인
+    // 4. 기존 매칭 확인
     console.log('[createMatchingRequest] Checking for existing matches');
     const [user1, user2] = normalizePair(payload.senderId, payload.receiverId);
     const existingMatch = await queryFirst<{ match_id: string; is_active: number }>(
@@ -461,7 +478,7 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
       throw new AppError('이미 매칭된 사용자입니다.', 400, 'MATCHING_ALREADY_MATCHED');
     }
 
-    // 매칭 요청 생성
+    // 5. 매칭 요청 생성
     const requestId = crypto.randomUUID();
     const now = nowIso();
     const expiresAt = addDays(MATCHING_DEFAULT_EXPIRE_DAYS);
@@ -472,28 +489,40 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
       receiverId: payload.receiverId
     });
 
-    await execute(
-      env.DB,
-      `INSERT INTO matching_requests (
-          request_id, sender_id, receiver_id, message, status, response_message,
-          responded_at, expires_at, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
-      `,
-      [
-        requestId,
-        payload.senderId,
-        payload.receiverId,
-        payload.message ?? null,
-        MATCHING_STATUS.PENDING,
-        expiresAt,
-        now,
-        now
-      ]
-    );
+    try {
+      await execute(
+        env.DB,
+        `INSERT INTO matching_requests (
+            request_id, sender_id, receiver_id, message, status, response_message,
+            responded_at, expires_at, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
+        `,
+        [
+          requestId,
+          payload.senderId,
+          payload.receiverId,
+          payload.message ?? null,
+          MATCHING_STATUS.PENDING,
+          expiresAt,
+          now,
+          now
+        ]
+      );
+    } catch (dbError) {
+      console.error('[createMatchingRequest] Database insert failed:', {
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+        stack: dbError instanceof Error ? dbError.stack : undefined
+      });
+      throw new AppError(
+        '매칭 요청 생성에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        500,
+        'MATCHING_DB_INSERT_FAILED'
+      );
+    }
 
     console.log('[createMatchingRequest] Successfully created request:', requestId);
 
-    // 알림 전송
+    // 6. 알림 전송 (실패해도 매칭 요청은 성공)
     try {
       console.log('[createMatchingRequest] Sending notification to receiver:', payload.receiverId);
 
@@ -531,6 +560,7 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
       // 알림 전송 실패는 로깅만 하고 요청 생성은 성공 처리
       console.error('[createMatchingRequest] Failed to send notification:', {
         error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+        stack: notificationError instanceof Error ? notificationError.stack : undefined,
         receiverId: payload.receiverId
       });
     }
@@ -540,6 +570,7 @@ export async function createMatchingRequest(env: Env, payload: RequestInsertPayl
     console.error('[createMatchingRequest] Error occurred:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.constructor.name : typeof error,
       payload: {
         senderId: payload.senderId,
         receiverId: payload.receiverId
