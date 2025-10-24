@@ -403,8 +403,16 @@ export const getProgressSummary = async () => {
     log.info('학습 진행 상황 요약 조회 성공', response.data, 'ANALYTICS');
     return response.data?.data ?? response.data;
   } catch (error) {
+    // 500 에러 또는 기타 API 에러 시 null 반환 (graceful degradation)
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status && [401, 403, 404, 500].includes(status)) {
+        log.warn('학습 진행 상황 요약 조회를 건너뜁니다. (백엔드 미구현 또는 에러)', { status }, 'ANALYTICS');
+        return null;
+      }
+    }
     log.error('학습 진행 상황 요약 조회 실패', error, 'ANALYTICS');
-    throw error;
+    return null; // 에러 발생 시에도 null 반환하여 앱이 계속 동작하도록 함
   }
 };
 

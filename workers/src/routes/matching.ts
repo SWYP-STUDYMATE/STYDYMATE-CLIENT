@@ -391,19 +391,32 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
   if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
 
   try {
+    log.info('[AI_BEST_MATCHES] Request started', { userId });
+
     const body = await c.req.json().catch(() => ({}));
     const limit = typeof body.limit === 'number' ? Math.min(body.limit, 50) : 10;
 
+    log.info('[AI_BEST_MATCHES] Request body parsed', { limit, preferences: body });
+
     // Get user's profile
+    log.info('[AI_BEST_MATCHES] Fetching user profile', { userId });
     const userProfile = await getUserProfile(c.env, userId);
     if (!userProfile) {
+      log.error('[AI_BEST_MATCHES] User profile not found', undefined, { userId });
       throw new AppError('User profile not found', 404, 'USER_NOT_FOUND');
     }
+    log.info('[AI_BEST_MATCHES] User profile fetched', { userId, profileId: userProfile.id });
 
     // Get candidate profiles (from existing recommendPartners logic)
+    log.info('[AI_BEST_MATCHES] Fetching candidates', { userId });
     const candidates = await recommendPartners(c.env, userId, {
       page: 1,
       size: 100 // Get more candidates for AI to analyze
+    });
+    log.info('[AI_BEST_MATCHES] Candidates fetched', {
+      userId,
+      totalCandidates: candidates.total,
+      candidateCount: candidates.data.length
     });
 
     // Get matching preferences from body or use defaults
@@ -417,7 +430,14 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       topicsWeight: typeof body.topicsWeight === 'number' ? body.topicsWeight : 0.10,
     };
 
+    log.info('[AI_BEST_MATCHES] Preferences set', { preferences });
+
     // Find best matches using AI
+    log.info('[AI_BEST_MATCHES] Starting AI matching', {
+      userId,
+      candidateCount: candidates.data.length,
+      limit
+    });
     const matches = await findBestMatches(
       c.env.AI,
       userProfile,
@@ -426,6 +446,10 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       c.env,
       limit
     );
+    log.info('[AI_BEST_MATCHES] AI matching completed', {
+      userId,
+      matchCount: matches.length
+    });
 
     return successResponse(c, {
       matches,
@@ -435,10 +459,17 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
   } catch (error) {
     // AppError는 그대로 throw (원래 상태 코드 유지)
     if (error instanceof AppError) {
+      log.error('[AI_BEST_MATCHES] AppError occurred', error, { userId });
       throw error;
     }
 
     // 기타 에러는 500으로 래핑
+    log.error('[AI_BEST_MATCHES] Unexpected error occurred', error as Error, {
+      userId,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+
     throw new AppError(
       error instanceof Error ? error.message : 'AI matching failed',
       500,

@@ -18,6 +18,7 @@ export default function ChatInputArea({
   onTypingStop,
 }) {
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [isComposing, setIsComposing] = useState(false); // 한글 입력 조합 상태
 
   // 이모지 클릭 핸들러 수정
   const handleEmojiSelect = (emojiObject) => {
@@ -33,7 +34,7 @@ export default function ChatInputArea({
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInput(value);
-    
+
     // 타이핑 상태 전송 (빈 문자열이 아닐 때)
     if (value.trim().length > 0 && onTypingStart) {
       onTypingStart();
@@ -42,8 +43,19 @@ export default function ChatInputArea({
     }
   };
 
+  // 한글 입력 조합 시작
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  // 한글 입력 조합 종료
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
+  };
+
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // 한글 조합 중일 때는 Enter 키로 메시지 전송하지 않음
+    if (e.key === "Enter" && !e.shiftKey && !isComposing) {
       e.preventDefault();
       sendMessage(input, selectedImageFiles, null);
       setInput("");
@@ -112,6 +124,8 @@ export default function ChatInputArea({
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             placeholder="Type your message"
             className="flex-1 bg-transparent outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1"
             aria-label="메시지 입력"

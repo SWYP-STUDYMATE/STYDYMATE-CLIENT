@@ -409,69 +409,131 @@ export async function calculateAIMatchScore(
   preferences: MatchingPreferences,
   env: Env
 ): Promise<MatchScore> {
-  // 프로필 확장
-  const [userExtended, candidateExtended] = await Promise.all([
-    convertToExtendedProfile(env, user),
-    convertToExtendedProfile(env, candidate)
-  ]);
+  const userId = 'id' in user ? user.id : user.userId;
+  const candidateId = 'id' in candidate ? candidate.id : candidate.userId;
 
-  // 각 차원별 호환성 점수 계산
-  const languageCompatibility = calculateLanguageCompatibility(userExtended, candidateExtended);
-  const levelCompatibility = calculateLevelCompatibility(userExtended, candidateExtended);
-  const scheduleCompatibility = calculateScheduleCompatibility(userExtended, candidateExtended);
-  const goalAlignment = calculateGoalAlignment(userExtended, candidateExtended);
-  const personalityMatch = calculatePersonalityMatch(userExtended, candidateExtended);
-  const topicOverlap = calculateTopicOverlap(userExtended, candidateExtended);
-
-  // 의미론적 유사도 계산 (임베딩 기반)
-  let semanticSimilarity = 50;  // 기본값
   try {
-    const [userEmbedding, candidateEmbedding] = await Promise.all([
-      generateProfileEmbedding(ai, userExtended),
-      generateProfileEmbedding(ai, candidateExtended)
+    log.info('[CALCULATE_AI_MATCH_SCORE] Starting', { userId, candidateId });
+
+    // 프로필 확장
+    log.info('[CALCULATE_AI_MATCH_SCORE] Converting to extended profiles', { userId, candidateId });
+    const [userExtended, candidateExtended] = await Promise.all([
+      convertToExtendedProfile(env, user),
+      convertToExtendedProfile(env, candidate)
     ]);
+    log.info('[CALCULATE_AI_MATCH_SCORE] Extended profiles created', { userId, candidateId });
 
-    const similarity = cosineSimilarity(userEmbedding, candidateEmbedding);
-    semanticSimilarity = Math.round(similarity * 100);  // 0-1 -> 0-100
-  } catch (error) {
-    log.error('Failed to calculate semantic similarity:', error);
-  }
+    // 각 차원별 호환성 점수 계산
+    log.info('[CALCULATE_AI_MATCH_SCORE] Calculating compatibility scores', { userId, candidateId });
+    const languageCompatibility = calculateLanguageCompatibility(userExtended, candidateExtended);
+    const levelCompatibility = calculateLevelCompatibility(userExtended, candidateExtended);
+    const scheduleCompatibility = calculateScheduleCompatibility(userExtended, candidateExtended);
+    const goalAlignment = calculateGoalAlignment(userExtended, candidateExtended);
+    const personalityMatch = calculatePersonalityMatch(userExtended, candidateExtended);
+    const topicOverlap = calculateTopicOverlap(userExtended, candidateExtended);
 
-  // 가중 평균으로 전체 점수 계산
-  const overallScore = Math.round(
-    languageCompatibility * preferences.languageWeight +
-    levelCompatibility * preferences.levelWeight +
-    semanticSimilarity * preferences.semanticWeight +
-    scheduleCompatibility * preferences.scheduleWeight +
-    goalAlignment * preferences.goalsWeight +
-    personalityMatch * preferences.personalityWeight +
-    topicOverlap * preferences.topicsWeight
-  );
-
-  const score: MatchScore = {
-    userId: candidateExtended.userId,
-    overallScore,
-    breakdown: {
+    log.info('[CALCULATE_AI_MATCH_SCORE] Compatibility scores calculated', {
+      userId,
+      candidateId,
       languageCompatibility,
       levelCompatibility,
-      semanticSimilarity,
       scheduleCompatibility,
       goalAlignment,
       personalityMatch,
       topicOverlap
-    },
-    aiReasons: [],
-    suggestedTopics: [],
-    compatibilityInsights: ''
-  };
+    });
 
-  // AI 생성 매칭 이유 및 주제 추천 (비동기로 생성)
-  const aiGenerated = await generateMatchingReasons(ai, userExtended, candidateExtended, score);
-  score.aiReasons = aiGenerated.reasons;
-  score.suggestedTopics = aiGenerated.topics;
-  score.compatibilityInsights = aiGenerated.insights;
+    // 의미론적 유사도 계산 (임베딩 기반)
+    let semanticSimilarity = 50;  // 기본값
+    try {
+      log.info('[CALCULATE_AI_MATCH_SCORE] Generating embeddings', { userId, candidateId });
+      const [userEmbedding, candidateEmbedding] = await Promise.all([
+        generateProfileEmbedding(ai, userExtended),
+        generateProfileEmbedding(ai, candidateExtended)
+      ]);
 
-  return score;
+      log.info('[CALCULATE_AI_MATCH_SCORE] Embeddings generated', {
+        userId,
+        candidateId,
+        userEmbeddingLength: userEmbedding.length,
+        candidateEmbeddingLength: candidateEmbedding.length
+      });
+
+      const similarity = cosineSimilarity(userEmbedding, candidateEmbedding);
+      semanticSimilarity = Math.round(similarity * 100);  // 0-1 -> 0-100
+
+      log.info('[CALCULATE_AI_MATCH_SCORE] Semantic similarity calculated', {
+        userId,
+        candidateId,
+        semanticSimilarity
+      });
+    } catch (error) {
+      log.error('[CALCULATE_AI_MATCH_SCORE] Failed to calculate semantic similarity', error as Error, {
+        userId,
+        candidateId
+      });
+    }
+
+    // 가중 평균으로 전체 점수 계산
+    log.info('[CALCULATE_AI_MATCH_SCORE] Calculating overall score', { userId, candidateId });
+    const overallScore = Math.round(
+      languageCompatibility * preferences.languageWeight +
+      levelCompatibility * preferences.levelWeight +
+      semanticSimilarity * preferences.semanticWeight +
+      scheduleCompatibility * preferences.scheduleWeight +
+      goalAlignment * preferences.goalsWeight +
+      personalityMatch * preferences.personalityWeight +
+      topicOverlap * preferences.topicsWeight
+    );
+
+    const score: MatchScore = {
+      userId: candidateExtended.userId,
+      overallScore,
+      breakdown: {
+        languageCompatibility,
+        levelCompatibility,
+        semanticSimilarity,
+        scheduleCompatibility,
+        goalAlignment,
+        personalityMatch,
+        topicOverlap
+      },
+      aiReasons: [],
+      suggestedTopics: [],
+      compatibilityInsights: ''
+    };
+
+    log.info('[CALCULATE_AI_MATCH_SCORE] Overall score calculated', {
+      userId,
+      candidateId,
+      overallScore
+    });
+
+    // AI 생성 매칭 이유 및 주제 추천 (비동기로 생성)
+    log.info('[CALCULATE_AI_MATCH_SCORE] Generating AI matching reasons', { userId, candidateId });
+    const aiGenerated = await generateMatchingReasons(ai, userExtended, candidateExtended, score);
+    score.aiReasons = aiGenerated.reasons;
+    score.suggestedTopics = aiGenerated.topics;
+    score.compatibilityInsights = aiGenerated.insights;
+
+    log.info('[CALCULATE_AI_MATCH_SCORE] Completed successfully', {
+      userId,
+      candidateId,
+      overallScore,
+      hasReasons: aiGenerated.reasons.length > 0,
+      hasTopics: aiGenerated.topics.length > 0
+    });
+
+    return score;
+  } catch (error) {
+    log.error('[CALCULATE_AI_MATCH_SCORE] Failed', error as Error, {
+      userId,
+      candidateId,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
+  }
 }
 
 /**
@@ -485,15 +547,50 @@ export async function findBestMatches(
   env: Env,
   limit: number = 10
 ): Promise<MatchScore[]> {
-  // 모든 후보에 대해 매칭 점수 계산
-  const scores = await Promise.all(
-    candidates.map(candidate =>
-      calculateAIMatchScore(ai, user, candidate, preferences, env)
-    )
-  );
+  try {
+    log.info('[FIND_BEST_MATCHES] Starting', {
+      userId: 'id' in user ? user.id : user.userId,
+      candidateCount: candidates.length,
+      limit
+    });
 
-  // 점수 순으로 정렬하고 상위 limit개 반환
-  scores.sort((a, b) => b.overallScore - a.overallScore);
+    // 모든 후보에 대해 매칭 점수 계산
+    const scores = await Promise.all(
+      candidates.map(async (candidate, index) => {
+        try {
+          log.info(`[FIND_BEST_MATCHES] Processing candidate ${index + 1}/${candidates.length}`, {
+            candidateId: 'id' in candidate ? candidate.id : candidate.userId
+          });
+          return await calculateAIMatchScore(ai, user, candidate, preferences, env);
+        } catch (error) {
+          log.error(`[FIND_BEST_MATCHES] Error processing candidate ${index + 1}`, error as Error, {
+            candidateId: 'id' in candidate ? candidate.id : candidate.userId,
+            errorMessage: error instanceof Error ? error.message : String(error)
+          });
+          throw error;
+        }
+      })
+    );
 
-  return scores.slice(0, limit);
+    log.info('[FIND_BEST_MATCHES] All candidates processed', {
+      scoreCount: scores.length
+    });
+
+    // 점수 순으로 정렬하고 상위 limit개 반환
+    scores.sort((a, b) => b.overallScore - a.overallScore);
+
+    log.info('[FIND_BEST_MATCHES] Completed successfully', {
+      returnedMatches: Math.min(limit, scores.length)
+    });
+
+    return scores.slice(0, limit);
+  } catch (error) {
+    log.error('[FIND_BEST_MATCHES] Failed', error as Error, {
+      userId: 'id' in user ? user.id : user.userId,
+      candidateCount: candidates.length,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
+  }
 }

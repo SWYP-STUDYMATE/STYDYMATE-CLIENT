@@ -1,58 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getStudyStats } from '../api/analytics';
 
 const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
   const [statsData, setStatsData] = useState(null);
-  const [isLoading, setIsLoading] = useState(loading);
-  const [error, setError] = useState(errorMessage);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (data) {
-      // 부모 컴포넌트에서 데이터를 전달받은 경우
-      const analyticsData = transformStatsData(data);
-      setStatsData(analyticsData);
-      setIsLoading(false);
-      setError(null);
-    } else {
-      // 독립적으로 데이터를 로드하는 경우
-      loadStatsData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  // transformStatsData를 useMemo로 변경하여 불필요한 재계산 방지
+  const transformedData = useMemo(() => {
+    if (!data) return null;
 
-  useEffect(() => {
-    if (errorMessage) {
-      setError(errorMessage);
-    }
-  }, [errorMessage]);
+    const metrics = data?.metrics || {};
 
-  const loadStatsData = async () => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    
-    try {
-      let analyticsData;
-      
-      const response = await getStudyStats('month'); // 월간 통계 조회
-      analyticsData = transformStatsData(response);
-      
-      setStatsData(analyticsData);
-      setError(null);
-    } catch (error) {
-      console.error('StudyStats data loading failed:', error);
-      
-      setStatsData(null);
-      setError('학습 통계를 불러오지 못했습니다. 나중에 다시 시도해주세요.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const transformStatsData = (apiResponse) => {
-    // API 응답을 컴포넌트에서 사용할 수 있는 형태로 변환
-    const metrics = apiResponse?.metrics || {};
-    
     return {
       overview: {
         totalMinutes: metrics.totalMinutes || 0,
@@ -61,6 +20,54 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
         partnersCount: metrics.partnersCount || 0
       }
     };
+  }, [data]);
+
+  useEffect(() => {
+    // 부모로부터 데이터를 받은 경우
+    if (data) {
+      setStatsData(transformedData);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    // 독립적으로 데이터를 로드하는 경우
+    loadStatsData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, transformedData]);
+
+  useEffect(() => {
+    setError(errorMessage);
+  }, [errorMessage]);
+
+  const loadStatsData = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await getStudyStats('month'); // 월간 통계 조회
+      const metrics = response?.metrics || {};
+
+      const analyticsData = {
+        overview: {
+          totalMinutes: metrics.totalMinutes || 0,
+          monthlyMinutes: metrics.monthlyMinutes || 0,
+          currentStreak: metrics.currentStreak || 0,
+          partnersCount: metrics.partnersCount || 0
+        }
+      };
+
+      setStatsData(analyticsData);
+      setError(null);
+    } catch (error) {
+      console.error('StudyStats data loading failed:', error);
+
+      setStatsData(null);
+      setError('학습 통계를 불러오지 못했습니다. 나중에 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTime = (minutes) => {

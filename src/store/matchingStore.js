@@ -330,6 +330,22 @@ const useMatchingStore = create(
 
       // 매칭 요청 보내기 (Workers API)
       sendMatchRequest: async (partnerId, message = '') => {
+        const { sentRequests } = get();
+
+        // ✅ 중복 요청 방지: 이미 요청을 보낸 사용자인지 확인
+        const alreadyRequested = sentRequests.some(
+          req => req.receiverId === partnerId || req.targetUserId === partnerId
+        );
+
+        if (alreadyRequested) {
+          console.warn('[matchingStore] Already sent request to this partner:', partnerId);
+          return {
+            success: false,
+            alreadyRequested: true,
+            message: '이미 매칭 요청을 보낸 사용자입니다.'
+          };
+        }
+
         try {
           console.log('[matchingStore] Sending match request:', {
             partnerId,
@@ -341,18 +357,18 @@ const useMatchingStore = create(
           console.log('[matchingStore] Match request result:', result);
 
           // sentRequests 상태 업데이트
-          const { sentRequests } = get();
           set({
             sentRequests: [...sentRequests, {
               ...result,
               receiverId: partnerId,
+              targetUserId: partnerId,
               status: 'pending',
               message,
               createdAt: new Date().toISOString()
             }]
           });
 
-          return result;
+          return { ...result, success: true };
         } catch (error) {
           console.error('[matchingStore] Send match request error:', {
             error,

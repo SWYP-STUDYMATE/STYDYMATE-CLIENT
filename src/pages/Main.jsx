@@ -329,20 +329,26 @@ export default function Main() {
 
   useEffect(() => {
     const loadProgressSummary = async () => {
+      if (!isMountedRef.current) return;
+
       setState((prev) => ({ ...prev, progressSummaryLoading: true }));
       try {
         const summary = await getProgressSummary();
         if (isMountedRef.current) {
           setState((prev) => ({
             ...prev,
-            progressSummary: summary,
+            progressSummary: summary, // null이어도 문제없음 (UI에서 조건부 렌더링)
             progressSummaryLoading: false,
           }));
         }
       } catch (error) {
         console.error('Failed to load progress summary:', error);
         if (isMountedRef.current) {
-          setState((prev) => ({ ...prev, progressSummaryLoading: false }));
+          setState((prev) => ({
+            ...prev,
+            progressSummary: null, // 에러 시 null로 설정
+            progressSummaryLoading: false
+          }));
         }
       }
     };

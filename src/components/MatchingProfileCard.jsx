@@ -67,8 +67,18 @@ export default function MatchingProfileCard({ user, onClick, showActions = true,
         try {
             setIsSending(true);
             console.log('[MatchingProfileCard] Sending match request to:', userId);
-            await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
-            showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
+            const result = await sendMatchRequest(userId, `안녕하세요! ${mappedUser.name}님과 언어 교환을 하고 싶습니다.`);
+
+            // ✅ 중복 요청인 경우 처리
+            if (result.alreadyRequested) {
+                showError(result.message || '이미 매칭 요청을 보낸 사용자입니다.');
+                return;
+            }
+
+            // ✅ 성공 처리
+            if (result.success !== false) {
+                showSuccess(`${mappedUser.name}님에게 매칭 요청을 보냈습니다!`);
+            }
         } catch (error) {
             console.error('[MatchingProfileCard] 매칭 요청 실패:', {
                 error,
