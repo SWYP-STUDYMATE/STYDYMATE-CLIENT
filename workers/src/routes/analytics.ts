@@ -9,6 +9,14 @@ import { AppError } from '../utils/errors';
 
 const app = new Hono<{ Bindings: Env }>();
 
+// 유틸리티 헬퍼
+function requireUserId(userId: string | undefined): string {
+  if (!userId) {
+    throw new AppError('인증 정보가 필요합니다.', 401, 'UNAUTHORIZED');
+  }
+  return userId;
+}
+
 // 메트릭 조회 스키마
 const metricsQuerySchema = z.object({
     start: z.string().datetime().optional(),
@@ -328,8 +336,7 @@ app.post('/events', async (c) => {
 // 학습 패턴 분석 엔드포인트
 app.get('/learning-pattern', authMiddleware as any, async (c) => {
     try {
-        const userId = c.get('userId') as string | undefined;
-        if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+        const userId = requireUserId(c.get('userId') as string | undefined);
 
         const monthsBack = parseInt(c.req.query('monthsBack') || '3');
 
@@ -341,7 +348,7 @@ app.get('/learning-pattern', authMiddleware as any, async (c) => {
         return successResponse(c, pattern);
     } catch (error) {
         if (error instanceof AppError) {
-            return errorResponse(c, error.message, error.statusCode);
+            return errorResponse(c, error.message, error.errorCode, null, error.statusCode);
         }
         console.error('Learning pattern analysis error:', error);
         return errorResponse(c, 'Learning pattern analysis failed');
@@ -352,48 +359,90 @@ app.get('/learning-pattern', authMiddleware as any, async (c) => {
 app.get('/progress-summary', authMiddleware as any, async (c) => {
     try {
         const userId = c.get('userId') as string | undefined;
-        if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
-
-        // AI 바인딩이 없는 경우 기본값 반환
-        if (!c.env.AI) {
-            console.warn('AI binding not available, returning default progress summary');
+        if (!userId) {
+            console.warn('User ID not found in context for progress-summary');
             return successResponse(c, {
                 currentLevel: 'A1',
                 sessionsThisWeek: 0,
                 consistency: 0,
-                nextMilestone: null,
+                nextMilestone: '학습을 시작하세요',
                 topStrength: null,
                 topWeakness: null,
                 fallback: true
             });
         }
 
-        const pattern = await analyzeLearningPattern(c.env, userId, 1);
+        // AI 바인딩이 없는 경우 기본값 반환
+        if (!c.env.AI) {
+            console.warn('AI binding not available, returning default progress summary');
+            return successResponse(c, {
+                currentLevel: 'B1',
+                sessionsThisWeek: 0,
+                consistency: 0,
+                nextMilestone: '이번 주 첫 세션을 시작해보세요',
+                topStrength: null,
+                topWeakness: null,
+                fallback: true
+            });
+        }
+
+        // DB 바인딩이 없는 경우에도 기본값 반환
+        if (!c.env.DB) {
+            console.warn('DB binding not available, returning default progress summary');
+            return successResponse(c, {
+                currentLevel: 'B1',
+                sessionsThisWeek: 0,
+                consistency: 0,
+                nextMilestone: '학습 데이터를 수집 중입니다',
+                topStrength: null,
+                topWeakness: null,
+                fallback: true
+            });
+        }
+
+        // 타임아웃 설정으로 AI 분석이 너무 오래 걸리면 기본값 반환
+        const timeoutPromise = new Promise<null>((resolve) => {
+            setTimeout(() => resolve(null), 3000); // 3초 타임아웃
+        });
+
+        const analysisPromise = analyzeLearningPattern(c.env, userId, 1);
+
+        const pattern = await Promise.race([analysisPromise, timeoutPromise]);
+
+        if (!pattern) {
+            console.warn('Learning pattern analysis timed out');
+            return successResponse(c, {
+                currentLevel: 'B1',
+                sessionsThisWeek: 0,
+                consistency: 0,
+                nextMilestone: '학습 분석 중입니다',
+                topStrength: null,
+                topWeakness: null,
+                fallback: true
+            });
+        }
 
         return successResponse(c, {
-            currentLevel: pattern.progress.currentLevel,
-            sessionsThisWeek: Math.round(pattern.studyHabits.sessionsPerWeek),
-            consistency: pattern.studyHabits.consistency,
-            nextMilestone: pattern.insights.milestones[0] || null,
-            topStrength: pattern.strengths[0]?.area || null,
-            topWeakness: pattern.weaknesses[0]?.area || null
+            currentLevel: pattern.progress?.currentLevel || 'B1',
+            sessionsThisWeek: Math.round(pattern.studyHabits?.sessionsPerWeek || 0),
+            consistency: pattern.studyHabits?.consistency || 0,
+            nextMilestone: pattern.insights?.milestones?.[0]?.title || '계속 학습하세요',
+            topStrength: pattern.strengths?.[0]?.area || null,
+            topWeakness: pattern.weaknesses?.[0]?.area || null,
+            fallback: false
         });
     } catch (error) {
-        if (error instanceof AppError) {
-            return errorResponse(c, error.message, error.statusCode);
-        }
         console.error('Progress summary error:', error);
 
-        // 에러 발생 시 기본값 반환 (500 에러 대신)
+        // 모든 에러 발생 시 안전한 기본값 반환 (500 에러 대신 graceful degradation)
         return successResponse(c, {
-            currentLevel: 'A1',
+            currentLevel: 'B1',
             sessionsThisWeek: 0,
             consistency: 0,
-            nextMilestone: null,
+            nextMilestone: '학습 데이터 로딩 중입니다',
             topStrength: null,
             topWeakness: null,
-            fallback: true,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            fallback: true
         });
     }
 });
@@ -401,8 +450,7 @@ app.get('/progress-summary', authMiddleware as any, async (c) => {
 // 맞춤형 학습 추천사항
 app.get('/recommendations', authMiddleware as any, async (c) => {
     try {
-        const userId = c.get('userId') as string | undefined;
-        if (!userId) throw new AppError('User not found in context', 500, 'CONTEXT_MISSING_USER');
+        const userId = requireUserId(c.get('userId') as string | undefined);
 
         const pattern = await analyzeLearningPattern(c.env, userId, 3);
 
@@ -417,7 +465,7 @@ app.get('/recommendations', authMiddleware as any, async (c) => {
         });
     } catch (error) {
         if (error instanceof AppError) {
-            return errorResponse(c, error.message, error.statusCode);
+            return errorResponse(c, error.message, error.errorCode, null, error.statusCode);
         }
         console.error('Recommendations error:', error);
         return errorResponse(c, 'Recommendations generation failed');
