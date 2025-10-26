@@ -7,7 +7,13 @@ import { successResponse, errorResponse } from '../utils/response';
 import { analyzeLearningPattern } from '../services/learningAnalytics';
 import { AppError } from '../utils/errors';
 
-const app = new Hono<{ Bindings: Env }>();
+// Hono 타입 정의
+type Variables = {
+    userId?: string;
+    requestId?: string;
+};
+
+const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // 유틸리티 헬퍼
 function requireUserId(userId: string | undefined): string {
@@ -336,7 +342,7 @@ app.post('/events', async (c) => {
 // 학습 패턴 분석 엔드포인트
 app.get('/learning-pattern', authMiddleware as any, async (c) => {
     try {
-        const userId = requireUserId(c.get('userId') as string | undefined);
+        const userId = requireUserId(c.get('userId'));
 
         const monthsBack = parseInt(c.req.query('monthsBack') || '3');
 
@@ -358,7 +364,7 @@ app.get('/learning-pattern', authMiddleware as any, async (c) => {
 // 학습 진행 상황 요약
 app.get('/progress-summary', authMiddleware as any, async (c) => {
     try {
-        const userId = c.get('userId') as string | undefined;
+        const userId = c.get('userId');
         if (!userId) {
             console.warn('User ID not found in context for progress-summary');
             return successResponse(c, {
@@ -450,7 +456,7 @@ app.get('/progress-summary', authMiddleware as any, async (c) => {
 // 맞춤형 학습 추천사항
 app.get('/recommendations', authMiddleware as any, async (c) => {
     try {
-        const userId = requireUserId(c.get('userId') as string | undefined);
+        const userId = requireUserId(c.get('userId'));
 
         const pattern = await analyzeLearningPattern(c.env, userId, 3);
 
