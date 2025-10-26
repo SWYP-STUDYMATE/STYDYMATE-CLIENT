@@ -13,7 +13,10 @@ export default function AILearningSummaryCard({ progressSummary, loading }) {
 
   // React 19 호환성: useMemo로 데이터 안정화
   const summaryData = useMemo(() => {
-    if (!progressSummary || loading) return null;
+    // 로딩 중이거나 데이터가 없으면 null 반환
+    if (loading || !progressSummary) {
+      return null;
+    }
 
     return {
       currentLevel: progressSummary.currentLevel || '-',
