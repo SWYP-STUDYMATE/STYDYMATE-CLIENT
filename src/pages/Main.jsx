@@ -146,6 +146,38 @@ export default function Main() {
   const [state, setState] = useState(INITIAL_MAIN_STATE);
   const isMountedRef = useRef(true);
 
+  // 참조 안정성을 위한 이전 상태 캐시
+  const stateCache = useRef({
+    profile: null,
+    studyStats: null,
+    languageProfile: null,
+    mates: null,
+    achievements: null,
+    achievementsStats: null,
+    progressSummary: null,
+  });
+
+  // 참조 안정성 헬퍼: 내용이 같으면 캐시된 참조 반환
+  const stabilizeRef = useCallback((key, newValue) => {
+    if (!newValue) return null;
+
+    const cached = stateCache.current[key];
+    if (!cached) {
+      stateCache.current[key] = newValue;
+      return newValue;
+    }
+
+    // 얕은 비교로 성능 최적화
+    const isSame = JSON.stringify(cached) === JSON.stringify(newValue);
+    if (isSame) {
+      return cached; // 기존 참조 유지
+    }
+
+    // 다르면 새 값으로 캐시 업데이트
+    stateCache.current[key] = newValue;
+    return newValue;
+  }, []);
+
   useEffect(() => () => {
     isMountedRef.current = false;
   }, []);
@@ -300,27 +332,29 @@ export default function Main() {
       return;
     }
 
-    setState({
+    setState((prev) => ({
+      ...prev,
       loading: false,
-      profile: profileResult.snapshot,
+      profile: stabilizeRef('profile', profileResult.snapshot),
       profileError: profileResult.error,
-      studyStats: studyStatsResult.data,
+      studyStats: stabilizeRef('studyStats', studyStatsResult.data),
       studyStatsError: studyStatsResult.error,
-      languageProfile: languageProfileResult.data,
+      languageProfile: stabilizeRef('languageProfile', languageProfileResult.data),
       languageProfileError: languageProfileResult.error,
-      mates: matesResult.data,
+      mates: stabilizeRef('mates', matesResult.data),
       matesError: matesResult.error,
-      achievements: achievementsResult.data,
-      achievementsStats: achievementsResult.stats,
+      achievements: stabilizeRef('achievements', achievementsResult.data),
+      achievementsStats: stabilizeRef('achievementsStats', achievementsResult.stats),
       achievementsError: achievementsResult.error,
       achievementsLoading: false,
-    });
+    }));
   }, [
     loadProfileSection,
     loadStudyStatsSection,
     loadLanguageProfileSection,
     loadMatesSection,
     loadAchievementsSection,
+    stabilizeRef,
   ]);
 
   useEffect(() => {
@@ -339,31 +373,21 @@ export default function Main() {
         const summary = response?.data ?? response;
 
         if (isMountedRef.current) {
-          setState((prev) => {
-            // 참조 안정성: 내용이 같으면 기존 객체 유지
-            const isSameData = prev.progressSummary && summary &&
-              JSON.stringify(prev.progressSummary) === JSON.stringify(summary);
-
-            return {
-              ...prev,
-              progressSummary: isSameData ? prev.progressSummary : (summary || null),
-              progressSummaryLoading: false,
-            };
-          });
+          setState((prev) => ({
+            ...prev,
+            progressSummary: stabilizeRef('progressSummary', summary),
+            progressSummaryLoading: false,
+          }));
         }
       } catch (error) {
         console.error('Failed to load progress summary:', error);
 
         if (isMountedRef.current) {
-          setState((prev) => {
-            // 에러 시에도 참조 안정성 유지
-            const wasNull = prev.progressSummary === null;
-            return {
-              ...prev,
-              progressSummary: wasNull ? prev.progressSummary : null,
-              progressSummaryLoading: false
-            };
-          });
+          setState((prev) => ({
+            ...prev,
+            progressSummary: null,
+            progressSummaryLoading: false
+          }));
         }
       }
     };
@@ -381,12 +405,12 @@ export default function Main() {
 
     setState((prev) => ({
       ...prev,
-      achievements: achievementsResult.data,
-      achievementsStats: achievementsResult.stats,
+      achievements: stabilizeRef('achievements', achievementsResult.data),
+      achievementsStats: stabilizeRef('achievementsStats', achievementsResult.stats),
       achievementsError: achievementsResult.error,
       achievementsLoading: false,
     }));
-  }, [loadAchievementsSection]);
+  }, [loadAchievementsSection, stabilizeRef]);
 
   const displayName = useMemo(() => (
     toDisplayText(state.profile?.englishName, "사용자")
