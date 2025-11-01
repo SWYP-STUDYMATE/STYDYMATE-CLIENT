@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, TrendingUp, Target, Brain, ChevronRight } from 'lucide-react';
 
@@ -11,29 +11,21 @@ import { Sparkles, TrendingUp, Target, Brain, ChevronRight } from 'lucide-react'
 export default function AILearningSummaryCard({ progressSummary, loading }) {
   const navigate = useNavigate();
 
-  // React 19 호환성: useMemo로 데이터 안정화
-  // 객체 전체를 의존성으로 사용하여 무한 루프 방지
-  const summaryData = useMemo(() => {
-    // 로딩 중이거나 데이터가 없으면 null 반환
-    if (loading || !progressSummary) {
-      return null;
-    }
-
-    return {
-      currentLevel: progressSummary.currentLevel || '-',
-      sessionsThisWeek: progressSummary.sessionsThisWeek || 0,
-      consistency: progressSummary.consistency
-        ? `${Math.round(progressSummary.consistency * 100)}%`
-        : '-',
-      nextMilestone: progressSummary.nextMilestone || null,
-      isFallback: progressSummary.fallback || false
-    };
-  }, [loading, progressSummary]);
-
   // 로딩 중이거나 데이터가 없으면 렌더링하지 않음
-  if (loading || !summaryData) {
+  if (loading || !progressSummary) {
     return null;
   }
+
+  // 데이터 직접 추출 (부모에서 참조 안정성 보장)
+  const summaryData = {
+    currentLevel: progressSummary.currentLevel || '-',
+    sessionsThisWeek: progressSummary.sessionsThisWeek || 0,
+    consistency: progressSummary.consistency
+      ? `${Math.round(progressSummary.consistency * 100)}%`
+      : '-',
+    nextMilestone: progressSummary.nextMilestone || null,
+    isFallback: progressSummary.fallback || false
+  };
 
   return (
     <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471]">

@@ -339,22 +339,31 @@ export default function Main() {
         const summary = response?.data ?? response;
 
         if (isMountedRef.current) {
-          setState((prev) => ({
-            ...prev,
-            progressSummary: summary || null,
-            progressSummaryLoading: false,
-          }));
+          setState((prev) => {
+            // 참조 안정성: 내용이 같으면 기존 객체 유지
+            const isSameData = prev.progressSummary && summary &&
+              JSON.stringify(prev.progressSummary) === JSON.stringify(summary);
+
+            return {
+              ...prev,
+              progressSummary: isSameData ? prev.progressSummary : (summary || null),
+              progressSummaryLoading: false,
+            };
+          });
         }
       } catch (error) {
         console.error('Failed to load progress summary:', error);
 
-        // 에러 시에도 안전하게 null로 설정하여 렌더링 일관성 유지
         if (isMountedRef.current) {
-          setState((prev) => ({
-            ...prev,
-            progressSummary: null,
-            progressSummaryLoading: false
-          }));
+          setState((prev) => {
+            // 에러 시에도 참조 안정성 유지
+            const wasNull = prev.progressSummary === null;
+            return {
+              ...prev,
+              progressSummary: wasNull ? prev.progressSummary : null,
+              progressSummaryLoading: false
+            };
+          });
         }
       }
     };
@@ -423,7 +432,7 @@ export default function Main() {
           />
         </div>
 
-        {/* AI Learning Summary Card - React 19 호환성을 위해 별도 컴포넌트로 분리 */}
+        {/* AI Learning Summary Card */}
         <AILearningSummaryCard
           progressSummary={state.progressSummary}
           loading={state.progressSummaryLoading}
