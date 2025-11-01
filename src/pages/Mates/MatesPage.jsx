@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -263,44 +263,40 @@ const MatesPage = () => {
     }
   }, [mates, menuTarget]);
 
-  const filterStats = useMemo(() => {
-    const onlineCount = mates.filter((mate) => mate.onlineStatus === 'ONLINE').length;
-    const recentCount = mates.filter((mate) => isRecentActive(mate.lastActive)).length;
-    const highScoreCount = mates.filter((mate) => (mate.compatibilityScore ?? 0) >= 80).length;
+  // ⚠️ useMemo 제거: React 19 cascading dependency 문제로 React Error #185 방지
+  // 직접 계산으로 변경하여 참조 안정성 문제 해결
+  const onlineCount = mates.filter((mate) => mate.onlineStatus === 'ONLINE').length;
+  const recentCount = mates.filter((mate) => isRecentActive(mate.lastActive)).length;
+  const highScoreCount = mates.filter((mate) => (mate.compatibilityScore ?? 0) >= 80).length;
 
-    return {
-      all: mates.length,
-      online: onlineCount,
-      recent: recentCount,
-      highScore: highScoreCount,
-    };
-  }, [mates]);
+  const filterStats = {
+    all: mates.length,
+    online: onlineCount,
+    recent: recentCount,
+    highScore: highScoreCount,
+  };
 
-  const filters = useMemo(() => (
-    FILTER_DEFINITIONS.map((filter) => ({
-      ...filter,
-      count: filterStats[filter.key] ?? 0,
-    }))
-  ), [filterStats]);
+  const filters = FILTER_DEFINITIONS.map((filter) => ({
+    ...filter,
+    count: filterStats[filter.key] ?? 0,
+  }));
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const filteredMates = useMemo(() => (
-    mates.filter((mate) => {
-      const matchesSearch = !normalizedQuery
-        || [mate.name, mate.bio, mate.nativeLanguage, mate.location]
-          .some((field) => field && field.toLowerCase().includes(normalizedQuery));
+  const filteredMates = mates.filter((mate) => {
+    const matchesSearch = !normalizedQuery
+      || [mate.name, mate.bio, mate.nativeLanguage, mate.location]
+        .some((field) => field && field.toLowerCase().includes(normalizedQuery));
 
-      const matchesFilter = {
-        all: true,
-        online: mate.onlineStatus === 'ONLINE',
-        recent: isRecentActive(mate.lastActive),
-        highScore: (mate.compatibilityScore ?? 0) >= 80,
-      }[filterType] ?? true;
+    const matchesFilter = {
+      all: true,
+      online: mate.onlineStatus === 'ONLINE',
+      recent: isRecentActive(mate.lastActive),
+      highScore: (mate.compatibilityScore ?? 0) >= 80,
+    }[filterType] ?? true;
 
-      return matchesSearch && matchesFilter;
-    })
-  ), [mates, normalizedQuery, filterType]);
+    return matchesSearch && matchesFilter;
+  });
 
   const handleRefresh = () => {
     if (loading || loadingMore) return;

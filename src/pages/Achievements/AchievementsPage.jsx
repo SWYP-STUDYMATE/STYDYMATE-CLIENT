@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Trophy,
@@ -277,11 +277,11 @@ const AchievementsPage = () => {
   // 안전한 배열 보장
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
 
-  const filteredAchievements = useMemo(() => {
-    // safeAchievements 사용으로 안전성 보장
-    if (selectedCategory === 'ALL') return safeAchievements;
-    return safeAchievements.filter((item) => item.achievement?.category === selectedCategory);
-  }, [safeAchievements, selectedCategory]);
+  // ⚠️ useMemo 제거: React 19 참조 안정성 문제 방지
+  // 직접 계산으로 변경 (safeAchievements가 이미 안정화되어 있으므로 성능 문제 없음)
+  const filteredAchievements = selectedCategory === 'ALL'
+    ? safeAchievements
+    : safeAchievements.filter((item) => item.achievement?.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">

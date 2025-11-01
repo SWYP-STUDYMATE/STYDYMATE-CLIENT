@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Camera,
@@ -203,32 +203,31 @@ export default function ProfilePage() {
     loading: achievementsLoading,
     error: achievementsError
   } = useAchievementOverview();
-  const recentAchievements = useMemo(() => {
-    if (!Array.isArray(allAchievements) || allAchievements.length === 0) return [];
 
+  // ⚠️ useMemo 제거: React 19 참조 안정성 문제로 무한 루프 및 React Error #185 방지
+  // useAchievementOverview hook이 이미 안정화된 데이터를 제공하므로 직접 계산해도 성능 문제 없음
+  let recentAchievements = [];
+  if (Array.isArray(allAchievements) && allAchievements.length > 0) {
     try {
-      // 배열 불변성 유지 및 안전한 정렬 (React Error #185 방지)
       const completed = allAchievements.filter((item) => item?.isCompleted === true);
 
-      if (completed.length === 0) return [];
+      if (completed.length > 0) {
+        const sorted = [...completed].sort((a, b) => {
+          const aTime = a?.completedAt ?? '';
+          const bTime = b?.completedAt ?? '';
 
-      // 정렬 전 새 배열 생성 (깊은 복사 불필요, 얕은 복사로 충분)
-      const sorted = [...completed].sort((a, b) => {
-        const aTime = a?.completedAt ?? '';
-        const bTime = b?.completedAt ?? '';
+          if (typeof aTime !== 'string' || typeof bTime !== 'string') return 0;
 
-        // 둘 다 문자열이 아니면 정렬하지 않음
-        if (typeof aTime !== 'string' || typeof bTime !== 'string') return 0;
+          return bTime.localeCompare(aTime);
+        });
 
-        return bTime.localeCompare(aTime);
-      });
-
-      return sorted.slice(0, 4);
+        recentAchievements = sorted.slice(0, 4);
+      }
     } catch (error) {
       console.error('[ProfilePage] recentAchievements 처리 오류:', error);
-      return [];
+      recentAchievements = [];
     }
-  }, [allAchievements]);
+  }
 
   useEffect(() => {
     let isActive = true;

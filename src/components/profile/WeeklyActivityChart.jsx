@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -31,17 +31,19 @@ export default function WeeklyActivityChart({
     error = null,
     emptyMessage = '최근 학습 데이터가 없습니다.'
 }) {
-    const weeklyData = useMemo(() => normalizeWeeklyData(data), [data]);
+    // ⚠️ useMemo 제거: React 19 cascading dependency 문제 방지
+    // 직접 계산으로 변경 (부모 컴포넌트가 data prop 참조 안정성 보장)
+    const weeklyData = normalizeWeeklyData(data);
     const [animatedData, setAnimatedData] = useState([]);
 
-    const maxMinutes = useMemo(() => {
+    const maxMinutes = (() => {
         if (weeklyData.length === 0) {
             return 1;
         }
         const minutes = weeklyData.map((d) => d.minutes ?? 0);
         const maxValue = Math.max(...minutes);
         return Number.isFinite(maxValue) && maxValue > 0 ? maxValue : 1;
-    }, [weeklyData]);
+    })();
 
     useEffect(() => {
         if (weeklyData.length === 0) {
