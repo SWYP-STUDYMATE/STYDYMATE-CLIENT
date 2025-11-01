@@ -12,7 +12,7 @@ export default function AILearningSummaryCard({ progressSummary, loading }) {
   const navigate = useNavigate();
 
   // React 19 호환성: useMemo로 데이터 안정화
-  // 객체 자체가 아닌 필요한 원시값들을 의존성 배열에 추가
+  // 객체 전체를 의존성으로 사용하여 무한 루프 방지
   const summaryData = useMemo(() => {
     // 로딩 중이거나 데이터가 없으면 null 반환
     if (loading || !progressSummary) {
@@ -28,14 +28,7 @@ export default function AILearningSummaryCard({ progressSummary, loading }) {
       nextMilestone: progressSummary.nextMilestone || null,
       isFallback: progressSummary.fallback || false
     };
-  }, [
-    loading,
-    progressSummary?.currentLevel,
-    progressSummary?.sessionsThisWeek,
-    progressSummary?.consistency,
-    progressSummary?.nextMilestone,
-    progressSummary?.fallback
-  ]);
+  }, [loading, progressSummary]);
 
   // 로딩 중이거나 데이터가 없으면 렌더링하지 않음
   if (loading || !summaryData) {

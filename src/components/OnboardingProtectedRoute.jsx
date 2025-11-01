@@ -222,9 +222,24 @@ export default function OnboardingProtectedRoute({ children }) {
     }
   }, [isAuthenticated, navigate]);
 
-  // 인증 에러 시 네비게이션 처리
+  // 인증 에러 시 토큰 삭제 및 네비게이션 처리
   useEffect(() => {
     if (error === 'AUTH_ERROR') {
+      console.log('🔒 OnboardingProtectedRoute: AUTH_ERROR 발생 - 토큰 삭제 및 로그아웃');
+
+      // 만료된 토큰 삭제
+      removeToken('accessToken');
+      removeToken('refreshToken');
+
+      // 토스트 메시지 (중복 방지)
+      if (!sessionStorage.getItem('authErrorToastShown')) {
+        toast.error('세션 만료', '로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+        sessionStorage.setItem('authErrorToastShown', 'true');
+        setTimeout(() => {
+          sessionStorage.removeItem('authErrorToastShown');
+        }, 3000);
+      }
+
       navigate('/', { replace: true });
     }
   }, [error, navigate]);
