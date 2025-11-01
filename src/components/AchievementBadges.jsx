@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { toDisplayText } from '../utils/text';
 
 const renderBadgeIcon = (achievement) => {
@@ -81,25 +81,24 @@ export default function AchievementBadges({
   limit = 4,
   onRefresh = null,
 }) {
-  const sanitizedAchievements = useMemo(() => {
-    if (!Array.isArray(achievements)) return [];
-    return achievements.map((item) => {
-      const normalizedTitle = toDisplayText(item.achievement?.title || item.title || item.name, '성취 배지');
-      const normalizedDescription = toDisplayText(item.achievement?.description || item.description || item.details, '') || '';
+  // ⚠️ useMemo 제거: React 19 무한 루프 방지
+  // achievements prop이 stabilizeRef로 안정화되므로 직접 변환해도 성능 문제 없음
+  const sanitizedAchievements = !Array.isArray(achievements) ? [] : achievements.map((item) => {
+    const normalizedTitle = toDisplayText(item.achievement?.title || item.title || item.name, '성취 배지');
+    const normalizedDescription = toDisplayText(item.achievement?.description || item.description || item.details, '') || '';
 
-      return {
-        ...item,
+    return {
+      ...item,
+      title: normalizedTitle,
+      description: normalizedDescription,
+      achievement: {
+        ...item.achievement,
         title: normalizedTitle,
         description: normalizedDescription,
-        achievement: {
-          ...item.achievement,
-          title: normalizedTitle,
-          description: normalizedDescription,
-          badgeColor: item.achievement?.badgeColor || '#E6F9F1'
-        }
-      };
-    });
-  }, [achievements]);
+        badgeColor: item.achievement?.badgeColor || '#E6F9F1'
+      }
+    };
+  });
 
   if (loading) {
     return (
@@ -132,12 +131,12 @@ export default function AchievementBadges({
   const completedCount = Number.isFinite(completedCountRaw) ? completedCountRaw : 0;
   const totalCount = Number.isFinite(totalCountRaw) ? totalCountRaw : sanitizedAchievements.length;
 
-  // 배열 불변성 유지 (React Error #185 방지)
-  const progressList = useMemo(() => {
-    if (!Array.isArray(sanitizedAchievements) || sanitizedAchievements.length === 0) return [];
-
+  // ⚠️ useMemo 제거: sanitizedAchievements 의존성 문제로 무한 루프 발생
+  // achievements prop이 stabilizeRef로 안정화되므로 직접 계산해도 성능 문제 없음
+  let progressList = [];
+  if (Array.isArray(sanitizedAchievements) && sanitizedAchievements.length > 0) {
     try {
-      return [...sanitizedAchievements]
+      progressList = [...sanitizedAchievements]
         .sort((a, b) => {
           // 안전한 문자열 비교
           const dateA = a?.completedAt ?? '';
@@ -150,9 +149,9 @@ export default function AchievementBadges({
         .slice(0, limit);
     } catch (error) {
       console.error('[AchievementBadges] progressList 처리 오류:', error);
-      return [];
+      progressList = [];
     }
-  }, [sanitizedAchievements, limit]);
+  }
 
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
