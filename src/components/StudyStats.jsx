@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getStudyStats } from '../api/analytics';
 
 const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
@@ -6,25 +6,21 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // transformStatsData를 useMemo로 변경하여 불필요한 재계산 방지
-  const transformedData = useMemo(() => {
-    if (!data) return null;
-
-    const metrics = data?.metrics || {};
-
-    return {
-      overview: {
-        totalMinutes: metrics.totalMinutes || 0,
-        monthlyMinutes: metrics.monthlyMinutes || 0,
-        currentStreak: metrics.currentStreak || 0,
-        partnersCount: metrics.partnersCount || 0
-      }
-    };
-  }, [data]);
-
+  // ⚠️ useMemo 제거: React 19 무한 루프 방지
+  // data prop이 stabilizeRef로 안정화되므로 직접 변환해도 성능 문제 없음
   useEffect(() => {
     // 부모로부터 데이터를 받은 경우
     if (data) {
+      const metrics = data?.metrics || {};
+      const transformedData = {
+        overview: {
+          totalMinutes: metrics.totalMinutes || 0,
+          monthlyMinutes: metrics.monthlyMinutes || 0,
+          currentStreak: metrics.currentStreak || 0,
+          partnersCount: metrics.partnersCount || 0
+        }
+      };
+
       setStatsData(transformedData);
       setIsLoading(false);
       setError(null);
@@ -34,7 +30,7 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
     // 독립적으로 데이터를 로드하는 경우
     loadStatsData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, transformedData]);
+  }, [data]);  // ← transformedData 의존성 제거
 
   useEffect(() => {
     setError(errorMessage);
