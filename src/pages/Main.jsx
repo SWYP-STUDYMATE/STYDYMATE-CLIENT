@@ -159,10 +159,14 @@ export default function Main() {
 
   // 참조 안정성 헬퍼: 내용이 같으면 캐시된 참조 반환
   const stabilizeRef = useCallback((key, newValue) => {
-    if (!newValue) return null;
+    if (!newValue) {
+      console.log(`[stabilizeRef:${key}] null 값, null 반환`);
+      return null;
+    }
 
     const cached = stateCache.current[key];
     if (!cached) {
+      console.log(`[stabilizeRef:${key}] 캐시 없음, 새 값 저장`);
       stateCache.current[key] = newValue;
       return newValue;
     }
@@ -170,10 +174,12 @@ export default function Main() {
     // 얕은 비교로 성능 최적화
     const isSame = JSON.stringify(cached) === JSON.stringify(newValue);
     if (isSame) {
+      console.log(`[stabilizeRef:${key}] 동일한 데이터, 캐시된 참조 반환 ✅`);
       return cached; // 기존 참조 유지
     }
 
     // 다르면 새 값으로 캐시 업데이트
+    console.log(`[stabilizeRef:${key}] 데이터 변경 감지, 새 참조 저장`);
     stateCache.current[key] = newValue;
     return newValue;
   }, []);
@@ -412,9 +418,8 @@ export default function Main() {
     }));
   }, [loadAchievementsSection, stabilizeRef]);
 
-  const displayName = useMemo(() => (
-    toDisplayText(state.profile?.englishName, "사용자")
-  ), [state.profile]);
+  // useMemo 대신 직접 계산 (stabilizeRef가 참조 안정성 보장)
+  const displayName = toDisplayText(state.profile?.englishName, "사용자");
 
   const userAge = useMemo(() => {
     const parsed = state.profile?.birthYear ? Number(state.profile.birthYear) : null;
@@ -423,7 +428,7 @@ export default function Main() {
     }
     const currentYear = new Date().getFullYear();
     return Math.max(0, currentYear - parsed);
-  }, [state.profile?.birthYear]);
+  }, [state.profile]);  // 전체 객체를 의존성으로
 
   const greetingLevel = useMemo(() => {
     const directLevel = state.profile?.languageLevel
@@ -433,7 +438,7 @@ export default function Main() {
       || null;
 
     return toDisplayText(directLevel, "레벨 정보 없음");
-  }, [state.profile, state.languageProfile]);
+  }, [state.profile, state.languageProfile]);  // 이건 괜찮음 (stabilizeRef 덕분)
 
   const matesEmptyMessage = state.matesError
     || "최근 매칭된 메이트가 없습니다.";
