@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import MainHeader from "../components/MainHeader";
@@ -318,25 +318,36 @@ export default function Main() {
   }, []);
 
   const initializeMainData = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true }));
+    setState((prev) => ({ ...prev, loading: true, progressSummaryLoading: true }));
 
+    // 🔄 모든 데이터 병렬 로드 (불필요한 렌더링 방지)
     const [
       profileResult,
       studyStatsResult,
       languageProfileResult,
       matesResult,
       achievementsResult,
+      progressSummaryResult,
     ] = await Promise.all([
       loadProfileSection(),
       loadStudyStatsSection(),
       loadLanguageProfileSection(),
       loadMatesSection(),
       loadAchievementsSection(),
+      // progressSummary도 함께 로드
+      getProgressSummary()
+        .then((response) => response?.data ?? response)
+        .catch((error) => {
+          console.error('Failed to load progress summary:', error);
+          return null;
+        }),
     ]);
 
     if (!isMountedRef.current) {
       return;
     }
+
+    console.log('✅ [initializeMainData] 모든 데이터 로드 완료, setState 1회만 실행');
 
     setState((prev) => ({
       ...prev,
@@ -353,6 +364,8 @@ export default function Main() {
       achievementsStats: stabilizeRef('achievementsStats', achievementsResult.stats),
       achievementsError: achievementsResult.error,
       achievementsLoading: false,
+      progressSummary: stabilizeRef('progressSummary', progressSummaryResult),
+      progressSummaryLoading: false,
     }));
   }, [
     loadProfileSection,
@@ -366,40 +379,6 @@ export default function Main() {
   useEffect(() => {
     initializeMainData();
   }, [initializeMainData]);
-
-  // AI 학습 진행 상황 요약 로드 (React 19 호환성 개선)
-  useEffect(() => {
-    const loadProgressSummary = async () => {
-      if (!isMountedRef.current) return;
-
-      setState((prev) => ({ ...prev, progressSummaryLoading: true }));
-
-      try {
-        const response = await getProgressSummary();
-        const summary = response?.data ?? response;
-
-        if (isMountedRef.current) {
-          setState((prev) => ({
-            ...prev,
-            progressSummary: stabilizeRef('progressSummary', summary),
-            progressSummaryLoading: false,
-          }));
-        }
-      } catch (error) {
-        console.error('Failed to load progress summary:', error);
-
-        if (isMountedRef.current) {
-          setState((prev) => ({
-            ...prev,
-            progressSummary: null,
-            progressSummaryLoading: false
-          }));
-        }
-      }
-    };
-
-    loadProgressSummary();
-  }, []);
 
   const handleRefreshAchievements = useCallback(async () => {
     setState((prev) => ({ ...prev, achievementsLoading: true }));
@@ -418,27 +397,24 @@ export default function Main() {
     }));
   }, [loadAchievementsSection, stabilizeRef]);
 
-  // useMemo 대신 직접 계산 (stabilizeRef가 참조 안정성 보장)
+  // ⚠️ useMemo 완전 제거: React 19에서 참조 불안정성으로 인한 무한 루프 방지
+  // stabilizeRef가 상태 참조를 안정화하므로 직접 계산해도 성능 문제 없음
+
   const displayName = toDisplayText(state.profile?.englishName, "사용자");
 
-  const userAge = useMemo(() => {
-    const parsed = state.profile?.birthYear ? Number(state.profile.birthYear) : null;
-    if (!parsed || Number.isNaN(parsed)) {
-      return null;
-    }
-    const currentYear = new Date().getFullYear();
-    return Math.max(0, currentYear - parsed);
-  }, [state.profile]);  // 전체 객체를 의존성으로
+  // userAge 계산 (useMemo 제거)
+  const parsed = state.profile?.birthYear ? Number(state.profile.birthYear) : null;
+  const userAge = parsed && !Number.isNaN(parsed)
+    ? Math.max(0, new Date().getFullYear() - parsed)
+    : null;
 
-  const greetingLevel = useMemo(() => {
-    const directLevel = state.profile?.languageLevel
-      || state.languageProfile?.learningLanguages?.[0]?.targetLevel
-      || state.languageProfile?.learningLanguages?.[0]?.level
-      || state.profile?.targetLanguage
-      || null;
-
-    return toDisplayText(directLevel, "레벨 정보 없음");
-  }, [state.profile, state.languageProfile]);  // 이건 괜찮음 (stabilizeRef 덕분)
+  // greetingLevel 계산 (useMemo 제거 - 배열 접근이 참조 불안정성을 일으킴)
+  const directLevel = state.profile?.languageLevel
+    || state.languageProfile?.learningLanguages?.[0]?.targetLevel
+    || state.languageProfile?.learningLanguages?.[0]?.level
+    || state.profile?.targetLanguage
+    || null;
+  const greetingLevel = toDisplayText(directLevel, "레벨 정보 없음");
 
   const matesEmptyMessage = state.matesError
     || "최근 매칭된 메이트가 없습니다.";
