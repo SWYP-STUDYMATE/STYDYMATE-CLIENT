@@ -52,6 +52,7 @@ export default function VideoSessionRoom() {
     // Check if Picture-in-Picture API is supported
     setPipSupported('pictureInPictureEnabled' in document);
 
+    console.log('🎥 [VideoSessionRoom] 초기화 시작', { roomId });
     initializeCall();
     loadRoomInfo();
 
@@ -182,22 +183,31 @@ export default function VideoSessionRoom() {
   const setupWebRTCCallbacks = () => {
     // Local stream callback
     webrtcManager.on('onLocalStream', (stream) => {
+      console.log('✅ [VideoSessionRoom] 로컬 스트림 수신', stream);
       log.info('로컬 스트림 수신', null, 'VIDEO_SESSION');
-      setLocalStream(stream);
+      setLocalStream(stream); // ✅ 상태 업데이트 (자막용)
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        console.log('✅ [VideoSessionRoom] 로컬 비디오 요소에 스트림 연결');
       }
     });
 
     // Remote stream callback
     webrtcManager.on('onRemoteStream', (userId, stream) => {
+      console.log('✅ [VideoSessionRoom] 원격 스트림 수신', { userId, stream });
       log.info('원격 스트림 수신', { userId }, 'VIDEO_SESSION');
-      
+
       // Set first remote stream for subtitles
       if (remoteVideosRef.current.size === 0) {
-        setRemoteStream(stream);
+        setRemoteStream(stream); // ✅ 상태 업데이트 (자막용)
+
+        // 메인 비디오 요소에도 연결
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
+          console.log('✅ [VideoSessionRoom] 원격 비디오 요소에 스트림 연결');
+        }
       }
-      
+
       // Create or update video element for remote participant
       let videoElement = remoteVideosRef.current.get(userId);
       if (!videoElement) {
@@ -205,27 +215,29 @@ export default function VideoSessionRoom() {
         videoElement.autoplay = true;
         videoElement.playsInline = true;
         videoElement.id = `remote-video-${userId}`;
-        
-        // For now, use the single remote video ref for the first participant
-        // In the future, this can be expanded to support multiple video elements
-        if (remoteVideosRef.current.size === 0 && remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = stream;
-        }
-        
+
         remoteVideosRef.current.set(userId, videoElement);
       }
-      
+
       videoElement.srcObject = stream;
     });
 
     // Remote stream removed callback
     webrtcManager.on('onRemoteStreamRemoved', (userId, stream) => {
       log.info('원격 스트림 제거', { userId }, 'VIDEO_SESSION');
-      
+
       const videoElement = remoteVideosRef.current.get(userId);
       if (videoElement) {
         videoElement.srcObject = null;
         remoteVideosRef.current.delete(userId);
+      }
+
+      // 마지막 원격 스트림이 제거되면 상태도 초기화
+      if (remoteVideosRef.current.size === 0) {
+        setRemoteStream(null); // ✅ 자막용 스트림도 초기화
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = null;
+        }
       }
 
       // Update participants

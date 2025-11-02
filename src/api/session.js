@@ -1,4 +1,9 @@
 import api from './index.js';
+import {
+  normalizeSessionCreatePayload,
+  normalizeSessionResponse,
+  normalizeSessionList
+} from '../utils/sessionAdapter.js';
 
 // 세션 목록 조회
 export const getSessions = async (page = 1, size = 20, status = null) => {
@@ -28,19 +33,9 @@ export const getSession = async (sessionId) => {
 // 세션 생성
 export const createSession = async (sessionData) => {
   try {
-    const response = await api.post('/sessions', {
-      partnerId: sessionData.partnerId,
-      type: sessionData.type, // audio, video
-      scheduledAt: sessionData.scheduledAt,
-      duration: sessionData.duration || 30, // 기본 30분
-      topic: sessionData.topic,
-      description: sessionData.description,
-      language: sessionData.language,
-      targetLanguage: sessionData.targetLanguage,
-      webRtcRoomId: sessionData.webRtcRoomId,
-      webRtcRoomType: sessionData.webRtcRoomType
-    });
-    return response.data;
+    const payload = normalizeSessionCreatePayload(sessionData);
+    const response = await api.post('/sessions', payload);
+    return normalizeSessionResponse(response.data);
   } catch (error) {
     console.error('Create session error:', error);
     throw error;

@@ -1,60 +1,19 @@
 import api from './index.js';
+import {
+  normalizeGroupSessionResponse,
+  normalizeGroupSessionCreatePayload,
+  normalizeGroupSessionUpdatePayload,
+  normalizeSessionList
+} from '../utils/sessionAdapter.js';
 
-const normalizeSessionRecord = (record = {}) => {
-  const participants = Array.isArray(record.participants)
-    ? record.participants.map((participant) => ({
-        ...participant,
-        id: participant.userId ?? participant.id,
-        name: participant.userName ?? participant.name ?? '참가자'
-      }))
-    : [];
-
-  return {
-    ...record,
-    hostId: record.hostUserId ?? record.hostId,
-    hostName: record.hostUserName ?? record.hostName,
-    language: record.targetLanguage ?? record.language ?? record.topicCategory ?? '미정',
-    targetLevel: record.languageLevel ?? record.targetLevel ?? '미정',
-    scheduledStartTime: record.scheduledAt ?? record.scheduledStartTime ?? null,
-    durationMinutes: record.sessionDuration ?? record.durationMinutes ?? 0,
-    topic: record.topicCategory ?? record.topic ?? null,
-    tags: record.sessionTags ?? record.tags ?? [],
-    participants,
-    participantIds: participants.map((participant) => participant.id),
-    sessionType: record.sessionType ?? 'VIDEO'
-  };
-};
-
-const mapSessionList = (payload) => {
-  if (!payload) return payload;
-  if (Array.isArray(payload)) {
-    return payload.map(normalizeSessionRecord);
-  }
-  if (Array.isArray(payload.content)) {
-    return {
-      ...payload,
-      content: payload.content.map(normalizeSessionRecord)
-    };
-  }
-  return payload;
-};
+// 하위 호환성을 위한 별칭 (기존 코드 지원)
+const normalizeSessionRecord = normalizeGroupSessionResponse;
+const mapSessionList = (payload) => normalizeSessionList(payload, normalizeGroupSessionResponse);
 
 // 그룹 세션 생성
 export const createGroupSession = async (sessionData) => {
   try {
-    const payload = {
-      title: sessionData.title,
-      description: sessionData.description,
-      topicCategory: sessionData.topic ?? sessionData.topicCategory ?? null,
-      targetLanguage: sessionData.language ?? sessionData.targetLanguage,
-      languageLevel: sessionData.targetLevel ?? sessionData.languageLevel,
-      maxParticipants: sessionData.maxParticipants || 6,
-      scheduledAt: sessionData.scheduledStartTime,
-      sessionDuration: sessionData.durationMinutes || 60,
-      isPublic: sessionData.isPublic !== false,
-      sessionTags: sessionData.tags || []
-    };
-
+    const payload = normalizeGroupSessionCreatePayload(sessionData);
     const response = await api.post('/group-sessions', payload);
     const payloadResponse = response.data;
     if (payloadResponse?.data) {
@@ -259,19 +218,7 @@ export const kickParticipant = async (sessionId, participantUserId, reason = '')
 // 세션 정보 수정 (호스트 전용)
 export const updateGroupSession = async (sessionId, updateData) => {
   try {
-    const payload = {
-      title: updateData.title,
-      description: updateData.description,
-      topicCategory: updateData.topic ?? updateData.topicCategory,
-      targetLanguage: updateData.language ?? updateData.targetLanguage,
-      languageLevel: updateData.targetLevel ?? updateData.languageLevel,
-      maxParticipants: updateData.maxParticipants,
-      scheduledAt: updateData.scheduledStartTime ?? updateData.scheduledAt,
-      sessionDuration: updateData.durationMinutes ?? updateData.sessionDuration,
-      isPublic: updateData.isPublic,
-      sessionTags: updateData.tags ?? updateData.sessionTags
-    };
-
+    const payload = normalizeGroupSessionUpdatePayload(updateData);
     const response = await api.put(`/group-sessions/${sessionId}`, payload);
     const payloadResponse = response.data;
     if (payloadResponse?.data) {

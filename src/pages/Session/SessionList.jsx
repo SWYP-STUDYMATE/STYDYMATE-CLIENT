@@ -264,7 +264,7 @@ export default function SessionList() {
                                     {title}
                                 </h3>
                                 {metadata.isPrivate && (
-                                    <span className="px-2 py-1 bg-[var(--warning-yellow)] bg-opacity-20 text-[var(--warning-yellow)] text-[10px] rounded-full">비공개</span>
+                                    <span className="px-2 py-1 bg-[rgba(0,196,113,0.15)] text-[var(--green-600)] text-[10px] rounded-full">비공개</span>
                                 )}
                                 <span className={`px-2 py-1 text-[10px] rounded-full ${room.status === 'active' ? 'bg-[rgba(0,196,113,0.15)] text-[var(--green-600)]' : 'bg-[var(--neutral-100)] text-[var(--black-300)]'}`}>
                                     {roomStatus}
