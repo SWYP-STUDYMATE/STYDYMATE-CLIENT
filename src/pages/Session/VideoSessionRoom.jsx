@@ -5,6 +5,7 @@ import LiveTranscription from '../../components/LiveTranscription';
 import SubtitleDisplay, { SubtitleController } from '../../components/SubtitleDisplay';
 import RealtimeSubtitlePanel from '../../components/RealtimeSubtitlePanel';
 import TranslatedSubtitles from '../../components/TranslatedSubtitles';
+import CommonButton from '../../components/CommonButton';
 import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor } from 'lucide-react';
 import { webrtcManager } from '../../services/webrtc';
 import { webrtcAPI } from '../../api/webrtc';
@@ -52,7 +53,7 @@ export default function VideoSessionRoom() {
     // Check if Picture-in-Picture API is supported
     setPipSupported('pictureInPictureEnabled' in document);
 
-    console.log('🎥 [VideoSessionRoom] 초기화 시작', { roomId });
+    console.log('🎥 [VideoSessionRoom] 초기화 시작', { roomId, isCameraOn, isMuted });
     initializeCall();
     loadRoomInfo();
 
@@ -184,12 +185,52 @@ export default function VideoSessionRoom() {
     // Local stream callback
     webrtcManager.on('onLocalStream', (stream) => {
       console.log('✅ [VideoSessionRoom] 로컬 스트림 수신', stream);
+      console.log('🎥 [VideoSessionRoom] 스트림 트랙:', stream.getTracks());
+      console.log('🎥 [VideoSessionRoom] 비디오 트랙:', stream.getVideoTracks());
+      console.log('🎥 [VideoSessionRoom] 오디오 트랙:', stream.getAudioTracks());
       log.info('로컬 스트림 수신', null, 'VIDEO_SESSION');
       setLocalStream(stream); // ✅ 상태 업데이트 (자막용)
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        console.log('✅ [VideoSessionRoom] 로컬 비디오 요소에 스트림 연결');
-      }
+
+      // Retry logic to wait for video element to be mounted
+      const attachStream = (retryCount = 0) => {
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+          console.log('✅ [VideoSessionRoom] 로컬 비디오 요소에 스트림 연결 (시도:', retryCount + 1, ')');
+
+          // Force video to play
+          localVideoRef.current.play().then(() => {
+            console.log('✅ [VideoSessionRoom] 로컬 비디오 재생 시작');
+          }).catch((error) => {
+            console.error('❌ [VideoSessionRoom] 로컬 비디오 재생 실패:', error);
+          });
+
+          // Log video element state after a short delay
+          setTimeout(() => {
+            if (localVideoRef.current) {
+              console.log('🎥 [VideoSessionRoom] 로컬 비디오 요소 최종 상태:', {
+                srcObject: !!localVideoRef.current.srcObject,
+                videoWidth: localVideoRef.current.videoWidth,
+                videoHeight: localVideoRef.current.videoHeight,
+                paused: localVideoRef.current.paused,
+                muted: localVideoRef.current.muted,
+                readyState: localVideoRef.current.readyState,
+                networkState: localVideoRef.current.networkState,
+                currentTime: localVideoRef.current.currentTime,
+                classList: localVideoRef.current.className,
+                hidden: localVideoRef.current.classList.contains('hidden')
+              });
+            }
+          }, 1000);
+        } else if (retryCount < 10) {
+          // Retry after 100ms if video element is not yet mounted (max 10 attempts = 1 second)
+          console.warn(`⚠️ [VideoSessionRoom] 로컬 비디오 ref가 null입니다. ${100}ms 후 재시도... (${retryCount + 1}/10)`);
+          setTimeout(() => attachStream(retryCount + 1), 100);
+        } else {
+          console.error('❌ [VideoSessionRoom] 로컬 비디오 ref 마운트 실패 (10회 재시도 후)');
+        }
+      };
+
+      attachStream();
     });
 
     // Remote stream callback
@@ -596,17 +637,15 @@ export default function VideoSessionRoom() {
 
             {/* PiP Button */}
             {pipSupported && connectionState === 'connected' && (
-              <button
+              <CommonButton
                 onClick={handlePictureInPicture}
-                className="p-2 rounded-lg hover:bg-[var(--black-400)] transition-colors"
-                title={isPipMode ? "PiP 모드 종료" : "PiP 모드"}
-              >
-                {isPipMode ? (
-                  <Minimize2 className="w-5 h-5 text-white" />
-                ) : (
-                  <Maximize2 className="w-5 h-5 text-white" />
-                )}
-              </button>
+                variant="ghost"
+                size="icon"
+                fullWidth={false}
+                icon={isPipMode ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+                className="text-white hover:bg-[var(--black-400)]"
+                aria-label={isPipMode ? "PiP 모드 종료" : "PiP 모드"}
+              />
             )}
           </div>
         </div>
@@ -631,12 +670,15 @@ export default function VideoSessionRoom() {
             <SignalZero className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <p className="text-white text-lg mb-2">연결 실패</p>
             <p className="text-[var(--black-200)] text-sm mb-4">네트워크 연결을 확인해주세요</p>
-            <button
+            <CommonButton
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-[var(--green-500)] text-white rounded-lg hover:bg-[var(--green-600)]"
+              variant="success"
+              size="default"
+              fullWidth={false}
+              className="px-6"
             >
               다시 시도
-            </button>
+            </CommonButton>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-6xl">
@@ -749,14 +791,17 @@ export default function VideoSessionRoom() {
           isMuted={isMuted}
           isVideoOn={isCameraOn}
           isScreenSharing={isScreenSharing}
+          isSubtitleEnabled={isSubtitleEnabled}
           currentLanguage={currentLanguage}
           onToggleMute={handleMicToggle}
           onToggleVideo={handleCameraToggle}
           onToggleScreenShare={handleScreenShare}
+          onToggleSubtitle={toggleSubtitle}
           onToggleLanguage={handleLanguageToggle}
           onEndCall={handleEndCall}
           showVideo={true}
           showScreenShare={true}
+          showSubtitle={true}
           showLanguageToggle={true}
           showSettings={false}
           showFullscreen={false}

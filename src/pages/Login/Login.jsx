@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
+import CommonButton from "../../components/CommonButton";
 import { getToken, isAutoLoginEnabled, setAutoLoginEnabled } from "../../utils/tokenStorage";
 
 export default function Login() {
@@ -117,36 +118,34 @@ export default function Login() {
         </label>
       </div>
       <div className="max-w-[720px] w-full mx-auto">
-        <button
+        <CommonButton
           data-testid="naver-login-button"
-          className={`flex justify-center items-center w-full py-[14px] text-[#FFFFFF] text-[18px] font-bold leading-[28px] rounded-[6px] focus:outline-none transition-colors duration-200 ${
-            isLoading 
-              ? "bg-[#929292] cursor-not-allowed" 
-              : "bg-[#09AA5C] cursor-pointer hover:bg-[#08964F]"
-          }`}
           onClick={handleNaverLogin}
           disabled={isLoading}
+          loading={isLoading}
+          variant="naver"
           tabIndex={0}
+          className="py-[14px]"
         >
-          <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/naverlogo.png')] bg-contain bg-no-repeat bg-center"></span>
-          네이버로 로그인
-        </button>
+          <span className="flex items-center justify-center">
+            <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/naverlogo.png')] bg-contain bg-no-repeat bg-center"></span>
+            네이버로 로그인
+          </span>
+        </CommonButton>
       </div>
       <div className="max-w-[720px] w-full mx-auto mt-[20px]">
-        <button
+        <CommonButton
           data-testid="google-login-button"
-          className={`flex justify-center items-center w-full py-[14px] text-[18px] font-bold leading-[24px] rounded-[6px] focus:outline-none transition-colors duration-200 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] ${
-            isLoading 
-              ? "bg-[#F1F3F5] text-[#929292] cursor-not-allowed" 
-              : "bg-[#FAFAFA] text-[#171717] cursor-pointer hover:bg-[#F1F3F5]"
-          }`}
           onClick={handleGoogleLogin}
           disabled={isLoading}
+          loading={isLoading}
+          variant="google"
+          className="py-[14px]"
           tabIndex={0}
         >
           <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/googlelogo.png')] bg-contain bg-no-repeat bg-center"></span>
           Google 로그인
-        </button>
+        </CommonButton>
       </div>
     </div>
   );

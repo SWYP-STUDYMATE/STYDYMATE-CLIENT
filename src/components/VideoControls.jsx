@@ -10,23 +10,28 @@ import {
   Globe,
   Settings,
   Maximize,
-  Users
+  Users,
+  Captions,
+  CaptionsOff
 } from 'lucide-react';
 
 export default function VideoControls({
   isMuted = false,
   isVideoOn = true,
   isScreenSharing = false,
+  isSubtitleEnabled = false,
   currentLanguage = 'en',
   onToggleMute,
   onToggleVideo,
   onToggleScreenShare,
+  onToggleSubtitle,
   onToggleLanguage,
   onEndCall,
   onOpenSettings,
   onToggleFullscreen,
   showVideo = true,
   showScreenShare = true,
+  showSubtitle = true,
   showLanguageToggle = true,
   showSettings = true,
   showFullscreen = true,
@@ -114,6 +119,27 @@ export default function VideoControls({
           )}
           <span className={tooltipClass}>
             {isScreenSharing ? "화면 공유 중지" : "화면 공유"}
+          </span>
+        </button>
+      )}
+
+      {/* Subtitle Toggle */}
+      {showSubtitle && (
+        <button
+          onClick={onToggleSubtitle}
+          className={`${baseButtonClass} ${isSubtitleEnabled
+            ? buttonVariants[variant].active
+            : buttonVariants[variant].normal
+            }`}
+          aria-label={isSubtitleEnabled ? "자막 끄기" : "자막 켜기"}
+        >
+          {isSubtitleEnabled ? (
+            <Captions className="w-6 h-6" />
+          ) : (
+            <CaptionsOff className="w-6 h-6" />
+          )}
+          <span className={tooltipClass}>
+            {isSubtitleEnabled ? "자막 끄기" : "자막 켜기"}
           </span>
         </button>
       )}

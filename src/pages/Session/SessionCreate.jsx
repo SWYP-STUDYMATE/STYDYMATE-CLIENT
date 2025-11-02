@@ -309,14 +309,17 @@ export default function SessionCreate() {
           <div className="bg-[var(--green-50)] rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[var(--black-300)] text-[14px]">룸 ID</span>
-              <button
+              <CommonButton
                 id="copy-room-id"
                 onClick={handleCopyRoomId}
-                className="flex items-center gap-1 text-[var(--green-500)] text-[12px] hover:text-[var(--green-600)]"
+                variant="link"
+                size="xs"
+                fullWidth={false}
+                icon={<Copy className="w-3 h-3" />}
+                className="text-[12px]"
               >
-                <Copy className="w-3 h-3" />
                 복사
-              </button>
+              </CommonButton>
             </div>
             <div className="font-mono text-[16px] text-[var(--black-500)] break-all">
               {createdRoom.roomId || createdRoom.id}
@@ -350,12 +353,15 @@ export default function SessionCreate() {
       {/* Header */}
       <div className="bg-white border-b border-[var(--black-50)] px-6 py-4">
         <div className="flex items-center gap-4">
-          <button
+          <CommonButton
             onClick={() => navigate('/sessions')}
-            className="p-2 hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-[var(--black-300)]" />
-          </button>
+            variant="ghost"
+            size="icon"
+            fullWidth={false}
+            icon={<ChevronLeft className="w-5 h-5" />}
+            className="text-[var(--black-300)]"
+            aria-label="뒤로가기"
+          />
           <h1 className="text-[20px] font-bold text-[var(--black-500)]">새 세션 만들기</h1>
         </div>
       </div>
@@ -490,17 +496,16 @@ export default function SessionCreate() {
 
         {/* 고급 설정 */}
         <div className="bg-white rounded-[20px] p-6 mb-6">
-          <button
+          <CommonButton
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between mb-4"
+            variant="ghost"
+            fullWidth={true}
+            icon={showAdvanced ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            iconPosition="right"
+            className="flex items-center justify-between mb-4 text-[var(--black-300)] hover:bg-transparent"
           >
             <h2 className="text-[18px] font-bold text-[var(--black-500)]">고급 설정</h2>
-            {showAdvanced ? (
-              <EyeOff className="w-5 h-5 text-[var(--black-300)]" />
-            ) : (
-              <Eye className="w-5 h-5 text-[var(--black-300)]" />
-            )}
-          </button>
+          </CommonButton>
 
           {showAdvanced && (
             <div className="space-y-4">

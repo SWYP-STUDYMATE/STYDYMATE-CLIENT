@@ -464,15 +464,22 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       throw error;
     }
 
-    // 기타 에러는 500으로 래핑
+    // 기타 에러는 500으로 래핑 (더 상세한 로깅)
     log.error('[AI_BEST_MATCHES] Unexpected error occurred', error as Error, {
       userId,
       errorMessage: error instanceof Error ? error.message : String(error),
-      errorStack: error instanceof Error ? error.stack : undefined
+      errorStack: error instanceof Error ? error.stack : undefined,
+      errorName: error instanceof Error ? error.name : undefined,
+      hasAIBinding: !!c.env.AI,
+      envKeys: Object.keys(c.env)
     });
 
+    // 개발/디버깅을 위해 더 상세한 에러 메시지 반환
+    const errorDetail = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
     throw new AppError(
-      error instanceof Error ? error.message : 'AI matching failed',
+      `AI matching failed: ${errorDetail}${errorStack ? '\n' + errorStack.split('\n').slice(0, 3).join('\n') : ''}`,
       500,
       'AI_MATCHING_FAILED'
     );

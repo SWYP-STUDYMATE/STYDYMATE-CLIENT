@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/Header";
+import CommonButton from "../../components/CommonButton";
 import { useNavigate } from "react-router-dom";
 import { getOnboardingStatus } from "../../api/user";
 import { resolveNextOnboardingStep } from "../../utils/onboardingStatus";
@@ -207,19 +208,15 @@ const Agreement = () => {
           <div className="text-sm text-gray-700">자세한 내용은 <span className="underline cursor-pointer text-[#4285F4]">개인정보 처리 방침</span>에서 확인할 수 있습니다.</div>
         </div>
         {/* 완료 버튼 */}
-        <button
-          className={`w-full py-3 rounded-lg font-bold text-lg transition-colors ${
-            isRequiredChecked
-              ? "bg-[#111111] text-white cursor-pointer"
-              : "bg-gray-200 text-gray-400 cursor-default pointer-events-none"
-          }`}
+        <CommonButton
+          variant="primary"
           disabled={!isRequiredChecked}
           onClick={async () => {
             if (isRequiredChecked) {
               try {
                 // 온보딩 상태 확인
                 const onboardingStatus = await getOnboardingStatus();
-                
+
                 if (!onboardingStatus.isCompleted) {
                   // 온보딩 미완료 시 바로 온보딩 페이지로
                   const nextStep = resolveNextOnboardingStep(onboardingStatus);
@@ -237,7 +234,7 @@ const Agreement = () => {
           }}
         >
           완료
-        </button>
+        </CommonButton>
         </div>
       </div>
 

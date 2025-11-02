@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { User, MapPin, MessageSquare, Edit3, Camera } from 'lucide-react';
 import { getOptimizedImageUrl } from '../api/profile';
 import ProfileEditor from './ProfileEditor';
+import CommonButton from './CommonButton';
 import { toDisplayText } from '../utils/text';
 
 export default function ProfileCard({ 
@@ -38,13 +39,16 @@ export default function ProfileCard({
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-[20px] font-bold text-[#111111]">프로필</h2>
           {showEditButton && (
-            <button
+            <CommonButton
               onClick={() => setIsEditorOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-[#F3F4F6] hover:bg-[#E7E7E7] rounded-[8px] transition-colors"
+              variant="secondary"
+              size="small"
+              fullWidth={false}
+              icon={<Edit3 className="w-4 h-4" />}
+              className="px-3"
             >
-              <Edit3 className="w-4 h-4" />
-              <span className="text-[14px] font-medium">편집</span>
-            </button>
+              편집
+            </CommonButton>
           )}
         </div>
 

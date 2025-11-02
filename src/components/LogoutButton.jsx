@@ -3,6 +3,7 @@ import api from "../api";
 import useProfileStore from "../store/profileStore";
 import { useAlert } from "../hooks/useAlert";
 import { removeToken } from "../utils/tokenStorage";
+import CommonButton from "./CommonButton";
 
 export default function LogoutButton() {
   const navigate = useNavigate();
@@ -28,8 +29,14 @@ export default function LogoutButton() {
   };
 
   return (
-    <button onClick={handleLogout} className="px-4 py-2 bg-red-500 text-white rounded">
+    <CommonButton
+      onClick={handleLogout}
+      variant="danger"
+      size="default"
+      fullWidth={false}
+      className="px-4"
+    >
       로그아웃
-    </button>
+    </CommonButton>
   );
 } 

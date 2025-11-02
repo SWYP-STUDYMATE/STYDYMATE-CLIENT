@@ -45,6 +45,12 @@ export default function CommonButton({
     case "link":
       variantClass = "bg-transparent text-[var(--green-500)] hover:text-[var(--green-600)] font-medium";
       break;
+    case "naver":
+      variantClass = "bg-[#09AA5C] text-white hover:bg-[#08964F] disabled:bg-[#929292]";
+      break;
+    case "google":
+      variantClass = "bg-[#FAFAFA] text-[#171717] hover:bg-[#F1F3F5] shadow-[0_0_0_1px_rgba(0,0,0,0.08)] disabled:bg-[#F1F3F5] disabled:text-[#929292]";
+      break;
     case "primary":
     default:
       variantClass = "bg-[#111111] text-white hover:bg-[#414141] active:bg-[#606060] disabled:bg-[#F1F3F5] disabled:text-[#929292]";

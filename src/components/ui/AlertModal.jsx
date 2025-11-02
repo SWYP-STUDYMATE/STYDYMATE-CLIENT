@@ -61,12 +61,15 @@ const AlertModal = ({
               {title || '알림'}
             </h3>
           </div>
-          <button
+          <CommonButton
             onClick={onClose}
-            className="p-1 -mr-1 hover:bg-[#F1F3F5] rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-[#929292]" />
-          </button>
+            variant="ghost"
+            size="icon"
+            fullWidth={false}
+            icon={<X className="w-5 h-5" />}
+            className="text-[#929292] -mr-1"
+            aria-label="닫기"
+          />
         </div>
 
         {/* Content */}
