@@ -386,6 +386,51 @@ matchingRoutes.patch('/settings', async (c) => {
   return successResponse(c, merged);
 });
 
+// AI 바인딩 테스트 엔드포인트 (디버깅용)
+matchingRoutes.get('/ai/test', async (c) => {
+  try {
+    const hasAI = !!c.env.AI;
+    const envKeys = Object.keys(c.env);
+
+    if (!hasAI) {
+      return successResponse(c, {
+        status: 'error',
+        message: 'AI binding not found',
+        availableBindings: envKeys,
+        environment: c.env.ENVIRONMENT
+      });
+    }
+
+    // 간단한 임베딩 테스트
+    try {
+      const testEmbedding = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', {
+        text: 'test'
+      });
+
+      return successResponse(c, {
+        status: 'success',
+        message: 'AI binding works',
+        hasEmbedding: !!(testEmbedding as any)?.data,
+        embeddingLength: (testEmbedding as any)?.data?.[0]?.length || 0,
+        environment: c.env.ENVIRONMENT
+      });
+    } catch (aiError) {
+      return successResponse(c, {
+        status: 'error',
+        message: 'AI binding exists but call failed',
+        error: aiError instanceof Error ? aiError.message : String(aiError),
+        environment: c.env.ENVIRONMENT
+      });
+    }
+  } catch (error) {
+    return successResponse(c, {
+      status: 'error',
+      message: 'Test endpoint error',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 // AI-powered matching endpoints
 matchingRoutes.post('/ai/best-matches', async (c) => {
   const userId = c.get('userId');

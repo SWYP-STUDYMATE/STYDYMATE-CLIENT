@@ -82,6 +82,41 @@ export default function VideoSessionRoom() {
     };
   }, [connectionState]);
 
+  // Attach local stream to video element when both are available
+  useEffect(() => {
+    if (localStream && localVideoRef.current && !localVideoRef.current.srcObject) {
+      console.log('🔄 [VideoSessionRoom] useEffect: 로컬 스트림을 비디오 요소에 연결');
+      localVideoRef.current.srcObject = localStream;
+
+      localVideoRef.current.play().then(() => {
+        console.log('✅ [VideoSessionRoom] useEffect: 로컬 비디오 재생 시작');
+      }).catch((error) => {
+        console.error('❌ [VideoSessionRoom] useEffect: 로컬 비디오 재생 실패:', error);
+      });
+
+      // Log final state
+      setTimeout(() => {
+        if (localVideoRef.current) {
+          console.log('🎥 [VideoSessionRoom] useEffect: 로컬 비디오 최종 상태:', {
+            hasStream: !!localVideoRef.current.srcObject,
+            videoWidth: localVideoRef.current.videoWidth,
+            videoHeight: localVideoRef.current.videoHeight,
+            paused: localVideoRef.current.paused,
+            readyState: localVideoRef.current.readyState
+          });
+        }
+      }, 500);
+    }
+  }, [localStream, connectionState]);
+
+  // Attach remote stream to video element when both are available
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current && !remoteVideoRef.current.srcObject) {
+      console.log('🔄 [VideoSessionRoom] useEffect: 원격 스트림을 비디오 요소에 연결');
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream, connectionState]);
+
   const initializeCall = async () => {
     try {
       setConnectionState('connecting');
