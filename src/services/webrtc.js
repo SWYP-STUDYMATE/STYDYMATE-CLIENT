@@ -228,6 +228,13 @@ class WebRTCConnectionManager {
    */
   handleParticipantJoined(participant) {
     console.log('Participant joined:', participant);
+
+    // payload가 undefined인 경우 처리
+    if (!participant || !participant.userId) {
+      console.warn('Invalid participant data in participant-joined message:', participant);
+      return;
+    }
+
     if (this.callbacks.onParticipantJoined) {
       this.callbacks.onParticipantJoined(participant);
     }
@@ -241,15 +248,22 @@ class WebRTCConnectionManager {
    */
   handleParticipantLeft(participant) {
     console.log('Participant left:', participant);
+
+    // payload가 undefined인 경우 처리
+    if (!participant || !participant.userId) {
+      console.warn('Invalid participant data in participant-left message:', participant);
+      return;
+    }
+
     const { userId } = participant;
-    
+
     // Close and remove peer connection
     const pc = this.peerConnections.get(userId);
     if (pc) {
       pc.close();
       this.peerConnections.delete(userId);
     }
-    
+
     // Remove remote stream
     const stream = this.remoteStreams.get(userId);
     if (stream) {
@@ -258,7 +272,7 @@ class WebRTCConnectionManager {
         this.callbacks.onRemoteStreamRemoved(userId, stream);
       }
     }
-    
+
     if (this.callbacks.onParticipantLeft) {
       this.callbacks.onParticipantLeft(participant);
     }

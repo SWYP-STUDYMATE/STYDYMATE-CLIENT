@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Phone, Video, Search, MoreVertical, LogOut, ChevronLeft } from "lucide-react";
+import { Search, MoreVertical, LogOut, ChevronLeft } from "lucide-react";
 import OptimizedImage from '../OptimizedImage';
 import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
 
@@ -57,27 +57,6 @@ export default function ChatHeader({ room, currentUserId, onLeaveRoom, onSearchT
         <span className="ml-3 text-lg font-semibold text-[#111111]">{room.roomName}</span>
       </div>
       <div className="flex items-center space-x-1 md:space-x-2">
-        {/* 데스크톱에서만 보이는 버튼들 */}
-        <button
-          onClick={() => {
-            /* 전화 로직 */
-          }}
-          className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
-          title="음성 통화"
-          aria-label="음성 통화"
-        >
-          <Phone className="w-5 h-5 text-[#606060]" />
-        </button>
-        <button
-          onClick={() => {
-            /* 영상통화 로직 */
-          }}
-          className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
-          title="영상 통화"
-          aria-label="영상 통화"
-        >
-          <Video className="w-5 h-5 text-[#606060]" />
-        </button>
         <button
           onClick={onSearchToggle}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"

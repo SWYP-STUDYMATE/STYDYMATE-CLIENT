@@ -1,20 +1,21 @@
 import React from "react";
 import { InlineSpinner } from "./ui/LoadingSpinner";
 
-export default function CommonButton({ 
-  text, 
+export default function CommonButton({
+  text,
   children, // children prop 추가
-  variant = "primary", 
-  className = "", 
+  variant = "primary",
+  className = "",
   loading = false,
   disabled = false,
   size = "default",
   icon,
   iconPosition = "left",
-  ...props 
+  fullWidth = true, // 전체 너비 여부
+  ...props
 }) {
   const isDisabled = disabled || loading;
-  
+
   let variantClass = "";
   switch (variant) {
     case "success":
@@ -32,8 +33,17 @@ export default function CommonButton({
     case "ghost":
       variantClass = "bg-transparent text-[#111111] hover:bg-[#F1F3F5] active:bg-[#E7E7E7]";
       break;
+    case "ghost-icon":
+      variantClass = "bg-transparent text-[var(--black-300)] hover:bg-[#F1F3F5] active:bg-[#E7E7E7]";
+      break;
+    case "icon-primary":
+      variantClass = "bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white";
+      break;
     case "danger":
       variantClass = "bg-[#EA4335] text-white hover:bg-[#D23F31] active:bg-[#B93025]";
+      break;
+    case "link":
+      variantClass = "bg-transparent text-[var(--green-500)] hover:text-[var(--green-600)] font-medium";
       break;
     case "primary":
     default:
@@ -42,9 +52,11 @@ export default function CommonButton({
   }
 
   const sizeClasses = {
+    xs: "h-[32px] text-[12px] px-2",
     small: "h-[40px] text-[14px] px-4",
     default: "h-[56px] text-[18px]",
-    large: "h-[64px] text-[20px]"
+    large: "h-[64px] text-[20px]",
+    icon: "w-10 h-10 p-2", // 아이콘 전용
   };
 
   const getContent = () => {
@@ -96,12 +108,12 @@ export default function CommonButton({
   return (
     <button
       className={`
-        w-full ${sizeClasses[size]} font-bold rounded-[6px] 
-        transition-all duration-200 
+        ${fullWidth ? 'w-full' : ''} ${sizeClasses[size]} font-bold rounded-[6px]
+        transition-all duration-200
         focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2
         ${!isDisabled ? 'active:scale-[0.98] active:transform' : ''}
         ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
-        ${variantClass} 
+        ${variantClass}
         ${className}
       `}
       disabled={isDisabled}

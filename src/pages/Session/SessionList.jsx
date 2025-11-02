@@ -188,12 +188,15 @@ export default function SessionList() {
                 </div>
 
                 {!isPast ? (
-                    <button
+                    <CommonButton
                         onClick={() => handleStartSession(session)}
-                        className="p-2 text-[var(--green-500)] hover:bg-[var(--neutral-100)] rounded-lg transition-colors"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
+                        variant="ghost"
+                        size="icon"
+                        fullWidth={false}
+                        icon={<ChevronRight />}
+                        className="text-[var(--green-500)]"
+                        aria-label="세션 시작"
+                    />
                 ) : (
                     session.rating && (
                         <div className="flex space-x-1">
@@ -217,18 +220,23 @@ export default function SessionList() {
                         {session.language === 'en' ? 'English' : '한국어'}
                     </span>
                     <div className="flex space-x-2">
-                        <button
+                        <CommonButton
                             onClick={() => handleCancelSession(session.id)}
-                            className="text-[14px] text-[var(--black-200)] hover:text-[var(--red)]"
+                            variant="link"
+                            size="xs"
+                            fullWidth={false}
+                            className="text-[var(--black-200)] hover:text-[var(--red)]"
                         >
                             취소
-                        </button>
-                        <button
+                        </CommonButton>
+                        <CommonButton
                             onClick={() => handleStartSession(session)}
-                            className="text-[14px] text-[var(--green-500)] hover:text-[var(--green-600)] font-medium"
+                            variant="link"
+                            size="xs"
+                            fullWidth={false}
                         >
                             참가하기
-                        </button>
+                        </CommonButton>
                     </div>
                 </div>
             )}
@@ -297,29 +305,17 @@ export default function SessionList() {
                         <span className="px-3 py-1 bg-[var(--neutral-100)] text-[var(--black-300)] text-[12px] rounded-full">
                             {languageLabel}
                         </span>
-                        <button
+                        <CommonButton
                             onClick={() => handleJoinActiveRoom(room)}
-                            disabled={isJoining === room.roomId || isFull}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors ${
-                                isFull
-                                    ? 'bg-[var(--black-50)] text-[var(--black-200)] cursor-not-allowed'
-                                    : 'bg-[var(--green-500)] text-white hover:bg-[var(--green-600)]'
-                            }`}
+                            disabled={isFull}
+                            loading={isJoining === room.roomId}
+                            variant={isFull ? "secondary" : "success"}
+                            size="small"
+                            fullWidth={false}
+                            icon={!isFull && !isJoining ? <Play /> : undefined}
                         >
-                            {isJoining === room.roomId ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    입장 중...
-                                </>
-                            ) : isFull ? (
-                                '만실'
-                            ) : (
-                                <>
-                                    <Play className="w-4 h-4" />
-                                    빠른 입장
-                                </>
-                            )}
-                        </button>
+                            {isFull ? '만실' : '빠른 입장'}
+                        </CommonButton>
                     </div>
                 </div>
             </div>
@@ -333,18 +329,22 @@ export default function SessionList() {
                 <div className="flex items-center justify-between">
                     <h1 className="text-[20px] font-bold text-[var(--black-500)]">세션</h1>
                     <div className="flex items-center space-x-2">
-                        <button
+                        <CommonButton
                             onClick={() => navigate('/sessions/calendar')}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <Calendar className="w-5 h-5 text-[var(--black-300)]" />
-                        </button>
-                        <button
+                            variant="ghost-icon"
+                            size="icon"
+                            fullWidth={false}
+                            icon={<Calendar />}
+                            aria-label="캘린더 보기"
+                        />
+                        <CommonButton
                             onClick={() => navigate('/sessions/create')}
-                            className="p-2 bg-[var(--green-500)] hover:bg-[var(--green-600)] text-white rounded-lg"
-                        >
-                            <Plus className="w-5 h-5" />
-                        </button>
+                            variant="icon-primary"
+                            size="icon"
+                            fullWidth={false}
+                            icon={<Plus />}
+                            aria-label="세션 생성"
+                        />
                     </div>
                 </div>
             </div>
@@ -415,14 +415,16 @@ export default function SessionList() {
 
             {/* Filter Button */}
             <div className="p-4">
-                <button
+                <CommonButton
                     onClick={() => setFilterOpen(!filterOpen)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg 
-          border border-[var(--black-50)] text-[14px] text-[var(--black-300)] hover:bg-[var(--neutral-100)]"
+                    variant="outline"
+                    size="small"
+                    fullWidth={false}
+                    icon={<Filter />}
+                    className="border border-[var(--black-50)] bg-white text-[var(--black-300)] hover:bg-[var(--neutral-100)]"
                 >
-                    <Filter className="w-4 h-4" />
-                    <span>필터</span>
-                </button>
+                    필터
+                </CommonButton>
             </div>
 
             {/* Session List */}
@@ -433,17 +435,16 @@ export default function SessionList() {
                             <h2 className="text-[18px] font-semibold text-[var(--black-500)]">
                                 지금 입장 가능한 세션
                             </h2>
-                            <button
+                            <CommonButton
                                 onClick={loadActiveRooms}
                                 disabled={loadingRooms}
-                                className="flex items-center gap-2 text-[var(--green-500)] text-[14px] hover:text-[var(--green-600)]"
+                                loading={loadingRooms}
+                                variant="link"
+                                size="small"
+                                fullWidth={false}
                             >
-                                {loadingRooms ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    '새로고침'
-                                )}
-                            </button>
+                                새로고침
+                            </CommonButton>
                         </div>
 
                         {loadingRooms ? (
