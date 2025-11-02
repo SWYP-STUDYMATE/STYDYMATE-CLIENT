@@ -93,10 +93,10 @@ const LearningPatternDashboard = ({ userId, monthsBack = 3 }) => {
           <div className="bg-[#E6F9F1] p-4 rounded-lg">
             <div className="text-sm text-[#929292] mb-1">현재 레벨</div>
             <div className="text-3xl font-bold text-[#00C471]">
-              {progress.currentLevel}
+              {progress?.currentLevel ? String(progress.currentLevel) : '-'}
             </div>
             <div className="text-xs text-[#929292] mt-2">
-              {progress.monthsLearning}개월 학습 중
+              {progress?.monthsLearning ? `${progress.monthsLearning}개월 학습 중` : '학습 기록 없음'}
             </div>
           </div>
 
@@ -104,10 +104,10 @@ const LearningPatternDashboard = ({ userId, monthsBack = 3 }) => {
           <div className="bg-[#FAFAFA] p-4 rounded-lg">
             <div className="text-sm text-[#929292] mb-1">주간 세션</div>
             <div className="text-3xl font-bold text-[#111111]">
-              {Math.round(studyHabits.sessionsPerWeek)}
+              {studyHabits?.sessionsPerWeek ? Math.round(studyHabits.sessionsPerWeek) : '-'}
             </div>
             <div className="text-xs text-[#929292] mt-2">
-              평균 {Math.round(studyHabits.averageSessionDuration)}분
+              평균 {studyHabits?.averageSessionDuration ? `${Math.round(studyHabits.averageSessionDuration)}분` : '-'}
             </div>
           </div>
 
@@ -116,12 +116,12 @@ const LearningPatternDashboard = ({ userId, monthsBack = 3 }) => {
             <div className="text-sm text-[#929292] mb-1">학습 일관성</div>
             <div
               className="text-3xl font-bold"
-              style={{ color: getConsistencyColor(studyHabits.consistency) }}
+              style={{ color: getConsistencyColor(studyHabits?.consistency ?? 0) }}
             >
-              {Math.round(studyHabits.consistency * 100)}%
+              {studyHabits?.consistency ? `${Math.round(studyHabits.consistency * 100)}%` : '-'}
             </div>
             <div className="text-xs text-[#929292] mt-2">
-              {studyHabits.mostProductiveTime}에 가장 활발
+              {studyHabits?.mostProductiveTime ? `${studyHabits.mostProductiveTime}에 가장 활발` : '분석 중...'}
             </div>
           </div>
         </div>

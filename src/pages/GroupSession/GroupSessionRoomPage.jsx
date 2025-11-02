@@ -1033,17 +1033,17 @@ export default function GroupSessionRoomPage() {
                     AI 피드백
                   </h3>
                   <div className="space-y-2">
-                    {conversationFeedback.grammar && (
+                    {conversationFeedback.grammar && typeof conversationFeedback.grammar === 'string' && (
                       <div className="p-2 bg-blue-50 rounded text-[12px]">
                         <strong>문법:</strong> {conversationFeedback.grammar}
                       </div>
                     )}
-                    {conversationFeedback.vocabulary && (
+                    {conversationFeedback.vocabulary && typeof conversationFeedback.vocabulary === 'string' && (
                       <div className="p-2 bg-green-50 rounded text-[12px]">
                         <strong>어휘:</strong> {conversationFeedback.vocabulary}
                       </div>
                     )}
-                    {conversationFeedback.pronunciation && (
+                    {conversationFeedback.pronunciation && typeof conversationFeedback.pronunciation === 'string' && (
                       <div className="p-2 bg-yellow-50 rounded text-[12px]">
                         <strong>발음:</strong> {conversationFeedback.pronunciation}
                       </div>

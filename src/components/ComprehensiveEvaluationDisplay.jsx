@@ -322,10 +322,10 @@ const ComprehensiveEvaluationDisplay = ({ evaluation }) => {
             {/* 다음 레벨 전략 */}
             <div className="bg-[#E6F9F1] p-4 rounded-lg">
               <h4 className="text-md font-bold text-[#00C471] mb-3">
-                다음 레벨: {nextLevelStrategy.targetLevel}
+                다음 레벨: {nextLevelStrategy?.targetLevel ? String(nextLevelStrategy.targetLevel) : '-'}
               </h4>
               <div className="text-sm text-[#111111] mb-2">
-                예상 소요 기간: <strong>{nextLevelStrategy.estimatedTimeMonths}개월</strong>
+                예상 소요 기간: <strong>{nextLevelStrategy?.estimatedTimeMonths ? `${nextLevelStrategy.estimatedTimeMonths}개월` : '미정'}</strong>
               </div>
               <div className="text-sm text-[#111111]">
                 <strong>주요 마일스톤:</strong>

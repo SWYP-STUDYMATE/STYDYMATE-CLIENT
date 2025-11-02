@@ -38,36 +38,34 @@ export default function SessionCreate() {
     autoTranscription: false
   });
 
-  // 매체 권한 확인
+  // 매체 권한 확인 (버튼 클릭 시에만 요청)
   const [mediaPermissions, setMediaPermissions] = useState({
     audio: null,
     video: null,
     checked: false
   });
 
-  useEffect(() => {
-    checkMediaPermissions();
-  }, []);
-
-  // 미디어 권한 확인
+  // 선택한 세션 타입에 따라 권한 상태 표시용으로만 사용
   const checkMediaPermissions = async () => {
     try {
-      const permissions = await navigator.permissions.query({ name: 'microphone' });
-      const audioAllowed = permissions.state === 'granted';
-      
-      let videoAllowed = false;
+      // Permissions API는 지원되지 않을 수 있으므로 try-catch
+      let audioAllowed = null;
+      let videoAllowed = null;
+
+      try {
+        const audioPermissions = await navigator.permissions.query({ name: 'microphone' });
+        audioAllowed = audioPermissions.state === 'granted';
+      } catch (err) {
+        // Permissions API를 지원하지 않는 브라우저
+        audioAllowed = null;
+      }
+
       try {
         const cameraPermissions = await navigator.permissions.query({ name: 'camera' });
         videoAllowed = cameraPermissions.state === 'granted';
       } catch (err) {
-        // 카메라 권한 확인 실패 시 getUserMedia로 테스트
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          stream.getTracks().forEach(track => track.stop());
-          videoAllowed = true;
-        } catch {
-          videoAllowed = false;
-        }
+        // Permissions API를 지원하지 않는 브라우저
+        videoAllowed = null;
       }
 
       setMediaPermissions({
@@ -78,8 +76,8 @@ export default function SessionCreate() {
     } catch (err) {
       console.error('Failed to check media permissions:', err);
       setMediaPermissions({
-        audio: false,
-        video: false,
+        audio: null,
+        video: null,
         checked: true
       });
     }
@@ -207,16 +205,45 @@ export default function SessionCreate() {
     }
   };
 
-  // 설정 변경 핸들러
-  const handleConfigChange = (field, value) => {
+  // 설정 변경 핸들러 (권한 요청 포함)
+  const handleConfigChange = async (field, value) => {
+    // 1. 먼저 상태 업데이트
     setSessionConfig(prev => ({
       ...prev,
       [field]: value
     }));
 
-    // 화상 세션으로 변경할 때 비디오 권한 확인
-    if (field === 'roomType' && value === 'video' && !mediaPermissions.video) {
-      checkMediaPermissions();
+    // 2. 세션 타입 변경 시 권한 요청
+    if (field === 'roomType') {
+      try {
+        const constraints = {
+          audio: true,
+          video: value === 'video'
+        };
+
+        // 권한 요청
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        // 즉시 스트림 정리
+        stream.getTracks().forEach(track => track.stop());
+
+        // 권한 상태 업데이트
+        await checkMediaPermissions();
+
+        setError(''); // 성공 시 에러 메시지 클리어
+      } catch (err) {
+        console.error('Permission request failed:', err);
+
+        // 권한 거부 시 에러 메시지 표시
+        const mediaType = value === 'video' ? '카메라와 마이크' : '마이크';
+        setError(`${mediaType} 권한이 필요합니다. 브라우저 설정에서 접근을 허용해주세요.`);
+
+        // 권한 실패 시 이전 타입으로 롤백
+        setSessionConfig(prev => ({
+          ...prev,
+          roomType: prev.roomType === 'video' ? 'audio' : prev.roomType
+        }));
+      }
     }
   };
 
@@ -370,7 +397,6 @@ export default function SessionCreate() {
                   ? 'border-[var(--green-500)] bg-[var(--green-50)]'
                   : 'border-[var(--black-50)] hover:border-[var(--black-100)]'
               }`}
-              disabled={mediaPermissions.checked && !mediaPermissions.video}
             >
               <Video className={`w-8 h-8 mx-auto mb-2 ${
                 sessionConfig.roomType === 'video' ? 'text-[var(--green-500)]' : 'text-[var(--black-300)]'
@@ -379,9 +405,6 @@ export default function SessionCreate() {
                 <p className="font-semibold text-[var(--black-500)]">화상 세션</p>
                 <p className="text-[12px] text-[var(--black-200)]">음성과 화상으로 대화</p>
               </div>
-              {mediaPermissions.checked && !mediaPermissions.video && (
-                <p className="text-[10px] text-[var(--red)] mt-1">카메라 권한 필요</p>
-              )}
             </button>
           </div>
         </div>
@@ -547,26 +570,28 @@ export default function SessionCreate() {
           )}
         </div>
 
-        {/* 미디어 권한 상태 */}
-        {mediaPermissions.checked && (
+        {/* 미디어 권한 상태 - 권한을 확인한 경우에만 표시 */}
+        {mediaPermissions.checked && (mediaPermissions.audio !== null || mediaPermissions.video !== null) && (
           <div className="bg-white rounded-[20px] p-6 mb-6">
-            <h2 className="text-[18px] font-bold text-[var(--black-500)] mb-4">미디어 권한</h2>
+            <h2 className="text-[18px] font-bold text-[var(--black-500)] mb-4">미디어 권한 상태</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Mic className="w-5 h-5 text-[var(--black-300)]" />
-                  <span className="text-[14px] text-[var(--black-500)]">마이크</span>
+              {mediaPermissions.audio !== null && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Mic className="w-5 h-5 text-[var(--black-300)]" />
+                    <span className="text-[14px] text-[var(--black-500)]">마이크</span>
+                  </div>
+                  <div className={`text-[12px] px-3 py-1 rounded-full ${
+                    mediaPermissions.audio
+                      ? 'bg-[var(--green-50)] text-[var(--green-600)]'
+                      : 'bg-[rgba(234,67,53,0.1)] text-[var(--red)]'
+                  }`}>
+                    {mediaPermissions.audio ? '허용됨' : '거부됨'}
+                  </div>
                 </div>
-                <div className={`text-[12px] px-3 py-1 rounded-full ${
-                  mediaPermissions.audio
-                    ? 'bg-[var(--green-50)] text-[var(--green-600)]'
-                    : 'bg-[rgba(234,67,53,0.1)] text-[var(--red)]'
-                }`}>
-                  {mediaPermissions.audio ? '허용됨' : '권한 필요'}
-                </div>
-              </div>
-              
-              {sessionConfig.roomType === 'video' && (
+              )}
+
+              {sessionConfig.roomType === 'video' && mediaPermissions.video !== null && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Video className="w-5 h-5 text-[var(--black-300)]" />
@@ -577,7 +602,7 @@ export default function SessionCreate() {
                       ? 'bg-[var(--green-50)] text-[var(--green-600)]'
                       : 'bg-[rgba(234,67,53,0.1)] text-[var(--red)]'
                   }`}>
-                    {mediaPermissions.video ? '허용됨' : '권한 필요'}
+                    {mediaPermissions.video ? '허용됨' : '거부됨'}
                   </div>
                 </div>
               )}
@@ -586,7 +611,7 @@ export default function SessionCreate() {
             {(!mediaPermissions.audio || (sessionConfig.roomType === 'video' && !mediaPermissions.video)) && (
               <div className="mt-4 p-3 bg-[var(--neutral-100)] rounded-lg">
                 <p className="text-[12px] text-[var(--black-300)] text-center">
-                  세션 생성 시 미디어 권한을 요청합니다
+                  브라우저 설정에서 권한을 허용한 후 다시 시도해주세요
                 </p>
               </div>
             )}

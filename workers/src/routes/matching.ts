@@ -4,6 +4,7 @@ import type { Variables } from '../types';
 import { auth as authMiddleware } from '../middleware/auth';
 import { AppError } from '../utils/errors';
 import { successResponse, paginatedResponse } from '../utils/response';
+import { log } from '../utils/logger';
 import {
   recommendPartners,
   createMatchingRequest,
