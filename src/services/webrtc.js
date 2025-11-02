@@ -179,36 +179,44 @@ class WebRTCConnectionManager {
     const { type, from, payload } = data;
 
     switch (type) {
+      case 'connected':
+        // WebSocket 연결 성공 메시지
+        console.log('✅ WebSocket connected to room:', payload);
+        if (this.callbacks.onConnectionStateChange) {
+          this.callbacks.onConnectionStateChange('connected');
+        }
+        break;
+
       case 'participant-joined':
         this.handleParticipantJoined(payload);
         break;
-        
+
       case 'participant-left':
         this.handleParticipantLeft(payload);
         break;
-        
+
       case 'participants-list':
         await this.handleParticipantsList(payload.participants);
         break;
-        
+
       case 'offer':
         await this.handleOffer(from, payload);
         break;
-        
+
       case 'answer':
         await this.handleAnswer(from, payload);
         break;
-        
+
       case 'ice-candidate':
         await this.handleIceCandidate(from, payload);
         break;
-        
+
       case 'chat-message':
         if (this.callbacks.onChatMessage) {
           this.callbacks.onChatMessage(payload);
         }
         break;
-        
+
       default:
         console.warn('Unknown message type:', type);
     }
