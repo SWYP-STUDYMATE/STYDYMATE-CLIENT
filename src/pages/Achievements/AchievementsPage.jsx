@@ -117,7 +117,19 @@ const AchievementCard = ({ item }) => {
 const StatsOverview = ({ stats }) => {
   if (!stats) return null;
 
-  const completionRate = Math.round(stats.completionRate ?? 0);
+  // 안전하게 숫자 추출
+  const safeNumber = (value, defaultValue = 0) => {
+    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
+      return value;
+    }
+    return defaultValue;
+  };
+
+  const completionRate = Math.round(safeNumber(stats.completionRate, 0));
+  const completedAchievements = safeNumber(stats.completedAchievements, 0);
+  const inProgressAchievements = safeNumber(stats.inProgressAchievements, 0);
+  const totalXpEarned = safeNumber(stats.totalXpEarned, 0);
+  const unclaimedRewards = safeNumber(stats.unclaimedRewards, 0);
 
   return (
     <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
@@ -131,15 +143,15 @@ const StatsOverview = ({ stats }) => {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center">
-          <div className="text-[24px] font-bold text-[#00C471] mb-1">{stats.completedAchievements ?? 0}</div>
+          <div className="text-[24px] font-bold text-[#00C471] mb-1">{completedAchievements}</div>
           <div className="text-[12px] text-[#929292]">완료한 배지</div>
         </div>
         <div className="text-center">
-          <div className="text-[24px] font-bold text-[#111111] mb-1">{stats.inProgressAchievements ?? 0}</div>
+          <div className="text-[24px] font-bold text-[#111111] mb-1">{inProgressAchievements}</div>
           <div className="text-[12px] text-[#929292]">진행 중</div>
         </div>
         <div className="text-center">
-          <div className="text-[24px] font-bold text-[#4285F4] mb-1">{stats.totalXpEarned ?? 0}</div>
+          <div className="text-[24px] font-bold text-[#4285F4] mb-1">{totalXpEarned}</div>
           <div className="text-[12px] text-[#929292]">누적 XP</div>
         </div>
       </div>
@@ -155,10 +167,10 @@ const StatsOverview = ({ stats }) => {
             style={{ width: `${Math.min(100, Math.max(0, completionRate))}%` }}
           />
         </div>
-        {stats.unclaimedRewards ? (
+        {unclaimedRewards > 0 ? (
           <p className="text-[12px] text-[#929292] mt-2 flex items-center gap-1">
             <Gift className="w-3 h-3 text-[#FFA000]" />
-            아직 수령하지 않은 보상 {stats.unclaimedRewards}개가 있습니다.
+            아직 수령하지 않은 보상 {unclaimedRewards}개가 있습니다.
           </p>
         ) : null}
       </div>
@@ -283,6 +295,18 @@ const AchievementsPage = () => {
     ? safeAchievements
     : safeAchievements.filter((item) => item.achievement?.category === selectedCategory);
 
+  // 안전하게 숫자 추출
+  const safeNumber = (value, defaultValue = 0) => {
+    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
+      return value;
+    }
+    return defaultValue;
+  };
+
+  const completedCount = safeNumber(stats?.completedAchievements, 0);
+  const totalCount = safeNumber(stats?.totalAchievements, safeAchievements.length);
+  const totalXp = safeNumber(stats?.totalXpEarned, 0);
+
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <div className="bg-white shadow-sm">
@@ -299,7 +323,7 @@ const AchievementsPage = () => {
                 <div>
                   <h1 className="text-xl font-bold text-[#111111]">성취 & 배지</h1>
                   <p className="text-sm text-[#929292]">
-                    완료 {stats?.completedAchievements ?? 0}/{stats?.totalAchievements ?? safeAchievements.length} · 총 XP {stats?.totalXpEarned ?? 0}
+                    완료 {completedCount}/{totalCount} · 총 XP {totalXp}
                   </p>
                 </div>
                 <button

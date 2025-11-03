@@ -10,6 +10,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import LanguageProfile from '../../components/LanguageProfile';
 import AchievementBadges from '../../components/AchievementBadges';
 import WeeklyActivityChart from '../../components/profile/WeeklyActivityChart';
@@ -25,7 +26,7 @@ import { logout } from '../../api/auth';
 import { getOptimizedImageUrl } from '../../api/profile';
 import { getUserLanguageInfo, getUserSettings, updateUserSettings } from '../../api/user';
 import { getOnboardingData } from '../../api/onboarding';
-import { getSessionActivity, getStudyStats } from '../../api/analytics';
+import { getStudyStats } from '../../api/analytics';
 import { deleteChatFile, fetchMyChatFiles } from '../../api/chat';
 import { getFileUrl } from '../../api/profile';
 import { useAlert } from '../../hooks/useAlert';
@@ -46,7 +47,35 @@ const defaultLearningStats = {
 const normalizeLanguageValue = (value) => {
   if (!value) return '';
   if (typeof value === 'string') return value;
-  return value.name || value.label || value.title || value.language || value.languageName || '';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'object') {
+    // 중첩 객체를 처리하기 위해 재귀적으로 문자열 추출
+    const name = value.name;
+    const label = value.label;
+    const title = value.title;
+    const language = value.language;
+    const languageName = value.languageName;
+    
+    // 각 속성이 문자열인지 확인
+    if (typeof name === 'string') return name;
+    if (typeof label === 'string') return label;
+    if (typeof title === 'string') return title;
+    if (typeof language === 'string') return language;
+    if (typeof languageName === 'string') return languageName;
+    
+    // 속성이 객체인 경우, 그 객체에서도 문자열 추출 시도
+    if (typeof name === 'object' && name) {
+      const nameStr = name.name || name.label || name.title || '';
+      if (typeof nameStr === 'string' && nameStr) return nameStr;
+    }
+    if (typeof label === 'object' && label) {
+      const labelStr = label.name || label.label || label.title || '';
+      if (typeof labelStr === 'string' && labelStr) return labelStr;
+    }
+    
+    return '';
+  }
+  return '';
 };
 
 const hasLanguageData = (profile) => {
@@ -66,15 +95,36 @@ const normalizeStudyStats = (raw) => {
     };
   }
 
+  // Backend SessionStatsResponseType 구조에 맞게 수정
   const payload = raw.data ?? raw;
 
-  const totalSessions = payload.totalSessions ?? payload.summary?.totalSessions ?? payload.metrics?.totalSessions ?? 0;
-  const totalMinutes = payload.totalMinutes ?? payload.summary?.totalMinutes ?? payload.metrics?.totalMinutes ?? 0;
-  const currentStreak = payload.weeklyStreak ?? payload.currentStreak ?? payload.summary?.currentStreak ?? null;
-  const monthlyGoal = payload.monthlyGoal ?? payload.goals?.monthlyGoal ?? null;
-  const monthlyProgress = payload.monthlyProgress ?? payload.goals?.monthlyProgress ?? null;
-  const averageDuration = payload.averageSessionLength ?? payload.summary?.averageDuration ?? null;
-  const preferredTime = payload.preferredTime ?? payload.summary?.preferredTime ?? null;
+  // totalSessions 처리 (completedSessions 사용)
+  const totalSessionsRaw = payload.completedSessions ?? payload.totalSessions ?? 0;
+  const totalSessions = typeof totalSessionsRaw === 'number' && !Number.isNaN(totalSessionsRaw) ? totalSessionsRaw : 0;
+
+  // totalMinutes 처리
+  const totalMinutesRaw = payload.totalMinutes ?? 0;
+  const totalMinutes = typeof totalMinutesRaw === 'number' && !Number.isNaN(totalMinutesRaw) ? totalMinutesRaw : 0;
+
+  // currentStreak 처리 (streakDays 필드 사용)
+  const currentStreakRaw = payload.streakDays ?? payload.currentStreak ?? null;
+  const currentStreak = typeof currentStreakRaw === 'number' && !Number.isNaN(currentStreakRaw) ? currentStreakRaw : null;
+
+  // monthlyGoal 처리 - Backend에서 제공하지 않으므로 기본값 사용
+  const monthlyGoalRaw = payload.monthlyGoal ?? null;
+  const monthlyGoal = typeof monthlyGoalRaw === 'number' && !Number.isNaN(monthlyGoalRaw) ? monthlyGoalRaw : null;
+
+  // monthlyProgress 처리 - Backend에서 제공하지 않으므로 기본값 사용
+  const monthlyProgressRaw = payload.monthlyProgress ?? null;
+  const monthlyProgress = typeof monthlyProgressRaw === 'number' && !Number.isNaN(monthlyProgressRaw) ? monthlyProgressRaw : null;
+
+  // averageDuration 처리
+  const averageDurationRaw = payload.averageDuration ?? null;
+  const averageDuration = typeof averageDurationRaw === 'number' && !Number.isNaN(averageDurationRaw) ? averageDurationRaw : null;
+
+  // preferredTime 처리 - Backend에서 제공하지 않으므로 기본값 사용
+  const preferredTimeRaw = payload.preferredTime ?? null;
+  const preferredTime = typeof preferredTimeRaw === 'string' ? preferredTimeRaw : null;
 
   const languageEntries = payload.languageProgress || payload.languages || [];
   const normalizeSkillMap = (skills = {}) => ({
@@ -85,14 +135,41 @@ const normalizeStudyStats = (raw) => {
   });
 
   const languageProgress = Array.isArray(languageEntries)
-    ? languageEntries.map((item) => ({
-        language: normalizeLanguageValue(item.language) || item.code || item.id || '언어',
-        progress: item.progress ?? item.completion ?? item.percentage ?? 0,
-        currentLevel: item.currentLevel ?? item.level ?? item.cefrLevel ?? null,
-        nextLevel: item.nextLevel ?? item.targetLevel ?? null,
-        skills: normalizeSkillMap(item.skills ?? item.skillBreakdown)
-      }))
+    ? languageEntries.map((item) => {
+        const safeProgress = typeof item.progress === 'number' && !Number.isNaN(item.progress)
+          ? item.progress
+          : (typeof item.completion === 'number' && !Number.isNaN(item.completion)
+              ? item.completion
+              : (typeof item.percentage === 'number' && !Number.isNaN(item.percentage)
+                  ? item.percentage
+                  : 0));
+        
+        const safeCurrentLevel = item.currentLevel 
+          ? (typeof item.currentLevel === 'string' ? item.currentLevel : normalizeLanguageValue(item.currentLevel))
+          : (item.level 
+              ? (typeof item.level === 'string' ? item.level : normalizeLanguageValue(item.level))
+              : (item.cefrLevel 
+                  ? (typeof item.cefrLevel === 'string' ? item.cefrLevel : normalizeLanguageValue(item.cefrLevel))
+                  : null));
+        
+        const safeNextLevel = item.nextLevel
+          ? (typeof item.nextLevel === 'string' ? item.nextLevel : normalizeLanguageValue(item.nextLevel))
+          : (item.targetLevel
+              ? (typeof item.targetLevel === 'string' ? item.targetLevel : normalizeLanguageValue(item.targetLevel))
+              : null);
+        
+        return {
+          language: normalizeLanguageValue(item.language) || (typeof item.code === 'string' ? item.code : '') || (typeof item.id === 'string' ? String(item.id) : '') || '언어',
+          progress: safeProgress,
+          currentLevel: safeCurrentLevel,
+          nextLevel: safeNextLevel,
+          skills: normalizeSkillMap(item.skills ?? item.skillBreakdown)
+        };
+      })
     : [];
+
+  // dailyStats 처리 - Backend에서 제공하면 사용, 없으면 빈 배열
+  const dailyStats = payload.dailyStats ?? [];
 
   return {
     learningStats: {
@@ -104,7 +181,8 @@ const normalizeStudyStats = (raw) => {
       averageDuration,
       preferredTime
     },
-    languageProgress
+    languageProgress,
+    dailyStats
   };
 };
 
@@ -124,10 +202,24 @@ const normalizeWeeklyActivity = (raw) => {
         day = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
       }
     }
+    
+    // 안전하게 숫자 추출
+    const safeMinutes = (() => {
+      const raw = item.minutes ?? item.totalMinutes ?? 0;
+      if (typeof raw === 'number' && !Number.isNaN(raw)) return raw;
+      return 0;
+    })();
+    
+    const safeSessions = (() => {
+      const raw = item.sessions ?? item.totalSessions ?? item.count ?? 0;
+      if (typeof raw === 'number' && !Number.isNaN(raw)) return raw;
+      return 0;
+    })();
+    
     return {
       day,
-      minutes: Number(item.minutes ?? item.totalMinutes ?? 0),
-      sessions: Number(item.sessions ?? item.totalSessions ?? item.count ?? 0)
+      minutes: Number.isFinite(safeMinutes) ? safeMinutes : 0,
+      sessions: Number.isFinite(safeSessions) ? safeSessions : 0
     };
   });
 };
@@ -176,9 +268,28 @@ export default function ProfilePage() {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
 
-  const { englishName, name, profileImage, residence, intro, clearProfile, loadProfileFromServer } = useProfileStore();
+  const profileStoreData = useProfileStore();
+  
+  // 안전하게 프로필 스토어 값들 추출
+  const englishName = profileStoreData?.englishName;
+  const name = profileStoreData?.name;
+  const profileImage = profileStoreData?.profileImage;
+  const residence = profileStoreData?.residence;
+  const intro = profileStoreData?.intro;
+  const clearProfile = profileStoreData?.clearProfile;
+  const loadProfileFromServer = profileStoreData?.loadProfileFromServer;
 
-  const displayResidence = toDisplayText(residence, '') || '위치 미설정';
+  // toDisplayText가 객체를 반환할 수 있으므로 안전하게 처리
+  const displayResidenceRaw = toDisplayText(residence, '');
+  const displayResidence = typeof displayResidenceRaw === 'string' ? displayResidenceRaw : '위치 미설정';
+  
+  // englishName과 name도 안전하게 처리
+  const safeEnglishName = typeof englishName === 'string' ? englishName : (typeof englishName === 'object' && englishName ? toDisplayText(englishName, '') : '');
+  const safeName = typeof name === 'string' ? name : (typeof name === 'object' && name ? toDisplayText(name, '') : '');
+  const displayName = safeEnglishName || safeName || 'User';
+  
+  // intro도 안전하게 처리
+  const safeIntro = typeof intro === 'string' ? intro : (typeof intro === 'object' && intro ? toDisplayText(intro, '') : null);
 
   const [languageProfile, setLanguageProfile] = useState({ teachableLanguages: [], learningLanguages: [], interests: [] });
   const [languageLoading, setLanguageLoading] = useState(true);
@@ -196,7 +307,7 @@ export default function ProfilePage() {
   const [userFiles, setUserFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
 
-  const primaryLanguage = languageProgress[0] ?? null;
+  const primaryLanguage = languageProgress?.[0] ?? null;
   const {
     achievements: allAchievements,
     stats: achievementStats,
@@ -204,12 +315,17 @@ export default function ProfilePage() {
     error: achievementsError
   } = useAchievementOverview();
 
+  // 안전하게 achievement 관련 값들 정규화
+  const safeAllAchievements = Array.isArray(allAchievements) ? allAchievements : [];
+  const safeAchievementStats = achievementStats && typeof achievementStats === 'object' && !Array.isArray(achievementStats) ? achievementStats : null;
+  const safeAchievementsError = achievementsError && typeof achievementsError === 'object' ? (achievementsError.message || achievementsError.error || String(achievementsError)) : (typeof achievementsError === 'string' ? achievementsError : null);
+
   // ⚠️ useMemo 제거: React 19 참조 안정성 문제로 무한 루프 및 React Error #185 방지
   // useAchievementOverview hook이 이미 안정화된 데이터를 제공하므로 직접 계산해도 성능 문제 없음
   let recentAchievements = [];
-  if (Array.isArray(allAchievements) && allAchievements.length > 0) {
+  if (safeAllAchievements.length > 0) {
     try {
-      const completed = allAchievements.filter((item) => item?.isCompleted === true);
+      const completed = safeAllAchievements.filter((item) => item?.isCompleted === true);
 
       if (completed.length > 0) {
         const sorted = [...completed].sort((a, b) => {
@@ -264,29 +380,26 @@ export default function ProfilePage() {
       setStatsLoading(true);
       setStatsError(null);
       try {
-        const [statsResult, activityResult] = await Promise.allSettled([
-          getStudyStats('month'),
-          getSessionActivity('week')
+        const [statsResult] = await Promise.allSettled([
+          getStudyStats('month')
         ]);
 
         if (!isActive) return;
 
         if (statsResult.status === 'fulfilled') {
-          const { learningStats: normalizedStats, languageProgress: languages } = normalizeStudyStats(statsResult.value);
+          const { learningStats: normalizedStats, languageProgress: languages, dailyStats } = normalizeStudyStats(statsResult.value);
           setLearningStats(normalizedStats);
           setLanguageProgress(languages);
+
+          // dailyStats가 있으면 사용, 없으면 빈 배열
+          setWeeklyActivity(normalizeWeeklyActivity(dailyStats || []));
         } else {
           setLearningStats(defaultLearningStats);
           setLanguageProgress([]);
-        }
-
-        if (activityResult.status === 'fulfilled') {
-          setWeeklyActivity(normalizeWeeklyActivity(activityResult.value));
-        } else {
           setWeeklyActivity([]);
         }
 
-        if (statsResult.status === 'rejected' && activityResult.status === 'rejected') {
+        if (statsResult.status === 'rejected') {
           setStatsError('데이터를 불러오는 데 실패했습니다.');
         }
       } catch (error) {
@@ -432,20 +545,28 @@ export default function ProfilePage() {
     }
   };
 
-  const totalMinutes = learningStats.totalMinutes ?? 0;
+  const totalMinutes = typeof learningStats?.totalMinutes === 'number' && !Number.isNaN(learningStats.totalMinutes) ? learningStats.totalMinutes : 0;
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
   const remainingGoal =
-    learningStats.monthlyGoal != null && learningStats.monthlyProgress != null
+    learningStats?.monthlyGoal != null && learningStats?.monthlyProgress != null &&
+    typeof learningStats.monthlyGoal === 'number' && typeof learningStats.monthlyProgress === 'number' && !Number.isNaN(learningStats.monthlyGoal) && !Number.isNaN(learningStats.monthlyProgress)
       ? Math.max(learningStats.monthlyGoal - learningStats.monthlyProgress, 0)
       : null;
   const monthlyProgressRatio =
-    learningStats.monthlyGoal && learningStats.monthlyGoal > 0 && learningStats.monthlyProgress != null
+    learningStats?.monthlyGoal && learningStats.monthlyGoal > 0 && learningStats?.monthlyProgress != null &&
+    typeof learningStats.monthlyGoal === 'number' && typeof learningStats.monthlyProgress === 'number' && !Number.isNaN(learningStats.monthlyGoal) && !Number.isNaN(learningStats.monthlyProgress)
       ? Math.min(100, Math.round((learningStats.monthlyProgress / learningStats.monthlyGoal) * 100))
       : 0;
 
+  // 모든 렌더링 전에 안전하게 값들을 정규화
+  const safeDisplayName = typeof displayName === 'string' ? displayName : 'User';
+  const safeDisplayResidence = typeof displayResidence === 'string' ? displayResidence : '위치 미설정';
+  const safeIntroText = typeof safeIntro === 'string' && safeIntro.trim() ? safeIntro : null;
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <ErrorBoundary fallback={null}>
+      <div className="min-h-screen bg-[#FAFAFA]">
       <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -467,31 +588,36 @@ export default function ProfilePage() {
       </div>
 
       <div className="bg-white border-b border-[#E7E7E7] p-6">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <OptimizedImage
-              src={getOptimizedImageUrl(profileImage, { width: 80, height: 80 }) || DEFAULT_PROFILE_IMAGE}
-              alt="Profile"
-              className="w-20 h-20 rounded-full object-cover"
-              width={80}
-              height={80}
-              loading="eager"
-            />
-            <button
-              onClick={handleProfileImageChange}
-              className="absolute bottom-0 right-0 p-1.5 bg-[#00C471] rounded-full text-white"
-            >
-              <Camera className="w-4 h-4" />
-            </button>
+        <ErrorBoundary fallback={null}>
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <OptimizedImage
+                src={(() => {
+                  const safeProfileImage = typeof profileImage === 'string' ? profileImage : (profileImage?.url || profileImage?.imageUrl || profileImage?.src || DEFAULT_PROFILE_IMAGE);
+                  return getOptimizedImageUrl(safeProfileImage, { width: 80, height: 80 }) || DEFAULT_PROFILE_IMAGE;
+                })()}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover"
+                width={80}
+                height={80}
+                loading="eager"
+              />
+              <button
+                onClick={handleProfileImageChange}
+                className="absolute bottom-0 right-0 p-1.5 bg-[#00C471] rounded-full text-white"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-[24px] font-bold text-[#111111]">{safeDisplayName}</h2>
+              <p className="text-[14px] text-[#606060]">{safeDisplayResidence}</p>
+              {safeIntroText && (
+                <p className="text-[14px] text-[#929292] mt-1">{safeIntroText}</p>
+              )}
+            </div>
           </div>
-          <div className="flex-1">
-            <h2 className="text-[24px] font-bold text-[#111111]">{englishName || name || 'User'}</h2>
-            <p className="text-[14px] text-[#606060]">{displayResidence}</p>
-            {intro && (
-              <p className="text-[14px] text-[#929292] mt-1">{intro}</p>
-            )}
-          </div>
-        </div>
+        </ErrorBoundary>
       </div>
 
       <div className="bg-white border-b border-[#E7E7E7]">
@@ -534,282 +660,343 @@ export default function ProfilePage() {
       <div className="px-6 py-6">
         {activeTab === 'profile' && (
           <div className="space-y-6">
-            <LanguageProfile
-              showEditButton={false}
-              profileData={languageProfile}
-              loading={languageLoading}
-              emptyMessage="등록된 언어 정보가 없습니다."
-            />
+            <ErrorBoundary fallback={null}>
+              <LanguageProfile
+                showEditButton={false}
+                profileData={languageProfile}
+                loading={languageLoading}
+                emptyMessage="등록된 언어 정보가 없습니다."
+              />
+            </ErrorBoundary>
 
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <h3 className="text-[18px] font-bold text-[#111111] mb-4">활동 요약</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <p className="text-[24px] font-bold text-[#00C471]">{learningStats.totalSessions}</p>
-                  <p className="text-[12px] text-[#929292]">완료한 세션</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[24px] font-bold text-[#00C471]">
-                    {totalHours}h {remainingMinutes}m
-                  </p>
-                  <p className="text-[12px] text-[#929292]">총 학습시간</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[24px] font-bold text-[#00C471]">{learningStats.currentStreak ?? '-'}</p>
-                  <p className="text-[12px] text-[#929292]">주간 연속</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[24px] font-bold text-[#00C471]">{learningStats.monthlyGoal ?? '-'}</p>
-                  <p className="text-[12px] text-[#929292]">월간 목표</p>
+            <ErrorBoundary fallback={null}>
+              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-4">활동 요약</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="text-[24px] font-bold text-[#00C471]">
+                      {typeof learningStats.totalSessions === 'object' ? '-' : (learningStats.totalSessions ?? 0)}
+                    </p>
+                    <p className="text-[12px] text-[#929292]">완료한 세션</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[24px] font-bold text-[#00C471]">
+                      {typeof totalHours === 'number' && typeof remainingMinutes === 'number' 
+                        ? `${totalHours}h ${remainingMinutes}m` 
+                        : '-'}
+                    </p>
+                    <p className="text-[12px] text-[#929292]">총 학습시간</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[24px] font-bold text-[#00C471]">
+                      {typeof learningStats.currentStreak === 'object' ? '-' : (learningStats.currentStreak ?? '-')}
+                    </p>
+                    <p className="text-[12px] text-[#929292]">주간 연속</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[24px] font-bold text-[#00C471]">
+                      {typeof learningStats.monthlyGoal === 'object' ? '-' : (learningStats.monthlyGoal ?? '-')}
+                    </p>
+                    <p className="text-[12px] text-[#929292]">월간 목표</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </ErrorBoundary>
 
-            <AchievementBadges
-              achievements={recentAchievements}
-              stats={achievementStats}
-              loading={achievementsLoading}
-              error={achievementsError}
-            />
+            <ErrorBoundary fallback={null}>
+              <AchievementBadges
+                achievements={recentAchievements}
+                stats={safeAchievementStats}
+                loading={achievementsLoading}
+                error={safeAchievementsError}
+              />
+            </ErrorBoundary>
           </div>
         )}
 
         {activeTab === 'stats' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471]">
-              <div className="flex items-center mb-3">
-                <Sparkles className="w-6 h-6 text-[#00C471] mr-2" />
-                <h3 className="text-[18px] font-bold text-[#111111]">AI 학습 패턴 분석</h3>
+            <ErrorBoundary fallback={null}>
+              <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471]">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="w-6 h-6 text-[#00C471] mr-2" />
+                  <h3 className="text-[18px] font-bold text-[#111111]">AI 학습 패턴 분석</h3>
+                </div>
+                <p className="text-[14px] text-[#666666] mb-4">
+                  당신의 학습 습관과 패턴을 AI가 분석하여 맞춤형 학습 전략을 제안합니다.
+                </p>
               </div>
-              <p className="text-[14px] text-[#666666] mb-4">
-                당신의 학습 습관과 패턴을 AI가 분석하여 맞춤형 학습 전략을 제안합니다.
-              </p>
-            </div>
+            </ErrorBoundary>
 
-            <LearningPatternDashboard monthsBack={3} />
+            <ErrorBoundary fallback={null}>
+              <LearningPatternDashboard monthsBack={3} />
+            </ErrorBoundary>
 
-            <WeeklyActivityChart data={weeklyActivity} loading={statsLoading} error={statsError} />
+            <ErrorBoundary fallback={null}>
+              <WeeklyActivityChart data={weeklyActivity} loading={statsLoading} error={statsError && typeof statsError === 'object' ? (statsError.message || statsError.error || String(statsError)) : (typeof statsError === 'string' ? statsError : null)} />
+            </ErrorBoundary>
 
-            {primaryLanguage ? (
-              <LanguageLevelProgress
-                language={primaryLanguage.language}
-                currentLevel={primaryLanguage.currentLevel}
-                progress={primaryLanguage.progress ?? 0}
-                nextLevel={primaryLanguage.nextLevel}
-                skills={primaryLanguage.skills}
-                goalMessage={
-                  primaryLanguage.nextLevel
-                    ? `${primaryLanguage.nextLevel} 레벨을 향해 ${primaryLanguage.progress ?? 0}% 진행 중입니다.`
-                    : '지속적인 학습으로 다음 목표를 설정해 보세요.'
-                }
-              />
-            ) : (
+            <ErrorBoundary fallback={null}>
+              {primaryLanguage ? (
+                <LanguageLevelProgress
+                  language={typeof primaryLanguage.language === 'string' ? primaryLanguage.language : (primaryLanguage.language?.name || primaryLanguage.language?.label || '언어')}
+                  currentLevel={typeof primaryLanguage.currentLevel === 'string' ? primaryLanguage.currentLevel : (primaryLanguage.currentLevel?.name || primaryLanguage.currentLevel?.label || null)}
+                  progress={typeof primaryLanguage.progress === 'number' ? primaryLanguage.progress : 0}
+                  nextLevel={typeof primaryLanguage.nextLevel === 'string' ? primaryLanguage.nextLevel : (primaryLanguage.nextLevel?.name || primaryLanguage.nextLevel?.label || null)}
+                  skills={typeof primaryLanguage.skills === 'object' && !Array.isArray(primaryLanguage.skills) ? primaryLanguage.skills : {}}
+                  goalMessage={
+                    primaryLanguage.nextLevel
+                      ? `${typeof primaryLanguage.nextLevel === 'string' ? primaryLanguage.nextLevel : (primaryLanguage.nextLevel?.name || primaryLanguage.nextLevel?.label || '')} 레벨을 향해 ${typeof primaryLanguage.progress === 'number' ? primaryLanguage.progress : 0}% 진행 중입니다.`
+                      : '지속적인 학습으로 다음 목표를 설정해 보세요.'
+                  }
+                />
+              ) : (
+                <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                  <h3 className="text-[18px] font-bold text-[#111111] mb-2">언어별 진도</h3>
+                  <p className="text-[14px] text-[var(--black-300)]">언어 학습 데이터를 찾을 수 없습니다.</p>
+                </div>
+              )}
+            </ErrorBoundary>
+
+            <ErrorBoundary fallback={null}>
               <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-                <h3 className="text-[18px] font-bold text-[#111111] mb-2">언어별 진도</h3>
-                <p className="text-[14px] text-[var(--black-300)]">언어 학습 데이터를 찾을 수 없습니다.</p>
-              </div>
-            )}
-
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[18px] font-bold text-[#111111]">월간 목표</h3>
-                {learningStats.monthlyGoal && learningStats.monthlyProgress != null ? (
-                  <span className="text-[14px] text-[#606060]">
-                    {learningStats.monthlyProgress}/{learningStats.monthlyGoal} 세션
-                  </span>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[18px] font-bold text-[#111111]">월간 목표</h3>
+                  {learningStats.monthlyGoal && learningStats.monthlyProgress != null ? (
+                    <span className="text-[14px] text-[#606060]">
+                      {typeof learningStats.monthlyProgress === 'number' && typeof learningStats.monthlyGoal === 'number'
+                        ? `${learningStats.monthlyProgress}/${learningStats.monthlyGoal} 세션`
+                        : '데이터 없음'}
+                    </span>
+                  ) : (
+                    <span className="text-[14px] text-[#606060]">데이터 없음</span>
+                  )}
+                </div>
+                {learningStats.monthlyGoal && learningStats.monthlyProgress != null && 
+                 typeof learningStats.monthlyGoal === 'number' && typeof learningStats.monthlyProgress === 'number' ? (
+                  <>
+                    <div className="w-full bg-[#F1F3F5] rounded-full h-3">
+                      <div
+                        className="bg-[#00C471] h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${typeof monthlyProgressRatio === 'number' ? monthlyProgressRatio : 0}%` }}
+                      />
+                    </div>
+                    <p className="text-[12px] text-[#929292] mt-2">
+                      {remainingGoal != null && typeof remainingGoal === 'number' 
+                        ? `이번 달 ${remainingGoal}개 세션이 남았어요!` 
+                        : '목표 진행 상황을 확인할 수 없습니다.'}
+                    </p>
+                  </>
                 ) : (
-                  <span className="text-[14px] text-[#606060]">데이터 없음</span>
+                  <p className="text-[14px] text-[#929292]">월간 목표 데이터가 아직 없습니다.</p>
                 )}
               </div>
-              {learningStats.monthlyGoal && learningStats.monthlyProgress != null ? (
-                <>
-                  <div className="w-full bg-[#F1F3F5] rounded-full h-3">
-                    <div
-                      className="bg-[#00C471] h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${monthlyProgressRatio}%` }}
-                    />
-                  </div>
-                  <p className="text-[12px] text-[#929292] mt-2">
-                    {remainingGoal != null ? `이번 달 ${remainingGoal}개 세션이 남았어요!` : '목표 진행 상황을 확인할 수 없습니다.'}
-                  </p>
-                </>
-              ) : (
-                <p className="text-[14px] text-[#929292]">월간 목표 데이터가 아직 없습니다.</p>
-              )}
-            </div>
+            </ErrorBoundary>
 
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <h3 className="text-[18px] font-bold text-[#111111] mb-4">학습 패턴</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-[#606060]" />
-                    <span className="text-[14px] text-[#606060]">평균 세션 시간</span>
+            <ErrorBoundary fallback={null}>
+              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-4">학습 패턴</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4 text-[#606060]" />
+                      <span className="text-[14px] text-[#606060]">평균 세션 시간</span>
+                    </div>
+                    <span className="text-[14px] font-medium text-[#111111]">
+                      {learningStats.averageDuration != null && typeof learningStats.averageDuration !== 'object' 
+                        ? `${learningStats.averageDuration}분` 
+                        : '-'}
+                    </span>
                   </div>
-                  <span className="text-[14px] font-medium text-[#111111]">
-                    {learningStats.averageDuration != null ? `${learningStats.averageDuration}분` : '-'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-[#606060]" />
-                    <span className="text-[14px] text-[#606060]">선호 시간대</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4 text-[#606060]" />
+                      <span className="text-[14px] text-[#606060]">선호 시간대</span>
+                    </div>
+                    <span className="text-[14px] font-medium text-[#111111]">
+                      {typeof learningStats.preferredTime === 'string' ? learningStats.preferredTime : '-'}
+                    </span>
                   </div>
-                  <span className="text-[14px] font-medium text-[#111111]">
-                    {learningStats.preferredTime || '-'}
-                  </span>
                 </div>
               </div>
-            </div>
+            </ErrorBoundary>
 
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <h3 className="text-[18px] font-bold text-[#111111] mb-4">언어별 진도</h3>
-              {languageProgress.length > 0 ? (
-                <div className="space-y-4">
-                  {languageProgress.map((item) => (
-                    <div key={item.language}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[14px] text-[#606060]">{item.language}</span>
-                        <span className="text-[14px] font-medium text-[#111111]">{item.progress ?? 0}%</span>
-                      </div>
-                      <div className="w-full bg-[#F1F3F5] rounded-full h-2">
-                        <div
-                          className="bg-[#00C471] h-2 rounded-full"
-                          style={{ width: `${Math.min(100, Math.max(0, item.progress ?? 0))}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[14px] text-[#929292]">언어별 진도 데이터를 찾을 수 없습니다.</p>
-              )}
-            </div>
+            <ErrorBoundary fallback={null}>
+              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-4">언어별 진도</h3>
+                {languageProgress.length > 0 ? (
+                  <div className="space-y-4">
+                    {languageProgress.map((item, index) => {
+                      const languageKey = typeof item.language === 'string' 
+                        ? item.language 
+                        : (item.language?.name || item.language?.label || item.language?.language || `language-${index}`);
+                      const safeProgress = typeof item.progress === 'number' && !Number.isNaN(item.progress) 
+                        ? Math.min(100, Math.max(0, item.progress)) 
+                        : 0;
+                      const safeLanguage = typeof item.language === 'string' 
+                        ? item.language 
+                        : (item.language?.name || item.language?.label || item.language?.language || '언어');
+                      return (
+                        <div key={languageKey}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[14px] text-[#606060]">
+                              {safeLanguage}
+                            </span>
+                            <span className="text-[14px] font-medium text-[#111111]">
+                              {safeProgress}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-[#F1F3F5] rounded-full h-2">
+                            <div
+                              className="bg-[#00C471] h-2 rounded-full"
+                              style={{ width: `${safeProgress}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[14px] text-[#929292]">언어별 진도 데이터를 찾을 수 없습니다.</p>
+                )}
+              </div>
+            </ErrorBoundary>
           </div>
         )}
 
         {activeTab === 'files' && (
           <div className="space-y-6">
-            {filesLoading ? (
-              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-                <div className="animate-pulse space-y-4">
-                  <div className="h-6 bg-[#E7E7E7] rounded w-1/3" />
-                  <div className="h-16 bg-[#F1F3F5] rounded" />
-                  <div className="h-16 bg-[#F1F3F5] rounded" />
-                  <div className="h-16 bg-[#F1F3F5] rounded" />
+            <ErrorBoundary fallback={null}>
+              {filesLoading ? (
+                <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-6 bg-[#E7E7E7] rounded w-1/3" />
+                    <div className="h-16 bg-[#F1F3F5] rounded" />
+                    <div className="h-16 bg-[#F1F3F5] rounded" />
+                    <div className="h-16 bg-[#F1F3F5] rounded" />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <FileManager
-                files={userFiles}
-                onFileDelete={handleFileDelete}
-                onFileSelect={handleFileSelect}
-                allowDelete
-                allowPreview
-                className="w-full"
-              />
-            )}
+              ) : (
+                <FileManager
+                  files={userFiles}
+                  onFileDelete={handleFileDelete}
+                  onFileSelect={handleFileSelect}
+                  allowDelete
+                  allowPreview
+                  className="w-full"
+                />
+              )}
+            </ErrorBoundary>
 
-            {userFiles.length === 0 && !filesLoading && (
-              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] text-center">
-                <h3 className="text-[18px] font-bold text-[#111111] mb-2">파일 업로드 안내</h3>
-                <p className="text-[14px] text-[#606060] mb-4">
-                  프로필 사진, 오디오 녹음, 채팅 이미지를 업로드하고 관리할 수 있습니다.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                  <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
-                    <h4 className="text-[14px] font-bold text-[#111111] mb-2">이미지</h4>
-                    <p className="text-[12px] text-[#606060] mb-1">JPG, PNG, WebP, GIF</p>
-                    <p className="text-[12px] text-[#929292]">최대 10MB</p>
-                  </div>
-                  <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
-                    <h4 className="text-[14px] font-bold text-[#111111] mb-2">오디오</h4>
-                    <p className="text-[12px] text-[#606060] mb-1">MP3, WAV, WebM, OGG</p>
-                    <p className="text-[12px] text-[#929292]">최대 50MB</p>
-                  </div>
-                  <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
-                    <h4 className="text-[14px] font-bold text-[#111111] mb-2">비디오</h4>
-                    <p className="text-[12px] text-[#606060] mb-1">MP4, WebM, MOV</p>
-                    <p className="text-[12px] text-[#929292]">최대 100MB</p>
+            <ErrorBoundary fallback={null}>
+              {userFiles.length === 0 && !filesLoading && (
+                <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] text-center">
+                  <h3 className="text-[18px] font-bold text-[#111111] mb-2">파일 업로드 안내</h3>
+                  <p className="text-[14px] text-[#606060] mb-4">
+                    프로필 사진, 오디오 녹음, 채팅 이미지를 업로드하고 관리할 수 있습니다.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                    <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
+                      <h4 className="text-[14px] font-bold text-[#111111] mb-2">이미지</h4>
+                      <p className="text-[12px] text-[#606060] mb-1">JPG, PNG, WebP, GIF</p>
+                      <p className="text-[12px] text-[#929292]">최대 10MB</p>
+                    </div>
+                    <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
+                      <h4 className="text-[14px] font-bold text-[#111111] mb-2">오디오</h4>
+                      <p className="text-[12px] text-[#606060] mb-1">MP3, WAV, WebM, OGG</p>
+                      <p className="text-[12px] text-[#929292]">최대 50MB</p>
+                    </div>
+                    <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
+                      <h4 className="text-[14px] font-bold text-[#111111] mb-2">비디오</h4>
+                      <p className="text-[12px] text-[#606060] mb-1">MP4, WebM, MOV</p>
+                      <p className="text-[12px] text-[#929292]">최대 100MB</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </ErrorBoundary>
           </div>
         )}
 
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <h3 className="text-[18px] font-bold text-[#111111] mb-4">알림 설정</h3>
-              {settingsLoading ? (
-                <div className="space-y-3">
-                  <div className="h-10 bg-[#F1F3F5] rounded animate-pulse" />
-                  <div className="h-10 bg-[#F1F3F5] rounded animate-pulse" />
-                  <div className="h-10 bg-[#F1F3F5] rounded animate-pulse" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {Object.entries(notificationCopy).map(([key, copy]) => (
-                    <div className="flex items-center justify-between" key={key}>
-                      <div>
-                        <p className="text-[14px] font-medium text-[#111111]">{copy.title}</p>
-                        <p className="text-[12px] text-[#929292]">{copy.description}</p>
+            <ErrorBoundary fallback={null}>
+              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-4">알림 설정</h3>
+                {settingsLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-10 bg-[#F1F3F5] rounded animate-pulse" />
+                    <div className="h-10 bg-[#F1F3F5] rounded animate-pulse" />
+                    <div className="h-10 bg-[#F1F3F5] rounded animate-pulse" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(notificationCopy).map(([key, copy]) => (
+                      <div className="flex items-center justify-between" key={key}>
+                        <div>
+                          <p className="text-[14px] font-medium text-[#111111]">{copy.title}</p>
+                          <p className="text-[12px] text-[#929292]">{copy.description}</p>
+                        </div>
+                        <button
+                          onClick={() => handleNotificationToggle(key)}
+                          className={`w-12 h-6 rounded-full transition-colors ${
+                            notificationSettings[key] ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
+                          } relative`}
+                        >
+                          <div
+                            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                              notificationSettings[key] ? 'translate-x-6' : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleNotificationToggle(key)}
-                        className={`w-12 h-6 rounded-full transition-colors ${
-                          notificationSettings[key] ? 'bg-[#00C471]' : 'bg-[#E7E7E7]'
-                        } relative`}
-                      >
-                        <div
-                          className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                            notificationSettings[key] ? 'translate-x-6' : 'translate-x-0.5'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-              <h3 className="text-[18px] font-bold text-[#111111] mb-4">계정 설정</h3>
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate('/settings/privacy')}
-                  className="w-full flex items-center justify-between p-3 hover:bg-[#F1F3F5] rounded-lg transition-colors"
-                >
-                  <span className="text-[14px] text-[#111111]">개인정보 설정</span>
-                  <ChevronRight className="w-4 h-4 text-[#929292]" />
-                </button>
-                <button
-                  onClick={() => navigate('/settings/language')}
-                  className="w-full flex items-center justify-between p-3 hover:bg-[#F1F3F5] rounded-lg transition-colors"
-                >
-                  <span className="text-[14px] text-[#111111]">언어 설정</span>
-                  <ChevronRight className="w-4 h-4 text-[#929292]" />
-                </button>
-                <button
-                  onClick={() => navigate('/settings/help')}
-                  className="w-full flex items-center justify-between p-3 hover:bg-[#F1F3F5] rounded-lg transition-colors"
-                >
-                  <span className="text-[14px] text-[#111111]">도움말</span>
-                  <ChevronRight className="w-4 h-4 text-[#929292]" />
-                </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            </ErrorBoundary>
 
-            <CommonButton onClick={handleLogout} variant="secondary" className="w-full">
-              로그아웃
-            </CommonButton>
+            <ErrorBoundary fallback={null}>
+              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
+                <h3 className="text-[18px] font-bold text-[#111111] mb-4">계정 설정</h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/settings/privacy')}
+                    className="w-full flex items-center justify-between p-3 hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                  >
+                    <span className="text-[14px] text-[#111111]">개인정보 설정</span>
+                    <ChevronRight className="w-4 h-4 text-[#929292]" />
+                  </button>
+                  <button
+                    onClick={() => navigate('/settings/language')}
+                    className="w-full flex items-center justify-between p-3 hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                  >
+                    <span className="text-[14px] text-[#111111]">언어 설정</span>
+                    <ChevronRight className="w-4 h-4 text-[#929292]" />
+                  </button>
+                  <button
+                    onClick={() => navigate('/settings/help')}
+                    className="w-full flex items-center justify-between p-3 hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                  >
+                    <span className="text-[14px] text-[#111111]">도움말</span>
+                    <ChevronRight className="w-4 h-4 text-[#929292]" />
+                  </button>
+                </div>
+              </div>
+            </ErrorBoundary>
+
+            <ErrorBoundary fallback={null}>
+              <CommonButton onClick={handleLogout} variant="secondary" className="w-full">
+                로그아웃
+              </CommonButton>
+            </ErrorBoundary>
           </div>
         )}
       </div>
 
       <ProfileImageUpload isOpen={showImageUpload} onClose={() => setShowImageUpload(false)} />
       <ProfileEditor isOpen={showProfileEditor} onClose={() => setShowProfileEditor(false)} />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

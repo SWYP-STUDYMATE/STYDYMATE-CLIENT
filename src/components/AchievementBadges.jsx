@@ -2,14 +2,18 @@ import React from 'react';
 import { toDisplayText } from '../utils/text';
 
 const renderBadgeIcon = (achievement) => {
-  const iconUrl = achievement.achievement?.badgeIconUrl;
-  const badgeColor = achievement.achievement?.badgeColor || '#E6F9F1';
-  const title = toDisplayText(
-    achievement.achievement?.title
-      || achievement.title
-      || achievement.achievement?.name,
-    '성취 배지'
-  );
+  // 안전하게 achievement 객체 추출
+  const rawAchievement = achievement?.achievement || achievement;
+  const safeAchievement = rawAchievement && typeof rawAchievement === 'object' && !Array.isArray(rawAchievement)
+    ? rawAchievement
+    : (typeof rawAchievement === 'string' ? { title: rawAchievement } : {});
+  
+  const iconUrl = safeAchievement?.badgeIconUrl || achievement?.badgeIconUrl;
+  const badgeColor = safeAchievement?.badgeColor || achievement?.badgeColor || '#E6F9F1';
+  
+  // 안전하게 title 추출
+  const titleRaw = safeAchievement?.title || achievement?.title || safeAchievement?.name || achievement?.name;
+  const title = toDisplayText(titleRaw, '성취 배지');
 
   if (iconUrl) {
     return (
@@ -33,19 +37,25 @@ const renderBadgeIcon = (achievement) => {
 };
 
 const AchievementBadgeCard = ({ item }) => {
-  const { achievement, isCompleted, progressPercentage } = item;
-  const title = toDisplayText(
-    achievement?.title
-      || item.title
-      || achievement?.name,
-    '성취 배지'
-  );
-  const description = toDisplayText(
-    achievement?.description
-      || item.description
-      || achievement?.details,
-    ''
-  ) || '';
+  // 안전하게 achievement 객체 추출
+  const rawAchievement = item?.achievement || item;
+  const achievement = rawAchievement && typeof rawAchievement === 'object' && !Array.isArray(rawAchievement) 
+    ? rawAchievement 
+    : (typeof rawAchievement === 'string' ? { title: rawAchievement } : {});
+  
+  const isCompleted = typeof item?.isCompleted === 'boolean' ? item.isCompleted : false;
+  const progressPercentage = typeof item?.progressPercentage === 'number' && !Number.isNaN(item.progressPercentage)
+    ? item.progressPercentage 
+    : (isCompleted ? 100 : 0);
+  
+  // 안전하게 title 추출
+  const titleRaw = achievement?.title || item?.title || achievement?.name || item?.name;
+  const title = toDisplayText(titleRaw, '성취 배지');
+  
+  // 안전하게 description 추출
+  const descriptionRaw = achievement?.description || item?.description || achievement?.details || item?.details;
+  const description = toDisplayText(descriptionRaw, '') || '';
+  
   const progress = isCompleted ? 100 : Math.min(100, Math.max(0, progressPercentage ?? 0));
 
   return (
@@ -125,11 +135,23 @@ export default function AchievementBadges({
     );
   }
 
-  const completedCountRaw = stats?.completedAchievements ?? sanitizedAchievements.filter((item) => item.isCompleted).length;
-  const totalCountRaw = stats?.totalAchievements ?? sanitizedAchievements.length;
+  // 안전하게 숫자 추출
+  const safeNumber = (value, defaultValue = 0) => {
+    if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
+      return value;
+    }
+    return defaultValue;
+  };
 
-  const completedCount = Number.isFinite(completedCountRaw) ? completedCountRaw : 0;
-  const totalCount = Number.isFinite(totalCountRaw) ? totalCountRaw : sanitizedAchievements.length;
+  const completedCountRaw = stats?.completedAchievements;
+  const totalCountRaw = stats?.totalAchievements;
+
+  const completedCount = completedCountRaw != null 
+    ? safeNumber(completedCountRaw, sanitizedAchievements.filter((item) => item.isCompleted).length)
+    : sanitizedAchievements.filter((item) => item.isCompleted).length;
+  const totalCount = totalCountRaw != null
+    ? safeNumber(totalCountRaw, sanitizedAchievements.length)
+    : sanitizedAchievements.length;
 
   // ⚠️ useMemo 제거: sanitizedAchievements 의존성 문제로 무한 루프 발생
   // achievements prop이 stabilizeRef로 안정화되므로 직접 계산해도 성능 문제 없음

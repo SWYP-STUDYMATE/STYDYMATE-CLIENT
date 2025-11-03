@@ -9,21 +9,86 @@ const LanguageProfile = ({ showEditButton = true, profileData = null, loading = 
   const hasInterests = profileData?.interests?.length;
   const hasAnyData = hasTeachable || hasLearning || hasInterests;
 
-  const LanguageTag = ({ language, level }) => (
-    <div className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-3 bg-[#F7FCFC] border border-[#E6F9F1] rounded-full mr-2 sm:mr-3 mb-2 sm:mb-3">
-      <span className="text-sm sm:text-base font-semibold text-[#111111] leading-[20px] sm:leading-[26px]">
-        {language} ({level})
-      </span>
-    </div>
-  );
+  const LanguageTag = ({ language, level }) => {
+    // 안전하게 문자열 추출
+    const safeString = (value, defaultValue = '') => {
+      if (typeof value === 'string') return value;
+      if (typeof value === 'number') return String(value);
+      if (value && typeof value === 'object') {
+        const name = value.name;
+        const label = value.label;
+        const lang = value.language;
+        const title = value.title;
+        
+        if (typeof name === 'string') return name;
+        if (typeof label === 'string') return label;
+        if (typeof lang === 'string') return lang;
+        if (typeof title === 'string') return title;
+        
+        // 중첩 객체 처리
+        if (typeof name === 'object' && name) {
+          const nameStr = name.name || name.label || name.title || '';
+          if (typeof nameStr === 'string' && nameStr) return nameStr;
+        }
+        if (typeof label === 'object' && label) {
+          const labelStr = label.name || label.label || label.title || '';
+          if (typeof labelStr === 'string' && labelStr) return labelStr;
+        }
+      }
+      return defaultValue;
+    };
+    
+    const safeLanguage = safeString(language, '언어');
+    const safeLevel = safeString(level, '');
+    
+    return (
+      <div className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-3 bg-[#F7FCFC] border border-[#E6F9F1] rounded-full mr-2 sm:mr-3 mb-2 sm:mb-3">
+        <span className="text-sm sm:text-base font-semibold text-[#111111] leading-[20px] sm:leading-[26px]">
+          {safeLanguage}{safeLevel ? ` (${safeLevel})` : ''}
+        </span>
+      </div>
+    );
+  };
 
-  const InterestTag = ({ interest }) => (
-    <div className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-3 bg-[#F7FCFC] border border-[#E6F9F1] rounded-full mr-2 sm:mr-3 mb-2 sm:mb-3">
-      <span className="text-sm sm:text-base font-semibold text-[#111111] leading-[20px] sm:leading-[26px]">
-        {interest}
-      </span>
-    </div>
-  );
+  const InterestTag = ({ interest }) => {
+    // 안전하게 문자열 추출
+    const safeString = (value, defaultValue = '') => {
+      if (typeof value === 'string') return value;
+      if (typeof value === 'number') return String(value);
+      if (value && typeof value === 'object') {
+        const name = value.name;
+        const label = value.label;
+        const interestVal = value.interest;
+        const title = value.title;
+        
+        if (typeof name === 'string') return name;
+        if (typeof label === 'string') return label;
+        if (typeof interestVal === 'string') return interestVal;
+        if (typeof title === 'string') return title;
+        
+        // 중첩 객체 처리
+        if (typeof name === 'object' && name) {
+          const nameStr = name.name || name.label || name.title || '';
+          if (typeof nameStr === 'string' && nameStr) return nameStr;
+        }
+        if (typeof label === 'object' && label) {
+          const labelStr = label.name || label.label || label.title || '';
+          if (typeof labelStr === 'string' && labelStr) return labelStr;
+        }
+      }
+      return defaultValue;
+    };
+    
+    const safeInterest = safeString(interest, '관심사');
+    
+    return (
+      <div className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-3 bg-[#F7FCFC] border border-[#E6F9F1] rounded-full mr-2 sm:mr-3 mb-2 sm:mb-3">
+        <span className="text-sm sm:text-base font-semibold text-[#111111] leading-[20px] sm:leading-[26px]">
+          {safeInterest}
+        </span>
+      </div>
+    );
+  };
 
   const handleEdit = () => {
     // 프로필 편집 페이지로 이동
@@ -64,13 +129,33 @@ const LanguageProfile = ({ showEditButton = true, profileData = null, loading = 
         </h3>
         {hasTeachable ? (
           <div className="flex flex-wrap">
-            {profileData.teachableLanguages.map((item, index) => (
-              <LanguageTag
-                key={`${item.language}-${item.level}-${index}`}
-                language={item.language}
-                level={item.level}
-              />
-            ))}
+            {profileData.teachableLanguages.map((item, index) => {
+              // 안전하게 key 생성
+              const safeString = (value, defaultValue = '') => {
+                if (typeof value === 'string') return value;
+                if (typeof value === 'number') return String(value);
+                if (value && typeof value === 'object') {
+                  const name = value.name;
+                  const label = value.label;
+                  const lang = value.language;
+                  if (typeof name === 'string') return name;
+                  if (typeof label === 'string') return label;
+                  if (typeof lang === 'string') return lang;
+                }
+                return defaultValue;
+              };
+              
+              const languageKey = safeString(item.language, `lang-${index}`);
+              const levelKey = safeString(item.level, `level-${index}`);
+              
+              return (
+                <LanguageTag
+                  key={`teachable-${languageKey}-${levelKey}-${index}`}
+                  language={item.language}
+                  level={item.level}
+                />
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm sm:text-base text-[#929292]">가르칠 수 있는 언어 정보가 없습니다.</p>
@@ -84,13 +169,33 @@ const LanguageProfile = ({ showEditButton = true, profileData = null, loading = 
         </h3>
         {hasLearning ? (
           <div className="flex flex-wrap">
-            {profileData.learningLanguages.map((item, index) => (
-              <LanguageTag
-                key={`${item.language}-${item.level}-${index}`}
-                language={item.language}
-                level={item.level}
-              />
-            ))}
+            {profileData.learningLanguages.map((item, index) => {
+              // 안전하게 key 생성
+              const safeString = (value, defaultValue = '') => {
+                if (typeof value === 'string') return value;
+                if (typeof value === 'number') return String(value);
+                if (value && typeof value === 'object') {
+                  const name = value.name;
+                  const label = value.label;
+                  const lang = value.language;
+                  if (typeof name === 'string') return name;
+                  if (typeof label === 'string') return label;
+                  if (typeof lang === 'string') return lang;
+                }
+                return defaultValue;
+              };
+              
+              const languageKey = safeString(item.language, `lang-${index}`);
+              const levelKey = safeString(item.level, `level-${index}`);
+              
+              return (
+                <LanguageTag
+                  key={`learning-${languageKey}-${levelKey}-${index}`}
+                  language={item.language}
+                  level={item.level}
+                />
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm sm:text-base text-[#929292]">학습하려는 언어가 아직 등록되지 않았습니다.</p>
@@ -104,12 +209,31 @@ const LanguageProfile = ({ showEditButton = true, profileData = null, loading = 
         </h3>
         {hasInterests ? (
           <div className="flex flex-wrap">
-            {profileData.interests.map((interest, index) => (
-              <InterestTag
-                key={`${interest}-${index}`}
-                interest={interest}
-              />
-            ))}
+            {profileData.interests.map((interest, index) => {
+              // 안전하게 key 생성
+              const safeString = (value, defaultValue = '') => {
+                if (typeof value === 'string') return value;
+                if (typeof value === 'number') return String(value);
+                if (value && typeof value === 'object') {
+                  const name = value.name;
+                  const label = value.label;
+                  const interestVal = value.interest;
+                  if (typeof name === 'string') return name;
+                  if (typeof label === 'string') return label;
+                  if (typeof interestVal === 'string') return interestVal;
+                }
+                return defaultValue;
+              };
+              
+              const interestKey = safeString(interest, `interest-${index}`);
+              
+              return (
+                <InterestTag
+                  key={`interest-${interestKey}-${index}`}
+                  interest={interest}
+                />
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm sm:text-base text-[#929292]">관심사가 아직 등록되지 않았습니다.</p>

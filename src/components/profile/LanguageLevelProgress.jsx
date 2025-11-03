@@ -10,6 +10,33 @@ export default function LanguageLevelProgress({
     trendLabel = null,
     goalMessage = '다음 목표를 설정해 학습을 이어가세요.'
 }) {
+    // 안전하게 문자열 추출
+    const safeString = (value, defaultValue = '') => {
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number') return String(value);
+        if (value && typeof value === 'object') {
+            return value.name || value.label || value.title || value.value || defaultValue;
+        }
+        return defaultValue;
+    };
+
+    // 안전하게 숫자 추출
+    const safeNumber = (value, defaultValue = 0) => {
+        if (typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value)) {
+            return value;
+        }
+        if (typeof value === 'string') {
+            const parsed = parseFloat(value);
+            if (!Number.isNaN(parsed) && Number.isFinite(parsed)) return parsed;
+        }
+        return defaultValue;
+    };
+
+    const safeLanguage = safeString(language, '언어');
+    const safeCurrentLevel = safeString(currentLevel, '');
+    const safeNextLevel = safeString(nextLevel, '');
+    const safeProgress = safeNumber(progress, 0);
+
     const [animatedProgress, setAnimatedProgress] = useState(0);
     const [animatedSkills, setAnimatedSkills] = useState({
         speaking: 0,
@@ -20,17 +47,17 @@ export default function LanguageLevelProgress({
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setAnimatedProgress(Number(progress) || 0);
+            setAnimatedProgress(safeProgress);
             setAnimatedSkills({
-                speaking: skills.speaking ?? 0,
-                listening: skills.listening ?? 0,
-                reading: skills.reading ?? 0,
-                writing: skills.writing ?? 0
+                speaking: safeNumber(skills.speaking, 0),
+                listening: safeNumber(skills.listening, 0),
+                reading: safeNumber(skills.reading, 0),
+                writing: safeNumber(skills.writing, 0)
             });
         }, 100);
 
         return () => clearTimeout(timer);
-    }, [progress, skills]);
+    }, [safeProgress, skills]);
 
     const getSkillName = (skill) => {
         const names = {
@@ -52,7 +79,7 @@ export default function LanguageLevelProgress({
         return icons[skill] || '📚';
     };
 
-    if (!language || progress == null || currentLevel == null) {
+    if (!safeLanguage || safeProgress == null || !safeCurrentLevel) {
         return (
             <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
                 <h3 className="text-[18px] font-bold text-[#111111] mb-2">언어별 진도</h3>
@@ -66,10 +93,10 @@ export default function LanguageLevelProgress({
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-[18px] font-bold text-[#111111]">{language} 레벨</h3>
-                    <p className="text-[14px] text-[#606060]">현재 레벨: {currentLevel}</p>
+                    <h3 className="text-[18px] font-bold text-[#111111]">{safeLanguage} 레벨</h3>
+                    <p className="text-[14px] text-[#606060]">현재 레벨: {safeCurrentLevel}</p>
                 </div>
-                {trendLabel && (
+                {trendLabel && typeof trendLabel === 'string' && (
                     <div className="text-right">
                         <div className="flex items-center gap-1 text-[#00C471]">
                             <TrendingUp className="w-4 h-4" />
@@ -96,38 +123,41 @@ export default function LanguageLevelProgress({
                     </div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-[12px] font-medium text-[#606060]">
-                            {currentLevel} → {nextLevel}
+                            {safeCurrentLevel} → {safeNextLevel}
                         </span>
                     </div>
                 </div>
                 <p className="text-[12px] text-[#929292] mt-2">
-                    {100 - progress}% 더 학습하면 {nextLevel} 레벨에 도달해요!
+                    {100 - safeProgress}% 더 학습하면 {safeNextLevel} 레벨에 도달해요!
                 </p>
             </div>
 
             {/* Skills Breakdown */}
             <div className="space-y-3">
                 <h4 className="text-[14px] font-medium text-[#111111] mb-3">영역별 실력</h4>
-                {Object.entries(skills).map(([skill, value]) => (
-                    <div key={skill} className="flex items-center gap-3">
-                        <span className="text-[20px] w-8 text-center">{getSkillIcon(skill)}</span>
-                        <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-[12px] text-[#606060]">{getSkillName(skill)}</span>
-                                <span className="text-[12px] font-medium text-[#111111]">{animatedSkills[skill]}%</span>
-                            </div>
-                            <div className="h-2 bg-[#F1F3F5] rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-[#00C471] rounded-full transition-all duration-1000 ease-out"
-                                    style={{
-                                        width: `${animatedSkills[skill]}%`,
-                                        backgroundColor: value >= 80 ? '#00A85F' : value >= 60 ? '#00C471' : '#FFB3C1'
-                                    }}
-                                />
+                {Object.entries(animatedSkills).map(([skill, value]) => {
+                    const safeValue = safeNumber(value, 0);
+                    return (
+                        <div key={skill} className="flex items-center gap-3">
+                            <span className="text-[20px] w-8 text-center">{getSkillIcon(skill)}</span>
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[12px] text-[#606060]">{getSkillName(skill)}</span>
+                                    <span className="text-[12px] font-medium text-[#111111]">{safeValue}%</span>
+                                </div>
+                                <div className="h-2 bg-[#F1F3F5] rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-[#00C471] rounded-full transition-all duration-1000 ease-out"
+                                        style={{
+                                            width: `${safeValue}%`,
+                                            backgroundColor: safeValue >= 80 ? '#00A85F' : safeValue >= 60 ? '#00C471' : '#FFB3C1'
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Next Goal */}

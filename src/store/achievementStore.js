@@ -157,12 +157,50 @@ const useAchievementStore = create(
 
           const basePayload = achievementsResponse?.data ?? achievementsResponse;
           const normalizedAchievements = resolveAchievements(basePayload);
-          const stats = statsResponse?.data ?? statsResponse ?? null;
+          const rawStats = statsResponse?.data ?? statsResponse ?? null;
+
+          // stats 객체의 모든 숫자 필드를 안전하게 처리
+          const normalizeStats = (raw) => {
+            if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+              return null;
+            }
+
+            return {
+              totalAchievements: typeof raw.totalAchievements === 'number' && !Number.isNaN(raw.totalAchievements) 
+                ? raw.totalAchievements 
+                : 0,
+              completedAchievements: typeof raw.completedAchievements === 'number' && !Number.isNaN(raw.completedAchievements)
+                ? raw.completedAchievements
+                : 0,
+              inProgressAchievements: typeof raw.inProgressAchievements === 'number' && !Number.isNaN(raw.inProgressAchievements)
+                ? raw.inProgressAchievements
+                : 0,
+              totalXpEarned: typeof raw.totalXpEarned === 'number' && !Number.isNaN(raw.totalXpEarned)
+                ? raw.totalXpEarned
+                : 0,
+              unclaimedRewards: typeof raw.unclaimedRewards === 'number' && !Number.isNaN(raw.unclaimedRewards)
+                ? raw.unclaimedRewards
+                : 0,
+              completionRate: typeof raw.completionRate === 'number' && !Number.isNaN(raw.completionRate)
+                ? raw.completionRate
+                : 0,
+              achievementsByCategory: typeof raw.achievementsByCategory === 'object' && !Array.isArray(raw.achievementsByCategory)
+                ? raw.achievementsByCategory
+                : {},
+              achievementsByTier: typeof raw.achievementsByTier === 'object' && !Array.isArray(raw.achievementsByTier)
+                ? raw.achievementsByTier
+                : {},
+              recentCompletions: Array.isArray(raw.recentCompletions) ? raw.recentCompletions : [],
+              nearCompletion: Array.isArray(raw.nearCompletion) ? raw.nearCompletion : []
+            };
+          };
+
+          const stats = normalizeStats(rawStats);
 
           const nextState = {
             achievements: normalizedAchievements,
             userAchievements: resolveOptionalArray(basePayload, 'userAchievements', state.userAchievements),
-            totalPoints: resolveNumber(basePayload, 'totalPoints', resolveNumber(stats, 'totalPoints', state.totalPoints)),
+            totalPoints: resolveNumber(basePayload, 'totalPoints', resolveNumber(stats, 'totalXpEarned', state.totalPoints)),
             currentLevel: resolveNumber(basePayload, 'currentLevel', state.currentLevel),
             unlockedBadges: resolveOptionalArray(basePayload, 'unlockedBadges', state.unlockedBadges),
             recentAchievements: resolveOptionalArray(basePayload, 'recentAchievements', state.recentAchievements),

@@ -8,19 +8,33 @@ const normalizeWeeklyData = (entries = []) => {
     }
 
     return entries.map((item) => {
-        const minutes = Number(item.minutes ?? item.totalMinutes ?? 0);
-        const sessions = Number(item.sessions ?? item.totalSessions ?? item.count ?? 0);
-        let dayLabel = item.day;
-
+        // 안전하게 숫자 추출
+        const safeMinutes = (() => {
+            const raw = item.minutes ?? item.totalMinutes ?? 0;
+            if (typeof raw === 'number' && !Number.isNaN(raw)) return raw;
+            return 0;
+        })();
+        
+        const safeSessions = (() => {
+            const raw = item.sessions ?? item.totalSessions ?? item.count ?? 0;
+            if (typeof raw === 'number' && !Number.isNaN(raw)) return raw;
+            return 0;
+        })();
+        
+        const minutes = Number.isFinite(safeMinutes) ? safeMinutes : 0;
+        const sessions = Number.isFinite(safeSessions) ? safeSessions : 0;
+        
+        let dayLabel = typeof item.day === 'string' ? item.day : '';
+        
         if (!dayLabel) {
             const date = item.date ? new Date(item.date) : null;
-            dayLabel = date ? DAY_LABELS[date.getDay()] : '';
+            dayLabel = date && !Number.isNaN(date.getTime()) ? DAY_LABELS[date.getDay()] : '';
         }
 
         return {
             day: dayLabel || '',
-            minutes: Number.isFinite(minutes) ? minutes : 0,
-            sessions: Number.isFinite(sessions) ? sessions : 0,
+            minutes,
+            sessions,
         };
     });
 };

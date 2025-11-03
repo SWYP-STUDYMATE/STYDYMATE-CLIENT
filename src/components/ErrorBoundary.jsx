@@ -51,6 +51,10 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const { fallback: Fallback } = this.props;
 
+      if (Fallback === null) {
+        return null;
+      }
+
       if (Fallback) {
         return <Fallback error={this.state.error} retry={this.handleRetry} />;
       }

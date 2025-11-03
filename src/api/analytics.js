@@ -59,53 +59,30 @@ export const getDashboardData = async () => {
 
 /**
  * 사용자 학습 통계 조회
- * @param {string} timeRange - 시간 범위 (day, week, month, year)
- * @param {string} userId - 사용자 ID (선택사항)
+ * @param {string} period - 기간 (week, month, year)
+ * @param {string} userId - 사용자 ID (선택사항, 현재는 사용 안함)
  * @returns {Promise<Object>} 학습 통계 데이터
  */
-export const getStudyStats = async (timeRange = 'week', userId = null) => {
+export const getStudyStats = async (period = 'month', userId = null) => {
   try {
-    log.info('학습 통계 조회 시작', { timeRange, userId }, 'ANALYTICS');
-    
+    log.info('학습 통계 조회 시작', { period, userId }, 'ANALYTICS');
+
+    // period 파라미터 검증 및 변환
+    const validPeriod = ['week', 'month', 'year'].includes(period) ? period : 'month';
+
     const params = new URLSearchParams();
-    
-    // 시간 범위 계산
-    const end = new Date();
-    const start = new Date();
-    
-    switch (timeRange) {
-      case 'day':
-        start.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        start.setDate(end.getDate() - 7);
-        break;
-      case 'month':
-        start.setMonth(end.getMonth() - 1);
-        break;
-      case 'year':
-        start.setFullYear(end.getFullYear() - 1);
-        break;
-      default:
-        start.setDate(end.getDate() - 7);
-    }
-    
-    params.append('start', start.toISOString());
-    params.append('end', end.toISOString());
-    
-    if (userId) {
-      params.append('userId', userId);
-    }
-    
-    const response = await workersApi.get(`/api/v1/analytics/metrics?${params}`);
-    
+    params.append('period', validPeriod);
+
+    // /api/v1/sessions/stats 엔드포인트로 변경 (사용자 학습 통계)
+    const response = await workersApi.get(`/api/v1/sessions/stats?${params}`);
+
     log.info('학습 통계 조회 성공', response.data, 'ANALYTICS');
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
       if (status && [401, 403, 404].includes(status)) {
-        log.warn('학습 통계 조회를 기본값으로 대체합니다.', { status, timeRange, userId }, 'ANALYTICS');
+        log.warn('학습 통계 조회를 기본값으로 대체합니다.', { status, period, userId }, 'ANALYTICS');
         return null;
       }
     }

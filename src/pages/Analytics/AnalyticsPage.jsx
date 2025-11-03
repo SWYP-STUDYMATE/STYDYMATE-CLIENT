@@ -54,26 +54,44 @@ const AnalyticsPage = () => {
    */
   const transformApiDataToAnalyticsData = (studyStats, sessionActivity) => {
     // API 응답 구조에 따라 데이터 변환 로직 구현
+    const metrics = studyStats?.metrics || {};
+    const safeNumber = (value, defaultValue = 0) => {
+      if (typeof value === 'number' && !Number.isNaN(value)) return value;
+      return defaultValue;
+    };
+    
     const transformedData = {
       overview: {
-        totalSessions: studyStats?.metrics?.totalSessions || 0,
-        totalMinutes: studyStats?.metrics?.totalMinutes || 0,
-        weeklyGrowth: studyStats?.metrics?.weeklyGrowth || 0,
-        currentStreak: studyStats?.metrics?.currentStreak || 0,
-        averageSessionTime: studyStats?.metrics?.averageSessionTime || 0,
-        partnersCount: studyStats?.metrics?.partnersCount || 0
+        totalSessions: safeNumber(metrics.totalSessions, 0),
+        totalMinutes: safeNumber(metrics.totalMinutes, 0),
+        weeklyGrowth: safeNumber(metrics.weeklyGrowth, 0),
+        currentStreak: safeNumber(metrics.currentStreak, 0),
+        averageSessionTime: safeNumber(metrics.averageSessionTime, 0),
+        partnersCount: safeNumber(metrics.partnersCount, 0)
       },
       sessionStats: sessionActivity?.metrics?.dailyStats || [],
-      languageProgress: studyStats?.metrics?.languageProgress || [],
+      languageProgress: Array.isArray(studyStats?.metrics?.languageProgress) 
+        ? studyStats.metrics.languageProgress 
+        : [],
       sessionTypes: Array.isArray(studyStats?.metrics?.sessionTypes)
         ? studyStats.metrics.sessionTypes
         : [],
-      weeklyGoals: studyStats?.metrics?.weeklyGoals || {
-        current: 0,
-        target: 7,
-        streak: 0
-      },
-      topPartners: studyStats?.metrics?.topPartners || []
+      weeklyGoals: typeof studyStats?.metrics?.weeklyGoals === 'object' && 
+                   studyStats?.metrics?.weeklyGoals !== null &&
+                   !Array.isArray(studyStats?.metrics?.weeklyGoals)
+        ? {
+            current: safeNumber(studyStats.metrics.weeklyGoals.current, 0),
+            target: safeNumber(studyStats.metrics.weeklyGoals.target, 7),
+            streak: safeNumber(studyStats.metrics.weeklyGoals.streak, 0)
+          }
+        : {
+            current: 0,
+            target: 7,
+            streak: 0
+          },
+      topPartners: Array.isArray(studyStats?.metrics?.topPartners)
+        ? studyStats.metrics.topPartners
+        : []
     };
     
     return transformedData;
@@ -179,7 +197,9 @@ const AnalyticsPage = () => {
               </div>
               <div className="text-right">
                 <div className="text-[20px] font-bold text-[#111111]">
-                  {analyticsData.overview.totalSessions}
+                  {typeof analyticsData.overview.totalSessions === 'number' 
+                    ? analyticsData.overview.totalSessions 
+                    : 0}
                 </div>
                 <div className="text-[12px] text-[#929292]">총 세션</div>
               </div>
@@ -187,7 +207,9 @@ const AnalyticsPage = () => {
             <div className="flex items-center space-x-1">
               <TrendingUp className="w-3 h-3 text-[#00C471]" />
               <span className="text-[12px] text-[#00C471] font-medium">
-                +{analyticsData.overview.weeklyGrowth}%
+                +{typeof analyticsData.overview.weeklyGrowth === 'number' 
+                  ? analyticsData.overview.weeklyGrowth 
+                  : 0}%
               </span>
             </div>
           </div>
@@ -199,13 +221,17 @@ const AnalyticsPage = () => {
               </div>
               <div className="text-right">
                 <div className="text-[20px] font-bold text-[#111111]">
-                  {Math.floor(analyticsData.overview.totalMinutes / 60)}h {analyticsData.overview.totalMinutes % 60}m
+                  {typeof analyticsData.overview.totalMinutes === 'number' 
+                    ? `${Math.floor(analyticsData.overview.totalMinutes / 60)}h ${analyticsData.overview.totalMinutes % 60}m`
+                    : '0h 0m'}
                 </div>
                 <div className="text-[12px] text-[#929292]">총 학습시간</div>
               </div>
             </div>
             <div className="text-[12px] text-[#666666]">
-              평균 {analyticsData.overview.averageSessionTime}분/세션
+              평균 {typeof analyticsData.overview.averageSessionTime === 'number' 
+                ? analyticsData.overview.averageSessionTime 
+                : 0}분/세션
             </div>
           </div>
 
@@ -216,7 +242,9 @@ const AnalyticsPage = () => {
               </div>
               <div className="text-right">
                 <div className="text-[20px] font-bold text-[#111111]">
-                  {analyticsData.overview.currentStreak}
+                  {typeof analyticsData.overview.currentStreak === 'number' 
+                    ? analyticsData.overview.currentStreak 
+                    : 0}
                 </div>
                 <div className="text-[12px] text-[#929292]">연속 학습</div>
               </div>
@@ -233,7 +261,9 @@ const AnalyticsPage = () => {
               </div>
               <div className="text-right">
                 <div className="text-[20px] font-bold text-[#111111]">
-                  {analyticsData.overview.partnersCount}
+                  {typeof analyticsData.overview.partnersCount === 'number' 
+                    ? analyticsData.overview.partnersCount 
+                    : 0}
                 </div>
                 <div className="text-[12px] text-[#929292]">파트너</div>
               </div>
@@ -256,16 +286,24 @@ const AnalyticsPage = () => {
           <div className="mb-4">
             <div className="flex items-center justify-between text-[14px] mb-2">
               <span className="text-[#666666]">
-                {analyticsData.weeklyGoals.current}/{analyticsData.weeklyGoals.target} 세션 완료
+                {typeof analyticsData.weeklyGoals.current === 'number' && typeof analyticsData.weeklyGoals.target === 'number'
+                  ? `${analyticsData.weeklyGoals.current}/${analyticsData.weeklyGoals.target} 세션 완료`
+                  : '0/7 세션 완료'}
               </span>
               <span className="text-[#111111] font-semibold">
-                {Math.round((analyticsData.weeklyGoals.current / analyticsData.weeklyGoals.target) * 100)}%
+                {typeof analyticsData.weeklyGoals.current === 'number' && typeof analyticsData.weeklyGoals.target === 'number' && analyticsData.weeklyGoals.target > 0
+                  ? Math.round((analyticsData.weeklyGoals.current / analyticsData.weeklyGoals.target) * 100)
+                  : 0}%
               </span>
             </div>
             <div className="w-full bg-[#E7E7E7] rounded-full h-3">
               <div 
                 className="bg-[#00C471] h-3 rounded-full transition-all duration-500"
-                style={{ width: `${(analyticsData.weeklyGoals.current / analyticsData.weeklyGoals.target) * 100}%` }}
+                style={{ 
+                  width: `${typeof analyticsData.weeklyGoals.current === 'number' && typeof analyticsData.weeklyGoals.target === 'number' && analyticsData.weeklyGoals.target > 0
+                    ? Math.min(100, Math.round((analyticsData.weeklyGoals.current / analyticsData.weeklyGoals.target) * 100))
+                    : 0}%` 
+                }}
               ></div>
             </div>
           </div>
@@ -273,7 +311,11 @@ const AnalyticsPage = () => {
           <div className="flex items-center space-x-4 text-[12px]">
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-[#00C471] rounded-full"></div>
-              <span className="text-[#666666]">{analyticsData.weeklyGoals.streak}일 연속 목표 달성</span>
+              <span className="text-[#666666]">
+                {typeof analyticsData.weeklyGoals.streak === 'number' 
+                  ? `${analyticsData.weeklyGoals.streak}일`
+                  : '0일'} 연속 목표 달성
+              </span>
             </div>
           </div>
         </div>

@@ -115,7 +115,12 @@ export const getFileUrl = (path) => {
  * 최적화된 이미지 URL 생성
  */
 export const getOptimizedImageUrl = (url, options = {}) => {
-  if (!url) return '/assets/basicProfilePic.png';
+  // url이 객체인 경우 안전하게 처리
+  if (url && typeof url === 'object') {
+    url = url.url || url.imageUrl || url.src || url.path || null;
+  }
+  
+  if (!url || typeof url !== 'string') return '/assets/basicProfilePic.png';
   
   const {
     width,

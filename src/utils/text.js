@@ -54,30 +54,48 @@ export const toDisplayText = (value, fallback = null) => {
   }
 
   if (typeof value === 'object') {
-    for (const key of candidateKeys) {
-      const candidate = value[key];
-      if (typeof candidate === 'string' && candidate.trim() !== '') {
-        return candidate;
+    // 재귀적으로 문자열을 추출하되, 최대 깊이 제한
+    const extractString = (obj, depth = 0) => {
+      if (depth > 3) return null; // 최대 깊이 제한
+      
+      for (const key of candidateKeys) {
+        const candidate = obj[key];
+        if (typeof candidate === 'string' && candidate.trim() !== '') {
+          return candidate;
+        }
+        if (typeof candidate === 'object' && candidate !== null) {
+          const nested = extractString(candidate, depth + 1);
+          if (typeof nested === 'string') return nested;
+        }
       }
-    }
 
-    const locationString = toLocationString(value);
-    if (locationString) {
-      return locationString;
-    }
+      const locationString = toLocationString(obj);
+      if (locationString) {
+        return locationString;
+      }
 
-    const stringValues = Object.values(value).filter(
-      (item) => typeof item === 'string' && item.trim() !== ''
-    );
+      // 객체의 모든 값 중에서 문자열 찾기
+      const stringValues = Object.values(obj)
+        .filter((item) => typeof item === 'string' && item.trim() !== '')
+        .map((item) => String(item));
 
-    if (stringValues.length > 0) {
-      return stringValues.join(', ');
-    }
+      if (stringValues.length > 0) {
+        return stringValues.join(', ');
+      }
 
-    return fallback;
+      return null;
+    };
+
+    const result = extractString(value);
+    return result || fallback;
   }
 
-  return String(value);
+  // 최종적으로 문자열로 변환 시도
+  try {
+    return String(value);
+  } catch {
+    return fallback;
+  }
 };
 
 export default toDisplayText;
