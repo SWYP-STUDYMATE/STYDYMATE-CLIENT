@@ -80,7 +80,8 @@ class WebRTCConnectionManager {
       try {
         const iceServersConfig = await webrtcAPI.getIceServers(roomId);
         if (iceServersConfig && iceServersConfig.iceServers) {
-          this.rtcConfiguration.iceServers = iceServersConfig.iceServers;
+          // 정규화된 ICE 서버 설정 사용
+          this.rtcConfiguration.iceServers = this.normalizeIceServers(iceServersConfig.iceServers);
           log.info('ICE 서버 설정 업데이트', this.rtcConfiguration, 'WEBRTC');
         }
       } catch (iceError) {
@@ -321,6 +322,59 @@ class WebRTCConnectionManager {
     if (this.callbacks.onParticipantLeft) {
       this.callbacks.onParticipantLeft(normalizedParticipant);
     }
+  }
+
+  /**
+   * Normalize ICE server URLs to valid format
+   * @param {Array} iceServers - ICE servers configuration
+   * @returns {Array} Normalized ICE servers
+   */
+  normalizeIceServers(iceServers) {
+    if (!Array.isArray(iceServers)) {
+      return this.rtcConfiguration.iceServers; // 기본 설정 반환
+    }
+
+    return iceServers.map(server => {
+      // urls가 문자열인 경우 배열로 변환
+      const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+      
+      // 각 URL을 정규화
+      const normalizedUrls = urls.map(url => {
+        if (typeof url !== 'string') {
+          return url;
+        }
+
+        // 이미 올바른 형식인지 확인 (stun: 또는 turn: 또는 turns:로 시작)
+        if (url.match(/^(stun|turn|turns):/i)) {
+          return url;
+        }
+
+        // 프로토콜이 없는 경우 추가
+        // stun.cloudflare.com:3478 -> stun:stun.cloudflare.com:3478
+        if (url.includes('stun.') || url.includes('stun1.') || url.includes('stun2.')) {
+          return `stun:${url}`;
+        }
+
+        // turn 서버인 경우 (username/credential이 있으면 turn으로 간주)
+        if (server.username || server.credential) {
+          // 포트 번호가 있는지 확인
+          if (url.includes(':')) {
+            return `turn:${url}`;
+          }
+          // 포트가 없으면 기본 포트 추가
+          return `turn:${url}:3478`;
+        }
+
+        // 알 수 없는 형식은 그대로 반환 (에러 발생 가능)
+        console.warn('⚠️ [WebRTC] 알 수 없는 ICE 서버 URL 형식:', url);
+        return url;
+      });
+
+      return {
+        ...server,
+        urls: normalizedUrls.length === 1 ? normalizedUrls[0] : normalizedUrls
+      };
+    });
   }
 
   /**
