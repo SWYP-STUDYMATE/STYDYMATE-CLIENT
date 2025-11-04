@@ -157,29 +157,24 @@ export function useRealtimeTranscription({
   // 전사 시작
   const startTranscription = useCallback(async (stream) => {
     if (!stream) {
-      const errorMessage = '오디오 스트림이 없습니다.';
-      setError(errorMessage);
+      // 스트림이 없으면 조용히 반환 (에러 로그 없음)
+      return;
+    }
+
+    // 오디오 트랙 상태 사전 확인
+    const audioTracks = stream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      // 오디오 트랙이 없으면 조용히 반환 (에러 로그 없음)
+      return;
+    }
+
+    const enabledTracks = audioTracks.filter(track => track.enabled && track.readyState === 'live');
+    if (enabledTracks.length === 0) {
+      // 오디오 트랙이 비활성화되어 있으면 조용히 반환 (에러 로그 없음)
       return;
     }
 
     try {
-      // 오디오 트랙 상태 사전 확인
-      const audioTracks = stream.getAudioTracks();
-      if (audioTracks.length === 0) {
-        const errorMessage = '스트림에 오디오 트랙이 없습니다.';
-        setError(errorMessage);
-        log.error('전사 시작 실패', new Error(errorMessage), 'TRANSCRIPTION');
-        return;
-      }
-
-      const enabledTracks = audioTracks.filter(track => track.enabled && track.readyState === 'live');
-      if (enabledTracks.length === 0) {
-        const errorMessage = '오디오 트랙이 모두 비활성화되어 있습니다. 오디오를 켜주세요.';
-        setError(errorMessage);
-        log.error('전사 시작 실패', new Error(errorMessage), 'TRANSCRIPTION');
-        return;
-      }
-
       setError(null);
       streamRef.current = stream;
       
@@ -202,6 +197,7 @@ export function useRealtimeTranscription({
       log.info('실시간 전사 시작', { language, chunkDuration }, 'TRANSCRIPTION');
 
     } catch (err) {
+      // initializeRecorder에서 발생한 에러만 로깅 (오디오 트랙 관련 에러는 이미 위에서 처리됨)
       const errorMessage = err.message || '전사를 시작할 수 없습니다.';
       setError(errorMessage);
       log.error('전사 시작 실패', err, 'TRANSCRIPTION');
@@ -242,9 +238,7 @@ export function useRealtimeTranscription({
         const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
         
         if (!hasEnabledAudio) {
-          const errorMessage = '오디오 트랙이 모두 비활성화되어 있습니다. 오디오를 켜주세요.';
-          setError(errorMessage);
-          log.error('전사 시작 실패', new Error(errorMessage), 'TRANSCRIPTION');
+          // 오디오 트랙이 없으면 조용히 반환 (에러 로그 없음)
           return;
         }
       }

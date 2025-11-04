@@ -74,10 +74,11 @@ export const getUserName = async () => {
 };
 
 // 사용자 언어 정보 조회
+// 사용자 언어 정보 조회
 export const getUserLanguageInfo = async () => {
   try {
     const response = await api.get('/users/language-info');
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
@@ -87,6 +88,24 @@ export const getUserLanguageInfo = async () => {
       }
     }
     console.error('Get user language info error:', error);
+    throw error;
+  }
+};
+
+// 다른 사용자 언어 정보 조회
+export const getUserLanguageInfoById = async (userId) => {
+  try {
+    const response = await api.get(`/users/${userId}/language-info`);
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status && [401, 403, 404].includes(status)) {
+        console.warn('User language info endpoint returned no data:', status);
+        return null;
+      }
+    }
+    console.error('Get user language info by id error:', error);
     throw error;
   }
 };
@@ -106,9 +125,20 @@ export const updateUserLanguageInfo = async (languageData) => {
 export const getUserMotivationInfo = async () => {
   try {
     const response = await api.get('/users/motivation-info');
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Get user motivation info error:', error);
+    throw error;
+  }
+};
+
+// 다른 사용자 동기/목표 정보 조회
+export const getUserMotivationInfoById = async (userId) => {
+  try {
+    const response = await api.get(`/users/${userId}/motivation-info`);
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('Get user motivation info by id error:', error);
     throw error;
   }
 };
@@ -150,9 +180,20 @@ export const updateUserPartnerInfo = async (partnerData) => {
 export const getUserScheduleInfo = async () => {
   try {
     const response = await api.get('/users/schedule-info');
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch (error) {
     console.error('Get user schedule info error:', error);
+    throw error;
+  }
+};
+
+// 다른 사용자 스케줄 정보 조회
+export const getUserScheduleInfoById = async (userId) => {
+  try {
+    const response = await api.get(`/users/${userId}/schedule-info`);
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error('Get user schedule info by id error:', error);
     throw error;
   }
 };

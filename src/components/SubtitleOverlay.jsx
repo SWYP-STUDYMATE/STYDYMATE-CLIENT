@@ -85,6 +85,8 @@ export function DualSubtitleOverlay({
   remoteLabel = '상대방',
   showConfidence = false,
   showTimestamp = false,
+  showLanguage = false,
+  showTranslationIndicator = false,
   className = ''
 }) {
   const [localVisible, setLocalVisible] = useState(false);
@@ -111,9 +113,22 @@ export function DualSubtitleOverlay({
       {/* 로컬 자막 (하단 왼쪽) */}
       {localSubtitle && localVisible && (
         <div className="fixed bottom-20 left-4 z-50 transition-all duration-300 animate-fadeIn">
-          <div className="bg-[#00C471]/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg max-w-md">
+          <div className="bg-[#00C471]/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg max-w-md border-2 border-green-400">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-green-200 font-medium">{localLabel}</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-green-200 font-medium">{localLabel}</div>
+                {showTranslationIndicator && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-green-600/50 rounded text-xs">
+                    <Languages className="w-3 h-3" />
+                    <span>번역</span>
+                  </div>
+                )}
+                {showLanguage && localSubtitle.language && (
+                  <div className="text-xs text-green-300">
+                    {localSubtitle.language}
+                  </div>
+                )}
+              </div>
               {showTimestamp && localSubtitle.timestamp && (
                 <div className="text-xs text-green-300">
                   {new Date(localSubtitle.timestamp).toLocaleTimeString()}
@@ -133,9 +148,22 @@ export function DualSubtitleOverlay({
       {/* 리모트 자막 (하단 오른쪽) */}
       {remoteSubtitle && remoteVisible && (
         <div className="fixed bottom-20 right-4 z-50 transition-all duration-300 animate-fadeIn">
-          <div className="bg-gray-800/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg max-w-md">
+          <div className="bg-gray-800/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg max-w-md border-2 border-gray-600">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs text-gray-400 font-medium">{remoteLabel}</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-gray-400 font-medium">{remoteLabel}</div>
+                {showTranslationIndicator && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-600/50 rounded text-xs">
+                    <Languages className="w-3 h-3" />
+                    <span>번역</span>
+                  </div>
+                )}
+                {showLanguage && remoteSubtitle.language && (
+                  <div className="text-xs text-gray-500">
+                    {remoteSubtitle.language}
+                  </div>
+                )}
+              </div>
               {showTimestamp && remoteSubtitle.timestamp && (
                 <div className="text-xs text-gray-500">
                   {new Date(remoteSubtitle.timestamp).toLocaleTimeString()}

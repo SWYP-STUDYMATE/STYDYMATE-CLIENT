@@ -379,6 +379,26 @@ usersRoutes.get('/language-info', async (c) => {
   }
 });
 
+// 다른 사용자 언어 정보 조회
+usersRoutes.get('/:userId/language-info', async (c) => {
+  const currentUserId = c.get('userId');
+  if (!currentUserId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const targetUserId = c.req.param('userId');
+  if (!targetUserId) {
+    throw new AppError('Target user id is required', 400, 'INVALID_PARAMETER');
+  }
+
+  try {
+    const info = await buildLanguageInfo(c.env, targetUserId);
+    return successResponse(c, info);
+  } catch (error) {
+    throw wrapError(error, `GET /api/v1/users/${targetUserId}/language-info`);
+  }
+});
+
 usersRoutes.patch('/language-info', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
@@ -416,6 +436,26 @@ usersRoutes.get('/motivation-info', async (c) => {
     return successResponse(c, info);
   } catch (error) {
     throw wrapError(error, 'GET /api/v1/user/motivation-info');
+  }
+});
+
+// 다른 사용자 동기/목표 정보 조회
+usersRoutes.get('/:userId/motivation-info', async (c) => {
+  const currentUserId = c.get('userId');
+  if (!currentUserId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const targetUserId = c.req.param('userId');
+  if (!targetUserId) {
+    throw new AppError('Target user id is required', 400, 'INVALID_PARAMETER');
+  }
+
+  try {
+    const info = await buildMotivationInfo(c.env, targetUserId);
+    return successResponse(c, info);
+  } catch (error) {
+    throw wrapError(error, `GET /api/v1/users/${targetUserId}/motivation-info`);
   }
 });
 
@@ -492,6 +532,26 @@ usersRoutes.get('/schedule-info', async (c) => {
     return successResponse(c, info);
   } catch (error) {
     throw wrapError(error, 'GET /api/v1/user/schedule-info');
+  }
+});
+
+// 다른 사용자 스케줄 정보 조회
+usersRoutes.get('/:userId/schedule-info', async (c) => {
+  const currentUserId = c.get('userId');
+  if (!currentUserId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const targetUserId = c.req.param('userId');
+  if (!targetUserId) {
+    throw new AppError('Target user id is required', 400, 'INVALID_PARAMETER');
+  }
+
+  try {
+    const info = await buildScheduleInfo(c.env, targetUserId);
+    return successResponse(c, info);
+  } catch (error) {
+    throw wrapError(error, `GET /api/v1/users/${targetUserId}/schedule-info`);
   }
 });
 

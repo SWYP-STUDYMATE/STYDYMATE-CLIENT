@@ -226,13 +226,12 @@ export default function RealtimeSubtitlePanel({
         const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
         
         if (hasEnabledAudio) {
-          toggleLocalTranscription(localStream).catch(error => {
-            console.error('로컬 전사 시작 실패:', error);
-            // 에러는 useRealtimeTranscription 훅에서 처리됨
+          // 에러는 조용히 무시 (useRealtimeTranscription에서 이미 처리됨)
+          toggleLocalTranscription(localStream).catch(() => {
+            // 에러는 조용히 무시 (오디오 트랙 관련 에러는 이미 startTranscription에서 처리됨)
           });
-        } else {
-          console.warn('⚠️ [RealtimeSubtitlePanel] 로컬 오디오가 꺼져 있어 전사를 시작하지 않습니다.');
         }
+        // 오디오가 없으면 조용히 무시 (경고 로그도 출력하지 않음)
       }
       
       if (remoteStream && !isRemoteTranscribing) {
@@ -240,13 +239,12 @@ export default function RealtimeSubtitlePanel({
         const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
         
         if (hasEnabledAudio) {
-          toggleRemoteTranscription(remoteStream).catch(error => {
-            console.error('원격 전사 시작 실패:', error);
-            // 에러는 useRealtimeTranscription 훅에서 처리됨
+          // 에러는 조용히 무시 (useRealtimeTranscription에서 이미 처리됨)
+          toggleRemoteTranscription(remoteStream).catch(() => {
+            // 에러는 조용히 무시 (오디오 트랙 관련 에러는 이미 startTranscription에서 처리됨)
           });
-        } else {
-          console.warn('⚠️ [RealtimeSubtitlePanel] 원격 오디오가 꺼져 있어 전사를 시작하지 않습니다.');
         }
+        // 오디오가 없으면 조용히 무시 (경고 로그도 출력하지 않음)
       }
     }
   }, [
@@ -396,6 +394,17 @@ export default function RealtimeSubtitlePanel({
                 <div className="w-2 h-2 bg-[#00C471] rounded-full animate-pulse" />
                 <span>활성</span>
               </div>
+            )}
+            {!isActive && subtitleEnabled && (
+              <div className="flex items-center gap-1 text-xs text-amber-500">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                <span>대기 중</span>
+              </div>
+            )}
+            {transcripts.length > 0 && !isExpanded && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                ({transcripts.length})
+              </span>
             )}
           </button>
 

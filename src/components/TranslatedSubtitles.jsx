@@ -87,30 +87,48 @@ export default function TranslatedSubtitles({
   // 로컬 자막 번역
   useEffect(() => {
     if (localSubtitle && showTranslation) {
+      console.log('🔄 [TranslatedSubtitles] 로컬 자막 번역 시작:', localSubtitle.text);
       translateLocal(localSubtitle).then(translation => {
         if (translation) {
+          console.log('✅ [TranslatedSubtitles] 로컬 자막 번역 완료:', translation.translated);
           setTranslatedLocalSubtitle({
             text: translation.translated,
             speaker: 'local',
             language: targetLanguage
           });
+        } else {
+          console.warn('⚠️ [TranslatedSubtitles] 로컬 자막 번역 결과 없음');
         }
+      }).catch(error => {
+        console.error('❌ [TranslatedSubtitles] 로컬 자막 번역 실패:', error);
       });
+    } else if (localSubtitle && !showTranslation) {
+      // 번역이 꺼져있으면 원본 자막만 표시
+      setTranslatedLocalSubtitle(null);
     }
   }, [localSubtitle, showTranslation, translateLocal, targetLanguage]);
 
   // 리모트 자막 번역
   useEffect(() => {
     if (remoteSubtitle && showTranslation) {
+      console.log('🔄 [TranslatedSubtitles] 리모트 자막 번역 시작:', remoteSubtitle.text);
       translateRemote(remoteSubtitle).then(translation => {
         if (translation) {
+          console.log('✅ [TranslatedSubtitles] 리모트 자막 번역 완료:', translation.translated);
           setTranslatedRemoteSubtitle({
             text: translation.translated,
             speaker: 'remote',
             language: targetLanguage
           });
+        } else {
+          console.warn('⚠️ [TranslatedSubtitles] 리모트 자막 번역 결과 없음');
         }
+      }).catch(error => {
+        console.error('❌ [TranslatedSubtitles] 리모트 자막 번역 실패:', error);
       });
+    } else if (remoteSubtitle && !showTranslation) {
+      // 번역이 꺼져있으면 원본 자막만 표시
+      setTranslatedRemoteSubtitle(null);
     }
   }, [remoteSubtitle, showTranslation, translateRemote, targetLanguage]);
 
@@ -128,8 +146,21 @@ export default function TranslatedSubtitles({
   }, [remoteStream, isRemoteTranscribing, toggleRemoteTranscription]);
 
   // 표시할 자막 결정
-  const displayLocalSubtitle = showTranslation ? translatedLocalSubtitle : localSubtitle;
-  const displayRemoteSubtitle = showTranslation ? translatedRemoteSubtitle : remoteSubtitle;
+  const displayLocalSubtitle = showTranslation && translatedLocalSubtitle ? translatedLocalSubtitle : localSubtitle;
+  const displayRemoteSubtitle = showTranslation && translatedRemoteSubtitle ? translatedRemoteSubtitle : remoteSubtitle;
+  
+  // 번역 상태 확인
+  const hasTranslation = showTranslation && (translatedLocalSubtitle || translatedRemoteSubtitle);
+  
+  console.log('📊 [TranslatedSubtitles] 자막 상태:', {
+    showTranslation,
+    hasLocalSubtitle: !!localSubtitle,
+    hasTranslatedLocal: !!translatedLocalSubtitle,
+    hasRemoteSubtitle: !!remoteSubtitle,
+    hasTranslatedRemote: !!translatedRemoteSubtitle,
+    displayLocal: displayLocalSubtitle?.text,
+    displayRemote: displayRemoteSubtitle?.text
+  });
 
   return (
     <>
@@ -188,7 +219,9 @@ export default function TranslatedSubtitles({
         localSubtitle={showOriginal ? localSubtitle : displayLocalSubtitle}
         remoteSubtitle={showOriginal ? remoteSubtitle : displayRemoteSubtitle}
         localLabel={showOriginal && showTranslation ? '원본' : '나'}
-        remoteLabel={showOriginal && showTranslation ? '번역' : '상대방'}
+        remoteLabel={showOriginal && showTranslation ? '원본' : '상대방'}
+        showLanguage={showTranslation}
+        showTranslationIndicator={hasTranslation}
       />
 
       {/* 번역된 자막 (원본과 함께 표시 시) */}
@@ -198,6 +231,7 @@ export default function TranslatedSubtitles({
           remoteSubtitle={translatedRemoteSubtitle}
           localLabel="번역"
           remoteLabel="번역"
+          showLanguage={true}
         />
       )}
 

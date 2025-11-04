@@ -286,21 +286,21 @@ export default function VideoSessionRoom() {
 
         if (remoteParticipant || Object.keys(metadata).length > 0) {
           setPartnerInfo({
-            name: metadata.partnerName || remoteParticipant?.name || remoteParticipant?.userName || 'Partner',
-            avatar: metadata.partnerAvatar || '/assets/basicProfilePic.png',
-            level: metadata.partnerLevel || 'Unknown',
-            nativeLanguage: metadata.partnerNativeLanguage || 'Unknown',
-            learningLanguage: metadata.partnerLearningLanguage || 'Unknown'
+            name: metadata.partnerName || remoteParticipant?.name || remoteParticipant?.userName || '게스트',
+            avatar: metadata.partnerAvatar || remoteParticipant?.avatar || '/assets/basicProfilePic.png',
+            level: metadata.partnerLevel || remoteParticipant?.level || null,
+            nativeLanguage: metadata.partnerNativeLanguage || remoteParticipant?.nativeLanguage || null,
+            learningLanguage: metadata.partnerLearningLanguage || remoteParticipant?.learningLanguage || null
           });
         } else {
           console.warn('⚠️ [VideoSessionRoom] 원격 참가자 정보를 찾을 수 없습니다');
           // 기본 파트너 정보 설정 (연결을 기다리는 상태)
           setPartnerInfo({
-            name: 'Waiting...',
+            name: '대기 중...',
             avatar: '/assets/basicProfilePic.png',
-            level: 'Unknown',
-            nativeLanguage: 'Unknown',
-            learningLanguage: 'Unknown'
+            level: null,
+            nativeLanguage: null,
+            learningLanguage: null
           });
         }
       }
@@ -308,11 +308,11 @@ export default function VideoSessionRoom() {
       log.warn('룸 정보 로드 실패', error, 'VIDEO_SESSION');
       // 에러 발생 시에도 기본 파트너 정보 설정
       setPartnerInfo({
-        name: 'Partner',
+        name: '대기 중...',
         avatar: '/assets/basicProfilePic.png',
-        level: 'Unknown',
-        nativeLanguage: 'Unknown',
-        learningLanguage: 'Unknown'
+        level: null,
+        nativeLanguage: null,
+        learningLanguage: null
       });
     }
   };
@@ -391,14 +391,19 @@ export default function VideoSessionRoom() {
 
       const currentUserId = localStorage.getItem('userId') || 'guest';
       if (participant.userId !== currentUserId) {
-        console.log('🔄 [VideoSessionRoom] 파트너 정보 업데이트:', participant.userName);
-        setPartnerInfo((prev) => ({
-          name: participant.userName || prev?.name || 'Partner',
-          avatar: prev?.avatar || '/assets/basicProfilePic.png',
-          level: prev?.level || 'Unknown',
-          nativeLanguage: prev?.nativeLanguage || 'Unknown',
-          learningLanguage: prev?.learningLanguage || 'Unknown'
-        }));
+        console.log('🔄 [VideoSessionRoom] 파트너 정보 업데이트:', participant.userName || participant.name);
+        
+        // 참가자 정보가 있으면 더 자세한 정보로 업데이트
+        setPartnerInfo((prev) => {
+          const participantName = participant.userName || participant.name;
+          return {
+            name: participantName || prev?.name || '게스트',
+            avatar: prev?.avatar || participant.avatar || '/assets/basicProfilePic.png',
+            level: participant.level || prev?.level || null,
+            nativeLanguage: participant.nativeLanguage || prev?.nativeLanguage || null,
+            learningLanguage: participant.learningLanguage || prev?.learningLanguage || null
+          };
+        });
       }
     });
 
@@ -798,11 +803,12 @@ export default function VideoSessionRoom() {
                 autoPlay
                 muted
                 playsInline
-                className={`w-full h-full object-cover ${!isCameraOn ? 'hidden' : ''}`}
+                className={`w-full h-full object-cover ${!isCameraOn ? 'opacity-0 pointer-events-none' : ''}`}
+                style={{ display: 'block' }}
               />
 
               {!isCameraOn && (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
                   <div className="text-center">
                     <div className="w-24 h-24 bg-[var(--black-400)] rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="text-[var(--black-200)] text-3xl">👤</span>
@@ -830,8 +836,13 @@ export default function VideoSessionRoom() {
             {/* Remote Videos (실제 스트림이 있는 참가자만 표시) */}
             {Array.from(remoteVideosRef.current.entries()).map(([userId, stream]) => {
               // participants Map에서 해당 userId의 참가자 정보 가져오기
-              const participant = participants.get(userId) || { userId, userName: 'Unknown' };
-
+              const participant = participants.get(userId);
+              
+              // 파트너 정보가 있으면 우선 사용, 없으면 participant 정보 사용
+              const displayName = partnerInfo?.name || participant?.userName || participant?.name || '게스트';
+              const displayInitial = displayName.charAt(0).toUpperCase();
+              const isGuest = !participant?.userName && !participant?.name && !partnerInfo?.name;
+              
               return (
                 <div
                   key={userId}
@@ -851,16 +862,51 @@ export default function VideoSessionRoom() {
                   />
 
                   {/* Partner Info Overlay */}
-                  <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">
+                  <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 min-w-[200px]">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[var(--green-500)] flex items-center justify-center">
+                      {/* 프로필 아바타 */}
+                      {partnerInfo?.avatar && partnerInfo.avatar !== '/assets/basicProfilePic.png' ? (
+                        <img
+                          src={partnerInfo.avatar}
+                          alt={displayName}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-[var(--green-500)]"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-10 h-10 rounded-full ${isGuest ? 'bg-[var(--black-300)]' : 'bg-[var(--green-500)]'} flex items-center justify-center ${partnerInfo?.avatar && partnerInfo.avatar !== '/assets/basicProfilePic.png' ? 'hidden' : ''}`}>
                         <span className="text-white font-bold text-lg">
-                          {participant.userName?.charAt(0).toUpperCase() || '?'}
+                          {displayInitial}
                         </span>
                       </div>
-                      <div>
-                        <p className="text-white font-medium">{participant.userName || 'Anonymous'}</p>
-                        <p className="text-[var(--black-200)] text-sm">참가자</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-medium text-sm truncate">{displayName}</p>
+                          {isGuest && (
+                            <span className="text-[var(--black-200)] text-xs px-1.5 py-0.5 bg-[var(--black-300)] rounded">
+                              게스트
+                            </span>
+                          )}
+                        </div>
+                        {partnerInfo?.level && partnerInfo.level !== 'Unknown' ? (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[var(--black-200)] text-xs">
+                              {partnerInfo.level}
+                            </p>
+                            {partnerInfo.nativeLanguage && partnerInfo.nativeLanguage !== 'Unknown' && (
+                              <>
+                                <span className="text-[var(--black-300)] text-xs">•</span>
+                                <p className="text-[var(--black-200)] text-xs">
+                                  {partnerInfo.nativeLanguage} → {partnerInfo.learningLanguage || '한국어'}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[var(--black-200)] text-xs mt-0.5">참가자</p>
+                        )}
                       </div>
                     </div>
                   </div>

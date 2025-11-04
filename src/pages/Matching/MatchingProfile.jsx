@@ -17,6 +17,8 @@ import useMatchingStore from '../../store/matchingStore';
 import useSessionStore from '../../store/sessionStore';
 import { useAlert } from '../../hooks/useAlert';
 import { getUserProfile } from '../../api/profile';
+import { getUserScheduleInfoById, getUserLanguageInfoById, getUserMotivationInfoById } from '../../api/user';
+import { getOnboardingSummaryById } from '../../api/onboarding';
 import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
 
 export default function MatchingProfile() {
@@ -59,13 +61,52 @@ export default function MatchingProfile() {
                     // 이미 matchedUsers에 있으면 사용
                     const mappedUser = mapUserData(matchedUser);
                     setUser(mappedUser);
+                    
+                    // 온보딩 summary와 스케줄 정보도 함께 가져오기
+                    try {
+                        const [scheduleData, onboardingSummary, languageInfo, motivationInfo] = await Promise.all([
+                            getUserScheduleInfoById(userId).catch(() => ({ schedules: [] })),
+                            getOnboardingSummaryById(userId).catch(() => null),
+                            getUserLanguageInfoById(userId).catch(() => null),
+                            getUserMotivationInfoById(userId).catch(() => null)
+                        ]);
+                        
+                        // 온보딩 데이터로 업데이트
+                        if (onboardingSummary || languageInfo || motivationInfo) {
+                            const updatedUser = enrichUserData(mappedUser, onboardingSummary, languageInfo, motivationInfo);
+                            setUser(updatedUser);
+                        }
+                        
+                        // 스케줄 정보 포맷팅
+                        if (scheduleData?.schedules) {
+                            const formattedAvailability = formatSchedules(scheduleData.schedules);
+                            setUser(prev => ({ ...prev, availability: formattedAvailability }));
+                        }
+                    } catch (error) {
+                        console.warn('Failed to fetch additional info:', error);
+                        // 추가 정보 실패해도 프로필은 표시
+                    }
+                    
                     setIsLoading(false);
                     return;
                 }
 
                 // matchedUsers에 없으면 API 호출
-                const profileData = await getUserProfile(userId);
-                const mappedUser = mapUserData(profileData);
+                const [profileData, scheduleData, onboardingSummary, languageInfo, motivationInfo] = await Promise.all([
+                    getUserProfile(userId),
+                    getUserScheduleInfoById(userId).catch(() => ({ schedules: [] })), // 실패해도 계속 진행
+                    getOnboardingSummaryById(userId).catch(() => null), // 실패해도 계속 진행
+                    getUserLanguageInfoById(userId).catch(() => null), // 실패해도 계속 진행
+                    getUserMotivationInfoById(userId).catch(() => null) // 실패해도 계속 진행
+                ]);
+                
+                const mappedUser = mapUserData(profileData, onboardingSummary, languageInfo, motivationInfo);
+                
+                // 스케줄 정보 포맷팅
+                if (scheduleData?.schedules) {
+                    mappedUser.availability = formatSchedules(scheduleData.schedules);
+                }
+                
                 setUser(mappedUser);
             } catch (err) {
                 console.error('Failed to fetch user profile:', err);
@@ -79,9 +120,88 @@ export default function MatchingProfile() {
         fetchUserProfile();
     }, [userId, matchedUsers, showError]);
 
+    // 스케줄 데이터를 표시 형식으로 변환
+    const formatSchedules = (schedules) => {
+        if (!Array.isArray(schedules) || schedules.length === 0) {
+            return [];
+        }
+
+        // 요일별로 그룹화
+        const dayMap = {
+            'MONDAY': { name: '월요일', order: 1 },
+            'TUESDAY': { name: '화요일', order: 2 },
+            'WEDNESDAY': { name: '수요일', order: 3 },
+            'THURSDAY': { name: '목요일', order: 4 },
+            'FRIDAY': { name: '금요일', order: 5 },
+            'SATURDAY': { name: '토요일', order: 6 },
+            'SUNDAY': { name: '일요일', order: 0 }
+        };
+
+        const grouped = {};
+        schedules.forEach(schedule => {
+            const dayInfo = dayMap[schedule.dayOfWeek] || { name: schedule.dayOfWeek, order: 99 };
+            const dayName = dayInfo.name;
+            if (!grouped[dayName]) {
+                grouped[dayName] = { times: [], order: dayInfo.order };
+            }
+            if (schedule.classTime) {
+                grouped[dayName].times.push(schedule.classTime);
+            }
+        });
+
+        // 형식 변환: [{ day: "월요일", times: ["19:00-21:00"] }]
+        // 요일 순서대로 정렬 (일요일이 맨 앞)
+        return Object.entries(grouped)
+            .map(([day, data]) => ({
+                day,
+                times: data.times.length > 0 ? data.times : [],
+                order: data.order
+            }))
+            .filter(item => item.times.length > 0) // 시간이 있는 것만 표시
+            .sort((a, b) => a.order - b.order); // 요일 순서대로 정렬
+    };
+
+    // 온보딩 summary 데이터로 프로필 정보를 보강
+    const enrichUserData = (userData, onboardingSummary, languageInfo, motivationInfo) => {
+        if (!onboardingSummary && !languageInfo && !motivationInfo) return userData;
+
+        let enriched = { ...userData };
+
+        // 언어 정보 처리 (languageInfo가 있으면 사용)
+        if (languageInfo?.targetLanguages && languageInfo.targetLanguages.length > 0) {
+            const learningLanguage = languageInfo.targetLanguages[0];
+            enriched.targetLanguages = languageInfo.targetLanguages;
+            enriched.learningLanguage = learningLanguage.languageName || enriched.learningLanguage;
+            // 레벨은 나중에 API에서 가져올 수 있으면 추가
+        }
+
+        // 관심사 (motivationInfo의 topics에서 가져오기)
+        if (motivationInfo?.topics && motivationInfo.topics.length > 0) {
+            const topicNames = motivationInfo.topics
+                .map(topic => topic.name)
+                .filter(name => name);
+            if (topicNames.length > 0) {
+                enriched.interests = topicNames;
+            }
+        }
+
+        // 학습 목표 (motivationInfo의 motivations에서 가져오기)
+        if (motivationInfo?.motivations && motivationInfo.motivations.length > 0) {
+            const goalNames = motivationInfo.motivations
+                .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+                .map(motivation => motivation.name)
+                .filter(name => name);
+            if (goalNames.length > 0) {
+                enriched.learningGoals = goalNames;
+            }
+        }
+
+        return enriched;
+    };
+
     // 백엔드 필드명을 프론트엔드 표시 형식으로 매핑
     // UserProfile 타입에 맞게 매핑 (workers/src/types/index.ts 참고)
-    const mapUserData = (userData) => {
+    const mapUserData = (userData, onboardingSummary = null, languageInfo = null, motivationInfo = null) => {
         if (!userData) return null;
 
         // 프로필 이미지 URL 변환 (DB에 저장된 키를 실제 URL로 변환)
@@ -97,20 +217,32 @@ export default function MatchingProfile() {
             }
         }
 
-        return {
+        // languageInfo가 있으면 언어 정보 우선 사용
+        const targetLanguages = languageInfo?.targetLanguages || userData.targetLanguages || [];
+        const learningLanguage = targetLanguages[0]?.languageName || userData.learningLanguage;
+        const level = targetLanguages[0]?.currentLevel || userData.level || userData.proficiencyLevel;
+
+        // motivationInfo가 있으면 관심사와 학습 목표 사용
+        const interests = motivationInfo?.topics?.map(t => t.name).filter(Boolean) || userData.interests || [];
+        const learningGoals = motivationInfo?.motivations
+            ?.sort((a, b) => (a.priority || 0) - (b.priority || 0))
+            .map(m => m.name)
+            .filter(Boolean) || userData.learningGoals || userData.goals || [];
+
+        const mapped = {
             ...userData,
             id: userData.id || userData.userId,
             name: userData.englishName || userData.name || '이름 없음',
             profileImage: profileImageUrl,
-            nationality: userData.location?.country || userData.nationality || '미지정',
-            nativeLanguage: userData.nativeLanguage?.name || userData.nativeLanguage || '미지정',
-            learningLanguage: userData.targetLanguages?.[0]?.languageName || userData.learningLanguage || '미지정',
-            level: userData.targetLanguages?.[0]?.currentLevel || userData.level || userData.proficiencyLevel || '미지정',
+            nationality: userData.location?.country || userData.nationality,
+            nativeLanguage: languageInfo?.nativeLanguage?.languageName || userData.nativeLanguage?.name || userData.nativeLanguage,
+            learningLanguage,
+            level,
             bio: userData.selfBio || userData.bio || userData.intro || '자기소개가 없습니다.',
-            interests: userData.interests || [],
-            learningGoals: userData.learningGoals || userData.goals || [],
+            interests,
+            learningGoals,
             availability: userData.availability || userData.schedule || [],
-            timezone: userData.location?.timeZone || userData.timezone || '미지정',
+            timezone: userData.location?.timeZone || userData.timezone,
             sessionPreference: userData.sessionPreference || userData.sessionType || '1on1',
             isOnline: userData.onlineStatus === 'ONLINE' || userData.isOnline || false,
             lastActive: userData.lastActiveTime || userData.lastActive || '알 수 없음',
@@ -124,8 +256,16 @@ export default function MatchingProfile() {
             email: userData.email,
             birthday: userData.birthday,
             birthyear: userData.birthyear,
-            onboardingCompleted: userData.onboardingCompleted
+            onboardingCompleted: userData.onboardingCompleted,
+            targetLanguages: targetLanguages.length > 0 ? targetLanguages : userData.targetLanguages
         };
+
+        // 온보딩 summary가 있으면 데이터 보강
+        if (onboardingSummary || languageInfo || motivationInfo) {
+            return enrichUserData(mapped, onboardingSummary, languageInfo, motivationInfo);
+        }
+
+        return mapped;
     };
 
     const handleAcceptMatch = async () => {
@@ -318,34 +458,34 @@ export default function MatchingProfile() {
 
                         {/* Interests */}
                         {user.interests && user.interests.length > 0 && (
-                            <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
-                                <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">관심사</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {user.interests.map((interest, index) => (
-                                        <span
-                                            key={index}
-                                            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#F1F3F5] text-[#606060] text-[12px] sm:text-[13px] md:text-[14px] rounded-full whitespace-nowrap break-words"
-                                        >
-                                            #{interest}
-                                        </span>
-                                    ))}
-                                </div>
+                        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
+                            <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">관심사</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {user.interests.map((interest, index) => (
+                                    <span
+                                        key={index}
+                                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#F1F3F5] text-[#606060] text-[12px] sm:text-[13px] md:text-[14px] rounded-full whitespace-nowrap break-words"
+                                    >
+                                        #{interest}
+                                    </span>
+                                ))}
                             </div>
+                        </div>
                         )}
 
                         {/* Learning Goals */}
                         {user.learningGoals && user.learningGoals.length > 0 && (
-                            <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
-                                <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">학습 목표</h3>
-                                <ul className="space-y-2">
-                                    {user.learningGoals.map((goal, index) => (
-                                        <li key={index} className="flex items-start space-x-2">
-                                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] flex-shrink-0 mt-0.5" />
-                                            <span className="text-[13px] sm:text-[14px] text-[#606060] break-words">{goal}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
+                            <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">학습 목표</h3>
+                            <ul className="space-y-2">
+                                {user.learningGoals.map((goal, index) => (
+                                    <li key={index} className="flex items-start space-x-2">
+                                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] flex-shrink-0 mt-0.5" />
+                                        <span className="text-[13px] sm:text-[14px] text-[#606060] break-words">{goal}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                         )}
                     </>
                 ) : (
@@ -356,25 +496,25 @@ export default function MatchingProfile() {
                             <span className="text-[11px] sm:text-[12px] text-[#929292] break-words">{user.timezone}</span>
                         </div>
                         {user.availability && user.availability.length > 0 ? (
-                            <div className="space-y-2 sm:space-y-3">
-                                {user.availability.map((slot, index) => (
-                                    <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                                        <span className="text-[13px] sm:text-[14px] font-medium text-[#111111] break-words whitespace-nowrap">
-                                            {slot.day}
-                                        </span>
-                                        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <div className="space-y-2 sm:space-y-3">
+                            {user.availability.map((slot, index) => (
+                                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                                    <span className="text-[13px] sm:text-[14px] font-medium text-[#111111] break-words whitespace-nowrap">
+                                        {slot.day}
+                                    </span>
+                                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                             {slot.times && slot.times.map((time, timeIndex) => (
-                                                <span
-                                                    key={timeIndex}
-                                                    className="px-2.5 sm:px-3 py-1 bg-[#F1F3F5] text-[#606060] text-[11px] sm:text-[12px] rounded-lg whitespace-nowrap break-words"
-                                                >
-                                                    {time}
-                                                </span>
-                                            ))}
-                                        </div>
+                                            <span
+                                                key={timeIndex}
+                                                className="px-2.5 sm:px-3 py-1 bg-[#F1F3F5] text-[#606060] text-[11px] sm:text-[12px] rounded-lg whitespace-nowrap break-words"
+                                            >
+                                                {time}
+                                            </span>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
+                        </div>
                         ) : (
                             <p className="text-[#929292] text-sm">등록된 스케줄이 없습니다.</p>
                         )}

@@ -24,6 +24,28 @@ export const getOnboardingProgress = async () => {
   }
 };
 
+// 온보딩 요약 정보 조회 (자기 자신)
+export const getOnboardingSummary = async () => {
+  try {
+    const response = await api.get("/onboarding/summary");
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error("Get onboarding summary error:", error);
+    throw error;
+  }
+};
+
+// 다른 사용자 온보딩 요약 정보 조회
+export const getOnboardingSummaryById = async (userId) => {
+  try {
+    const response = await api.get(`/onboarding/${userId}/summary`);
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    console.error("Get onboarding summary by id error:", error);
+    throw error;
+  }
+};
+
 // 전체 온보딩 완료 처리 (Workers API 연동)
 export const completeAllOnboarding = async (onboardingData) => {
   try {

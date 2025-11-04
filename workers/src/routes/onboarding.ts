@@ -1046,6 +1046,24 @@ onboardingRoutes.get('/summary', async (c) => {
   }
 });
 
+// 다른 사용자 온보딩 정보 조회
+onboardingRoutes.get('/:userId/summary', async (c) => {
+  const currentUserId = c.get('userId');
+  if (!currentUserId) throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  
+  const targetUserId = c.req.param('userId');
+  if (!targetUserId) {
+    throw new AppError('Target user id is required', 400, 'INVALID_PARAMETER');
+  }
+  
+  try {
+    const summary = await loadOnboardingSummary(c.env, targetUserId);
+    return successResponse(c, summary);
+  } catch (error) {
+    throw wrapError(error, `Failed to load onboarding summary for user ${targetUserId}`);
+  }
+});
+
 onboardingRoutes.post('/complete', async (c) => {
   const userId = c.get('userId');
   if (!userId) throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
