@@ -171,46 +171,46 @@ const SecuritySettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] px-6">
+    <div className="min-h-screen bg-[#FAFAFA] px-4 sm:px-6 overflow-y-auto">
       {/* Header */}
-      <div className="pt-12 pb-6">
+      <div className="pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-5 md:pb-6">
         <div className="flex items-center justify-between">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white rounded-lg transition-colors"
+            className="p-2 hover:bg-white rounded-lg transition-colors touch-manipulation"
           >
-            <ChevronRight className="w-6 h-6 text-[#111111] rotate-180" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111] rotate-180" />
           </button>
-          <h1 className="text-xl font-bold text-[#111111]">보안 설정</h1>
-          <div className="w-10" />
+          <h1 className="text-[18px] sm:text-[19px] md:text-xl font-bold text-[#111111] break-words">보안 설정</h1>
+          <div className="w-8 sm:w-10" />
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-5 md:space-y-6">
         {/* 비밀번호 변경 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">비밀번호</h2>
-            <Key className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">비밀번호</h2>
+            <Key className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
           {!showPasswordForm ? (
             <div>
-              <p className="text-sm text-[#929292] mb-4">
+              <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] mb-3 sm:mb-4 break-words leading-[1.4] sm:leading-[1.5]">
                 계정 보안을 위해 정기적으로 비밀번호를 변경하는 것을 권장합니다.
               </p>
               <CommonButton
                 onClick={() => setShowPasswordForm(true)}
                 variant="secondary"
-                className="w-full"
+                className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
               >
                 비밀번호 변경
               </CommonButton>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#111111] mb-2">현재 비밀번호</label>
+                <label className="block text-[13px] sm:text-[14px] md:text-sm font-medium text-[#111111] mb-2 break-words">현재 비밀번호</label>
                 <PasswordInput
                   value={passwordForm.currentPassword}
                   onChange={(value) => setPasswordForm(prev => ({...prev, currentPassword: value}))}
@@ -222,7 +222,7 @@ const SecuritySettings = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-[#111111] mb-2">새 비밀번호</label>
+                <label className="block text-[13px] sm:text-[14px] md:text-sm font-medium text-[#111111] mb-2 break-words">새 비밀번호</label>
                 <PasswordInput
                   value={passwordForm.newPassword}
                   onChange={(value) => setPasswordForm(prev => ({...prev, newPassword: value}))}
@@ -234,7 +234,7 @@ const SecuritySettings = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-[#111111] mb-2">비밀번호 확인</label>
+                <label className="block text-[13px] sm:text-[14px] md:text-sm font-medium text-[#111111] mb-2 break-words">비밀번호 확인</label>
                 <PasswordInput
                   value={passwordForm.confirmPassword}
                   onChange={(value) => setPasswordForm(prev => ({...prev, confirmPassword: value}))}
@@ -245,19 +245,19 @@ const SecuritySettings = () => {
                 />
               </div>
               
-              <div className="flex space-x-3 pt-2">
+              <div className="flex space-x-2 sm:space-x-3 pt-2">
                 <CommonButton
                   onClick={handlePasswordChange}
                   disabled={saving}
                   variant="success"
-                  className="flex-1"
+                  className="flex-1 text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                 >
                   {saving ? '변경 중...' : '변경하기'}
                 </CommonButton>
                 <CommonButton
                   onClick={() => setShowPasswordForm(false)}
                   variant="secondary"
-                  className="flex-1"
+                  className="flex-1 text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                 >
                   취소
                 </CommonButton>
@@ -267,21 +267,21 @@ const SecuritySettings = () => {
         </div>
 
         {/* 2단계 인증 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">2단계 인증</h2>
-            <Shield className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">2단계 인증</h2>
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <Smartphone className="w-5 h-5 text-[#00C471] mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-medium text-[#111111]">모바일 앱 인증</h3>
-                <p className="text-sm text-[#929292]">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-start space-x-2 sm:space-x-3">
+              <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-[#111111] text-[14px] sm:text-[15px] md:text-base break-words">모바일 앱 인증</h3>
+                <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] break-words leading-[1.4] sm:leading-[1.5]">
                   Google Authenticator, Authy 등의 앱으로 추가 보안 계층을 제공합니다.
                 </p>
-                <p className="text-xs text-[#929292] mt-1">
+                <p className="text-[11px] sm:text-[12px] text-[#929292] mt-1 break-words">
                   현재 상태: {twoFactorEnabled ? 
                     <span className="text-[#00C471] font-medium">활성화됨</span> : 
                     <span className="text-[#929292]">비활성화됨</span>
@@ -295,51 +295,51 @@ const SecuritySettings = () => {
                 onClick={handleEnable2FA}
                 disabled={saving}
                 variant="success"
-                className="w-full"
+                className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
               >
                 {saving ? '설정 중...' : '2단계 인증 활성화'}
               </CommonButton>
             )}
             
             {show2FAForm && !twoFactorEnabled && (
-              <div className="space-y-4 border-t border-gray-100 pt-4">
+              <div className="space-y-3 sm:space-y-4 border-t border-gray-100 pt-3 sm:pt-4">
                 <div className="text-center">
-                  <h4 className="font-medium text-[#111111] mb-2">QR 코드 스캔</h4>
-                  <p className="text-sm text-[#929292] mb-4">
+                  <h4 className="font-medium text-[#111111] mb-2 text-[14px] sm:text-[15px] md:text-base break-words">QR 코드 스캔</h4>
+                  <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] mb-3 sm:mb-4 break-words leading-[1.4] sm:leading-[1.5]">
                     인증 앱으로 아래 QR 코드를 스캔하고, 생성된 6자리 코드를 입력하세요.
                   </p>
                   {qrCode && (
-                    <div className="bg-gray-100 p-4 rounded-lg mb-4">
-                      <img src={qrCode} alt="2FA QR Code" className="mx-auto" />
+                    <div className="bg-gray-100 p-3 sm:p-4 rounded-lg mb-3 sm:mb-4">
+                      <img src={qrCode} alt="2FA QR Code" className="mx-auto max-w-[200px] sm:max-w-[240px] md:max-w-[280px]" />
                     </div>
                   )}
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-[#111111] mb-2">인증 코드</label>
+                  <label className="block text-[13px] sm:text-[14px] md:text-sm font-medium text-[#111111] mb-2 break-words">인증 코드</label>
                   <input
                     type="text"
                     value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    placeholder="6자리 인증 코드"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors text-center tracking-widest"
-                    maxLength="6"
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    maxLength={6}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors text-center tracking-widest text-[16px] sm:text-[18px] md:text-[20px] touch-manipulation"
                   />
                 </div>
                 
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 sm:space-x-3">
                   <CommonButton
                     onClick={handleVerify2FA}
                     disabled={saving}
                     variant="success"
-                    className="flex-1"
+                    className="flex-1 text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                   >
                     {saving ? '인증 중...' : '인증하기'}
                   </CommonButton>
                   <CommonButton
                     onClick={() => setShow2FAForm(false)}
                     variant="secondary"
-                    className="flex-1"
+                    className="flex-1 text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                   >
                     취소
                   </CommonButton>
@@ -348,13 +348,13 @@ const SecuritySettings = () => {
             )}
             
             {twoFactorEnabled && (
-              <div className="space-y-4 border-t border-gray-100 pt-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="space-y-3 sm:space-y-4 border-t border-gray-100 pt-3 sm:pt-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center space-x-2">
-                    <Shield className="w-5 h-5 text-green-600" />
-                    <span className="text-green-800 font-medium">2단계 인증이 활성화되어 있습니다</span>
+                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                    <span className="text-green-800 font-medium text-[13px] sm:text-[14px] md:text-sm break-words">2단계 인증이 활성화되어 있습니다</span>
                   </div>
-                  <p className="text-sm text-green-700 mt-2">
+                  <p className="text-[12px] sm:text-[13px] md:text-sm text-green-700 mt-2 break-words leading-[1.4] sm:leading-[1.5]">
                     계정 보안이 강화되었습니다. 로그인 시 추가 인증이 필요합니다.
                   </p>
                 </div>
@@ -363,39 +363,39 @@ const SecuritySettings = () => {
                   <CommonButton
                     onClick={() => setShow2FAForm(true)}
                     variant="secondary"
-                    className="w-full"
+                    className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                   >
                     2단계 인증 비활성화
                   </CommonButton>
                 )}
                 
                 {show2FAForm && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-[#111111] mb-2">인증 코드</label>
+                      <label className="block text-[13px] sm:text-[14px] md:text-sm font-medium text-[#111111] mb-2 break-words">인증 코드</label>
                       <input
                         type="text"
                         value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        placeholder="6자리 인증 코드"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors text-center tracking-widest"
-                        maxLength="6"
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors text-center tracking-widest text-[16px] sm:text-[18px] md:text-[20px] touch-manipulation"
                       />
                     </div>
                     
-                    <div className="flex space-x-3">
+                    <div className="flex space-x-2 sm:space-x-3">
                       <CommonButton
                         onClick={handleDisable2FA}
                         disabled={saving}
                         variant="danger"
-                        className="flex-1"
+                        className="flex-1 text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                       >
                         {saving ? '비활성화 중...' : '비활성화하기'}
                       </CommonButton>
                       <CommonButton
                         onClick={() => setShow2FAForm(false)}
                         variant="secondary"
-                        className="flex-1"
+                        className="flex-1 text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                       >
                         취소
                       </CommonButton>
@@ -408,12 +408,12 @@ const SecuritySettings = () => {
         </div>
 
         {/* 보안 팁 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-medium text-blue-900 mb-2">보안 권장사항</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-start space-x-2 sm:space-x-3">
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-blue-900 mb-2 text-[14px] sm:text-[15px] md:text-base break-words">보안 권장사항</h3>
+              <ul className="text-[12px] sm:text-[13px] md:text-sm text-blue-800 space-y-1 break-words leading-[1.4] sm:leading-[1.5]">
                 <li>• 강력한 비밀번호를 사용하세요 (8자 이상, 특수문자 포함)</li>
                 <li>• 다른 서비스와 동일한 비밀번호를 사용하지 마세요</li>
                 <li>• 2단계 인증을 활성화하여 보안을 강화하세요</li>
@@ -425,7 +425,7 @@ const SecuritySettings = () => {
         </div>
       </div>
 
-      <div className="pb-8" />
+      <div className="pb-6 sm:pb-8" />
     </div>
   );
 };

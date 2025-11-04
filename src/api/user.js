@@ -257,12 +257,13 @@ export const updateUserSettings = async (settings) => {
 };
 
 // 프로필 이미지 업로드 (Workers API 연동)
+// Workers API: POST /api/v1/users/me/profile-image
 export const uploadProfileImage = async (imageFile) => {
   try {
     const formData = new FormData();
-    formData.append('file', imageFile);
+    formData.append('file', imageFile);  // Workers는 'file' 필드명 사용
 
-    const response = await api.post('/users/profile-image', formData, {
+    const response = await api.post('/users/me/profile-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

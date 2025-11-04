@@ -120,16 +120,16 @@ export default function ObLang1() {
   };
      
   return (
-    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
+    <div className="bg-[#FFFFFF] min-h-screen max-w-full sm:max-w-[768px] w-full mx-auto overflow-y-auto">
       <Header />
-      <ProgressBar total={4} value={1} className="mt-[19px]" />
-      <div className="mx-auto mt-[19px] max-w-[720px] w-full">
-        <h1 className="text-[32px] font-bold leading-[42px] text-[#111111]">
+      <ProgressBar total={4} value={1} className="mt-[12px] sm:mt-[19px]" />
+      <div className="mx-auto mt-[12px] sm:mt-[19px] max-w-full sm:max-w-[720px] w-full px-4 sm:px-6">
+        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.3] sm:leading-[1.35] md:leading-[42px] text-[#111111] break-words">
           모국어를 선택해주세요.
         </h1>
       </div>
-      <div className="mx-auto mt-[32px] max-w-[720px] w-full">
-        <label className="block text-[16px] font-medium leading-[24px] text-[#343a40] mb-[8px]">
+      <div className="mx-auto mt-[24px] sm:mt-[32px] max-w-full sm:max-w-[720px] w-full px-4 sm:px-6">
+        <label className="block text-[14px] sm:text-[15px] md:text-[16px] font-medium leading-[20px] sm:leading-[22px] md:leading-[24px] text-[#343a40] mb-[6px] sm:mb-[8px] break-words">
           모국어 선택
         </label>
         <Select
@@ -137,7 +137,7 @@ export default function ObLang1() {
           value={selected}
           onChange={setSelected}
           placeholder="모국어를 선택해주세요"
-          className="mb-[576px]"
+          className="mb-[400px] sm:mb-[500px] md:mb-[576px]"
           styles={commonSelectStyles}
           isSearchable={false}
         />

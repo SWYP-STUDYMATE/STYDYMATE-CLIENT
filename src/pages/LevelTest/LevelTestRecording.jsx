@@ -126,25 +126,25 @@ export default function LevelTestRecording() {
   };
 
   return (
-    <div className="min-h-screen page-bg flex flex-col">
+    <div className="min-h-screen page-bg flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
+      <div className="bg-white border-b border-[#E7E7E7] px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate('/level-test/check')}
-            className="p-2 -ml-2"
+            className="p-2 -ml-2 touch-manipulation"
           >
-            <ChevronLeft className="w-6 h-6 text-[var(--black-500)]" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--black-500)]" />
           </button>
-          <h1 className="text-[18px] font-bold text-[#111111]">
+          <h1 className="text-[16px] sm:text-[18px] font-bold text-[#111111] break-words">
             질문 {currentQuestionIndex + 1} / {totalQuestions}
           </h1>
-          <div className="w-10" />
+          <div className="w-8 sm:w-10" />
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-white px-6 py-3">
+      <div className="bg-white px-4 sm:px-6 py-2 sm:py-3">
         <div className="h-2 bg-[var(--black-50)] rounded-full overflow-hidden">
           <div
             className="h-full bg-[var(--green-500)] transition-all duration-300"
@@ -154,16 +154,16 @@ export default function LevelTestRecording() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center px-6 py-8">
+      <div className="flex-1 flex flex-col items-center px-4 sm:px-6 py-6 sm:py-8">
         {/* Question Card */}
-        <div className="w-full max-w-2xl bg-white rounded-[20px] p-6 mb-8 border border-[var(--black-50)]">
-          <p className="text-[20px] font-bold text-[var(--black-500)] mb-3">
+        <div className="w-full max-w-2xl bg-white rounded-[20px] p-4 sm:p-6 mb-6 sm:mb-8 border border-[var(--black-50)]">
+          <p className="text-[16px] sm:text-[18px] md:text-[20px] font-bold text-[var(--black-500)] mb-2 sm:mb-3 break-words leading-[1.4] sm:leading-[1.5]">
             {currentQuestion?.questionText || currentQuestion?.text || ''}
           </p>
         </div>
 
         {/* Timer */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <CountdownTimer
             duration={currentQuestionDuration}
             onTimeUp={handleTimeUp}
@@ -171,7 +171,7 @@ export default function LevelTestRecording() {
         </div>
 
         {/* Audio Recorder */}
-        <div className="mb-8 w-full max-w-md">
+        <div className="mb-6 sm:mb-8 w-full max-w-md">
           <AudioRecorder
             onRecordingComplete={handleRecordingComplete}
             disabled={hasRecording}
@@ -179,13 +179,13 @@ export default function LevelTestRecording() {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="w-full max-w-md space-y-3">
+        <div className="w-full max-w-md space-y-2 sm:space-y-3">
           {hasRecording && (
             <>
               <CommonButton
                 onClick={handleRetry}
                 variant="secondary"
-                className="w-full"
+                className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px]"
               >
                 다시 녹음하기
               </CommonButton>
@@ -193,18 +193,18 @@ export default function LevelTestRecording() {
               <CommonButton
                 onClick={handleNext}
                 variant="primary"
-                className="w-full"
+                className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white inline-block mr-2"></span>
+                    <span className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white inline-block mr-2"></span>
                     제출 중...
                   </>
                 ) : (
                   <>
                     {currentQuestionIndex < totalQuestions - 1 ? '다음 질문' : '테스트 완료'}
-                    <ChevronRight className="w-5 h-5 ml-2" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                   </>
                 )}
               </CommonButton>
@@ -216,9 +216,9 @@ export default function LevelTestRecording() {
             <CommonButton
               onClick={handlePrevious}
               variant="secondary"
-              className="w-full"
+              className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px]"
             >
-              <ChevronLeft className="w-5 h-5 mr-2" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               이전 질문
             </CommonButton>
           )}
@@ -228,7 +228,7 @@ export default function LevelTestRecording() {
         {!hasRecording && (
           <button
             onClick={handleNext}
-            className="mt-4 text-[#929292] text-sm underline"
+            className="mt-4 text-[#929292] text-[12px] sm:text-[13px] md:text-sm underline touch-manipulation break-words"
           >
             이 질문 건너뛰기 (테스트용)
           </button>

@@ -73,22 +73,22 @@ export default function ObSchadule1() {
   };
 
   return (
-    <div className="bg-[#FFFFFF] min-h-screen max-w-[768px] w-full mx-auto">
+    <div className="bg-[#FFFFFF] min-h-screen max-w-full sm:max-w-[768px] w-full mx-auto overflow-y-auto">
       <Header />
-      <ProgressBar total={5} value={1} className="mt-[19px]" />
-      <div className="max-w-[720px] w-full mx-auto mt-[19px]">
-        <h1 className="text-[32px] font-bold leading-[42px] text-[#111111] mb-[24px]">
+      <ProgressBar total={5} value={1} className="mt-[12px] sm:mt-[19px]" />
+      <div className="max-w-full sm:max-w-[720px] w-full mx-auto mt-[12px] sm:mt-[19px] px-4 sm:px-6">
+        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.3] sm:leading-[1.35] md:leading-[42px] text-[#111111] mb-[16px] sm:mb-[20px] md:mb-[24px] break-words">
           선호하는 소통 방식을 선택해 주세요.
         </h1>
-        <div className="mb-[12px] text-[16px] font-medium text-[#343a40] leading-[24px]">
+        <div className="mb-[10px] sm:mb-[12px] text-[14px] sm:text-[15px] md:text-[16px] font-medium text-[#343a40] leading-[20px] sm:leading-[22px] md:leading-[24px] break-words">
           소통 방식
         </div>
         {loading ? (
           <div className="flex justify-center items-center py-8">
-            <div className="text-[16px] text-[#6c757d]">로딩 중...</div>
+            <div className="text-[14px] sm:text-[15px] md:text-[16px] text-[#6c757d] break-words">로딩 중...</div>
           </div>
         ) : (
-          <div className="flex flex-col gap-[12px]">
+          <div className="flex flex-col gap-[10px] sm:gap-[12px]">
             {communicationMethods.map((item) => (
               <CommonChecklistItem
                 key={item.name}
@@ -102,7 +102,7 @@ export default function ObSchadule1() {
         )}
         <CommonButton
           text="다음"
-          className="w-full mt-[440px]"
+          className="w-full mt-[300px] sm:mt-[380px] md:mt-[440px]"
           disabled={!selected || loading}
           onClick={handleNext}
         />

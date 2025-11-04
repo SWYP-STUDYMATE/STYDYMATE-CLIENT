@@ -176,7 +176,10 @@ class WebRTCConnectionManager {
    * @param {Object} data - Message data
    */
   async handleWebSocketMessage(data) {
-    const { type, from, payload } = data;
+    // 메시지 구조 확인 (디버깅용)
+    console.log('📨 [WebRTC] Received message:', data);
+    
+    const { type, from, payload, participant, participantId, userId } = data;
 
     switch (type) {
       case 'connected':
@@ -188,37 +191,58 @@ class WebRTCConnectionManager {
         break;
 
       case 'participant-joined':
-        this.handleParticipantJoined(payload);
+        // payload 또는 participant 필드 지원
+        const joinedParticipant = participant || payload;
+        if (!joinedParticipant) {
+          console.warn('⚠️ [WebRTC] participant-joined message missing participant data:', data);
+          return;
+        }
+        this.handleParticipantJoined(joinedParticipant);
         break;
 
       case 'participant-left':
-        this.handleParticipantLeft(payload);
+        // payload, participant, 또는 participantId/userId 필드 지원
+        let leftParticipant = participant || payload;
+        
+        // participantId나 userId만 있는 경우 객체로 변환
+        if (!leftParticipant && (participantId || userId)) {
+          leftParticipant = {
+            userId: participantId || userId,
+            id: participantId || userId
+          };
+        }
+        
+        if (!leftParticipant) {
+          console.warn('⚠️ [WebRTC] participant-left message missing participant data:', data);
+          return;
+        }
+        this.handleParticipantLeft(leftParticipant);
         break;
 
       case 'participants-list':
-        await this.handleParticipantsList(payload.participants);
+        await this.handleParticipantsList(payload?.participants || data.participants);
         break;
 
       case 'offer':
-        await this.handleOffer(from, payload);
+        await this.handleOffer(from, payload || data.data);
         break;
 
       case 'answer':
-        await this.handleAnswer(from, payload);
+        await this.handleAnswer(from, payload || data.data);
         break;
 
       case 'ice-candidate':
-        await this.handleIceCandidate(from, payload);
+        await this.handleIceCandidate(from, payload || data.data);
         break;
 
       case 'chat-message':
         if (this.callbacks.onChatMessage) {
-          this.callbacks.onChatMessage(payload);
+          this.callbacks.onChatMessage(payload || data);
         }
         break;
 
       default:
-        console.warn('Unknown message type:', type);
+        console.warn('Unknown message type:', type, data);
     }
   }
 
@@ -227,19 +251,38 @@ class WebRTCConnectionManager {
    * @param {Object} participant - Participant info
    */
   handleParticipantJoined(participant) {
-    console.log('Participant joined:', participant);
+    console.log('✅ [WebRTC] Participant joined:', participant);
+    console.log('🔍 [WebRTC] Participant data type:', typeof participant);
+    console.log('🔍 [WebRTC] Participant keys:', participant ? Object.keys(participant) : 'null');
 
-    // payload가 undefined인 경우 처리
-    if (!participant || !participant.userId) {
-      console.warn('Invalid participant data in participant-joined message:', participant);
+    // participant 데이터 정규화 (id 또는 userId 지원)
+    const normalizedParticipant = this.normalizeParticipant(participant);
+    
+    if (!normalizedParticipant) {
+      console.warn('❌ [WebRTC] Invalid participant data in participant-joined message:', participant);
+      return;
+    }
+
+    console.log('✅ [WebRTC] Normalized participant:', normalizedParticipant);
+    console.log('👤 [WebRTC] Current userId:', this.userId);
+    console.log('👤 [WebRTC] Participant userId:', normalizedParticipant.userId);
+
+    // 자기 자신이 아닌 경우에만 처리
+    if (normalizedParticipant.userId === this.userId) {
+      console.log('ℹ️ [WebRTC] 자기 자신의 입장 메시지이므로 무시');
       return;
     }
 
     if (this.callbacks.onParticipantJoined) {
-      this.callbacks.onParticipantJoined(participant);
+      console.log('📢 [WebRTC] Calling onParticipantJoined callback');
+      this.callbacks.onParticipantJoined(normalizedParticipant);
+    } else {
+      console.warn('⚠️ [WebRTC] onParticipantJoined callback not registered');
     }
+
     // Create peer connection for new participant
-    this.createPeerConnection(participant.userId);
+    console.log('🔗 [WebRTC] Creating peer connection for:', normalizedParticipant.userId);
+    this.createPeerConnection(normalizedParticipant.userId);
   }
 
   /**
@@ -249,13 +292,15 @@ class WebRTCConnectionManager {
   handleParticipantLeft(participant) {
     console.log('Participant left:', participant);
 
-    // payload가 undefined인 경우 처리
-    if (!participant || !participant.userId) {
+    // participant 데이터 정규화 (id 또는 userId 지원)
+    const normalizedParticipant = this.normalizeParticipant(participant);
+    
+    if (!normalizedParticipant) {
       console.warn('Invalid participant data in participant-left message:', participant);
       return;
     }
 
-    const { userId } = participant;
+    const { userId } = normalizedParticipant;
 
     // Close and remove peer connection
     const pc = this.peerConnections.get(userId);
@@ -274,8 +319,42 @@ class WebRTCConnectionManager {
     }
 
     if (this.callbacks.onParticipantLeft) {
-      this.callbacks.onParticipantLeft(participant);
+      this.callbacks.onParticipantLeft(normalizedParticipant);
     }
+  }
+
+  /**
+   * Normalize participant data (supports both 'id' and 'userId' fields)
+   * @param {Object} participant - Participant data
+   * @returns {Object|null} Normalized participant object
+   */
+  normalizeParticipant(participant) {
+    if (!participant) return null;
+
+    // 이미 정규화된 경우
+    if (participant.userId) {
+      return participant;
+    }
+
+    // id 필드가 있는 경우 userId로 변환
+    if (participant.id) {
+      return {
+        ...participant,
+        userId: participant.id,
+        userName: participant.name || participant.userName || 'Anonymous'
+      };
+    }
+
+    // 문자열인 경우 (userId만 전달된 경우)
+    if (typeof participant === 'string') {
+      return {
+        userId: participant,
+        id: participant,
+        userName: 'Anonymous'
+      };
+    }
+
+    return null;
   }
 
   /**

@@ -164,27 +164,27 @@ const PrivacySettings = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] px-6">
+    <div className="min-h-screen bg-[#FAFAFA] px-4 sm:px-6 overflow-y-auto">
       {/* Header */}
-      <div className="pt-12 pb-6">
+      <div className="pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-5 md:pb-6">
         <div className="flex items-center justify-between">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white rounded-lg transition-colors"
+            className="p-2 hover:bg-white rounded-lg transition-colors touch-manipulation"
           >
-            <ChevronRight className="w-6 h-6 text-[#111111] rotate-180" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111] rotate-180" />
           </button>
-          <h1 className="text-xl font-bold text-[#111111]">개인정보 보호</h1>
-          <div className="w-10" />
+          <h1 className="text-[18px] sm:text-[19px] md:text-xl font-bold text-[#111111] break-words">개인정보 보호</h1>
+          <div className="w-8 sm:w-10" />
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-5 md:space-y-6">
         {/* 프로필 공개 설정 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">프로필 공개 설정</h2>
-            <Eye className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">프로필 공개 설정</h2>
+            <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
           <div className="space-y-1">
@@ -234,13 +234,13 @@ const PrivacySettings = () => {
         </div>
 
         {/* 매칭 설정 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">매칭 설정</h2>
-            <Users className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">매칭 설정</h2>
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <SettingItem
               icon={Users}
               title="매칭 허용"
@@ -258,11 +258,11 @@ const PrivacySettings = () => {
             />
             
             <div>
-              <label className="block text-sm font-medium text-[#111111] mb-2">매칭 거리 (km)</label>
+              <label className="block text-[13px] sm:text-[14px] md:text-sm font-medium text-[#111111] mb-2 break-words">매칭 거리 (km)</label>
               <select
                 value={settings.matchingRadius}
                 onChange={(e) => handleSelectChange('matchingRadius', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471] transition-colors text-[13px] sm:text-[14px] md:text-sm touch-manipulation"
               >
                 <option value="10">10km</option>
                 <option value="25">25km</option>
@@ -275,10 +275,10 @@ const PrivacySettings = () => {
         </div>
 
         {/* 연락처 설정 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">연락처 설정</h2>
-            <Lock className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">연락처 설정</h2>
+            <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
           <div className="space-y-4">
@@ -321,8 +321,8 @@ const PrivacySettings = () => {
         </div>
 
         {/* 활동 설정 */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-[#111111] mb-4">활동 정보 공개</h2>
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] mb-3 sm:mb-4 break-words">활동 정보 공개</h2>
           
           <div className="space-y-1">
             <SettingItem
@@ -352,8 +352,8 @@ const PrivacySettings = () => {
         </div>
 
         {/* 데이터 수집 동의 */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-[#111111] mb-4">데이터 수집 동의</h2>
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] mb-3 sm:mb-4 break-words">데이터 수집 동의</h2>
           
           <div className="space-y-1">
             <SettingItem
@@ -391,11 +391,12 @@ const PrivacySettings = () => {
         </div>
 
         {/* 저장 버튼 */}
-        <div className="pb-8">
+        <div className="pb-6 sm:pb-8">
           <CommonButton
             onClick={handleSave}
             disabled={saving}
             variant="success"
+            className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
           >
             {saving ? '저장 중...' : '변경사항 저장'}
           </CommonButton>

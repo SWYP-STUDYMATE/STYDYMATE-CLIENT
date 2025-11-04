@@ -125,27 +125,27 @@ const NotificationSettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] px-6">
+    <div className="min-h-screen bg-[#FAFAFA] px-4 sm:px-6 overflow-y-auto">
       {/* Header */}
-      <div className="pt-12 pb-6">
+      <div className="pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-5 md:pb-6">
         <div className="flex items-center justify-between">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white rounded-lg transition-colors"
+            className="p-2 hover:bg-white rounded-lg transition-colors touch-manipulation"
           >
-            <ChevronRight className="w-6 h-6 text-[#111111] rotate-180" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111] rotate-180" />
           </button>
-          <h1 className="text-xl font-bold text-[#111111]">알림 설정</h1>
-          <div className="w-10" />
+          <h1 className="text-[18px] sm:text-[19px] md:text-xl font-bold text-[#111111] break-words">알림 설정</h1>
+          <div className="w-8 sm:w-10" />
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-5 md:space-y-6">
         {/* 푸시 알림 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">푸시 알림</h2>
-            <Bell className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">푸시 알림</h2>
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
           <div className="space-y-1">
@@ -198,10 +198,10 @@ const NotificationSettings = () => {
         </div>
 
         {/* 이메일 알림 */}
-        <div className="bg-white rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#111111]">이메일 알림</h2>
-            <Mail className="w-5 h-5 text-[#929292]" />
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] break-words">이메일 알림</h2>
+            <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
           </div>
           
           <div className="space-y-1">
@@ -254,8 +254,8 @@ const NotificationSettings = () => {
         </div>
 
         {/* 소리 및 진동 */}
-        <div className="bg-white rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-[#111111] mb-4">소리 및 진동</h2>
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6">
+          <h2 className="text-[16px] sm:text-[17px] md:text-lg font-semibold text-[#111111] mb-3 sm:mb-4 break-words">소리 및 진동</h2>
           
           <div className="space-y-1">
             <SettingItem

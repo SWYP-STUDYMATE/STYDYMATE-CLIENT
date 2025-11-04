@@ -10,17 +10,18 @@ const WORKERS_API_URL =
 
 /**
  * 프로필 이미지 업로드
+ * Workers API: POST /api/v1/users/me/profile-image
  */
 export const uploadProfileImage = async (file) => {
   const formData = new FormData();
-  formData.append('image', file);
-  
-  const response = await api.post('/users/profile/image', formData, {
+  formData.append('file', file);  // Workers는 'file' 필드명 사용
+
+  const response = await api.post('/users/me/profile-image', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-  
+
   return response.data;
 };
 
@@ -68,31 +69,74 @@ export const uploadAudioFile = async (file, type = 'recording') => {
 
 /**
  * 파일 유효성 검사
+ * @param {File} file - 검사할 파일
+ * @param {string|Object} typeOrOptions - 'image', 'audio', 'video' 또는 옵션 객체
  */
-export const validateFile = (file, options = {}) => {
+export const validateFile = (file, typeOrOptions = 'image') => {
+  // 타입 문자열인 경우 기본 옵션 사용
+  let options = {};
+
+  if (typeof typeOrOptions === 'string') {
+    switch (typeOrOptions) {
+      case 'image':
+        options = {
+          maxSize: 10 * 1024 * 1024, // 10MB
+          allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+          allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+        };
+        break;
+      case 'audio':
+        options = {
+          maxSize: 50 * 1024 * 1024, // 50MB
+          allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/webm', 'audio/ogg'],
+          allowedExtensions: ['.mp3', '.wav', '.webm', '.ogg']
+        };
+        break;
+      case 'video':
+        options = {
+          maxSize: 100 * 1024 * 1024, // 100MB
+          allowedTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+          allowedExtensions: ['.mp4', '.webm', '.mov']
+        };
+        break;
+      default:
+        options = {
+          maxSize: 10 * 1024 * 1024,
+          allowedTypes: [],
+          allowedExtensions: []
+        };
+    }
+  } else {
+    options = {
+      maxSize: typeOrOptions.maxSize || 10 * 1024 * 1024,
+      allowedTypes: typeOrOptions.allowedTypes || [],
+      allowedExtensions: typeOrOptions.allowedExtensions || []
+    };
+  }
+
   const {
-    maxSize = 10 * 1024 * 1024, // 10MB
-    allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    maxSize,
+    allowedTypes,
+    allowedExtensions
   } = options;
-  
+
   // 파일 크기 검사
   if (file.size > maxSize) {
     throw new Error(`파일 크기는 ${maxSize / (1024 * 1024)}MB를 초과할 수 없습니다.`);
   }
-  
+
   // 파일 타입 검사
   if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
     throw new Error(`허용되지 않는 파일 형식입니다. (${allowedTypes.join(', ')}만 가능)`);
   }
-  
+
   // 파일 확장자 검사
   const fileName = file.name.toLowerCase();
   const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-  if (!hasValidExtension) {
+  if (allowedExtensions.length > 0 && !hasValidExtension) {
     throw new Error(`허용되지 않는 파일 확장자입니다. (${allowedExtensions.join(', ')}만 가능)`);
   }
-  
+
   return true;
 };
 

@@ -90,17 +90,22 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 🔍 디버깅 로그 추가
-    console.log("🔍 [API Response Error Interceptor]");
-    console.log("🔍 Error occurred for:", originalRequest?.method?.toUpperCase(), originalRequest?.url);
-    console.log("🔍 Error status:", error.response?.status);
-    console.log("🔍 Error data:", error.response?.data);
-    console.log("🔍 Error headers:", error.response?.headers);
-
     // 에러 로깅
     const duration = originalRequest.startTime ? Date.now() - originalRequest.startTime : 0;
     const method = originalRequest.method?.toUpperCase() || 'UNKNOWN';
     const url = originalRequest.url || 'unknown';
+
+    // 401 에러는 토큰 재발급 시도 전에만 로깅 (예상 가능한 에러)
+    const isExpected401 = error.response?.status === 401 && 
+                          (url.includes('/onboarding-status') || url.includes('/auth/'));
+    
+    if (!isExpected401) {
+      // 🔍 디버깅 로그 (예상되지 않은 에러에만)
+      console.log("🔍 [API Response Error Interceptor]");
+      console.log("🔍 Error occurred for:", method, url);
+      console.log("🔍 Error status:", error.response?.status);
+      console.log("🔍 Error data:", error.response?.data);
+    }
 
     if (error.response) {
       log.api(method, url, error.response.status, duration);

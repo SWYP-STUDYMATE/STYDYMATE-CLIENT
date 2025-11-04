@@ -241,70 +241,70 @@ export default function LevelTestResult() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
-        <h1 className="text-[20px] font-bold text-[#111111] text-center">
+    <div className="min-h-screen bg-[#FAFAFA] overflow-y-auto">
+      <div className="bg-white border-b border-[#E7E7E7] px-4 sm:px-6 py-3 sm:py-4">
+        <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] text-center break-words">
           레벨 테스트 결과
         </h1>
       </div>
 
-      <div className="px-6 py-8 max-w-lg mx-auto">
-        <div className="text-center mb-8">
-          <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full ${levelInfo.color} text-white mb-4`}>
-            <Trophy className="w-12 h-12" />
+      <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-lg mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className={`inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full ${levelInfo.color} text-white mb-3 sm:mb-4`}>
+            <Trophy className="w-10 h-10 sm:w-12 sm:h-12" />
           </div>
-          <h2 className="text-[32px] font-bold text-[#111111] mb-2">
+          <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#111111] mb-2 break-words">
             {levelValue || '확인 필요'}
           </h2>
-          <p className="text-[18px] font-semibold text-[#666666] mb-2">
+          <p className="text-[16px] sm:text-[17px] md:text-[18px] font-semibold text-[#666666] mb-2 break-words">
             {levelInfo.title}
           </p>
-          <p className="text-[14px] text-[#929292]">
+          <p className="text-[12px] sm:text-[13px] md:text-[14px] text-[#929292] break-words">
             {levelInfo.description}
           </p>
         </div>
 
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
-          <h3 className="text-[18px] font-bold text-[#111111] mb-4">
+        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-4 sm:mb-6">
+          <h3 className="text-[16px] sm:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4 break-words">
             상세 분석 결과
           </h3>
-          <div className="h-[300px]">
+          <div className="h-[250px] sm:h-[300px]">
             {hasScoreData ? (
               <RadarChart scores={scores} scoreKeys={scoreKeys} labels={SCORE_LABELS} animate={true} />
             ) : (
-              <div className="text-sm text-[#929292] text-center pt-16">
+              <div className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] text-center pt-12 sm:pt-16 break-words">
                 표시할 점수가 없습니다.
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
-          <h3 className="text-[18px] font-bold text-[#111111] mb-4">
+        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-4 sm:mb-6">
+          <h3 className="text-[16px] sm:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4 break-words">
             영역별 점수
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {hasScoreData ? (
               scoreKeys.map((skill) => (
-                <div key={skill} className="flex items-center justify-between">
-                  <span className="text-[16px] text-[#666666]">
+                <div key={skill} className="flex items-center justify-between gap-2 sm:gap-4">
+                  <span className="text-[13px] sm:text-[14px] md:text-[16px] text-[#666666] flex-1 min-w-0 break-words">
                     {formatScoreLabel(skill)}
                   </span>
-                  <div className="flex items-center">
-                    <div className="w-32 h-2 bg-[#E7E7E7] rounded-full mr-3">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <div className="w-24 sm:w-32 h-2 bg-[#E7E7E7] rounded-full mr-2 sm:mr-3">
                       <div
                         className="h-full bg-[#00C471] rounded-full transition-all duration-1000"
                         style={{ width: `${scores[skill] ?? 0}%` }}
                       />
                     </div>
-                    <span className="text-[16px] font-semibold text-[#111111] w-12 text-right">
+                    <span className="text-[13px] sm:text-[14px] md:text-[16px] font-semibold text-[#111111] w-10 sm:w-12 text-right">
                       {Number.isFinite(scores[skill]) ? scores[skill] : '-'}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-sm text-[#929292] text-center">
+              <div className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] text-center break-words">
                 표시할 점수가 없습니다.
               </div>
             )}
@@ -312,28 +312,28 @@ export default function LevelTestResult() {
         </div>
 
         {feedback && (
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
-            <h3 className="text-[18px] font-bold text-[#111111] mb-4">
+          <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-4 sm:mb-6">
+            <h3 className="text-[16px] sm:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4 break-words">
               AI 피드백
             </h3>
-            <p className="text-[14px] text-[#666666] leading-relaxed">
+            <p className="text-[13px] sm:text-[14px] text-[#666666] leading-relaxed break-words">
               {feedback}
             </p>
           </div>
         )}
 
         {(strengthsArr.length > 0 || improvementsArr.length > 0) && (
-          <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
+          <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-4 sm:mb-6">
             {strengthsArr.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-[16px] font-semibold text-[#111111] mb-2">
+              <div className="mb-3 sm:mb-4">
+                <h4 className="text-[14px] sm:text-[15px] md:text-[16px] font-semibold text-[#111111] mb-2 break-words">
                   🌟 강점
                 </h4>
                 <ul className="space-y-1">
                   {strengthsArr.map((strength, index) => (
-                    <li key={`strength-${index}`} className="text-[14px] text-[#666666] flex items-start">
-                      <span className="text-[#00C471] mr-2">•</span>
-                      {strength}
+                    <li key={`strength-${index}`} className="text-[13px] sm:text-[14px] text-[#666666] flex items-start break-words">
+                      <span className="text-[#00C471] mr-2 flex-shrink-0">•</span>
+                      <span>{strength}</span>
                     </li>
                   ))}
                 </ul>
@@ -342,14 +342,14 @@ export default function LevelTestResult() {
 
             {improvementsArr.length > 0 && (
               <div>
-                <h4 className="text-[16px] font-semibold text-[#111111] mb-2">
+                <h4 className="text-[14px] sm:text-[15px] md:text-[16px] font-semibold text-[#111111] mb-2 break-words">
                   💪 개선점
                 </h4>
                 <ul className="space-y-1">
                   {improvementsArr.map((improvement, index) => (
-                    <li key={`improvement-${index}`} className="text-[14px] text-[#666666] flex items-start">
-                      <span className="text-[#FF6B6B] mr-2">•</span>
-                      {improvement}
+                    <li key={`improvement-${index}`} className="text-[13px] sm:text-[14px] text-[#666666] flex items-start break-words">
+                      <span className="text-[#FF6B6B] mr-2 flex-shrink-0">•</span>
+                      <span>{improvement}</span>
                     </li>
                   ))}
                 </ul>
@@ -359,33 +359,33 @@ export default function LevelTestResult() {
         )}
 
         {!showDetailedAnalysis && (
-          <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-6 border border-[#00C471] mb-6">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-gradient-to-r from-[#E6F9F1] to-[#B0EDD3] rounded-[20px] p-4 sm:p-6 border border-[#00C471] mb-4 sm:mb-6">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <div className="flex items-center">
-                <Sparkles className="w-6 h-6 text-[#00C471] mr-2" />
-                <h3 className="text-[18px] font-bold text-[#111111]">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#00C471] mr-2" />
+                <h3 className="text-[16px] sm:text-[18px] font-bold text-[#111111] break-words">
                   AI 상세 분석
                 </h3>
               </div>
             </div>
-            <p className="text-[14px] text-[#666666] mb-4">
+            <p className="text-[12px] sm:text-[13px] md:text-[14px] text-[#666666] mb-3 sm:mb-4 break-words leading-[1.4] sm:leading-[1.5]">
               CEFR 기준에 따른 6차원 상세 평가, 발음 분석, 문법 분석, 어휘 분석, 학습 계획을 확인하세요.
             </p>
             <CommonButton
               onClick={handleLoadDetailedAnalysis}
               variant="primary"
-              className="w-full"
+              className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
               disabled={isLoadingDetailed}
             >
               {isLoadingDetailed ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2" />
                   분석 중...
                 </div>
               ) : (
                 <>
                   AI 상세 분석 보기
-                  <Sparkles className="w-5 h-5 ml-2" />
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                 </>
               )}
             </CommonButton>
@@ -398,54 +398,54 @@ export default function LevelTestResult() {
           </div>
         )}
 
-        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-8">
-          <h3 className="text-[18px] font-bold text-[#111111] mb-4">
+        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-6 sm:mb-8">
+          <h3 className="text-[16px] sm:text-[17px] md:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4 break-words">
             추천 학습 방법
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex items-start">
-              <Target className="w-5 h-5 text-[#00C471] mt-0.5 mr-3 flex-shrink-0" />
+              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
-                <p className="text-[16px] font-semibold text-[#111111] mb-1">
+                <p className="text-[14px] sm:text-[15px] md:text-[16px] font-semibold text-[#111111] mb-1 break-words">
                   목표 설정
                 </p>
-                <p className="text-[14px] text-[#666666]">
+                <p className="text-[13px] sm:text-[14px] text-[#666666] break-words">
                   현재 {levelValue || '현재 레벨'} 레벨에서 다음 레벨로 향상을 위한 구체적인 목표를 설정하세요.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start">
-              <BookOpen className="w-5 h-5 text-[#00C471] mt-0.5 mr-3 flex-shrink-0" />
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
-                <p className="text-[16px] font-semibold text-[#111111] mb-1">
+                <p className="text-[14px] sm:text-[15px] md:text-[16px] font-semibold text-[#111111] mb-1 break-words">
                   집중 학습
                 </p>
-                <p className="text-[14px] text-[#666666]">
+                <p className="text-[13px] sm:text-[14px] text-[#666666] break-words">
                   가장 낮은 점수를 받은 영역부터 집중적으로 학습하세요.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start">
-              <Users className="w-5 h-5 text-[#00C471] mt-0.5 mr-3 flex-shrink-0" />
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
-                <p className="text-[16px] font-semibold text-[#111111] mb-1">
+                <p className="text-[14px] sm:text-[15px] md:text-[16px] font-semibold text-[#111111] mb-1 break-words">
                   대화 연습
                 </p>
-                <p className="text-[14px] text-[#666666]">
+                <p className="text-[13px] sm:text-[14px] text-[#666666] break-words">
                   비슷한 레벨의 학습자와 정기적으로 대화 연습을 하세요.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start">
-              <Calendar className="w-5 h-5 text-[#00C471] mt-0.5 mr-3 flex-shrink-0" />
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
-                <p className="text-[16px] font-semibold text-[#111111] mb-1">
+                <p className="text-[14px] sm:text-[15px] md:text-[16px] font-semibold text-[#111111] mb-1 break-words">
                   꾸준한 학습
                 </p>
-                <p className="text-[14px] text-[#666666]">
+                <p className="text-[13px] sm:text-[14px] text-[#666666] break-words">
                   매일 30분씩 꾸준히 학습하는 것이 중요합니다.
                 </p>
               </div>
@@ -457,16 +457,16 @@ export default function LevelTestResult() {
           <CommonButton
             onClick={handleStartLearning}
             variant="primary"
-            className="w-full"
+            className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
           >
             학습 시작하기
-            <ChevronRight className="w-5 h-5 ml-2" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
           </CommonButton>
 
           <CommonButton
             onClick={handleRetakeTest}
             variant="secondary"
-            className="w-full"
+            className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
           >
             테스트 다시 하기
           </CommonButton>
