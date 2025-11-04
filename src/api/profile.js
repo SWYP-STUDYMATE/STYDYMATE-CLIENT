@@ -219,5 +219,5 @@ export const getProfile = async () => {
  */
 export const getUserProfile = async (userId) => {
   const response = await api.get(`/users/${userId}/profile`);
-  return response.data;
+  return response.data?.data ?? response.data;
 };

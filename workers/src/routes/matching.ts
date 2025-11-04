@@ -502,7 +502,7 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       candidateCount: candidates.data.length,
       limit
     });
-    const matches = await findBestMatches(
+    const matchScores = await findBestMatches(
       c.env.AI,
       userProfile,
       candidates.data,
@@ -511,6 +511,48 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       limit
     );
     log.info('[AI_BEST_MATCHES] AI matching completed', {
+      userId,
+      matchCount: matchScores.length
+    });
+
+    // MatchScore를 파트너 정보와 함께 매핑
+    const matches = matchScores.map((score) => {
+      const partner = candidates.data.find(
+        (candidate) => ('id' in candidate ? candidate.id : candidate.userId) === score.userId
+      );
+      
+      if (!partner) {
+        log.warn('[AI_BEST_MATCHES] Partner not found for match score', { userId: score.userId });
+        return null;
+      }
+
+      return {
+        partner: {
+          id: 'id' in partner ? partner.id : partner.userId,
+          userId: 'id' in partner ? partner.id : partner.userId,
+          name: partner.englishName || partner.name || 'Unknown',
+          profileImageUrl: partner.profileImageUrl,
+          bio: partner.selfBio,
+          age: partner.age,
+          gender: partner.gender,
+          location: partner.location,
+          nativeLanguage: partner.nativeLanguage,
+          targetLanguages: partner.targetLanguages || [],
+          interests: partner.interests || [],
+          personalities: partner.partnerPersonalities || [],
+          onlineStatus: partner.onlineStatus || 'OFFLINE',
+          lastActiveTime: partner.lastActiveTime
+        },
+        score: score.overallScore,
+        scores: score.breakdown,
+        matchReason: score.aiReasons.join(' '),
+        conversationStarters: score.suggestedTopics,
+        overallScore: score.overallScore,
+        compatibilityInsights: score.compatibilityInsights
+      };
+    }).filter(Boolean); // null 제거
+
+    log.info('[AI_BEST_MATCHES] Matches formatted', {
       userId,
       matchCount: matches.length
     });

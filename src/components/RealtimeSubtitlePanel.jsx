@@ -142,8 +142,8 @@ export default function RealtimeSubtitlePanel({
   // 자막 토글
   const handleToggleSubtitles = useCallback(async () => {
     const newState = !subtitleEnabled;
-    setSubtitleEnabled(newState);
-
+    
+    // 자막을 켤 때만 오디오 트랙 상태 확인
     if (newState) {
       // 자막 시작 전에 오디오 트랙 상태 확인
       let canStartLocal = false;
@@ -169,6 +169,15 @@ export default function RealtimeSubtitlePanel({
         }
       }
 
+      // 둘 다 시작할 수 없으면 자막을 켜지 않음
+      if (!canStartLocal && !canStartRemote) {
+        console.warn('⚠️ [RealtimeSubtitlePanel] 오디오가 켜져 있지 않아 자막을 시작할 수 없습니다.');
+        return; // 자막을 켜지 않음
+      }
+
+      // 자막 상태를 켜기 (오디오가 하나라도 켜져 있음)
+      setSubtitleEnabled(true);
+
       // 오디오가 하나라도 켜져 있으면 전사 시작
       if (canStartLocal && localStream) {
         try {
@@ -187,15 +196,10 @@ export default function RealtimeSubtitlePanel({
           // 원격 전사 실패는 에러로 표시하지 않음 (로컬만 가능해도 OK)
         }
       }
-
-      // 둘 다 시작할 수 없으면 자막을 다시 끄기
-      if (!canStartLocal && !canStartRemote) {
-        setSubtitleEnabled(false);
-        console.warn('⚠️ [RealtimeSubtitlePanel] 오디오가 켜져 있지 않아 자막을 시작할 수 없습니다.');
-        return;
-      }
     } else {
       // 자막 중지
+      setSubtitleEnabled(false);
+      
       if (isLocalTranscribing) {
         toggleLocalTranscription();
       }
@@ -222,7 +226,10 @@ export default function RealtimeSubtitlePanel({
         const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
         
         if (hasEnabledAudio) {
-          toggleLocalTranscription(localStream);
+          toggleLocalTranscription(localStream).catch(error => {
+            console.error('로컬 전사 시작 실패:', error);
+            // 에러는 useRealtimeTranscription 훅에서 처리됨
+          });
         } else {
           console.warn('⚠️ [RealtimeSubtitlePanel] 로컬 오디오가 꺼져 있어 전사를 시작하지 않습니다.');
         }
@@ -233,7 +240,10 @@ export default function RealtimeSubtitlePanel({
         const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
         
         if (hasEnabledAudio) {
-          toggleRemoteTranscription(remoteStream);
+          toggleRemoteTranscription(remoteStream).catch(error => {
+            console.error('원격 전사 시작 실패:', error);
+            // 에러는 useRealtimeTranscription 훅에서 처리됨
+          });
         } else {
           console.warn('⚠️ [RealtimeSubtitlePanel] 원격 오디오가 꺼져 있어 전사를 시작하지 않습니다.');
         }

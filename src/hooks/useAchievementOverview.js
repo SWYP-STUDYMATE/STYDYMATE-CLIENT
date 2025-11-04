@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { shallow } from 'zustand/shallow';
 import useAchievementStore from '../store/achievementStore';
 
@@ -29,35 +29,31 @@ export const useAchievementOverview = () => {
   }, [rawAchievements]);
 
   // 초기 fetch 추적을 위한 ref (무한 루프 방지)
-  const hasInitializedRef = useRef(false);
+  const initializedRef = useRef(false);
 
+  // 초기화: 마운트 시 한 번만 실행되도록 보장
   useEffect(() => {
-    // 이미 초기화되었거나 로딩 중이면 스킵
-    if (hasInitializedRef.current || loading) return;
-
-    // 캐시된 데이터가 있으면 fetch하지 않음 (hydration으로 이미 복원됨)
-    // achievements 배열이 있고, lastFetchedAt이 설정되어 있으면 캐시된 것으로 간주
-    if (rawAchievements && rawAchievements.length > 0 && lastFetchedAt && lastFetchedAt > 0) {
-      hasInitializedRef.current = true;
-      return;
-    }
-
-    if (typeof fetchAchievements !== 'function') {
-      console.warn('[useAchievementOverview] fetchAchievements is not available');
-      return;
-    }
-
-    // 초기화 플래그 설정하여 중복 호출 방지
-    hasInitializedRef.current = true;
+    // 이미 초기화되었으면 스킵
+    if (initializedRef.current) return;
+    initializedRef.current = true;
     
-    // 비동기로 fetch 실행 (렌더링 완료 후)
-    Promise.resolve().then(() => {
-      fetchAchievements().catch((err) => {
-        console.error('[useAchievementOverview] Failed to fetch achievements:', err);
-        // 에러 발생 시 플래그 재설정하여 재시도 가능하도록
-        hasInitializedRef.current = false;
-      });
-    });
+    // 캐시된 데이터가 없으면 fetch 실행
+    const hasCachedData = rawAchievements && rawAchievements.length > 0 && lastFetchedAt && lastFetchedAt > 0;
+    
+    if (!hasCachedData && typeof fetchAchievements === 'function') {
+      // 다음 틱에서 실행하여 렌더링 완료 후 보장
+      const timeoutId = setTimeout(() => {
+        if (typeof fetchAchievements === 'function') {
+          fetchAchievements().catch((err) => {
+            console.error('[useAchievementOverview] Failed to fetch achievements:', err);
+          });
+        }
+      }, 0);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 마운트 시 한 번만 실행
 

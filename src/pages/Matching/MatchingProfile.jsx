@@ -9,12 +9,15 @@ import {
     MessageCircle,
     Video,
     CheckCircle,
-    XCircle
+    XCircle,
+    Loader2
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import useMatchingStore from '../../store/matchingStore';
 import useSessionStore from '../../store/sessionStore';
 import { useAlert } from '../../hooks/useAlert';
+import { getUserProfile } from '../../api/profile';
+import { DEFAULT_PROFILE_IMAGE } from '../../utils/imageUtils';
 
 export default function MatchingProfile() {
     const navigate = useNavigate();
@@ -23,6 +26,9 @@ export default function MatchingProfile() {
 
     const [activeTab, setActiveTab] = useState('profile');
     const [isScheduling, setIsScheduling] = useState(false);
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const {
         matchedUsers,
@@ -33,37 +39,97 @@ export default function MatchingProfile() {
 
     const { scheduleSession } = useSessionStore();
 
-    // 실제로는 userId로 사용자 정보를 가져와야 함
-    const user = matchedUsers.find(u => u.id === userId) || {
-        id: userId,
-        name: "Emma Wilson",
-        englishName: "Emma",
-        profileImage: "/assets/basicProfilePic.png",
-        age: 28,
-        nationality: "United States",
-        nativeLanguage: "English",
-        learningLanguage: "Korean",
-        level: "Intermediate",
-        bio: "Hi! I'm Emma from California. I've been learning Korean for 2 years and I'm really excited to practice with native speakers. I love K-dramas and K-pop!",
-        interests: ["K-pop", "Travel", "Cooking", "Photography", "Movies"],
-        learningGoals: ["일상 대화 능력 향상", "한국 문화 이해", "비즈니스 한국어"],
-        availability: [
-            { day: "Monday", times: ["19:00-21:00"] },
-            { day: "Wednesday", times: ["19:00-21:00"] },
-            { day: "Friday", times: ["19:00-21:00"] },
-            { day: "Saturday", times: ["10:00-12:00", "14:00-16:00"] }
-        ],
-        timezone: "PST (UTC-8)",
-        sessionPreference: "1on1",
-        isOnline: true,
-        lastActive: "2분 전",
-        matchScore: 92,
-        completedSessions: 45,
-        rating: 4.8,
-        responseRate: 95
+    // userId로 프로필 정보 가져오기
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            if (!userId) {
+                setError('사용자 ID가 없습니다.');
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                // 먼저 matchedUsers에서 찾아보기
+                const matchedUser = matchedUsers.find(u => u.id === userId || u.userId === userId);
+                
+                if (matchedUser) {
+                    // 이미 matchedUsers에 있으면 사용
+                    const mappedUser = mapUserData(matchedUser);
+                    setUser(mappedUser);
+                    setIsLoading(false);
+                    return;
+                }
+
+                // matchedUsers에 없으면 API 호출
+                const profileData = await getUserProfile(userId);
+                const mappedUser = mapUserData(profileData);
+                setUser(mappedUser);
+            } catch (err) {
+                console.error('Failed to fetch user profile:', err);
+                setError('프로필 정보를 불러오는 중 오류가 발생했습니다.');
+                showError('프로필 정보를 불러오는 중 오류가 발생했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUserProfile();
+    }, [userId, matchedUsers, showError]);
+
+    // 백엔드 필드명을 프론트엔드 표시 형식으로 매핑
+    // UserProfile 타입에 맞게 매핑 (workers/src/types/index.ts 참고)
+    const mapUserData = (userData) => {
+        if (!userData) return null;
+
+        // 프로필 이미지 URL 변환 (DB에 저장된 키를 실제 URL로 변환)
+        let profileImageUrl = DEFAULT_PROFILE_IMAGE;
+        if (userData.profileImageUrl) {
+            profileImageUrl = userData.profileImageUrl;
+        } else if (userData.profileImage) {
+            // profileImage가 키인 경우 URL로 변환
+            if (userData.profileImage.startsWith('http://') || userData.profileImage.startsWith('https://') || userData.profileImage.startsWith('/')) {
+                profileImageUrl = userData.profileImage;
+            } else {
+                profileImageUrl = `/api/v1/upload/file/${userData.profileImage}`;
+            }
+        }
+
+        return {
+            ...userData,
+            id: userData.id || userData.userId,
+            name: userData.englishName || userData.name || '이름 없음',
+            profileImage: profileImageUrl,
+            nationality: userData.location?.country || userData.nationality || '미지정',
+            nativeLanguage: userData.nativeLanguage?.name || userData.nativeLanguage || '미지정',
+            learningLanguage: userData.targetLanguages?.[0]?.languageName || userData.learningLanguage || '미지정',
+            level: userData.targetLanguages?.[0]?.currentLevel || userData.level || userData.proficiencyLevel || '미지정',
+            bio: userData.selfBio || userData.bio || userData.intro || '자기소개가 없습니다.',
+            interests: userData.interests || [],
+            learningGoals: userData.learningGoals || userData.goals || [],
+            availability: userData.availability || userData.schedule || [],
+            timezone: userData.location?.timeZone || userData.timezone || '미지정',
+            sessionPreference: userData.sessionPreference || userData.sessionType || '1on1',
+            isOnline: userData.onlineStatus === 'ONLINE' || userData.isOnline || false,
+            lastActive: userData.lastActiveTime || userData.lastActive || '알 수 없음',
+            matchScore: userData.compatibilityScore || userData.matchScore || 0,
+            completedSessions: userData.completedSessions || userData.totalSessions || 0,
+            rating: userData.rating || userData.averageRating || 0,
+            responseRate: userData.responseRate || 0,
+            // UserProfile 타입의 추가 필드들
+            age: userData.age || (userData.birthyear ? new Date().getFullYear() - parseInt(userData.birthyear) : undefined),
+            gender: userData.gender,
+            email: userData.email,
+            birthday: userData.birthday,
+            birthyear: userData.birthyear,
+            onboardingCompleted: userData.onboardingCompleted
+        };
     };
 
     const handleAcceptMatch = async () => {
+        if (!user) return;
         try {
             await acceptMatch(user.id);
             setIsScheduling(true);
@@ -74,6 +140,7 @@ export default function MatchingProfile() {
     };
 
     const handleRejectMatch = async () => {
+        if (!user) return;
         if (window.confirm('이 매칭을 거절하시겠습니까?')) {
             try {
                 await rejectMatch(user.id);
@@ -86,13 +153,62 @@ export default function MatchingProfile() {
     };
 
     const handleScheduleSession = () => {
+        if (!user) return;
         // 세션 예약 로직
         navigate(`/schedule/new?partnerId=${user.id}`);
     };
 
     const handleStartChat = () => {
+        if (!user) return;
         navigate(`/chat/${user.id}`);
     };
+
+    // 로딩 상태
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#00C471] mx-auto mb-4" />
+                    <p className="text-[#606060] text-sm">프로필 정보를 불러오는 중...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // 에러 상태 또는 사용자 정보 없음
+    if (error || !user) {
+        return (
+            <div className="min-h-screen bg-[#FAFAFA] overflow-y-auto">
+                <div className="bg-white border-b border-[#E7E7E7] px-4 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center justify-between">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2 -ml-2 touch-manipulation"
+                        >
+                            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111]" />
+                        </button>
+                        <h1 className="text-[16px] sm:text-[18px] font-bold text-[#111111] break-words">매칭 프로필</h1>
+                        <div className="w-8 sm:w-10" />
+                    </div>
+                </div>
+                <div className="flex items-center justify-center min-h-[60vh] px-4">
+                    <div className="text-center">
+                        <XCircle className="w-12 h-12 text-[#929292] mx-auto mb-4" />
+                        <p className="text-[#606060] text-sm mb-2">
+                            {error || '프로필 정보를 불러올 수 없습니다.'}
+                        </p>
+                        <CommonButton
+                            onClick={() => navigate(-1)}
+                            variant="secondary"
+                            size="small"
+                        >
+                            돌아가기
+                        </CommonButton>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] overflow-y-auto">
@@ -132,7 +248,7 @@ export default function MatchingProfile() {
                             </span>
                         </div>
                         <p className="text-[13px] sm:text-[14px] text-[#606060] mb-2 break-words">
-                            {user.age}세 • {user.nationality}
+                            {user.age ? `${user.age}세 • ` : ''}{user.nationality}
                         </p>
                         <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 text-[12px] sm:text-[13px] md:text-[14px] text-[#929292]">
                             <span className="flex items-center space-x-1 whitespace-nowrap">
@@ -201,32 +317,36 @@ export default function MatchingProfile() {
                         </div>
 
                         {/* Interests */}
-                        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
-                            <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">관심사</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {user.interests.map((interest, index) => (
-                                    <span
-                                        key={index}
-                                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#F1F3F5] text-[#606060] text-[12px] sm:text-[13px] md:text-[14px] rounded-full whitespace-nowrap break-words"
-                                    >
-                                        #{interest}
-                                    </span>
-                                ))}
+                        {user.interests && user.interests.length > 0 && (
+                            <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
+                                <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">관심사</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {user.interests.map((interest, index) => (
+                                        <span
+                                            key={index}
+                                            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#F1F3F5] text-[#606060] text-[12px] sm:text-[13px] md:text-[14px] rounded-full whitespace-nowrap break-words"
+                                        >
+                                            #{interest}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Learning Goals */}
-                        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
-                            <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">학습 목표</h3>
-                            <ul className="space-y-2">
-                                {user.learningGoals.map((goal, index) => (
-                                    <li key={index} className="flex items-start space-x-2">
-                                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] flex-shrink-0 mt-0.5" />
-                                        <span className="text-[13px] sm:text-[14px] text-[#606060] break-words">{goal}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {user.learningGoals && user.learningGoals.length > 0 && (
+                            <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
+                                <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] mb-2 sm:mb-3 break-words">학습 목표</h3>
+                                <ul className="space-y-2">
+                                    {user.learningGoals.map((goal, index) => (
+                                        <li key={index} className="flex items-start space-x-2">
+                                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471] flex-shrink-0 mt-0.5" />
+                                            <span className="text-[13px] sm:text-[14px] text-[#606060] break-words">{goal}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </>
                 ) : (
                     /* Schedule Tab */
@@ -235,25 +355,29 @@ export default function MatchingProfile() {
                             <h3 className="text-[15px] sm:text-[16px] font-bold text-[#111111] break-words">가능한 시간</h3>
                             <span className="text-[11px] sm:text-[12px] text-[#929292] break-words">{user.timezone}</span>
                         </div>
-                        <div className="space-y-2 sm:space-y-3">
-                            {user.availability.map((slot, index) => (
-                                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                                    <span className="text-[13px] sm:text-[14px] font-medium text-[#111111] break-words whitespace-nowrap">
-                                        {slot.day}
-                                    </span>
-                                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                                        {slot.times.map((time, timeIndex) => (
-                                            <span
-                                                key={timeIndex}
-                                                className="px-2.5 sm:px-3 py-1 bg-[#F1F3F5] text-[#606060] text-[11px] sm:text-[12px] rounded-lg whitespace-nowrap break-words"
-                                            >
-                                                {time}
-                                            </span>
-                                        ))}
+                        {user.availability && user.availability.length > 0 ? (
+                            <div className="space-y-2 sm:space-y-3">
+                                {user.availability.map((slot, index) => (
+                                    <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                                        <span className="text-[13px] sm:text-[14px] font-medium text-[#111111] break-words whitespace-nowrap">
+                                            {slot.day}
+                                        </span>
+                                        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                                            {slot.times && slot.times.map((time, timeIndex) => (
+                                                <span
+                                                    key={timeIndex}
+                                                    className="px-2.5 sm:px-3 py-1 bg-[#F1F3F5] text-[#606060] text-[11px] sm:text-[12px] rounded-lg whitespace-nowrap break-words"
+                                                >
+                                                    {time}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[#929292] text-sm">등록된 스케줄이 없습니다.</p>
+                        )}
                     </div>
                 )}
             </div>

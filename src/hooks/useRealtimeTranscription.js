@@ -157,11 +157,29 @@ export function useRealtimeTranscription({
   // 전사 시작
   const startTranscription = useCallback(async (stream) => {
     if (!stream) {
-      setError('오디오 스트림이 없습니다.');
+      const errorMessage = '오디오 스트림이 없습니다.';
+      setError(errorMessage);
       return;
     }
 
     try {
+      // 오디오 트랙 상태 사전 확인
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        const errorMessage = '스트림에 오디오 트랙이 없습니다.';
+        setError(errorMessage);
+        log.error('전사 시작 실패', new Error(errorMessage), 'TRANSCRIPTION');
+        return;
+      }
+
+      const enabledTracks = audioTracks.filter(track => track.enabled && track.readyState === 'live');
+      if (enabledTracks.length === 0) {
+        const errorMessage = '오디오 트랙이 모두 비활성화되어 있습니다. 오디오를 켜주세요.';
+        setError(errorMessage);
+        log.error('전사 시작 실패', new Error(errorMessage), 'TRANSCRIPTION');
+        return;
+      }
+
       setError(null);
       streamRef.current = stream;
       
@@ -218,6 +236,19 @@ export function useRealtimeTranscription({
     if (isTranscribing) {
       stopTranscription();
     } else {
+      // 전사 시작 전에 오디오 트랙 상태 확인
+      if (stream) {
+        const audioTracks = stream.getAudioTracks();
+        const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+        
+        if (!hasEnabledAudio) {
+          const errorMessage = '오디오 트랙이 모두 비활성화되어 있습니다. 오디오를 켜주세요.';
+          setError(errorMessage);
+          log.error('전사 시작 실패', new Error(errorMessage), 'TRANSCRIPTION');
+          return;
+        }
+      }
+      
       await startTranscription(stream);
     }
   }, [isTranscribing, startTranscription, stopTranscription]);

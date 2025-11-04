@@ -554,8 +554,8 @@ export async function findBestMatches(
       limit
     });
 
-    // 모든 후보에 대해 매칭 점수 계산
-    const scores = await Promise.all(
+    // 모든 후보에 대해 매칭 점수 계산 (일부 실패해도 계속 진행)
+    const scoreResults = await Promise.allSettled(
       candidates.map(async (candidate, index) => {
         try {
           log.info(`[FIND_BEST_MATCHES] Processing candidate ${index + 1}/${candidates.length}`, {
@@ -572,8 +572,23 @@ export async function findBestMatches(
       })
     );
 
+    // 성공한 결과만 필터링
+    const scores: MatchScore[] = [];
+    for (let i = 0; i < scoreResults.length; i++) {
+      const result = scoreResults[i];
+      if (result.status === 'fulfilled') {
+        scores.push(result.value);
+      } else {
+        log.warn(`[FIND_BEST_MATCHES] Skipped candidate ${i + 1} due to error`, {
+          error: result.reason instanceof Error ? result.reason.message : String(result.reason)
+        });
+      }
+    }
+
     log.info('[FIND_BEST_MATCHES] All candidates processed', {
-      scoreCount: scores.length
+      totalCandidates: candidates.length,
+      successfulScores: scores.length,
+      failedCandidates: candidates.length - scores.length
     });
 
     // 점수 순으로 정렬하고 상위 limit개 반환

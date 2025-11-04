@@ -210,6 +210,29 @@ usersRoutes.get('/profile', async (c) => {
   }
 });
 
+// 다른 사용자 프로필 조회
+usersRoutes.get('/:userId/profile', async (c) => {
+  const currentUserId = c.get('userId');
+  if (!currentUserId) {
+    throw new AppError('User id missing from context', 500, 'CONTEXT_MISSING_USER');
+  }
+
+  const targetUserId = c.req.param('userId');
+  if (!targetUserId) {
+    throw new AppError('Target user id is required', 400, 'INVALID_PARAMETER');
+  }
+
+  try {
+    const profile = await getUserProfile(c.env, targetUserId);
+    if (!profile) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+    return successResponse(c, profile);
+  } catch (error) {
+    throw wrapError(error, `GET /api/v1/users/${targetUserId}/profile`);
+  }
+});
+
 usersRoutes.put('/me/profile', async (c) => {
   const userId = c.get('userId');
   if (!userId) {
