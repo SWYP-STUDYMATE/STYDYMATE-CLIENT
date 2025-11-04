@@ -40,6 +40,7 @@ class WebRTCConnectionManager {
     this.lastConnectionCheck = 0;
     this.connectionQuality = 'unknown'; // good, fair, poor, unknown
     this.reconnectTimeout = null;
+    this.pendingIceCandidates = new Map(); // 대기 중인 ICE candidates
   }
 
   /**
@@ -182,12 +183,21 @@ class WebRTCConnectionManager {
     // 메시지 구조 확인 (디버깅용)
     console.log('📨 [WebRTC] Received message:', data);
     
-    const { type, from, payload, participant, participantId, userId } = data;
+    // 서버가 보내는 메시지 형식: { type, from, data: signal }
+    // data는 전체 메시지 객체
+    const { type, from, data: messageData, payload, participant, participantId, userId } = data;
 
     switch (type) {
       case 'connected':
         // WebSocket 연결 성공 메시지
         console.log('✅ WebSocket connected to room:', this.roomId);
+        
+        // roomData에 기존 참가자 목록이 있으면 처리
+        if (data.roomData && data.roomData.participants && Array.isArray(data.roomData.participants)) {
+          console.log('📋 [WebRTC] connected 메시지에서 기존 참가자 목록 발견:', data.roomData.participants);
+          await this.handleParticipantsList(data.roomData.participants);
+        }
+        
         if (this.callbacks.onConnectionStateChange) {
           this.callbacks.onConnectionStateChange('connected');
         }
@@ -195,7 +205,7 @@ class WebRTCConnectionManager {
 
       case 'participant-joined':
         // payload 또는 participant 필드 지원
-        const joinedParticipant = participant || payload;
+        const joinedParticipant = participant || payload || messageData;
         if (!joinedParticipant) {
           console.warn('⚠️ [WebRTC] participant-joined message missing participant data:', data);
           return;
@@ -205,13 +215,13 @@ class WebRTCConnectionManager {
 
       case 'participant-left':
         // payload, participant, 또는 participantId/userId 필드 지원
-        let leftParticipant = participant || payload;
+        let leftParticipant = participant || payload || messageData;
         
         // participantId나 userId만 있는 경우 객체로 변환
-        if (!leftParticipant && (participantId || userId)) {
+        if (!leftParticipant && (participantId || userId || data.userId)) {
           leftParticipant = {
-            userId: participantId || userId,
-            id: participantId || userId
+            userId: participantId || userId || data.userId,
+            id: participantId || userId || data.userId
           };
         }
         
@@ -223,24 +233,36 @@ class WebRTCConnectionManager {
         break;
 
       case 'participants-list':
-        await this.handleParticipantsList(payload?.participants || data.participants);
+        await this.handleParticipantsList(payload?.participants || messageData?.participants || data.participants);
         break;
 
       case 'offer':
-        await this.handleOffer(from, payload || data.data);
+        // 서버는 { type: 'offer', from: userId, data: offer } 형식으로 보냄
+        // messageData가 직접 SDP 객체 { type: 'offer', sdp: '...' }
+        const offerSdp = messageData || payload;
+        console.log('📥 [WebRTC] Offer 메시지 수신:', { type, from, sdp: offerSdp });
+        await this.handleOffer(from, offerSdp);
         break;
 
       case 'answer':
-        await this.handleAnswer(from, payload || data.data);
+        // 서버는 { type: 'answer', from: userId, data: answer } 형식으로 보냄
+        // messageData가 직접 SDP 객체 { type: 'answer', sdp: '...' }
+        const answerSdp = messageData || payload;
+        console.log('📥 [WebRTC] Answer 메시지 수신:', { type, from, sdp: answerSdp });
+        await this.handleAnswer(from, answerSdp);
         break;
 
       case 'ice-candidate':
-        await this.handleIceCandidate(from, payload || data.data);
+        // 서버는 { type: 'ice-candidate', from: userId, data: candidate } 형식으로 보냄
+        // messageData가 직접 RTCIceCandidateInit 객체
+        const candidateData = messageData || payload;
+        console.log('📥 [WebRTC] ICE candidate 메시지 수신:', { type, from, candidate: candidateData });
+        await this.handleIceCandidate(from, candidateData);
         break;
 
       case 'chat-message':
         if (this.callbacks.onChatMessage) {
-          this.callbacks.onChatMessage(payload || data);
+          this.callbacks.onChatMessage(payload || messageData || data);
         }
         break;
 
@@ -285,7 +307,8 @@ class WebRTCConnectionManager {
 
     // Create peer connection for new participant
     console.log('🔗 [WebRTC] Creating peer connection for:', normalizedParticipant.userId);
-    this.createPeerConnection(normalizedParticipant.userId);
+    // 새로 들어온 참가자에 대해 offer를 생성해야 WebRTC 연결이 시작됩니다
+    this.createPeerConnection(normalizedParticipant.userId, true);
   }
 
   /**
@@ -546,8 +569,9 @@ class WebRTCConnectionManager {
     
     console.log('✅ [WebRTC] 최종 RTCPeerConnection 설정:', JSON.stringify(config, null, 2));
     
+    let pc; // 함수 스코프에서 선언
     try {
-      const pc = new RTCPeerConnection(config);
+      pc = new RTCPeerConnection(config);
       this.peerConnections.set(remoteUserId, pc);
       console.log('✅ [WebRTC] RTCPeerConnection 생성 성공');
     } catch (error) {
@@ -565,7 +589,7 @@ class WebRTCConnectionManager {
         ]
       };
       try {
-        const pc = new RTCPeerConnection(fallbackConfig);
+        pc = new RTCPeerConnection(fallbackConfig);
         this.peerConnections.set(remoteUserId, pc);
         console.log('✅ [WebRTC] 기본 설정으로 RTCPeerConnection 생성 성공');
         // 기본 설정으로 업데이트
@@ -577,7 +601,7 @@ class WebRTCConnectionManager {
     }
 
     // Add local stream tracks
-    if (this.localStream) {
+    if (this.localStream && pc) {
       console.log(`📤 [WebRTC] 로컬 스트림 트랙 추가 (${remoteUserId}):`, this.localStream.getTracks().map(t => t.kind));
       this.localStream.getTracks().forEach(track => {
         pc.addTrack(track, this.localStream);
@@ -587,56 +611,60 @@ class WebRTCConnectionManager {
     }
 
     // Handle incoming tracks
-    pc.ontrack = (event) => {
-      console.log(`📥 [WebRTC] 원격 트랙 수신 (${remoteUserId}):`, event.track.kind);
-      const [stream] = event.streams;
-      console.log(`🎥 [WebRTC] 원격 스트림 저장 (${remoteUserId}):`, stream.id, stream.getTracks().map(t => t.kind));
-      this.remoteStreams.set(remoteUserId, stream);
-      if (this.callbacks.onRemoteStream) {
-        console.log(`✅ [WebRTC] onRemoteStream 콜백 호출 (${remoteUserId})`);
-        this.callbacks.onRemoteStream(remoteUserId, stream);
-      }
-    };
+    if (pc) {
+      pc.ontrack = (event) => {
+        console.log(`📥 [WebRTC] 원격 트랙 수신 (${remoteUserId}):`, event.track.kind);
+        const [stream] = event.streams;
+        console.log(`🎥 [WebRTC] 원격 스트림 저장 (${remoteUserId}):`, stream.id, stream.getTracks().map(t => t.kind));
+        this.remoteStreams.set(remoteUserId, stream);
+        if (this.callbacks.onRemoteStream) {
+          console.log(`✅ [WebRTC] onRemoteStream 콜백 호출 (${remoteUserId})`);
+          this.callbacks.onRemoteStream(remoteUserId, stream);
+        }
+      };
 
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log(`🧊 [WebRTC] ICE 후보 전송 (${remoteUserId})`);
-        this.sendMessage({
-          type: 'ice-candidate',
-          to: remoteUserId,
-          payload: {
-            candidate: event.candidate,
-          },
-        });
-      }
-    };
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log(`🧊 [WebRTC] ICE 후보 전송 (${remoteUserId})`);
+          this.sendMessage({
+            type: 'ice-candidate',
+            data: {
+              to: remoteUserId,
+              candidate: event.candidate,
+            },
+          });
+        }
+      };
 
-    // Handle connection state changes
-    pc.onconnectionstatechange = () => {
-      console.log(`🔄 [WebRTC] 연결 상태 변경 (${remoteUserId}): ${pc.connectionState}`);
-    };
+      // Handle connection state changes
+      pc.onconnectionstatechange = () => {
+        console.log(`🔄 [WebRTC] 연결 상태 변경 (${remoteUserId}): ${pc.connectionState}`);
+      };
 
-    // ICE connection state monitoring
-    pc.oniceconnectionstatechange = () => {
-      console.log(`🧊 [WebRTC] ICE 연결 상태 (${remoteUserId}): ${pc.iceConnectionState}`);
-    };
+      // ICE connection state monitoring
+      pc.oniceconnectionstatechange = () => {
+        console.log(`🧊 [WebRTC] ICE 연결 상태 (${remoteUserId}): ${pc.iceConnectionState}`);
+      };
 
-    // Create offer if needed
-    if (createOffer) {
-      try {
-        console.log(`📝 [WebRTC] Offer 생성 시작 (${remoteUserId})`);
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        console.log(`📤 [WebRTC] Offer 전송 (${remoteUserId})`);
-        this.sendMessage({
-          type: 'offer',
-          to: remoteUserId,
-          payload: { sdp: offer },
-        });
-      } catch (error) {
-        console.error(`❌ [WebRTC] Offer 생성 실패 (${remoteUserId}):`, error);
-        this.handleError('Failed to create offer', error);
+      // Create offer if needed
+      if (createOffer) {
+        try {
+          console.log(`📝 [WebRTC] Offer 생성 시작 (${remoteUserId})`);
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          console.log(`📤 [WebRTC] Offer 전송 (${remoteUserId})`);
+          this.sendMessage({
+            type: 'offer',
+            data: {
+              to: remoteUserId,
+              signal: offer,
+            },
+          });
+        } catch (error) {
+          console.error(`❌ [WebRTC] Offer 생성 실패 (${remoteUserId}):`, error);
+          this.handleError('Failed to create offer', error);
+        }
       }
     }
 
@@ -650,19 +678,63 @@ class WebRTCConnectionManager {
    */
   async handleOffer(from, payload) {
     try {
+      console.log('📥 [WebRTC] handleOffer 호출:', { from, payload });
+      console.log('📥 [WebRTC] payload 타입:', typeof payload);
+      console.log('📥 [WebRTC] payload 키:', payload ? Object.keys(payload) : 'null');
+      
       const pc = await this.createPeerConnection(from);
-      await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      
+      // payload는 서버에서 { type, from, data: offer } 형식으로 받았고
+      // data 필드가 직접 SDP 객체 { type: 'offer', sdp: '...' }입니다
+      if (!payload) {
+        throw new Error('Offer payload is null or undefined');
+      }
+      
+      // SDP 객체 검증
+      if (typeof payload !== 'object') {
+        throw new Error('Invalid offer payload type: ' + typeof payload);
+      }
+      
+      // payload가 이미 SDP 객체인지 확인
+      if (payload.type && payload.sdp) {
+        // 이미 올바른 형식: { type: 'offer', sdp: '...' }
+        console.log('✅ [WebRTC] SDP 객체 형식 확인됨:', { type: payload.type, sdpLength: payload.sdp.length });
+        await pc.setRemoteDescription(new RTCSessionDescription(payload));
+      } else {
+        // payload가 다른 형식일 수 있음 (예: { sdp: { type, sdp } })
+        console.warn('⚠️ [WebRTC] 예상과 다른 payload 형식:', payload);
+        throw new Error('SDP must have type and sdp fields');
+      }
+      
+      // remote description 설정 후 대기 중인 ICE candidates 처리
+      if (this.pendingIceCandidates.has(from)) {
+        const pending = this.pendingIceCandidates.get(from);
+        console.log(`🔄 [WebRTC] ${pending.length}개의 대기 중인 ICE candidate 처리`);
+        for (const candidateData of pending) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+          } catch (err) {
+            console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate 처리 실패:', err);
+          }
+        }
+        this.pendingIceCandidates.delete(from);
+      }
       
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       
+      console.log('📤 [WebRTC] Answer 생성 및 전송:', { type: answer.type, sdpLength: answer.sdp.length });
       this.sendMessage({
         type: 'answer',
-        to: from,
-        payload: { sdp: answer },
+        data: {
+          to: from,
+          signal: answer,
+        },
       });
     } catch (error) {
-      console.error('Failed to handle offer:', error);
+      console.error('❌ [WebRTC] Failed to handle offer:', error);
+      console.error('❌ [WebRTC] Payload was:', payload);
+      console.error('❌ [WebRTC] Error stack:', error.stack);
       this.handleError('Failed to handle offer', error);
     }
   }
@@ -674,12 +746,53 @@ class WebRTCConnectionManager {
    */
   async handleAnswer(from, payload) {
     try {
+      console.log('📥 [WebRTC] handleAnswer 호출:', { from, payload });
+      console.log('📥 [WebRTC] payload 타입:', typeof payload);
+      console.log('📥 [WebRTC] payload 키:', payload ? Object.keys(payload) : 'null');
+      
       const pc = this.peerConnections.get(from);
-      if (pc) {
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      if (!pc) {
+        console.error('❌ [WebRTC] Peer connection not found for:', from);
+        return;
+      }
+      
+      // payload는 서버에서 { type, from, data: answer } 형식으로 받았고
+      // data 필드가 직접 SDP 객체 { type: 'answer', sdp: '...' }입니다
+      if (!payload) {
+        throw new Error('Answer payload is null or undefined');
+      }
+      
+      if (typeof payload !== 'object') {
+        throw new Error('Invalid answer payload type: ' + typeof payload);
+      }
+      
+      // payload가 이미 SDP 객체인지 확인
+      if (payload.type && payload.sdp) {
+        // 이미 올바른 형식: { type: 'answer', sdp: '...' }
+        console.log('✅ [WebRTC] SDP 객체 형식 확인됨:', { type: payload.type, sdpLength: payload.sdp.length });
+        await pc.setRemoteDescription(new RTCSessionDescription(payload));
+      } else {
+        console.warn('⚠️ [WebRTC] 예상과 다른 payload 형식:', payload);
+        throw new Error('SDP must have type and sdp fields');
+      }
+      
+      // remote description 설정 후 대기 중인 ICE candidates 처리
+      if (this.pendingIceCandidates.has(from)) {
+        const pending = this.pendingIceCandidates.get(from);
+        console.log(`🔄 [WebRTC] ${pending.length}개의 대기 중인 ICE candidate 처리`);
+        for (const candidateData of pending) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+          } catch (err) {
+            console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate 처리 실패:', err);
+          }
+        }
+        this.pendingIceCandidates.delete(from);
       }
     } catch (error) {
-      console.error('Failed to handle answer:', error);
+      console.error('❌ [WebRTC] Failed to handle answer:', error);
+      console.error('❌ [WebRTC] Payload was:', payload);
+      console.error('❌ [WebRTC] Error stack:', error.stack);
       this.handleError('Failed to handle answer', error);
     }
   }
@@ -693,11 +806,32 @@ class WebRTCConnectionManager {
     try {
       const pc = this.peerConnections.get(from);
       if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        // payload는 서버에서 { type, from, data: candidate } 형식으로 받았고
+        // data.data가 직접 RTCIceCandidateInit 객체입니다
+        // remote description이 설정되지 않았으면 ICE candidate를 큐에 저장
+        if (pc.remoteDescription === null) {
+          console.log('⏳ [WebRTC] Remote description이 없어 ICE candidate를 대기 중:', payload);
+          // 큐에 저장 (나중에 remote description이 설정되면 처리)
+          if (!this.pendingIceCandidates.has(from)) {
+            this.pendingIceCandidates.set(from, []);
+          }
+          this.pendingIceCandidates.get(from).push(payload);
+          return;
+        }
+        
+        // payload는 직접 RTCIceCandidateInit 객체입니다
+        // null candidate는 연결이 완료되었음을 의미하므로 무시
+        if (payload === null) {
+          console.log('✅ [WebRTC] ICE gathering 완료');
+          return;
+        }
+        
+        await pc.addIceCandidate(new RTCIceCandidate(payload));
       }
     } catch (error) {
-      console.error('Failed to handle ICE candidate:', error);
-      this.handleError('Failed to handle ICE candidate', error);
+      console.error('❌ [WebRTC] Failed to handle ICE candidate:', error);
+      console.error('❌ [WebRTC] Payload was:', payload);
+      // 에러를 무시하지 않고 로그만 남김 (ICE candidate는 실패해도 연결은 가능)
     }
   }
 
