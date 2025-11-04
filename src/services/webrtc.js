@@ -497,19 +497,37 @@ class WebRTCConnectionManager {
     }
 
     console.log(`🔗 [WebRTC] 새 피어 연결 생성: ${remoteUserId}, createOffer: ${createOffer}`);
-    console.log('🔧 [WebRTC] 원본 ICE 서버 설정:', JSON.stringify(this.rtcConfiguration.iceServers, null, 2));
+    
+    // ICE 서버 설정을 먼저 필터링 (잘못된 형식 제거)
+    const rawIceServers = this.rtcConfiguration.iceServers || [];
+    console.log('🔧 [WebRTC] 원본 ICE 서버 설정:', JSON.stringify(rawIceServers, null, 2));
+    
+    // 잘못된 형식의 URL을 즉시 제거하고 정규화
+    const filteredIceServers = rawIceServers.filter(server => {
+      if (!server || !server.urls) return false;
+      const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+      return urls.some(url => {
+        if (typeof url !== 'string') return true;
+        // 이미 올바른 형식이거나, 정규화 가능한 형식인지 확인
+        return url.match(/^(stun|turn|turns):/i) || 
+               url.includes('cloudflare') || 
+               url.includes('stun') || 
+               url.includes('turn');
+      });
+    });
+    
+    console.log('🔧 [WebRTC] 필터링된 ICE 서버:', JSON.stringify(filteredIceServers, null, 2));
     console.log('🔧 [WebRTC] normalizeIceServers 함수 존재 여부:', typeof this.normalizeIceServers);
     
     // RTCPeerConnection 생성 전에 ICE 서버 설정을 다시 정규화 (안전장치)
-    // API에서 받은 설정이 이미 정규화되어 있어도, 혹시 모를 경우를 대비해 재정규화
     let normalizedIceServers;
     try {
       console.log('🔧 [WebRTC] normalizeIceServers 함수 호출 시작');
-      normalizedIceServers = this.normalizeIceServers(this.rtcConfiguration.iceServers);
+      normalizedIceServers = this.normalizeIceServers(filteredIceServers.length > 0 ? filteredIceServers : rawIceServers);
       console.log('✅ [WebRTC] 정규화 완료, 결과:', JSON.stringify(normalizedIceServers, null, 2));
     } catch (normalizeError) {
       console.error('❌ [WebRTC] ICE 서버 정규화 실패:', normalizeError);
-      console.error('❌ [WebRTC] 정규화 에러 스택:', normalizeError.stack);
+      console.error('❌ [WebRTC] 정규화 에러 스택:', normalizeError?.stack);
       // 정규화 실패 시 기본 설정 사용
       normalizedIceServers = [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -536,7 +554,26 @@ class WebRTCConnectionManager {
       console.error('❌ [WebRTC] RTCPeerConnection 생성 실패:', error);
       console.error('❌ [WebRTC] 시도한 설정:', JSON.stringify(config, null, 2));
       console.error('❌ [WebRTC] ICE 서버 설정 상세:', JSON.stringify(config.iceServers, null, 2));
-      throw error;
+      
+      // 마지막 시도: 기본 설정으로 재시도
+      console.log('🔄 [WebRTC] 기본 설정으로 재시도...');
+      const fallbackConfig = {
+        ...this.rtcConfiguration,
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ]
+      };
+      try {
+        const pc = new RTCPeerConnection(fallbackConfig);
+        this.peerConnections.set(remoteUserId, pc);
+        console.log('✅ [WebRTC] 기본 설정으로 RTCPeerConnection 생성 성공');
+        // 기본 설정으로 업데이트
+        this.rtcConfiguration.iceServers = fallbackConfig.iceServers;
+      } catch (fallbackError) {
+        console.error('❌ [WebRTC] 기본 설정으로도 실패:', fallbackError);
+        throw error; // 원래 에러를 throw
+      }
     }
 
     // Add local stream tracks
