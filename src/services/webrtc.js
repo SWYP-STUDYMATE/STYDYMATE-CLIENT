@@ -81,7 +81,9 @@ class WebRTCConnectionManager {
         const iceServersConfig = await webrtcAPI.getIceServers(roomId);
         if (iceServersConfig && iceServersConfig.iceServers) {
           // 정규화된 ICE 서버 설정 사용
-          this.rtcConfiguration.iceServers = this.normalizeIceServers(iceServersConfig.iceServers);
+          const normalizedServers = this.normalizeIceServers(iceServersConfig.iceServers);
+          this.rtcConfiguration.iceServers = normalizedServers;
+          console.log('✅ [WebRTC] ICE 서버 설정 업데이트 (정규화 완료):', JSON.stringify(this.rtcConfiguration.iceServers, null, 2));
           log.info('ICE 서버 설정 업데이트', this.rtcConfiguration, 'WEBRTC');
         }
       } catch (iceError) {
@@ -340,15 +342,18 @@ class WebRTCConnectionManager {
       return this.rtcConfiguration.iceServers; // 기본 설정 반환
     }
 
-    console.log('🔧 [WebRTC] ICE 서버 정규화 시작:', iceServers);
+    console.log('🔧 [WebRTC] ICE 서버 정규화 시작:', JSON.stringify(iceServers, null, 2));
 
-    const normalized = iceServers.map(server => {
+    const normalized = iceServers.map((server, index) => {
+      console.log(`🔍 [WebRTC] 서버 ${index} 처리 시작:`, JSON.stringify(server, null, 2));
+      
       // urls가 문자열인 경우 배열로 변환
       const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
       
       // 각 URL을 정규화
       const normalizedUrls = urls.map(url => {
         if (typeof url !== 'string') {
+          console.warn(`⚠️ [WebRTC] URL이 문자열이 아닙니다:`, url);
           return url;
         }
 
@@ -361,9 +366,12 @@ class WebRTCConnectionManager {
         }
 
         // STUN 서버 감지 및 정규화
-        // 패턴: stun.*, stun1.*, stun2.*, *.stun.*, cloudflare.* (STUN 서버일 가능성)
-        if (url.match(/^(stun[0-9]?\.|.*\.stun\.|cloudflare\.)/i) || 
-            (url.includes('stun') && !url.includes('turn'))) {
+        // 우선순위: cloudflare 포함 > stun.* 패턴 > stun 포함 (turn 미포함)
+        const isCloudflare = url.includes('cloudflare');
+        const isStunPattern = url.match(/^(stun[0-9]?\.|.*\.stun\.)/i);
+        const hasStunButNotTurn = url.includes('stun') && !url.includes('turn');
+        
+        if (isCloudflare || isStunPattern || hasStunButNotTurn) {
           // 포트가 없으면 기본 포트 3478 추가
           if (!url.includes(':')) {
             const normalized = `stun:${url}:3478`;
@@ -400,13 +408,16 @@ class WebRTCConnectionManager {
         return normalized;
       });
 
-      return {
+      const result = {
         ...server,
         urls: normalizedUrls.length === 1 ? normalizedUrls[0] : normalizedUrls
       };
+      
+      console.log(`✅ [WebRTC] 서버 ${index} 정규화 완료:`, JSON.stringify(result, null, 2));
+      return result;
     });
 
-    console.log('✅ [WebRTC] 정규화된 ICE 서버:', normalized);
+    console.log('✅ [WebRTC] 정규화된 ICE 서버:', JSON.stringify(normalized, null, 2));
     return normalized;
   }
 
@@ -486,10 +497,15 @@ class WebRTCConnectionManager {
     }
 
     console.log(`🔗 [WebRTC] 새 피어 연결 생성: ${remoteUserId}, createOffer: ${createOffer}`);
-    console.log('🔧 [WebRTC] 사용할 ICE 서버 설정:', JSON.stringify(this.rtcConfiguration.iceServers, null, 2));
+    console.log('🔧 [WebRTC] 원본 ICE 서버 설정:', JSON.stringify(this.rtcConfiguration.iceServers, null, 2));
     
-    // RTCPeerConnection 생성 전에 ICE 서버 설정을 다시 정규화
+    // RTCPeerConnection 생성 전에 ICE 서버 설정을 다시 정규화 (안전장치)
+    // API에서 받은 설정이 이미 정규화되어 있어도, 혹시 모를 경우를 대비해 재정규화
     const normalizedIceServers = this.normalizeIceServers(this.rtcConfiguration.iceServers);
+    
+    // 정규화된 서버로 설정 업데이트 (다음 연결을 위해)
+    this.rtcConfiguration.iceServers = normalizedIceServers;
+    
     const config = {
       ...this.rtcConfiguration,
       iceServers: normalizedIceServers
@@ -497,8 +513,14 @@ class WebRTCConnectionManager {
     
     console.log('✅ [WebRTC] 최종 RTCPeerConnection 설정:', JSON.stringify(config, null, 2));
     
-    const pc = new RTCPeerConnection(config);
-    this.peerConnections.set(remoteUserId, pc);
+    try {
+      const pc = new RTCPeerConnection(config);
+      this.peerConnections.set(remoteUserId, pc);
+    } catch (error) {
+      console.error('❌ [WebRTC] RTCPeerConnection 생성 실패:', error);
+      console.error('❌ [WebRTC] 시도한 설정:', JSON.stringify(config, null, 2));
+      throw error;
+    }
 
     // Add local stream tracks
     if (this.localStream) {
