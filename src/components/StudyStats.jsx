@@ -11,18 +11,17 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
   useEffect(() => {
     // 부모로부터 데이터를 받은 경우
     if (data) {
-      const metrics = data?.metrics || {};
       const safeNumber = (value, defaultValue = 0) => {
         if (typeof value === 'number' && !Number.isNaN(value)) return value;
         return defaultValue;
       };
-      
+
       const transformedData = {
         overview: {
-          totalMinutes: safeNumber(metrics.totalMinutes, 0),
-          monthlyMinutes: safeNumber(metrics.monthlyMinutes, 0),
-          currentStreak: safeNumber(metrics.currentStreak, 0),
-          partnersCount: safeNumber(metrics.partnersCount, 0)
+          totalMinutes: safeNumber(data.totalMinutes, 0),
+          monthlyMinutes: safeNumber(data.monthlyMinutes, 0),
+          currentStreak: safeNumber(data.streakDays, 0),
+          partnersCount: safeNumber(data.partnersCount, 0)
         }
       };
 
@@ -48,8 +47,9 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
 
     try {
       const response = await getStudyStats('month'); // 월간 통계 조회
-      const metrics = response?.metrics || {};
-      
+      // response는 직접 SessionStatsResponseType 형태
+      const data = response?.data ?? response;
+
       const safeNumber = (value, defaultValue = 0) => {
         if (typeof value === 'number' && !Number.isNaN(value)) return value;
         return defaultValue;
@@ -57,10 +57,10 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
 
       const analyticsData = {
         overview: {
-          totalMinutes: safeNumber(metrics.totalMinutes, 0),
-          monthlyMinutes: safeNumber(metrics.monthlyMinutes, 0),
-          currentStreak: safeNumber(metrics.currentStreak, 0),
-          partnersCount: safeNumber(metrics.partnersCount, 0)
+          totalMinutes: safeNumber(data.totalMinutes, 0),
+          monthlyMinutes: safeNumber(data.monthlyMinutes, 0),
+          currentStreak: safeNumber(data.streakDays, 0),
+          partnersCount: safeNumber(data.partnersCount, 0)
         }
       };
 

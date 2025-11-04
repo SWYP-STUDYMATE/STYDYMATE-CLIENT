@@ -320,10 +320,16 @@ export default function ProfilePage() {
   const safeAchievementStats = achievementStats && typeof achievementStats === 'object' && !Array.isArray(achievementStats) ? achievementStats : null;
   const safeAchievementsError = achievementsError && typeof achievementsError === 'object' ? (achievementsError.message || achievementsError.error || String(achievementsError)) : (typeof achievementsError === 'string' ? achievementsError : null);
 
-  // ⚠️ useMemo 제거: React 19 참조 안정성 문제로 무한 루프 및 React Error #185 방지
-  // useAchievementOverview hook이 이미 안정화된 데이터를 제공하므로 직접 계산해도 성능 문제 없음
-  let recentAchievements = [];
-  if (safeAllAchievements.length > 0) {
+  // ⚠️ React Error #185 방지: useState로 안정적으로 관리
+  const [recentAchievements, setRecentAchievements] = useState([]);
+
+  // allAchievements가 변경될 때만 recentAchievements 업데이트
+  useEffect(() => {
+    if (safeAllAchievements.length === 0) {
+      setRecentAchievements([]);
+      return;
+    }
+
     try {
       const completed = safeAllAchievements.filter((item) => item?.isCompleted === true);
 
@@ -337,13 +343,15 @@ export default function ProfilePage() {
           return bTime.localeCompare(aTime);
         });
 
-        recentAchievements = sorted.slice(0, 4);
+        setRecentAchievements(sorted.slice(0, 4));
+      } else {
+        setRecentAchievements([]);
       }
     } catch (error) {
       console.error('[ProfilePage] recentAchievements 처리 오류:', error);
-      recentAchievements = [];
+      setRecentAchievements([]);
     }
-  }
+  }, [safeAllAchievements.length]); // length만 의존성으로 사용하여 불필요한 재계산 방지
 
   useEffect(() => {
     let isActive = true;

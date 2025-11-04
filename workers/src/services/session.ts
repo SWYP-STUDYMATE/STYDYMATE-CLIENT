@@ -1397,6 +1397,20 @@ export async function getSessionStats(
     start.setUTCFullYear(start.getUTCFullYear() - 1);
   }
   const startIso = start.toISOString();
+
+  // 1. 전체 학습 시간 계산 (모든 기간)
+  const allTimeRows = await query<SessionRow>(
+    env.DB,
+    `SELECT duration_minutes
+       FROM sessions
+      WHERE (host_user_id = ? OR guest_user_id = ?)
+        AND status = ?`,
+    [userId, userId, SESSION_STATUS.COMPLETED]
+  );
+
+  const totalMinutes = allTimeRows.reduce((sum, row) => sum + Number(row.duration_minutes ?? 0), 0);
+
+  // 2. 지정된 기간의 세션 조회
   const rows = await query<SessionRow>(
     env.DB,
     `SELECT s.*, host.name AS host_name, host.profile_image AS host_profile_image,
@@ -1413,7 +1427,7 @@ export async function getSessionStats(
   let completed = 0;
   let cancelled = 0;
   let upcoming = 0;
-  let totalMinutes = 0;
+  let monthlyMinutes = 0;
   const partners = new Set<string>();
   const completedDates = new Set<string>();
   let lastSessionAt: string | undefined;
@@ -1426,7 +1440,7 @@ export async function getSessionStats(
     if (otherUser) partners.add(otherUser);
     if (row.status === SESSION_STATUS.COMPLETED) {
       completed += 1;
-      totalMinutes += Number(row.duration_minutes ?? 0);
+      monthlyMinutes += Number(row.duration_minutes ?? 0);
       completedDates.add(new Date(row.scheduled_at).toISOString().slice(0, 10));
     } else if (row.status === SESSION_STATUS.CANCELLED) {
       cancelled += 1;
@@ -1435,7 +1449,7 @@ export async function getSessionStats(
     }
   }
 
-  const averageDuration = completed > 0 ? totalMinutes / completed : 0;
+  const averageDuration = completed > 0 ? monthlyMinutes / completed : 0;
   const streakDays = (() => {
     if (completedDates.size === 0) return 0;
     const cursor = new Date();
@@ -1459,6 +1473,7 @@ export async function getSessionStats(
     cancelledSessions: cancelled,
     upcomingSessions: upcoming,
     totalMinutes,
+    monthlyMinutes,
     averageDuration,
     partnersCount: partners.size,
     streakDays,

@@ -37,6 +37,7 @@ import {
   saveOnboardingStep
 } from '../services/onboardingState';
 import { getUserProfile, updateUserProfile } from '../services/user';
+import { query } from '../utils/db';
 
 const onboardingRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -75,7 +76,8 @@ async function buildOnboardingData(env: Env, userId: string) {
     motivations,
     topics,
     learningStyles,
-    learningExpectations
+    learningExpectations,
+    languageLevels // ✅ 실제 저장된 언어 데이터 가져오기
   ] = await Promise.all([
     getUserProfile(env, userId),
     getStepPayload(env, userId, 1),
@@ -87,13 +89,47 @@ async function buildOnboardingData(env: Env, userId: string) {
     listMotivationOptions(env),
     listTopicOptions(env),
     listLearningStyleOptions(env),
-    listLearningExpectationOptions(env)
+    listLearningExpectationOptions(env),
+    // ✅ DB에서 실제 저장된 언어 레벨 데이터 조회 (언어 이름 포함)
+    query<{
+      language_id: number;
+      language_name: string;
+      current_level_id: number | null;
+      current_level_name: string | null;
+      target_level_id: number | null;
+      target_level_name: string | null;
+    }>(
+      env.DB,
+      `SELECT
+        oll.language_id,
+        l.language_name,
+        oll.current_level_id,
+        cl.lang_level_name AS current_level_name,
+        oll.target_level_id,
+        tl.lang_level_name AS target_level_name
+      FROM onboarding_lang_level oll
+      LEFT JOIN languages l ON oll.language_id = l.language_id
+      LEFT JOIN lang_level_type cl ON oll.current_level_id = cl.lang_level_id
+      LEFT JOIN lang_level_type tl ON oll.target_level_id = tl.lang_level_id
+      WHERE oll.user_id = ?`,
+      [userId]
+    )
   ]);
 
   const step1Payload = (step1 as Record<string, unknown>) ?? {};
   const step2Payload = (step2 as Record<string, unknown>) ?? {};
   const step3Payload = (step3 as Record<string, unknown>) ?? {};
   const step4Payload = (step4 as Record<string, unknown>) ?? {};
+
+  // ✅ 실제 저장된 언어 데이터를 프론트엔드가 기대하는 형식으로 변환
+  const targetLanguages = languageLevels.map((item) => ({
+    languageId: item.language_id,
+    languageName: item.language_name,
+    currentLevelId: item.current_level_id ?? undefined,
+    currentLevelName: item.current_level_name ?? undefined,
+    targetLevelId: item.target_level_id ?? undefined,
+    targetLevelName: item.target_level_name ?? undefined
+  }));
 
   const userOnboardingData: Record<string, unknown> = {
     englishName: (step1Payload?.englishName as string | undefined) ?? profile?.englishName ?? profile?.name,
@@ -104,7 +140,7 @@ async function buildOnboardingData(env: Env, userId: string) {
       (step2Payload?.nativeLanguageId as number | undefined) ??
       (step2Payload?.languageId as number | undefined) ??
       profile?.nativeLanguage?.id ?? null,
-    targetLanguages: step2Payload?.targetLanguages ?? [],
+    targetLanguages, // ✅ 실제 DB 데이터 사용
     motivationIds: step3Payload?.motivationIds ?? step3Payload?.motivations ?? [],
     topicIds: step4Payload?.topicIds ?? step3Payload?.topicIds ?? [],
     learningStyleIds: step4Payload?.learningStyleIds ?? [],

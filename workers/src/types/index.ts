@@ -341,6 +341,7 @@ export interface SessionStatsResponseType {
     cancelledSessions: number;
     upcomingSessions: number;
     totalMinutes: number;
+    monthlyMinutes: number;
     averageDuration: number;
     partnersCount: number;
     streakDays: number;
