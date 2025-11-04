@@ -85,38 +85,83 @@ export default function VideoSessionRoom() {
   // Attach local stream to video element when both are available
   useEffect(() => {
     if (!localStream || !localVideoRef.current) {
+      console.log('⏳ [VideoSessionRoom] useEffect: 로컬 스트림 또는 비디오 요소 대기 중', {
+        hasStream: !!localStream,
+        hasVideoRef: !!localVideoRef.current
+      });
       return;
     }
-
-    // 이미 스트림이 연결되어 있으면 중복 연결 방지
-    if (localVideoRef.current.srcObject === localStream) {
-      return;
-    }
-
-    console.log('🔄 [VideoSessionRoom] useEffect: 로컬 스트림을 비디오 요소에 연결');
 
     const videoElement = localVideoRef.current;
+    
+    // 이미 같은 스트림이 연결되어 있으면 중복 연결 방지
+    if (videoElement.srcObject === localStream) {
+      console.log('ℹ️ [VideoSessionRoom] useEffect: 이미 같은 스트림이 연결되어 있음');
+      return;
+    }
+
+    console.log('🔄 [VideoSessionRoom] useEffect: 로컬 스트림을 비디오 요소에 연결', {
+      streamId: localStream.id,
+      videoTracks: localStream.getVideoTracks().length,
+      audioTracks: localStream.getAudioTracks().length
+    });
+
+    // 기존 스트림 정리
+    if (videoElement.srcObject) {
+      const oldStream = videoElement.srcObject;
+      oldStream.getTracks().forEach(track => {
+        if (track !== localStream.getTracks().find(t => t.id === track.id)) {
+          track.stop();
+        }
+      });
+    }
+
     videoElement.srcObject = localStream;
 
     // 비디오 재생
-    videoElement.play()
-      .then(() => {
-        console.log('✅ [VideoSessionRoom] useEffect: 로컬 비디오 재생 시작');
+    const playPromise = videoElement.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('✅ [VideoSessionRoom] useEffect: 로컬 비디오 재생 시작');
 
-        // 최종 상태 로그 (비디오 메타데이터 로드 대기)
-        videoElement.addEventListener('loadedmetadata', () => {
-          console.log('🎥 [VideoSessionRoom] useEffect: 로컬 비디오 최종 상태:', {
-            hasStream: !!videoElement.srcObject,
-            videoWidth: videoElement.videoWidth,
-            videoHeight: videoElement.videoHeight,
-            paused: videoElement.paused,
-            readyState: videoElement.readyState
+          // 최종 상태 로그 (비디오 메타데이터 로드 대기)
+          const handleLoadedMetadata = () => {
+            console.log('🎥 [VideoSessionRoom] useEffect: 로컬 비디오 최종 상태:', {
+              hasStream: !!videoElement.srcObject,
+              videoWidth: videoElement.videoWidth,
+              videoHeight: videoElement.videoHeight,
+              paused: videoElement.paused,
+              readyState: videoElement.readyState,
+              muted: videoElement.muted
+            });
+          };
+          
+          if (videoElement.readyState >= 2) {
+            // 이미 메타데이터가 로드된 경우
+            handleLoadedMetadata();
+          } else {
+            videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+          }
+        })
+        .catch((error) => {
+          console.error('❌ [VideoSessionRoom] useEffect: 로컬 비디오 재생 실패:', error);
+          console.error('❌ [VideoSessionRoom] 에러 상세:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
           });
-        }, { once: true });
-      })
-      .catch((error) => {
-        console.error('❌ [VideoSessionRoom] useEffect: 로컬 비디오 재생 실패:', error);
-      });
+        });
+    }
+
+    // 클린업 함수
+    return () => {
+      if (videoElement.srcObject === localStream) {
+        console.log('🧹 [VideoSessionRoom] useEffect: 로컬 비디오 연결 정리');
+        videoElement.srcObject = null;
+      }
+    };
   }, [localStream]);
 
   // Attach remote stream to video element when both are available

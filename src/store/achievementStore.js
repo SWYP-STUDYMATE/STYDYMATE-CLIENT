@@ -29,9 +29,6 @@ const resolveNumber = (payload, key, fallback) => {
 const useAchievementStore = create(
   persist(
     (set, get) => ({
-      // Hydration 완료 플래그
-      _hasHydrated: false,
-      setHasHydrated: (hasHydrated) => set({ _hasHydrated: hasHydrated }),
       // Achievement 상태
       achievements: [],
       userAchievements: [],
@@ -256,14 +253,8 @@ const useAchievementStore = create(
         stats: state.stats,
         lastFetchedAt: state.lastFetchedAt
       }),
-      onRehydrateStorage: () => (state) => {
-        // Hydration 완료 시 플래그 설정 (비동기로 처리)
-        if (state?.setHasHydrated) {
-          setTimeout(() => {
-            state.setHasHydrated(true);
-          }, 0);
-        }
-      }
+      // Hydration은 Zustand가 자동으로 처리하므로 별도 콜백 불필요
+      // onRehydrateStorage 제거하여 무한 루프 방지
     }
   )
 );

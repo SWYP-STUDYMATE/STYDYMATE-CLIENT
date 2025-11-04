@@ -145,12 +145,54 @@ export default function RealtimeSubtitlePanel({
     setSubtitleEnabled(newState);
 
     if (newState) {
-      // 자막 시작
+      // 자막 시작 전에 오디오 트랙 상태 확인
+      let canStartLocal = false;
+      let canStartRemote = false;
+
       if (localStream) {
-        await toggleLocalTranscription(localStream);
+        const audioTracks = localStream.getAudioTracks();
+        const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+        canStartLocal = hasEnabledAudio;
+        
+        if (!hasEnabledAudio) {
+          console.warn('⚠️ [RealtimeSubtitlePanel] 로컬 오디오가 꺼져 있어 로컬 전사를 시작할 수 없습니다.');
+        }
       }
+
       if (remoteStream) {
-        await toggleRemoteTranscription(remoteStream);
+        const audioTracks = remoteStream.getAudioTracks();
+        const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+        canStartRemote = hasEnabledAudio;
+        
+        if (!hasEnabledAudio) {
+          console.warn('⚠️ [RealtimeSubtitlePanel] 원격 오디오가 꺼져 있어 원격 전사를 시작할 수 없습니다.');
+        }
+      }
+
+      // 오디오가 하나라도 켜져 있으면 전사 시작
+      if (canStartLocal && localStream) {
+        try {
+          await toggleLocalTranscription(localStream);
+        } catch (error) {
+          console.error('로컬 전사 시작 실패:', error);
+          // 에러는 useRealtimeTranscription 훅에서 자동으로 처리됨
+        }
+      }
+      
+      if (canStartRemote && remoteStream) {
+        try {
+          await toggleRemoteTranscription(remoteStream);
+        } catch (error) {
+          console.error('원격 전사 시작 실패:', error);
+          // 원격 전사 실패는 에러로 표시하지 않음 (로컬만 가능해도 OK)
+        }
+      }
+
+      // 둘 다 시작할 수 없으면 자막을 다시 끄기
+      if (!canStartLocal && !canStartRemote) {
+        setSubtitleEnabled(false);
+        console.warn('⚠️ [RealtimeSubtitlePanel] 오디오가 켜져 있지 않아 자막을 시작할 수 없습니다.');
+        return;
       }
     } else {
       // 자막 중지
@@ -174,11 +216,27 @@ export default function RealtimeSubtitlePanel({
   // 스트림 변경 시 자동 처리
   useEffect(() => {
     if (subtitleEnabled) {
+      // 오디오 트랙 상태 확인 후 전사 시작
       if (localStream && !isLocalTranscribing) {
-        toggleLocalTranscription(localStream);
+        const audioTracks = localStream.getAudioTracks();
+        const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+        
+        if (hasEnabledAudio) {
+          toggleLocalTranscription(localStream);
+        } else {
+          console.warn('⚠️ [RealtimeSubtitlePanel] 로컬 오디오가 꺼져 있어 전사를 시작하지 않습니다.');
+        }
       }
+      
       if (remoteStream && !isRemoteTranscribing) {
-        toggleRemoteTranscription(remoteStream);
+        const audioTracks = remoteStream.getAudioTracks();
+        const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+        
+        if (hasEnabledAudio) {
+          toggleRemoteTranscription(remoteStream);
+        } else {
+          console.warn('⚠️ [RealtimeSubtitlePanel] 원격 오디오가 꺼져 있어 전사를 시작하지 않습니다.');
+        }
       }
     }
   }, [
@@ -190,6 +248,84 @@ export default function RealtimeSubtitlePanel({
     toggleLocalTranscription,
     toggleRemoteTranscription
   ]);
+
+  // 오디오 트랙 상태 모니터링 (오디오가 꺼지면 전사 중지)
+  useEffect(() => {
+    if (!localStream || !isLocalTranscribing) return;
+
+    const audioTracks = localStream.getAudioTracks();
+    if (audioTracks.length === 0) return;
+
+    const checkAudioState = () => {
+      const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+      
+      if (!hasEnabledAudio && isLocalTranscribing) {
+        console.log('🔇 [RealtimeSubtitlePanel] 오디오가 꺼져서 로컬 전사를 중지합니다.');
+        toggleLocalTranscription();
+      }
+    };
+
+    // 초기 체크
+    checkAudioState();
+
+    // 트랙 상태 변경 감지
+    const handleTrackEnded = () => {
+      checkAudioState();
+    };
+
+    audioTracks.forEach(track => {
+      track.addEventListener('ended', handleTrackEnded);
+    });
+
+    // 주기적으로 체크 (트랙 enabled 상태 변경 감지)
+    const checkInterval = setInterval(checkAudioState, 1000);
+
+    return () => {
+      audioTracks.forEach(track => {
+        track.removeEventListener('ended', handleTrackEnded);
+      });
+      clearInterval(checkInterval);
+    };
+  }, [localStream, isLocalTranscribing, toggleLocalTranscription]);
+
+  // 원격 오디오 트랙 상태 모니터링
+  useEffect(() => {
+    if (!remoteStream || !isRemoteTranscribing) return;
+
+    const audioTracks = remoteStream.getAudioTracks();
+    if (audioTracks.length === 0) return;
+
+    const checkAudioState = () => {
+      const hasEnabledAudio = audioTracks.some(track => track.enabled && track.readyState === 'live');
+      
+      if (!hasEnabledAudio && isRemoteTranscribing) {
+        console.log('🔇 [RealtimeSubtitlePanel] 원격 오디오가 꺼져서 원격 전사를 중지합니다.');
+        toggleRemoteTranscription();
+      }
+    };
+
+    // 초기 체크
+    checkAudioState();
+
+    // 트랙 상태 변경 감지
+    const handleTrackEnded = () => {
+      checkAudioState();
+    };
+
+    audioTracks.forEach(track => {
+      track.addEventListener('ended', handleTrackEnded);
+    });
+
+    // 주기적으로 체크
+    const checkInterval = setInterval(checkAudioState, 1000);
+
+    return () => {
+      audioTracks.forEach(track => {
+        track.removeEventListener('ended', handleTrackEnded);
+      });
+      clearInterval(checkInterval);
+    };
+  }, [remoteStream, isRemoteTranscribing, toggleRemoteTranscription]);
 
   // 자동 스크롤
   useEffect(() => {

@@ -254,10 +254,20 @@ class WebRTCConnectionManager {
 
       case 'ice-candidate':
         // 서버는 { type: 'ice-candidate', from: userId, data: candidate } 형식으로 보냄
-        // messageData가 직접 RTCIceCandidateInit 객체
-        const candidateData = messageData || payload;
-        console.log('📥 [WebRTC] ICE candidate 메시지 수신:', { type, from, candidate: candidateData });
-        await this.handleIceCandidate(from, candidateData);
+        // 하지만 실제로는 data가 { to, candidate } 형식일 수 있음
+        // 서버가 data.signal || data를 보내므로, data가 { to, candidate }이면 그대로 전달됨
+        let candidatePayload = messageData || payload;
+        
+        // payload가 { to, candidate } 형식인지 확인
+        if (candidatePayload && candidatePayload.candidate && candidatePayload.to) {
+          // candidate 필드 추출
+          candidatePayload = candidatePayload.candidate;
+          console.log('📥 [WebRTC] ICE candidate 메시지 수신 (to 필드 제거):', { type, from, candidate: candidatePayload });
+        } else {
+          console.log('📥 [WebRTC] ICE candidate 메시지 수신:', { type, from, candidate: candidatePayload });
+        }
+        
+        await this.handleIceCandidate(from, candidatePayload);
         break;
 
       case 'chat-message':
@@ -626,14 +636,19 @@ class WebRTCConnectionManager {
       // Handle ICE candidates
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log(`🧊 [WebRTC] ICE 후보 전송 (${remoteUserId})`);
+          console.log(`🧊 [WebRTC] ICE 후보 전송 (${remoteUserId}):`, event.candidate);
+          // RTCIceCandidate 객체를 JSON으로 직렬화 (toJSON() 메서드 사용)
+          const candidateData = event.candidate.toJSON();
           this.sendMessage({
             type: 'ice-candidate',
             data: {
               to: remoteUserId,
-              candidate: event.candidate,
+              candidate: candidateData,
             },
           });
+        } else {
+          // null candidate는 ICE gathering 완료를 의미
+          console.log(`✅ [WebRTC] ICE gathering 완료 (${remoteUserId})`);
         }
       };
 
@@ -712,7 +727,32 @@ class WebRTCConnectionManager {
         console.log(`🔄 [WebRTC] ${pending.length}개의 대기 중인 ICE candidate 처리`);
         for (const candidateData of pending) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+            // candidateData가 { to, candidate } 형식일 수 있으므로 처리
+            let candidate = candidateData;
+            if (candidateData && typeof candidateData === 'object') {
+              if (candidateData.candidate && candidateData.to) {
+                candidate = candidateData.candidate;
+              } else if (candidateData.candidate && !candidateData.to) {
+                candidate = candidateData.candidate;
+              }
+              
+              // sdpMid와 sdpMLineIndex가 모두 null이면 기본값 설정
+              if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+                const candidateStr = candidate.candidate || '';
+                if (candidateStr.includes('audio')) {
+                  candidate.sdpMLineIndex = 0;
+                  candidate.sdpMid = '0';
+                } else if (candidateStr.includes('video')) {
+                  candidate.sdpMLineIndex = 1;
+                  candidate.sdpMid = '1';
+                } else {
+                  candidate.sdpMLineIndex = 0;
+                  candidate.sdpMid = '0';
+                }
+              }
+            }
+            
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch (err) {
             console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate 처리 실패:', err);
           }
@@ -782,7 +822,32 @@ class WebRTCConnectionManager {
         console.log(`🔄 [WebRTC] ${pending.length}개의 대기 중인 ICE candidate 처리`);
         for (const candidateData of pending) {
           try {
-            await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+            // candidateData가 { to, candidate } 형식일 수 있으므로 처리
+            let candidate = candidateData;
+            if (candidateData && typeof candidateData === 'object') {
+              if (candidateData.candidate && candidateData.to) {
+                candidate = candidateData.candidate;
+              } else if (candidateData.candidate && !candidateData.to) {
+                candidate = candidateData.candidate;
+              }
+              
+              // sdpMid와 sdpMLineIndex가 모두 null이면 기본값 설정
+              if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+                const candidateStr = candidate.candidate || '';
+                if (candidateStr.includes('audio')) {
+                  candidate.sdpMLineIndex = 0;
+                  candidate.sdpMid = '0';
+                } else if (candidateStr.includes('video')) {
+                  candidate.sdpMLineIndex = 1;
+                  candidate.sdpMid = '1';
+                } else {
+                  candidate.sdpMLineIndex = 0;
+                  candidate.sdpMid = '0';
+                }
+              }
+            }
+            
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch (err) {
             console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate 처리 실패:', err);
           }
@@ -805,32 +870,115 @@ class WebRTCConnectionManager {
   async handleIceCandidate(from, payload) {
     try {
       const pc = this.peerConnections.get(from);
-      if (pc) {
-        // payload는 서버에서 { type, from, data: candidate } 형식으로 받았고
-        // data.data가 직접 RTCIceCandidateInit 객체입니다
-        // remote description이 설정되지 않았으면 ICE candidate를 큐에 저장
-        if (pc.remoteDescription === null) {
-          console.log('⏳ [WebRTC] Remote description이 없어 ICE candidate를 대기 중:', payload);
-          // 큐에 저장 (나중에 remote description이 설정되면 처리)
-          if (!this.pendingIceCandidates.has(from)) {
-            this.pendingIceCandidates.set(from, []);
-          }
-          this.pendingIceCandidates.get(from).push(payload);
-          return;
-        }
-        
-        // payload는 직접 RTCIceCandidateInit 객체입니다
-        // null candidate는 연결이 완료되었음을 의미하므로 무시
-        if (payload === null) {
-          console.log('✅ [WebRTC] ICE gathering 완료');
-          return;
-        }
-        
-        await pc.addIceCandidate(new RTCIceCandidate(payload));
+      if (!pc) {
+        console.warn('⚠️ [WebRTC] Peer connection not found for:', from);
+        return;
       }
+      
+      // payload 디버깅
+      console.log('🔍 [WebRTC] handleIceCandidate payload:', {
+        type: typeof payload,
+        keys: payload ? Object.keys(payload) : 'null',
+        hasCandidate: payload?.candidate !== undefined,
+        hasTo: payload?.to !== undefined,
+        payload: payload
+      });
+      
+      // remote description이 설정되지 않았으면 ICE candidate를 큐에 저장
+      if (pc.remoteDescription === null) {
+        console.log('⏳ [WebRTC] Remote description이 없어 ICE candidate를 대기 중:', payload);
+        // 큐에 저장하기 전에 candidate 필드 추출
+        let candidateToQueue = payload;
+        if (payload && typeof payload === 'object' && payload.candidate && payload.to) {
+          candidateToQueue = payload.candidate;
+        }
+        if (!this.pendingIceCandidates.has(from)) {
+          this.pendingIceCandidates.set(from, []);
+        }
+        this.pendingIceCandidates.get(from).push(candidateToQueue);
+        return;
+      }
+      
+      // payload는 직접 RTCIceCandidateInit 객체이거나 null
+      // null candidate는 연결이 완료되었음을 의미하므로 무시
+      if (payload === null || payload === undefined) {
+        console.log('✅ [WebRTC] ICE gathering 완료 (null candidate)');
+        return;
+      }
+      
+      // payload가 여전히 { to, candidate } 형식일 수 있음 (방어적 처리)
+      let candidate = payload;
+      if (payload && typeof payload === 'object') {
+        // { to, candidate } 형식인지 확인
+        if (payload.candidate && payload.to) {
+          console.log('🔍 [WebRTC] {to, candidate} 형식 감지, candidate 필드 추출');
+          candidate = payload.candidate;
+        }
+        // candidate 필드가 직접 있는 경우
+        else if (payload.candidate && !payload.to) {
+          console.log('🔍 [WebRTC] {candidate} 형식 감지, candidate 필드 사용');
+          candidate = payload.candidate;
+        }
+        // payload 자체가 candidate 객체인 경우
+        else if (payload.candidate || payload.sdpMid !== undefined || payload.sdpMLineIndex !== undefined) {
+          console.log('🔍 [WebRTC] 직접 candidate 객체 형식');
+          candidate = payload;
+        }
+      }
+      
+      // candidate 객체 검증
+      if (!candidate || typeof candidate !== 'object') {
+        console.warn('⚠️ [WebRTC] Invalid candidate format:', candidate);
+        return;
+      }
+      
+      // candidate 필드가 문자열인지 확인 (RTCIceCandidateInit 형식)
+      if (!candidate.candidate && candidate.candidate !== null) {
+        console.warn('⚠️ [WebRTC] Candidate 객체에 candidate 필드가 없음:', candidate);
+        return;
+      }
+      
+      // sdpMid와 sdpMLineIndex가 모두 null이면 건너뛰기 (종료 candidate)
+      if (candidate.candidate === null || candidate.candidate === '') {
+        console.log('✅ [WebRTC] ICE gathering 완료 (null/empty candidate string)');
+        return;
+      }
+      
+      // sdpMid와 sdpMLineIndex가 모두 null이면 기본값 설정 시도
+      if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+        console.warn('⚠️ [WebRTC] sdpMid와 sdpMLineIndex가 모두 null, 기본값 설정 시도');
+        // SDP에서 m-line 인덱스 추정 시도 (보수적 접근)
+        // candidate 문자열에서 "m=" 라인 번호 확인
+        const candidateStr = candidate.candidate || '';
+        if (candidateStr.includes('audio')) {
+          candidate.sdpMLineIndex = 0;
+          candidate.sdpMid = '0';
+        } else if (candidateStr.includes('video')) {
+          candidate.sdpMLineIndex = 1;
+          candidate.sdpMid = '1';
+        } else {
+          // 기본값으로 0 설정
+          candidate.sdpMLineIndex = 0;
+          candidate.sdpMid = '0';
+        }
+      }
+      
+      // RTCIceCandidate 생성 및 추가
+      await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      console.log('✅ [WebRTC] ICE candidate 추가 성공:', { 
+        from, 
+        candidate: candidate.candidate?.substring(0, 50),
+        sdpMid: candidate.sdpMid,
+        sdpMLineIndex: candidate.sdpMLineIndex
+      });
     } catch (error) {
       console.error('❌ [WebRTC] Failed to handle ICE candidate:', error);
       console.error('❌ [WebRTC] Payload was:', payload);
+      console.error('❌ [WebRTC] Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       // 에러를 무시하지 않고 로그만 남김 (ICE candidate는 실패해도 연결은 가능)
     }
   }

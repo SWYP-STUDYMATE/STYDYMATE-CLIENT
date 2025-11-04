@@ -86,12 +86,31 @@ export function useRealtimeTranscription({
 
   // 미디어 레코더 초기화
   const initializeRecorder = useCallback(async (stream) => {
+    // 스트림 검증
+    if (!stream || !(stream instanceof MediaStream)) {
+      throw new Error('유효한 미디어 스트림이 제공되지 않았습니다.');
+    }
+
     // 오디오 트랙만 추출
+    const audioTracks = stream.getAudioTracks();
+    
+    // 오디오 트랙이 없거나 모든 트랙이 비활성화된 경우
+    if (audioTracks.length === 0) {
+      throw new Error('스트림에 오디오 트랙이 없습니다.');
+    }
+
+    // 활성화된 오디오 트랙이 있는지 확인
+    const enabledTracks = audioTracks.filter(track => track.enabled && track.readyState === 'live');
+    
+    // 활성화된 트랙이 없으면 에러 발생 (자동 활성화하지 않음)
+    // 사용자가 의도적으로 오디오를 껐을 수 있으므로 자동으로 켜지 않음
+    if (enabledTracks.length === 0) {
+      throw new Error('오디오 트랙이 모두 비활성화되어 있습니다. 오디오를 켜주세요.');
+    }
+
     const audioStream = new MediaStream();
-    stream.getAudioTracks().forEach(track => {
-      if (track.enabled) {
-        audioStream.addTrack(track);
-      }
+    enabledTracks.forEach(track => {
+      audioStream.addTrack(track);
     });
 
     if (audioStream.getAudioTracks().length === 0) {
