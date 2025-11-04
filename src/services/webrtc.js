@@ -283,9 +283,25 @@ class WebRTCConnectionManager {
    * @param {Array} participants - List of participants
    */
   async handleParticipantsList(participants) {
+    console.log('📋 [WebRTC] 참가자 목록 수신:', participants);
+    console.log('👤 [WebRTC] 현재 사용자 ID:', this.userId);
+
+    // Notify UI about all participants
+    if (participants && participants.length > 0) {
+      participants.forEach(participant => {
+        if (participant.userId && participant.userId !== this.userId) {
+          console.log('➕ [WebRTC] 기존 참가자 알림:', participant);
+          if (this.callbacks.onParticipantJoined) {
+            this.callbacks.onParticipantJoined(participant);
+          }
+        }
+      });
+    }
+
     // Create peer connections for existing participants
     for (const participant of participants) {
-      if (participant.userId !== this.userId) {
+      if (participant.userId && participant.userId !== this.userId) {
+        console.log('🔗 [WebRTC] 피어 연결 생성 시작:', participant.userId);
         await this.createPeerConnection(participant.userId, true);
       }
     }
@@ -299,25 +315,32 @@ class WebRTCConnectionManager {
    */
   async createPeerConnection(remoteUserId, createOffer = false) {
     if (this.peerConnections.has(remoteUserId)) {
+      console.log('⚠️ [WebRTC] 이미 존재하는 피어 연결:', remoteUserId);
       return this.peerConnections.get(remoteUserId);
     }
 
+    console.log(`🔗 [WebRTC] 새 피어 연결 생성: ${remoteUserId}, createOffer: ${createOffer}`);
     const pc = new RTCPeerConnection(this.rtcConfiguration);
     this.peerConnections.set(remoteUserId, pc);
 
     // Add local stream tracks
     if (this.localStream) {
+      console.log(`📤 [WebRTC] 로컬 스트림 트랙 추가 (${remoteUserId}):`, this.localStream.getTracks().map(t => t.kind));
       this.localStream.getTracks().forEach(track => {
         pc.addTrack(track, this.localStream);
       });
+    } else {
+      console.warn('⚠️ [WebRTC] 로컬 스트림 없음 - 트랙을 추가할 수 없습니다');
     }
 
     // Handle incoming tracks
     pc.ontrack = (event) => {
-      console.log('Remote track received from:', remoteUserId);
+      console.log(`📥 [WebRTC] 원격 트랙 수신 (${remoteUserId}):`, event.track.kind);
       const [stream] = event.streams;
+      console.log(`🎥 [WebRTC] 원격 스트림 저장 (${remoteUserId}):`, stream.id, stream.getTracks().map(t => t.kind));
       this.remoteStreams.set(remoteUserId, stream);
       if (this.callbacks.onRemoteStream) {
+        console.log(`✅ [WebRTC] onRemoteStream 콜백 호출 (${remoteUserId})`);
         this.callbacks.onRemoteStream(remoteUserId, stream);
       }
     };
@@ -325,6 +348,7 @@ class WebRTCConnectionManager {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log(`🧊 [WebRTC] ICE 후보 전송 (${remoteUserId})`);
         this.sendMessage({
           type: 'ice-candidate',
           to: remoteUserId,
@@ -337,21 +361,28 @@ class WebRTCConnectionManager {
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log(`Connection state with ${remoteUserId}:`, pc.connectionState);
+      console.log(`🔄 [WebRTC] 연결 상태 변경 (${remoteUserId}): ${pc.connectionState}`);
+    };
+
+    // ICE connection state monitoring
+    pc.oniceconnectionstatechange = () => {
+      console.log(`🧊 [WebRTC] ICE 연결 상태 (${remoteUserId}): ${pc.iceConnectionState}`);
     };
 
     // Create offer if needed
     if (createOffer) {
       try {
+        console.log(`📝 [WebRTC] Offer 생성 시작 (${remoteUserId})`);
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        console.log(`📤 [WebRTC] Offer 전송 (${remoteUserId})`);
         this.sendMessage({
           type: 'offer',
           to: remoteUserId,
           payload: { sdp: offer },
         });
       } catch (error) {
-        console.error('Failed to create offer:', error);
+        console.error(`❌ [WebRTC] Offer 생성 실패 (${remoteUserId}):`, error);
         this.handleError('Failed to create offer', error);
       }
     }

@@ -223,21 +223,52 @@ export default function VideoSessionRoom() {
   const loadRoomInfo = async () => {
     try {
       const info = await webrtcAPI.getRoomInfo(roomId);
+      console.log('📋 [VideoSessionRoom] 룸 정보 로드:', info);
+
       if (info) {
         const metadata = info.metadata || {};
         const currentUserId = localStorage.getItem('userId');
-        const remoteParticipant = (info.participants || []).find((participant) => participant.id !== currentUserId);
+        const participants = info.participants || [];
 
-        setPartnerInfo({
-          name: metadata.partnerName || remoteParticipant?.name || 'Partner',
-          avatar: metadata.partnerAvatar || '/assets/basicProfilePic.png',
-          level: metadata.partnerLevel || 'Unknown',
-          nativeLanguage: metadata.partnerNativeLanguage || 'Unknown',
-          learningLanguage: metadata.partnerLearningLanguage || 'Unknown'
-        });
+        console.log('👥 [VideoSessionRoom] 참가자 목록:', participants);
+        console.log('👤 [VideoSessionRoom] 현재 사용자 ID:', currentUserId);
+
+        const remoteParticipant = participants.find(
+          (participant) => participant.id !== currentUserId && participant.userId !== currentUserId
+        );
+
+        console.log('🔍 [VideoSessionRoom] 원격 참가자:', remoteParticipant);
+
+        if (remoteParticipant || Object.keys(metadata).length > 0) {
+          setPartnerInfo({
+            name: metadata.partnerName || remoteParticipant?.name || remoteParticipant?.userName || 'Partner',
+            avatar: metadata.partnerAvatar || '/assets/basicProfilePic.png',
+            level: metadata.partnerLevel || 'Unknown',
+            nativeLanguage: metadata.partnerNativeLanguage || 'Unknown',
+            learningLanguage: metadata.partnerLearningLanguage || 'Unknown'
+          });
+        } else {
+          console.warn('⚠️ [VideoSessionRoom] 원격 참가자 정보를 찾을 수 없습니다');
+          // 기본 파트너 정보 설정 (연결을 기다리는 상태)
+          setPartnerInfo({
+            name: 'Waiting...',
+            avatar: '/assets/basicProfilePic.png',
+            level: 'Unknown',
+            nativeLanguage: 'Unknown',
+            learningLanguage: 'Unknown'
+          });
+        }
       }
     } catch (error) {
       log.warn('룸 정보 로드 실패', error, 'VIDEO_SESSION');
+      // 에러 발생 시에도 기본 파트너 정보 설정
+      setPartnerInfo({
+        name: 'Partner',
+        avatar: '/assets/basicProfilePic.png',
+        level: 'Unknown',
+        nativeLanguage: 'Unknown',
+        learningLanguage: 'Unknown'
+      });
     }
   };
 
@@ -266,18 +297,19 @@ export default function VideoSessionRoom() {
       // Store stream in Map for multi-participant rendering
       remoteVideosRef.current.set(userId, stream);
 
-      // Force re-render to update participant videos
-      setParticipants(prev => new Map(prev));
+      // Force re-render by updating a state (리렌더링 트리거)
+      setConnectionStats(prev => ({ ...prev, lastUpdate: Date.now() }));
     });
 
     // Remote stream removed callback
     webrtcManager.on('onRemoteStreamRemoved', (userId, stream) => {
+      console.log('❌ [VideoSessionRoom] 원격 스트림 제거:', userId);
       log.info('원격 스트림 제거', { userId }, 'VIDEO_SESSION');
 
-      const videoElement = remoteVideosRef.current.get(userId);
-      if (videoElement) {
-        videoElement.srcObject = null;
+      // remoteVideosRef에서 스트림 제거
+      if (remoteVideosRef.current.has(userId)) {
         remoteVideosRef.current.delete(userId);
+        console.log('🗑️ [VideoSessionRoom] 스트림 삭제 완료. 남은 스트림 수:', remoteVideosRef.current.size);
       }
 
       // 마지막 원격 스트림이 제거되면 상태도 초기화
@@ -292,17 +324,29 @@ export default function VideoSessionRoom() {
       setParticipants(prev => {
         const updated = new Map(prev);
         updated.delete(userId);
+        console.log('👥 [VideoSessionRoom] 참가자 삭제. 남은 참가자 수:', updated.size);
         return updated;
       });
+
+      // Force re-render (리렌더링 트리거)
+      setConnectionStats(prev => ({ ...prev, lastUpdate: Date.now() }));
     });
 
     // Participant joined callback
     webrtcManager.on('onParticipantJoined', (participant) => {
+      console.log('✅ [VideoSessionRoom] 참가자 입장:', participant);
       log.info('참가자 입장', participant, 'VIDEO_SESSION');
-      setParticipants(prev => new Map(prev).set(participant.userId, participant));
+
+      setParticipants(prev => {
+        const updated = new Map(prev);
+        updated.set(participant.userId, participant);
+        console.log('👥 [VideoSessionRoom] 업데이트된 참가자 목록:', Array.from(updated.keys()));
+        return updated;
+      });
 
       const currentUserId = localStorage.getItem('userId') || 'guest';
       if (participant.userId !== currentUserId) {
+        console.log('🔄 [VideoSessionRoom] 파트너 정보 업데이트:', participant.userName);
         setPartnerInfo((prev) => ({
           name: participant.userName || prev?.name || 'Partner',
           avatar: prev?.avatar || '/assets/basicProfilePic.png',
@@ -315,15 +359,20 @@ export default function VideoSessionRoom() {
 
     // Participant left callback
     webrtcManager.on('onParticipantLeft', (participant) => {
+      console.log('🚪 [VideoSessionRoom] 참가자 퇴장:', participant);
       log.info('참가자 퇴장', participant, 'VIDEO_SESSION');
+
       setParticipants(prev => {
         const updated = new Map(prev);
         updated.delete(participant.userId);
+        console.log('👥 [VideoSessionRoom] 퇴장 후 남은 참가자 수:', updated.size);
         return updated;
       });
 
       const currentUserId = localStorage.getItem('userId') || 'guest';
       if (participant.userId !== currentUserId) {
+        console.log('👋 [VideoSessionRoom] 파트너가 나갔습니다');
+        // 파트너가 나가면 파트너 정보 초기화
         setPartnerInfo(null);
       }
     });
@@ -609,7 +658,8 @@ export default function VideoSessionRoom() {
             <div className="flex items-center gap-2 text-[var(--black-200)]">
               <Users className="w-4 h-4" />
               <span className="text-sm">
-                {participants.size + 1}명 참가 중
+                {/* 실제 연결된 원격 스트림 수 + 나 자신 = 총 참가자 수 */}
+                {remoteVideosRef.current.size + 1}명 참가 중
               </span>
             </div>
           </div>
@@ -689,9 +739,12 @@ export default function VideoSessionRoom() {
           </div>
         ) : (
           <div className={`grid gap-6 w-full max-w-6xl ${
-            participants.size === 0 ? 'grid-cols-1 max-w-2xl' :
-            participants.size === 1 ? 'grid-cols-1 lg:grid-cols-2' :
-            'grid-cols-2 lg:grid-cols-2'
+            // 실제 원격 스트림 수에 따라 동적 레이아웃 조정
+            remoteVideosRef.current.size === 0 ? 'grid-cols-1 max-w-2xl' : // 나 혼자
+            remoteVideosRef.current.size === 1 ? 'grid-cols-1 lg:grid-cols-2' : // 나 + 1명
+            remoteVideosRef.current.size === 2 ? 'grid-cols-2 lg:grid-cols-2' : // 나 + 2명
+            remoteVideosRef.current.size === 3 ? 'grid-cols-2 lg:grid-cols-2' : // 나 + 3명 (2x2 격자)
+            'grid-cols-2 lg:grid-cols-3' // 나 + 4명 이상
           }`}>
             {/* Local Video (Self) - 항상 표시 */}
             <div className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video">
@@ -729,19 +782,20 @@ export default function VideoSessionRoom() {
               </div>
             </div>
 
-            {/* Remote Videos (All Participants) */}
-            {Array.from(participants.values()).map((participant) => {
-              const stream = remoteVideosRef.current.get(participant.userId);
+            {/* Remote Videos (실제 스트림이 있는 참가자만 표시) */}
+            {Array.from(remoteVideosRef.current.entries()).map(([userId, stream]) => {
+              // participants Map에서 해당 userId의 참가자 정보 가져오기
+              const participant = participants.get(userId) || { userId, userName: 'Unknown' };
 
               return (
                 <div
-                  key={participant.userId}
+                  key={userId}
                   className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video"
                 >
                   <video
                     ref={(el) => {
                       if (el && stream && !el.srcObject) {
-                        console.log(`🔗 [VideoSessionRoom] 참가자 ${participant.userId} 스트림 연결`);
+                        console.log(`🔗 [VideoSessionRoom] 참가자 ${userId} 스트림 연결`);
                         el.srcObject = stream;
                         el.play().catch(err => console.error('원격 비디오 재생 실패:', err));
                       }
@@ -750,20 +804,6 @@ export default function VideoSessionRoom() {
                     playsInline
                     className="w-full h-full object-cover"
                   />
-
-                  {/* 스트림이 없으면 플레이스홀더 표시 */}
-                  {!stream && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-[var(--green-500)] rounded-full flex items-center justify-center mx-auto mb-3">
-                          <span className="text-white font-bold text-2xl">
-                            {participant.userName?.charAt(0).toUpperCase() || '?'}
-                          </span>
-                        </div>
-                        <p className="text-[var(--black-200)] text-sm">연결 중...</p>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Partner Info Overlay */}
                   <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">

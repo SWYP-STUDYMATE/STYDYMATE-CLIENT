@@ -49,20 +49,20 @@ export default function Login() {
 
 
   return (
-    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto">
+    <div className="bg-[#FFFFFF] h-screen max-w-[768px] w-full mx-auto overflow-y-auto">
       <Header />
-      <div className="ml-[24px] mt-[53px]">
+      <div className="px-4 sm:px-6 md:px-[24px] pt-[40px] sm:pt-[48px] md:pt-[53px]">
       <h1
-        className="text-[32px] font-bold leading-[42px]"
+        className="text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.3] sm:leading-[1.35] md:leading-[42px]"
       >
         Language Mate에 오신 것을 환영해요!
       </h1>
-      <p className="mt-[12px] text-[16px] font-medium text-[#929292] leading-[24px]">간편하게 바로 시작해 보세요</p>
+      <p className="mt-[12px] text-[14px] sm:text-[15px] md:text-[16px] font-medium text-[#929292] leading-[1.5] sm:leading-[1.6] md:leading-[24px]">간편하게 바로 시작해 보세요</p>
       </div>
       
       {/* 로딩 상태 */}
       {isLoading && (
-        <div data-testid="loading" className="flex justify-center items-center ml-[24px] mt-[16px]">
+        <div data-testid="loading" className="flex justify-center items-center px-4 sm:px-6 md:px-[24px] mt-[16px]">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#00C471]"></div>
           <span className="ml-2 text-[14px] text-[#606060]">로그인 중...</span>
         </div>
@@ -70,12 +70,12 @@ export default function Login() {
       
       {/* 에러 메시지 */}
       {error && (
-        <div data-testid="error-message" className="ml-[24px] mt-[16px] p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-[6px]">
-          <p className="text-[14px] text-[#DC2626] font-medium">{error}</p>
+        <div data-testid="error-message" className="px-4 sm:px-6 md:px-[24px] mt-[16px] p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-[6px]">
+          <p className="text-[14px] text-[#DC2626] font-medium break-words">{error}</p>
         </div>
       )}
       {/* 체크박스 */}
-      <div className="flex items-center ml-[24px] mt-[32px] mb-[40px]">
+      <div className="flex items-center px-4 sm:px-6 md:px-[24px] mt-[32px] mb-[32px] sm:mb-[36px] md:mb-[40px]">
         <button
           type="button"
           data-testid="auto-login-checkbox"
@@ -87,13 +87,13 @@ export default function Login() {
               return next;
             });
           }}
-          className="w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-150 focus:outline-none"
+          className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border flex items-center justify-center transition-colors duration-150 focus:outline-none flex-shrink-0"
           style={{
             borderColor: autoLogin ? "#00C471" : "#ced4da",
             backgroundColor: autoLogin ? "#00C471" : "#fff"
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="w-3 h-3 sm:w-3.5 sm:h-3.5">
             <path
               d="M3 7.5L6 10.5L11 4.5"
               stroke={autoLogin ? "#fff" : "#ced4da"}
@@ -105,7 +105,7 @@ export default function Login() {
         </button>
         <label
           htmlFor="auto-login"
-          className="ml-2 text-[16px] font-medium text-[#212529]"
+          className="ml-2 sm:ml-3 text-[14px] sm:text-[15px] md:text-[16px] font-medium text-[#212529] cursor-pointer flex-shrink-0"
           onClick={() => {
             setAutoLogin((v) => {
               const next = !v;
@@ -117,7 +117,7 @@ export default function Login() {
           자동 로그인
         </label>
       </div>
-      <div className="max-w-[720px] w-full mx-auto">
+      <div className="px-4 sm:px-6 md:px-[24px] max-w-[720px] w-full mx-auto">
         <CommonButton
           data-testid="naver-login-button"
           onClick={handleNaverLogin}
@@ -125,26 +125,28 @@ export default function Login() {
           loading={isLoading}
           variant="naver"
           tabIndex={0}
-          className="py-[14px]"
+          className="py-[14px] w-full text-[14px] sm:text-[15px] md:text-[16px]"
         >
           <span className="flex items-center justify-center">
-            <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/naverlogo.png')] bg-contain bg-no-repeat bg-center"></span>
-            네이버로 로그인
+            <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-[12px] sm:mr-[15px] bg-[url('/assets/naverlogo.png')] bg-contain bg-no-repeat bg-center flex-shrink-0"></span>
+            <span className="whitespace-nowrap">네이버로 로그인</span>
           </span>
         </CommonButton>
       </div>
-      <div className="max-w-[720px] w-full mx-auto mt-[20px]">
+      <div className="px-4 sm:px-6 md:px-[24px] max-w-[720px] w-full mx-auto mt-[16px] sm:mt-[20px] pb-[24px] sm:pb-[32px]">
         <CommonButton
           data-testid="google-login-button"
           onClick={handleGoogleLogin}
           disabled={isLoading}
           loading={isLoading}
           variant="google"
-          className="py-[14px]"
+          className="py-[14px] w-full text-[14px] sm:text-[15px] md:text-[16px]"
           tabIndex={0}
         >
-          <span className="inline-block w-4 h-4 mr-[15px] bg-[url('/assets/googlelogo.png')] bg-contain bg-no-repeat bg-center"></span>
-          Google 로그인
+          <span className="flex items-center justify-center">
+            <span className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-[12px] sm:mr-[15px] bg-[url('/assets/googlelogo.png')] bg-contain bg-no-repeat bg-center flex-shrink-0"></span>
+            <span className="whitespace-nowrap">Google 로그인</span>
+          </span>
         </CommonButton>
       </div>
     </div>

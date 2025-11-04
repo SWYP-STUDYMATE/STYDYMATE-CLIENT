@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Camera,
@@ -324,6 +324,18 @@ export default function ProfilePage() {
   const [recentAchievements, setRecentAchievements] = useState([]);
 
   // allAchievements가 변경될 때만 recentAchievements 업데이트
+  // 배열 내용 변경 감지를 위해 JSON.stringify 사용 (성능 최적화)
+  const achievementsKey = useMemo(() => {
+    if (!safeAllAchievements.length) return '';
+    // 완료된 성취만 포함하여 키 생성
+    const completed = safeAllAchievements
+      .filter(item => item?.isCompleted)
+      .map(item => `${item.id}-${item.completedAt || ''}`)
+      .sort()
+      .join(',');
+    return completed;
+  }, [safeAllAchievements]);
+
   useEffect(() => {
     if (safeAllAchievements.length === 0) {
       setRecentAchievements([]);
@@ -351,7 +363,7 @@ export default function ProfilePage() {
       console.error('[ProfilePage] recentAchievements 처리 오류:', error);
       setRecentAchievements([]);
     }
-  }, [safeAllAchievements.length]); // length만 의존성으로 사용하여 불필요한 재계산 방지
+  }, [achievementsKey, safeAllAchievements]); // achievementsKey 변경 시에만 실행
 
   useEffect(() => {
     let isActive = true;
@@ -653,64 +665,64 @@ export default function ProfilePage() {
   return (
     <ErrorBoundary fallback={null}>
       <div className="min-h-screen bg-[#FAFAFA]">
-      <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
+      <div className="bg-white border-b border-[#E7E7E7] px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
-            <h1 className="text-[20px] font-bold text-[#111111]">프로필</h1>
+            <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] break-words">프로필</h1>
           </div>
           <button
             onClick={handleEditProfile}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
           >
             <Edit className="w-5 h-5 text-[#606060]" />
           </button>
         </div>
       </div>
 
-      <div className="bg-white border-b border-[#E7E7E7] p-6">
+      <div className="bg-white border-b border-[#E7E7E7] p-4 sm:p-6">
         <ErrorBoundary fallback={null}>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="relative flex-shrink-0">
               <OptimizedImage
                 src={(() => {
                   const safeProfileImage = typeof profileImage === 'string' ? profileImage : (profileImage?.url || profileImage?.imageUrl || profileImage?.src || DEFAULT_PROFILE_IMAGE);
                   return getOptimizedImageUrl(safeProfileImage, { width: 80, height: 80 }) || DEFAULT_PROFILE_IMAGE;
                 })()}
                 alt="Profile"
-                className="w-20 h-20 rounded-full object-cover"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
                 width={80}
                 height={80}
                 loading="eager"
               />
               <button
                 onClick={handleProfileImageChange}
-                className="absolute bottom-0 right-0 p-1.5 bg-[#00C471] rounded-full text-white"
+                className="absolute bottom-0 right-0 p-1 sm:p-1.5 bg-[#00C471] rounded-full text-white touch-manipulation"
               >
-                <Camera className="w-4 h-4" />
+                <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
-            <div className="flex-1">
-              <h2 className="text-[24px] font-bold text-[#111111]">{safeDisplayName}</h2>
-              <p className="text-[14px] text-[#606060]">{safeDisplayResidence}</p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-[20px] sm:text-[24px] font-bold text-[#111111] break-words">{safeDisplayName}</h2>
+              <p className="text-[13px] sm:text-[14px] text-[#606060] break-words">{safeDisplayResidence}</p>
               {safeIntroText && (
-                <p className="text-[14px] text-[#929292] mt-1">{safeIntroText}</p>
+                <p className="text-[13px] sm:text-[14px] text-[#929292] mt-1 break-words line-clamp-2">{safeIntroText}</p>
               )}
             </div>
           </div>
         </ErrorBoundary>
       </div>
 
-      <div className="bg-white border-b border-[#E7E7E7]">
-        <div className="flex">
+      <div className="bg-white border-b border-[#E7E7E7] overflow-x-auto">
+        <div className="flex min-w-full">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
+            className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
               activeTab === 'profile' ? 'text-[#00C471] border-[#00C471]' : 'text-[#929292] border-transparent'
             }`}
           >
@@ -718,7 +730,7 @@ export default function ProfilePage() {
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
+            className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
               activeTab === 'stats' ? 'text-[#00C471] border-[#00C471]' : 'text-[#929292] border-transparent'
             }`}
           >
@@ -726,7 +738,7 @@ export default function ProfilePage() {
           </button>
           <button
             onClick={() => setActiveTab('files')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
+            className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
               activeTab === 'files' ? 'text-[#00C471] border-[#00C471]' : 'text-[#929292] border-transparent'
             }`}
           >
@@ -734,7 +746,7 @@ export default function ProfilePage() {
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`flex-1 py-3 text-[14px] font-medium border-b-2 transition-colors ${
+            className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
               activeTab === 'settings' ? 'text-[#00C471] border-[#00C471]' : 'text-[#929292] border-transparent'
             }`}
           >
@@ -743,7 +755,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6">
         {activeTab === 'profile' && (
           <div className="space-y-6">
             <ErrorBoundary fallback={null}>
@@ -756,34 +768,34 @@ export default function ProfilePage() {
             </ErrorBoundary>
 
             <ErrorBoundary fallback={null}>
-              <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-                <h3 className="text-[18px] font-bold text-[#111111] mb-4">활동 요약</h3>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
+                <h3 className="text-[16px] sm:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4">활동 요약</h3>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="text-center">
-                    <p className="text-[24px] font-bold text-[#00C471]">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-[#00C471] break-words">
                       {typeof learningStats.totalSessions === 'object' ? '-' : (learningStats.totalSessions ?? 0)}
                     </p>
-                    <p className="text-[12px] text-[#929292]">완료한 세션</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#929292] break-words">완료한 세션</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[24px] font-bold text-[#00C471]">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-[#00C471] break-words">
                       {typeof totalHours === 'number' && typeof remainingMinutes === 'number' 
                         ? `${totalHours}h ${remainingMinutes}m` 
                         : '-'}
                     </p>
-                    <p className="text-[12px] text-[#929292]">총 학습시간</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#929292] break-words">총 학습시간</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[24px] font-bold text-[#00C471]">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-[#00C471] break-words">
                       {typeof learningStats.currentStreak === 'object' ? '-' : (learningStats.currentStreak ?? '-')}
                     </p>
-                    <p className="text-[12px] text-[#929292]">주간 연속</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#929292] break-words">주간 연속</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[24px] font-bold text-[#00C471]">
+                    <p className="text-[20px] sm:text-[24px] font-bold text-[#00C471] break-words">
                       {typeof learningStats.monthlyGoal === 'object' ? '-' : (learningStats.monthlyGoal ?? '-')}
                     </p>
-                    <p className="text-[12px] text-[#929292]">월간 목표</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#929292] break-words">월간 목표</p>
                   </div>
                 </div>
               </div>
@@ -981,7 +993,7 @@ export default function ProfilePage() {
                   <p className="text-[14px] text-[#606060] mb-4">
                     프로필 사진, 오디오 녹음, 채팅 이미지를 업로드하고 관리할 수 있습니다.
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 text-left">
                     <div className="p-4 bg-[#F8F9FA] rounded-[12px]">
                       <h4 className="text-[14px] font-bold text-[#111111] mb-2">이미지</h4>
                       <p className="text-[12px] text-[#606060] mb-1">JPG, PNG, WebP, GIF</p>

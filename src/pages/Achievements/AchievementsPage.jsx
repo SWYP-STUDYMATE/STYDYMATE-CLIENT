@@ -65,29 +65,29 @@ const AchievementCard = ({ item }) => {
 
   return (
     <div
-      className={`bg-white rounded-[12px] p-4 border transition-all ${
+      className={`bg-white rounded-[12px] p-3 sm:p-4 border transition-all ${
         isCompleted ? 'border-[#00C471] shadow-sm' : 'border-[#E7E7E7]'
       }`}
     >
-      <div className="flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isCompleted ? 'bg-[#E6F9F1]' : 'bg-[#F1F3F5]'}`}>
-          <Award className={`w-5 h-5 ${isCompleted ? 'text-[#00C471]' : 'text-[#B5B5B5]'}`} />
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${isCompleted ? 'bg-[#E6F9F1]' : 'bg-[#F1F3F5]'}`}>
+          <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${isCompleted ? 'text-[#00C471]' : 'text-[#B5B5B5]'}`} />
         </div>
-        <div className="flex-1">
-          <div className="flex items-start justify-between mb-1">
-            <h3 className={`font-bold text-[16px] ${isCompleted ? 'text-[#111111]' : 'text-[#606060]'}`}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-1 gap-2">
+            <h3 className={`font-bold text-[14px] sm:text-[15px] md:text-[16px] flex-1 min-w-0 break-words ${isCompleted ? 'text-[#111111]' : 'text-[#606060]'}`}>
               {title}
             </h3>
             {xpReward ? (
-              <span className="text-[14px] font-bold text-[#4285F4]">+{xpReward} XP</span>
+              <span className="text-[12px] sm:text-[13px] md:text-[14px] font-bold text-[#4285F4] flex-shrink-0">+{xpReward} XP</span>
             ) : null}
           </div>
-          <p className="text-[13px] text-[#929292] mb-2 line-clamp-2">{description}</p>
-          <div className="flex items-center gap-3 text-[12px] text-[#929292] mb-2">
-            <span className="px-2 py-1 bg-[#F8F9FA] rounded-full">{categoryLabel}</span>
-            {tier && <span className={tierClass}>{tier}</span>}
+          <p className="text-[12px] sm:text-[13px] text-[#929292] mb-2 line-clamp-2 break-words">{description}</p>
+          <div className="flex items-center flex-wrap gap-2 sm:gap-3 text-[11px] sm:text-[12px] text-[#929292] mb-2">
+            <span className="px-2 py-0.5 sm:py-1 bg-[#F8F9FA] rounded-full whitespace-nowrap">{categoryLabel}</span>
+            {tier && <span className={`${tierClass} whitespace-nowrap`}>{tier}</span>}
             {item.completedAt && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 whitespace-nowrap">
                 <Clock className="w-3 h-3" />
                 {formatDate(item.completedAt)} 완료
               </span>
@@ -132,27 +132,27 @@ const StatsOverview = ({ stats }) => {
   const unclaimedRewards = safeNumber(stats.unclaimedRewards, 0);
 
   return (
-    <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[18px] font-bold text-[#111111]">나의 진행 상황</h2>
-        <div className="flex items-center space-x-2">
-          <Trophy className="w-5 h-5 text-[#00C471]" />
-          <span className="text-[14px] font-semibold text-[#111111]">완료율 {completionRate}%</span>
+    <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7]">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 flex-wrap gap-2">
+        <h2 className="text-[16px] sm:text-[18px] font-bold text-[#111111] break-words">나의 진행 상황</h2>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471]" />
+          <span className="text-[12px] sm:text-[13px] md:text-[14px] font-semibold text-[#111111] break-words">완료율 {completionRate}%</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <div className="text-center">
-          <div className="text-[24px] font-bold text-[#00C471] mb-1">{completedAchievements}</div>
-          <div className="text-[12px] text-[#929292]">완료한 배지</div>
+          <div className="text-[20px] sm:text-[24px] font-bold text-[#00C471] mb-1 break-words">{completedAchievements}</div>
+          <div className="text-[11px] sm:text-[12px] text-[#929292] break-words">완료한 배지</div>
         </div>
         <div className="text-center">
-          <div className="text-[24px] font-bold text-[#111111] mb-1">{inProgressAchievements}</div>
-          <div className="text-[12px] text-[#929292]">진행 중</div>
+          <div className="text-[20px] sm:text-[24px] font-bold text-[#111111] mb-1 break-words">{inProgressAchievements}</div>
+          <div className="text-[11px] sm:text-[12px] text-[#929292] break-words">진행 중</div>
         </div>
         <div className="text-center">
-          <div className="text-[24px] font-bold text-[#4285F4] mb-1">{totalXpEarned}</div>
-          <div className="text-[12px] text-[#929292]">누적 XP</div>
+          <div className="text-[20px] sm:text-[24px] font-bold text-[#4285F4] mb-1 break-words">{totalXpEarned}</div>
+          <div className="text-[11px] sm:text-[12px] text-[#929292] break-words">누적 XP</div>
         </div>
       </div>
 
@@ -179,13 +179,13 @@ const StatsOverview = ({ stats }) => {
 };
 
 const CategoryFilter = ({ selected, onSelect }) => (
-  <div className="bg-white px-6 py-3 border border-[#E7E7E7] rounded-[16px]">
-    <div className="flex gap-2 overflow-x-auto">
+  <div className="bg-white px-4 sm:px-6 py-2 sm:py-3 border border-[#E7E7E7] rounded-[16px]">
+    <div className="flex gap-2 overflow-x-auto pb-1">
       {['ALL', ...Object.values(ACHIEVEMENT_CATEGORIES)].map((category) => (
         <button
           key={category}
           onClick={() => onSelect(category)}
-          className={`px-4 py-2 rounded-full text-[14px] font-medium whitespace-nowrap transition-colors ${
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[12px] sm:text-[13px] md:text-[14px] font-medium whitespace-nowrap transition-colors touch-manipulation ${
             selected === category ? 'bg-[#00C471] text-white' : 'bg-[#F1F3F5] text-[#606060] hover:bg-[#E7E7E7]'
           }`}
         >
@@ -310,25 +310,25 @@ const AchievementsPage = () => {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <div className="bg-white shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center space-x-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation flex-shrink-0"
             >
-              <ChevronLeft className="w-6 h-6 text-[#111111]" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111]" />
             </button>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-xl font-bold text-[#111111]">성취 & 배지</h1>
-                  <p className="text-sm text-[#929292]">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] break-words">성취 & 배지</h1>
+                  <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] break-words">
                     완료 {completedCount}/{totalCount} · 총 XP {totalXp}
                   </p>
                 </div>
                 <button
                   onClick={refresh}
-                  className="px-3 py-1.5 text-[13px] text-[#00C471] border border-[#00C471] rounded-full hover:bg-[#00C471]/10"
+                  className="px-3 py-1.5 text-[12px] sm:text-[13px] text-[#00C471] border border-[#00C471] rounded-full hover:bg-[#00C471]/10 touch-manipulation whitespace-nowrap flex-shrink-0"
                 >
                   새로고침
                 </button>
@@ -338,11 +338,11 @@ const AchievementsPage = () => {
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <StatsOverview stats={stats} />
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
         <AchievementsList achievements={filteredAchievements} loading={loading} error={error} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <RecentCompletions stats={stats} />
           <UpcomingAchievements stats={stats} />
         </div>

@@ -134,60 +134,89 @@ export default function AudioSession() {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col items-center justify-center p-8">
-                {/* Profile Cards */}
-                <div className="flex items-center justify-center space-x-16 mb-12">
-                    {/* User Profile */}
-                    <div className="text-center">
-                        <div className="relative mb-4">
-                            <img
-                                src={userProfileImage || "/assets/basicProfilePic.png"}
-                                alt={userName}
-                                className="w-32 h-32 rounded-full object-cover border-4 border-[var(--black-400)]"
-                            />
-                            {isAudioEnabled && (
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--green-500)] rounded-full flex items-center justify-center">
-                                    <Mic className="w-4 h-4 text-white" />
-                                </div>
-                            )}
-                        </div>
-                        <h3 className="text-[16px] font-semibold mb-1">{userName || "나"}</h3>
-                        <p className="text-[14px] text-[var(--black-200)]">
-                            {currentLanguage === 'en' ? 'Speaking English' : 'Speaking Korean'}
-                        </p>
-                    </div>
-
-                    {/* Connection Visual */}
-                    <div className="flex items-center">
-                        <div className="flex space-x-2">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <div
-                                    key={i}
-                                    className={`w-2 h-12 bg-[var(--green-500)] rounded-full transition-all duration-300`}
-                                    style={{
-                                        height: `${Math.random() * 48 + 12}px`,
-                                        opacity: sessionStatus === 'connected' ? 1 : 0.3
-                                    }}
+                {/* Participants Grid */}
+                <div className="mb-12">
+                    <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-4">
+                        {/* Current User */}
+                        <div className="text-center">
+                            <div className="relative mb-4">
+                                {/* Audio Level Ring Animation */}
+                                {isAudioEnabled && (
+                                    <div className="absolute inset-0 rounded-full border-4 border-[var(--green-500)] animate-pulse" />
+                                )}
+                                <img
+                                    src={userProfileImage || "/assets/basicProfilePic.png"}
+                                    alt={userName}
+                                    className={`w-32 h-32 rounded-full object-cover border-4 transition-all duration-300 ${
+                                        isAudioEnabled
+                                            ? 'border-[var(--green-500)]'
+                                            : 'border-[var(--black-400)]'
+                                    }`}
                                 />
-                            ))}
+                                {isAudioEnabled && (
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--green-500)] rounded-full flex items-center justify-center shadow-lg">
+                                        <Mic className="w-4 h-4 text-white" />
+                                    </div>
+                                )}
+                            </div>
+                            <h3 className="text-[16px] font-semibold mb-1">{userName || "나"}</h3>
+                            <p className="text-[14px] text-[var(--black-200)]">
+                                {currentLanguage === 'en' ? 'Speaking English' : 'Speaking Korean'}
+                            </p>
                         </div>
+
+                        {/* Partner */}
+                        <div className="text-center">
+                            <div className="relative mb-4">
+                                {/* Audio Level Ring Animation */}
+                                {!speakerMuted && sessionStatus === 'connected' && (
+                                    <div className="absolute inset-0 rounded-full border-4 border-[var(--blue)] animate-pulse" />
+                                )}
+                                <img
+                                    src={partner.profileImage}
+                                    alt={partner.name}
+                                    className={`w-32 h-32 rounded-full object-cover border-4 transition-all duration-300 ${
+                                        !speakerMuted && sessionStatus === 'connected'
+                                            ? 'border-[var(--blue)]'
+                                            : 'border-[var(--black-400)]'
+                                    }`}
+                                />
+                                {!speakerMuted && sessionStatus === 'connected' && (
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--blue)] rounded-full flex items-center justify-center shadow-lg">
+                                        <Volume2 className="w-4 h-4 text-white" />
+                                    </div>
+                                )}
+                            </div>
+                            <h3 className="text-[16px] font-semibold mb-1">{partner.name}</h3>
+                            <p className="text-[14px] text-[var(--black-200)]">{partner.level}</p>
+                        </div>
+
+                        {/* Additional Remote Participants */}
+                        {Array.from(remoteStreams.entries()).slice(1).map(([peerId, stream], index) => (
+                            <div key={peerId} className="text-center">
+                                <div className="relative mb-4">
+                                    {/* Audio Level Ring Animation */}
+                                    <div className="absolute inset-0 rounded-full border-4 border-[var(--blue)] animate-pulse" />
+                                    <div className="w-32 h-32 rounded-full bg-[var(--black-500)] flex items-center justify-center border-4 border-[var(--blue)] transition-all duration-300">
+                                        <span className="text-[32px] font-bold text-white">
+                                            {String.fromCharCode(65 + index)}
+                                        </span>
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--blue)] rounded-full flex items-center justify-center shadow-lg">
+                                        <Volume2 className="w-4 h-4 text-white" />
+                                    </div>
+                                </div>
+                                <h3 className="text-[16px] font-semibold mb-1">참여자 {index + 2}</h3>
+                                <p className="text-[14px] text-[var(--black-200)]">연결됨</p>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Partner Profile */}
-                    <div className="text-center">
-                        <div className="relative mb-4">
-                            <img
-                                src={partner.profileImage}
-                                alt={partner.name}
-                                className="w-32 h-32 rounded-full object-cover border-4 border-[var(--black-400)]"
-                            />
-                            {!speakerMuted && sessionStatus === 'connected' && (
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[var(--blue)] rounded-full flex items-center justify-center">
-                                    <Volume2 className="w-4 h-4 text-white" />
-                                </div>
-                            )}
-                        </div>
-                        <h3 className="text-[16px] font-semibold mb-1">{partner.name}</h3>
-                        <p className="text-[14px] text-[var(--black-200)]">{partner.level}</p>
+                    {/* Total Participants Count */}
+                    <div className="mt-6 text-center">
+                        <p className="text-[14px] text-[var(--black-200)]">
+                            총 <span className="text-[var(--green-500)] font-semibold">{remoteStreams.size + 1}</span>명 참여 중
+                        </p>
                     </div>
                 </div>
 

@@ -142,47 +142,47 @@ export default function LevelTestCheck() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-[#E7E7E7] px-6 py-4">
+      <div className="bg-white border-b border-[#E7E7E7] px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 -ml-2"
+            className="p-2 -ml-2 touch-manipulation"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="w-5 h-5 sm:w-6 sm:h-6">
               <path d="M15 18L9 12L15 6" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          <h1 className="text-[18px] font-bold text-[#111111] flex-1 text-center mr-6">
+          <h1 className="text-[16px] sm:text-[18px] font-bold text-[#111111] flex-1 text-center mr-4 sm:mr-6 break-words">
             연결 확인
           </h1>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
         <div className="w-full max-w-[400px]">
           {/* Title */}
-          <h2 className="text-[24px] font-bold text-[#111111] mb-3 text-center">
+          <h2 className="text-[20px] sm:text-[22px] md:text-[24px] font-bold text-[#111111] mb-2 sm:mb-3 text-center break-words">
             테스트 환경을 확인하고 있어요
           </h2>
 
           {/* Description */}
-          <p className="text-[16px] text-[#929292] mb-8 text-center">
+          <p className="text-[14px] sm:text-[15px] md:text-[16px] text-[#929292] mb-6 sm:mb-8 text-center leading-[1.4] sm:leading-[1.5] break-words">
             원활한 테스트를 위해 필요한 권한을 확인합니다
           </p>
 
           {/* Check Items */}
-          <div className="space-y-4 mb-8">
+          <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
             {/* Microphone Check */}
-            <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
+            <div className="bg-white rounded-[10px] p-3 sm:p-4 border border-[#E7E7E7]">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#E6F9F1] rounded-full flex items-center justify-center">
-                    <Mic className="w-5 h-5 text-[#00C471]" />
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#E6F9F1] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471]" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[14px] font-medium text-[#111111]">마이크</p>
-                    <p className="text-[12px] text-[#929292]">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] sm:text-[14px] font-medium text-[#111111] break-words">마이크</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#929292] break-words">
                       {getStatusText('mic', micPermission)}
                     </p>
                     {micPermission === 'granted' && (
@@ -193,38 +193,42 @@ export default function LevelTestCheck() {
                             style={{ width: `${audioLevel}%` }}
                           />
                         </div>
-                        <p className="text-[10px] text-[#929292] mt-1">오디오 레벨: {audioLevel}%</p>
+                        <p className="text-[9px] sm:text-[10px] text-[#929292] mt-1 break-words">오디오 레벨: {audioLevel}%</p>
                       </div>
                     )}
                   </div>
                 </div>
-                {getStatusIcon(micPermission)}
+                <div className="flex-shrink-0 ml-2">
+                  {getStatusIcon(micPermission)}
+                </div>
               </div>
             </div>
 
             {/* Internet Check */}
-            <div className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]">
+            <div className="bg-white rounded-[10px] p-3 sm:p-4 border border-[#E7E7E7]">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#E6F9F1] rounded-full flex items-center justify-center">
-                    <Wifi className="w-5 h-5 text-[#00C471]" />
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#E6F9F1] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Wifi className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471]" />
                   </div>
-                  <div>
-                    <p className="text-[14px] font-medium text-[#111111]">인터넷</p>
-                    <p className="text-[12px] text-[#929292]">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] sm:text-[14px] font-medium text-[#111111] break-words">인터넷</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#929292] break-words">
                       {getStatusText('internet', internetConnection)}
                     </p>
                   </div>
                 </div>
-                {getStatusIcon(internetConnection)}
+                <div className="flex-shrink-0 ml-2">
+                  {getStatusIcon(internetConnection)}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Notice */}
           {micPermission === 'denied' && (
-            <div className="bg-[#FFF9E6] rounded-[10px] p-4 mb-6">
-              <p className="text-[12px] text-[#8B7A00]">
+            <div className="bg-[#FFF9E6] rounded-[10px] p-3 sm:p-4 mb-4 sm:mb-6">
+              <p className="text-[11px] sm:text-[12px] text-[#8B7A00] leading-[1.4] sm:leading-[1.5] break-words">
                 💡 브라우저 설정에서 마이크 권한을 허용해주세요
               </p>
             </div>
@@ -234,7 +238,7 @@ export default function LevelTestCheck() {
             <CommonButton
               onClick={handleRetry}
               variant="secondary"
-              className="w-full mb-3"
+              className="w-full mb-3 text-[14px] sm:text-[15px] md:text-base py-[14px]"
             >
               다시 확인
             </CommonButton>
@@ -243,11 +247,11 @@ export default function LevelTestCheck() {
       </div>
 
       {/* Bottom Button */}
-      <div className="px-6 pb-6 bg-white pt-4 border-t border-[#E7E7E7]">
+      <div className="px-4 sm:px-6 pb-4 sm:pb-6 bg-white pt-3 sm:pt-4 border-t border-[#E7E7E7]">
         <CommonButton
           onClick={handleContinue}
           variant="primary"
-          className="w-full"
+          className="w-full text-[14px] sm:text-[15px] md:text-base py-[14px]"
           disabled={!canContinue || isChecking}
         >
           {isChecking ? '확인 중...' : '계속하기'}

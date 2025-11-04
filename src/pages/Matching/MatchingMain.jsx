@@ -333,15 +333,101 @@ export default function MatchingMain() {
                 </div>
             </div>
 
+    return (
+        <div className="min-h-screen bg-[#FAFAFA]">
+            {/* Header */}
+            <div className="bg-white border-b border-[#E7E7E7] px-4 sm:px-6 py-3 sm:py-4">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] break-words">매칭</h1>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="p-2 rounded-lg hover:bg-[#F1F3F5] transition-colors touch-manipulation"
+                        >
+                            <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-[#666666]" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/matching/settings')}
+                            className="p-2 rounded-lg hover:bg-[#F1F3F5] transition-colors touch-manipulation"
+                        >
+                            <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-[#666666]" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filter Panel */}
+            {showFilters && (
+                <FilterPanel
+                    filters={matchingFilters}
+                    onFiltersChange={handleFilterChange}
+                    onClose={() => setShowFilters(false)}
+                    showLocation={true}
+                    showAge={true}
+                    showAvailability={true}
+                    showSessionPreferences={true}
+                />
+            )}
+
+            {/* Tabs */}
+            <div className="bg-white border-b border-[#E7E7E7] overflow-x-auto">
+                <div className="flex min-w-full">
+                    <button
+                        onClick={() => setActiveTab('recommended')}
+                        className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
+                            activeTab === 'recommended'
+                                ? 'text-[#00C471] border-[#00C471]'
+                                : 'text-[#929292] border-transparent'
+                        }`}
+                    >
+                        <div className="flex items-center justify-center space-x-1">
+                            <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>추천</span>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('sent')}
+                        className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
+                            activeTab === 'sent'
+                                ? 'text-[#00C471] border-[#00C471]'
+                                : 'text-[#929292] border-transparent'
+                        }`}
+                    >
+                        <div className="flex items-center justify-center space-x-1">
+                            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>보낸 요청</span>
+                            {sentRequests.length > 0 && (
+                                <span className="ml-1 px-1 sm:px-1.5 py-0.5 bg-[#00C471] text-white text-[9px] sm:text-[10px] rounded-full">
+                                    {sentRequests.length}
+                                </span>
+                            )}
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('search')}
+                        className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
+                            activeTab === 'search'
+                                ? 'text-[#00C471] border-[#00C471]'
+                                : 'text-[#929292] border-transparent'
+                        }`}
+                    >
+                        <div className="flex items-center justify-center space-x-1">
+                            <Search className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>검색</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
             {/* Content */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
                 {activeTab === 'recommended' ? (
                     // 추천 탭
                     <>
                         {/* Quick Actions */}
-                        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
-                            <h2 className="text-[18px] font-bold text-[#111111] mb-4">빠른 매칭</h2>
-                            <p className="text-[14px] text-[#666666] mb-4">
+                        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-4 sm:mb-6">
+                            <h2 className="text-[16px] sm:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4 break-words">빠른 매칭</h2>
+                            <p className="text-[13px] sm:text-[14px] text-[#666666] mb-3 sm:mb-4 leading-[1.4] sm:leading-[1.5] break-words">
                                 AI가 당신에게 맞는 완벽한 언어 교환 파트너를 찾아드려요.
                             </p>
                             <div className="space-y-3">
@@ -402,9 +488,9 @@ export default function MatchingMain() {
                         )}
 
                         {/* Recommended Partners */}
-                        <div className="mb-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-[18px] font-bold text-[#111111]">추천 파트너</h2>
+                        <div className="mb-4 sm:mb-6">
+                            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                                <h2 className="text-[16px] sm:text-[18px] font-bold text-[#111111] break-words">추천 파트너</h2>
                                 <button
                                     onClick={loadRecommendedPartners}
                                     className="text-[14px] text-[#00C471] font-medium"
@@ -575,9 +661,9 @@ export default function MatchingMain() {
                     // 검색 탭
                     <>
                         {/* Search Form */}
-                        <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7] mb-6">
-                            <h2 className="text-[18px] font-bold text-[#111111] mb-4">파트너 검색</h2>
-                            <p className="text-[14px] text-[#666666] mb-6">
+                        <div className="bg-white rounded-[20px] p-4 sm:p-6 border border-[#E7E7E7] mb-4 sm:mb-6">
+                            <h2 className="text-[16px] sm:text-[18px] font-bold text-[#111111] mb-3 sm:mb-4 break-words">파트너 검색</h2>
+                            <p className="text-[13px] sm:text-[14px] text-[#666666] mb-4 sm:mb-6 leading-[1.4] sm:leading-[1.5] break-words">
                                 이름이나 관심사로 언어 교환 파트너를 직접 찾아보세요.
                             </p>
 

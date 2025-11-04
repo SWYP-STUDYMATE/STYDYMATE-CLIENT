@@ -143,70 +143,70 @@ const AnalyticsPage = () => {
     <div className="min-h-screen bg-[#FAFAFA]">
       {/* Header */}
       <div className="bg-white shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-0">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
               <button 
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden touch-manipulation flex-shrink-0"
               >
-                <ChevronRight className="w-6 h-6 text-[#111111] rotate-180" />
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111] rotate-180" />
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-[#111111]">학습 통계</h1>
-                <p className="text-sm text-[#929292]">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] break-words">학습 통계</h1>
+                <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] break-words">
                   {getTimeRangeLabel(timeRange)} 학습 현황
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               {/* Time Range Selector */}
               <div className="relative">
                 <select
                   value={timeRange}
                   onChange={(e) => setTimeRange(e.target.value)}
-                  className="appearance-none bg-white border border-[#E7E7E7] rounded-lg px-4 py-2 pr-8 text-[14px] focus:border-[#00C471] focus:outline-none"
+                  className="appearance-none bg-white border border-[#E7E7E7] rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 pr-6 sm:pr-8 text-[12px] sm:text-[13px] md:text-[14px] focus:border-[#00C471] focus:outline-none"
                 >
                   <option value="day">오늘</option>
                   <option value="week">이번 주</option>
                   <option value="month">이번 달</option>
                   <option value="year">올해</option>
                 </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#929292] pointer-events-none" />
+                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-[#929292] pointer-events-none" />
               </div>
 
               <button
                 onClick={loadAnalyticsData}
-                className="p-2 text-[#666666] hover:text-[#111111] hover:bg-[#F1F3F5] rounded-lg transition-colors"
+                className="p-2 text-[#666666] hover:text-[#111111] hover:bg-[#F1F3F5] rounded-lg transition-colors touch-manipulation"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Overview Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-[16px] p-4 border border-[#E7E7E7]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-[16px] p-3 sm:p-4 border border-[#E7E7E7]">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-[#00C471]/10 rounded-full flex items-center justify-center">
-                <Video className="w-5 h-5 text-[#00C471]" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#00C471]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <Video className="w-4 h-4 sm:w-5 sm:h-5 text-[#00C471]" />
               </div>
-              <div className="text-right">
-                <div className="text-[20px] font-bold text-[#111111]">
+              <div className="text-right min-w-0 flex-1 ml-2">
+                <div className="text-[16px] sm:text-[18px] md:text-[20px] font-bold text-[#111111] break-words">
                   {typeof analyticsData.overview.totalSessions === 'number' 
                     ? analyticsData.overview.totalSessions 
                     : 0}
                 </div>
-                <div className="text-[12px] text-[#929292]">총 세션</div>
+                <div className="text-[10px] sm:text-[11px] md:text-[12px] text-[#929292] break-words">총 세션</div>
               </div>
             </div>
             <div className="flex items-center space-x-1">
-              <TrendingUp className="w-3 h-3 text-[#00C471]" />
-              <span className="text-[12px] text-[#00C471] font-medium">
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#00C471]" />
+              <span className="text-[10px] sm:text-[11px] md:text-[12px] text-[#00C471] font-medium break-words">
                 +{typeof analyticsData.overview.weeklyGrowth === 'number' 
                   ? analyticsData.overview.weeklyGrowth 
                   : 0}%
@@ -214,21 +214,21 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-[16px] p-4 border border-[#E7E7E7]">
+          <div className="bg-white rounded-[16px] p-3 sm:p-4 border border-[#E7E7E7]">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-[#4285F4]/10 rounded-full flex items-center justify-center">
-                <Clock className="w-5 h-5 text-[#4285F4]" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#4285F4]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#4285F4]" />
               </div>
-              <div className="text-right">
-                <div className="text-[20px] font-bold text-[#111111]">
+              <div className="text-right min-w-0 flex-1 ml-2">
+                <div className="text-[16px] sm:text-[18px] md:text-[20px] font-bold text-[#111111] break-words">
                   {typeof analyticsData.overview.totalMinutes === 'number' 
                     ? `${Math.floor(analyticsData.overview.totalMinutes / 60)}h ${analyticsData.overview.totalMinutes % 60}m`
                     : '0h 0m'}
                 </div>
-                <div className="text-[12px] text-[#929292]">총 학습시간</div>
+                <div className="text-[10px] sm:text-[11px] md:text-[12px] text-[#929292] break-words">총 학습시간</div>
               </div>
             </div>
-            <div className="text-[12px] text-[#666666]">
+            <div className="text-[10px] sm:text-[11px] md:text-[12px] text-[#666666] break-words">
               평균 {typeof analyticsData.overview.averageSessionTime === 'number' 
                 ? analyticsData.overview.averageSessionTime 
                 : 0}분/세션

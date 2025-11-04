@@ -357,63 +357,63 @@ const MatesPage = () => {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <div className="bg-white shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-0">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden touch-manipulation flex-shrink-0"
               >
-                <ChevronRight className="w-6 h-6 text-[#111111] rotate-180" />
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111] rotate-180" />
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-[#111111]">내 메이트</h1>
-                <p className="text-sm text-[#929292]">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] break-words">내 메이트</h1>
+                <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] break-words">
                   {totalCount}명의 언어 교환 파트너
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               <button
                 onClick={handleRefresh}
                 disabled={loading || loadingMore}
-                className="flex items-center space-x-2 border border-[#E7E7E7] text-[#666666] rounded-lg px-3 py-2 hover:border-[#00C471] hover:text-[#00C471] transition-colors disabled:opacity-60"
+                className="flex items-center space-x-1 sm:space-x-2 border border-[#E7E7E7] text-[#666666] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 hover:border-[#00C471] hover:text-[#00C471] transition-colors disabled:opacity-60 touch-manipulation"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                <span className="text-[14px] font-medium">새로고침</span>
+                <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span className="text-[12px] sm:text-[13px] md:text-[14px] font-medium whitespace-nowrap">새로고침</span>
               </button>
               <button
                 onClick={() => navigate('/matching')}
-                className="flex items-center space-x-2 bg-[#00C471] text-white px-4 py-2 rounded-lg hover:bg-[#00B267] transition-colors"
+                className="flex items-center space-x-1 sm:space-x-2 bg-[#00C471] text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#00B267] transition-colors touch-manipulation"
               >
-                <UserPlus className="w-4 h-4" />
-                <span className="text-[14px] font-medium">새 파트너 찾기</span>
+                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="text-[12px] sm:text-[13px] md:text-[14px] font-medium whitespace-nowrap">새 파트너 찾기</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
-        <div className="space-y-4">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="space-y-3 sm:space-y-4">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#929292]" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[#929292]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="파트너 이름, 관심사, 언어로 검색"
-              className="w-full h-12 pl-12 pr-4 border border-[#E7E7E7] rounded-lg focus:border-[#00C471] focus:outline-none bg-white"
+              className="w-full h-11 sm:h-12 pl-10 sm:pl-12 pr-3 sm:pr-4 text-[13px] sm:text-[14px] md:text-base border border-[#E7E7E7] rounded-lg focus:border-[#00C471] focus:outline-none bg-white"
             />
           </div>
 
-          <div className="flex space-x-2 overflow-x-auto pb-2">
+          <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
             {filters.map((filter) => (
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
-                className={`flex-shrink-0 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors ${
+                className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[12px] sm:text-[13px] md:text-[14px] font-medium transition-colors touch-manipulation whitespace-nowrap ${
                   filterType === filter.key
                     ? 'bg-[#00C471] text-white'
                     : 'bg-white text-[#666666] border border-[#E7E7E7] hover:border-[#00C471]'

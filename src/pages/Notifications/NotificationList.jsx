@@ -250,55 +250,55 @@ const NotificationList = () => {
     <div className="min-h-screen bg-[#FAFAFA]">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               <button 
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation flex-shrink-0"
               >
-                <ChevronLeft className="w-6 h-6 text-[#111111]" />
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#111111]" />
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-[#111111]">알림</h1>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-[18px] sm:text-[20px] font-bold text-[#111111] break-words">알림</h1>
                 {unreadCount > 0 && (
-                  <p className="text-sm text-[#929292]">
+                  <p className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] break-words">
                     읽지 않은 알림 {unreadCount}개
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`
-                  p-2 rounded-lg transition-colors
+                  p-2 rounded-lg transition-colors touch-manipulation
                   ${showFilters ? 'bg-[#00C471] text-white' : 'hover:bg-gray-100 text-[#111111]'}
                 `}
               >
-                <Filter className="w-5 h-5" />
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               
               <div className="relative">
                 <button
                   onClick={() => setShowActions(!showActions)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
                 >
-                  <MoreVertical className="w-5 h-5 text-[#111111]" />
+                  <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-[#111111]" />
                 </button>
                 
                 {showActions && (
-                  <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px] z-20">
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] sm:min-w-[160px] z-20">
                     <button
                       onClick={async () => {
                         await markAllAsRead();
                         setShowActions(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                      className="w-full px-3 sm:px-4 py-2 text-left text-[12px] sm:text-[13px] md:text-sm hover:bg-gray-50 flex items-center space-x-2 touch-manipulation"
                     >
-                      <CheckCheck className="w-4 h-4" />
-                      <span>모두 읽음</span>
+                      <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="whitespace-nowrap">모두 읽음</span>
                     </button>
                     <button
                       onClick={() => {
@@ -306,10 +306,10 @@ const NotificationList = () => {
                         setSelectedNotifications([]);
                         setShowActions(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                      className="w-full px-3 sm:px-4 py-2 text-left text-[12px] sm:text-[13px] md:text-sm hover:bg-gray-50 flex items-center space-x-2 touch-manipulation"
                     >
-                      <Check className="w-4 h-4" />
-                      <span>선택 모드</span>
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="whitespace-nowrap">선택 모드</span>
                     </button>
                     <button
                       onClick={() => {
@@ -317,10 +317,10 @@ const NotificationList = () => {
                         loadUnreadCount();
                         setShowActions(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2"
+                      className="w-full px-3 sm:px-4 py-2 text-left text-[12px] sm:text-[13px] md:text-sm hover:bg-gray-50 flex items-center space-x-2 touch-manipulation"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      <span>새로고침</span>
+                      <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="whitespace-nowrap">새로고침</span>
                     </button>
                   </div>
                 )}
@@ -329,20 +329,20 @@ const NotificationList = () => {
           </div>
 
           {/* Search */}
-          <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#929292]" />
+          <div className="mt-3 sm:mt-4 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#929292]" />
             <input
               type="text"
               placeholder="알림 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471]"
+              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 text-[13px] sm:text-[14px] md:text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00C471] focus:border-[#00C471]"
             />
           </div>
 
           {/* Filters */}
           {showFilters && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
               <FilterButton type={null} label="전체" count={notifications.length} />
               <FilterButton type="chat" label="채팅" count={notifications.filter(n => (n.category || n.type) === 'chat').length} />
               <FilterButton type="matching" label="매칭" count={notifications.filter(n => (n.category || '').includes('matching') || n.type?.includes('match')).length} />
@@ -354,30 +354,30 @@ const NotificationList = () => {
 
           {/* Selection Mode Actions */}
           {isSelectionMode && (
-            <div className="mt-4 flex items-center justify-between bg-blue-50 px-4 py-2 rounded-lg">
-              <div className="flex items-center space-x-4">
+            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 bg-blue-50 px-3 sm:px-4 py-2 rounded-lg">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <button
                   onClick={handleSelectAll}
-                  className="text-sm text-blue-600 font-medium"
+                  className="text-[12px] sm:text-[13px] md:text-sm text-blue-600 font-medium touch-manipulation break-words"
                 >
                   {selectedNotifications.length === notifications.length ? '전체 해제' : '전체 선택'}
                 </button>
-                <span className="text-sm text-[#929292]">
+                <span className="text-[12px] sm:text-[13px] md:text-sm text-[#929292] break-words">
                   {selectedNotifications.length}개 선택됨
                 </span>
               </div>
               
               {selectedNotifications.length > 0 && (
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 w-full sm:w-auto">
                   <button
                     onClick={() => handleBulkAction('markAsRead')}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+                    className="flex-1 sm:flex-none px-3 py-1.5 sm:py-1 bg-blue-600 text-white text-[12px] sm:text-[13px] md:text-sm rounded-md hover:bg-blue-700 touch-manipulation whitespace-nowrap"
                   >
                     읽음 처리
                   </button>
                   <button
                     onClick={() => handleBulkAction('delete')}
-                    className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+                    className="flex-1 sm:flex-none px-3 py-1.5 sm:py-1 bg-red-600 text-white text-[12px] sm:text-[13px] md:text-sm rounded-md hover:bg-red-700 touch-manipulation whitespace-nowrap"
                   >
                     삭제
                   </button>
@@ -390,13 +390,13 @@ const NotificationList = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="mx-4 sm:mx-6 mt-3 sm:mt-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-[12px] sm:text-[13px] md:text-sm break-words">{error}</p>
         </div>
       )}
 
       {/* Notifications List */}
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-3 sm:py-4">
         {loading && notifications.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
