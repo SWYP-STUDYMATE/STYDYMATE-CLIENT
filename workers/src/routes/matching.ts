@@ -439,6 +439,12 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
   try {
     log.info('[AI_BEST_MATCHES] Request started', { userId });
 
+    // AI 바인딩 확인
+    if (!c.env.AI) {
+      log.error('[AI_BEST_MATCHES] AI binding not available', undefined, { userId });
+      throw new AppError('AI service is not available', 503, 'AI_SERVICE_UNAVAILABLE');
+    }
+
     const body = await c.req.json().catch(() => ({}));
     const limit = typeof body.limit === 'number' ? Math.min(body.limit, 50) : 10;
 
@@ -464,6 +470,17 @@ matchingRoutes.post('/ai/best-matches', async (c) => {
       totalCandidates: candidates.total,
       candidateCount: candidates.data.length
     });
+
+    // 후보가 없는 경우 처리
+    if (!candidates.data || candidates.data.length === 0) {
+      log.warn('[AI_BEST_MATCHES] No candidates found', { userId });
+      return successResponse(c, {
+        matches: [],
+        totalCandidates: 0,
+        analyzedCandidates: 0,
+        message: '매칭할 파트너를 찾지 못했습니다. 잠시 후 다시 시도해주세요.'
+      });
+    }
 
     // Get matching preferences from body or use defaults
     const preferences: MatchingPreferences = {

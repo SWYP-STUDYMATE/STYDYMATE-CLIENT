@@ -133,12 +133,54 @@ export default function MatchingMain() {
                 topicsWeight: 0.10
             };
             const matches = await getAIBestMatches(preferences, 5);
-            setAiMatches(matches.matches || []);
-            setShowAIResults(true);
-            showSuccess('AI 매칭이 완료되었습니다!');
+            const matchResults = matches.matches || [];
+            
+            if (matchResults.length === 0) {
+                showError(matches.message || '매칭할 파트너를 찾지 못했습니다. 잠시 후 다시 시도해주세요.');
+                setShowAIResults(false);
+            } else {
+                setAiMatches(matchResults);
+                setShowAIResults(true);
+                showSuccess('AI 매칭이 완료되었습니다!');
+            }
         } catch (error) {
             console.error('AI matching error:', error);
-            showError('AI 매칭 중 오류가 발생했습니다. 다시 시도해주세요.');
+            
+            // 에러 메시지 추출
+            let errorMessage = 'AI 매칭 중 오류가 발생했습니다. 다시 시도해주세요.';
+            
+            if (error?.response?.data) {
+                // 백엔드에서 전달된 에러 메시지 사용
+                const errorData = error.response.data;
+                if (errorData.error?.message) {
+                    errorMessage = errorData.error.message;
+                } else if (errorData.message) {
+                    errorMessage = errorData.message;
+                } else if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                }
+                
+                // 특정 에러 코드에 따른 메시지 커스터마이징
+                const errorCode = errorData.error?.code || errorData.code;
+                if (errorCode === 'USER_NOT_FOUND') {
+                    errorMessage = '사용자 프로필을 찾을 수 없습니다. 프로필을 완성해주세요.';
+                } else if (errorCode === 'AI_MATCHING_FAILED') {
+                    errorMessage = 'AI 매칭 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                } else if (errorCode === 'AI_SERVICE_UNAVAILABLE') {
+                    errorMessage = 'AI 서비스가 현재 사용할 수 없습니다. 잠시 후 다시 시도해주세요.';
+                } else if (errorCode === 'CONTEXT_MISSING_USER') {
+                    errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+                }
+            } else if (error?.message) {
+                // 네트워크 에러 등의 경우
+                if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+                    errorMessage = '네트워크 연결을 확인해주세요.';
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+            
+            showError(errorMessage);
         } finally {
             setIsLoadingAI(false);
         }
