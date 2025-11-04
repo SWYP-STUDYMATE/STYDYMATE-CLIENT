@@ -326,15 +326,23 @@ class WebRTCConnectionManager {
 
   /**
    * Normalize ICE server URLs to valid format
+   * According to WebRTC spec:
+   * - STUN URLs must start with "stun:" (e.g., "stun:stun.l.google.com:19302")
+   * - TURN URLs must start with "turn:" or "turns:" (e.g., "turn:turn.example.com:3478")
+   * - Default ports: STUN/TURN use 3478, TURN over TLS uses 5349
+   * 
    * @param {Array} iceServers - ICE servers configuration
    * @returns {Array} Normalized ICE servers
    */
   normalizeIceServers(iceServers) {
     if (!Array.isArray(iceServers)) {
+      console.warn('⚠️ [WebRTC] ICE 서버가 배열이 아닙니다:', iceServers);
       return this.rtcConfiguration.iceServers; // 기본 설정 반환
     }
 
-    return iceServers.map(server => {
+    console.log('🔧 [WebRTC] ICE 서버 정규화 시작:', iceServers);
+
+    const normalized = iceServers.map(server => {
       // urls가 문자열인 경우 배열로 변환
       const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
       
@@ -344,30 +352,52 @@ class WebRTCConnectionManager {
           return url;
         }
 
+        console.log('🔍 [WebRTC] 정규화 전 URL:', url);
+
         // 이미 올바른 형식인지 확인 (stun: 또는 turn: 또는 turns:로 시작)
         if (url.match(/^(stun|turn|turns):/i)) {
+          console.log('✅ [WebRTC] 이미 올바른 형식:', url);
           return url;
         }
 
-        // 프로토콜이 없는 경우 추가
-        // stun.cloudflare.com:3478 -> stun:stun.cloudflare.com:3478
-        if (url.includes('stun.') || url.includes('stun1.') || url.includes('stun2.')) {
-          return `stun:${url}`;
+        // STUN 서버 감지 및 정규화
+        // 패턴: stun.*, stun1.*, stun2.*, *.stun.*, cloudflare.* (STUN 서버일 가능성)
+        if (url.match(/^(stun[0-9]?\.|.*\.stun\.|cloudflare\.)/i) || 
+            (url.includes('stun') && !url.includes('turn'))) {
+          // 포트가 없으면 기본 포트 3478 추가
+          if (!url.includes(':')) {
+            const normalized = `stun:${url}:3478`;
+            console.log('🔧 [WebRTC] STUN URL 정규화 (포트 추가):', url, '->', normalized);
+            return normalized;
+          }
+          const normalized = `stun:${url}`;
+          console.log('🔧 [WebRTC] STUN URL 정규화:', url, '->', normalized);
+          return normalized;
         }
 
-        // turn 서버인 경우 (username/credential이 있으면 turn으로 간주)
+        // TURN 서버 감지 및 정규화 (username/credential이 있으면 TURN으로 간주)
         if (server.username || server.credential) {
           // 포트 번호가 있는지 확인
           if (url.includes(':')) {
-            return `turn:${url}`;
+            // TLS 포트(5349)를 사용하는 경우 turns: 사용
+            const port = url.split(':').pop();
+            const isTLS = port === '5349' || port === '443' || url.includes('tls') || url.includes('ssl');
+            const protocol = isTLS ? 'turns' : 'turn';
+            const normalized = `${protocol}:${url}`;
+            console.log('🔧 [WebRTC] TURN URL 정규화:', url, '->', normalized);
+            return normalized;
           }
-          // 포트가 없으면 기본 포트 추가
-          return `turn:${url}:3478`;
+          // 포트가 없으면 기본 포트 추가 (일반 TURN은 3478)
+          const normalized = `turn:${url}:3478`;
+          console.log('🔧 [WebRTC] TURN URL 정규화 (포트 추가):', url, '->', normalized);
+          return normalized;
         }
 
-        // 알 수 없는 형식은 그대로 반환 (에러 발생 가능)
-        console.warn('⚠️ [WebRTC] 알 수 없는 ICE 서버 URL 형식:', url);
-        return url;
+        // 알 수 없는 형식은 stun:으로 가정하고 정규화 시도
+        // (많은 경우 STUN 서버일 가능성이 높음)
+        const normalized = `stun:${url}`;
+        console.warn('⚠️ [WebRTC] 알 수 없는 ICE 서버 URL 형식, STUN으로 가정:', url, '->', normalized);
+        return normalized;
       });
 
       return {
@@ -375,6 +405,9 @@ class WebRTCConnectionManager {
         urls: normalizedUrls.length === 1 ? normalizedUrls[0] : normalizedUrls
       };
     });
+
+    console.log('✅ [WebRTC] 정규화된 ICE 서버:', normalized);
+    return normalized;
   }
 
   /**
@@ -453,7 +486,18 @@ class WebRTCConnectionManager {
     }
 
     console.log(`🔗 [WebRTC] 새 피어 연결 생성: ${remoteUserId}, createOffer: ${createOffer}`);
-    const pc = new RTCPeerConnection(this.rtcConfiguration);
+    console.log('🔧 [WebRTC] 사용할 ICE 서버 설정:', JSON.stringify(this.rtcConfiguration.iceServers, null, 2));
+    
+    // RTCPeerConnection 생성 전에 ICE 서버 설정을 다시 정규화
+    const normalizedIceServers = this.normalizeIceServers(this.rtcConfiguration.iceServers);
+    const config = {
+      ...this.rtcConfiguration,
+      iceServers: normalizedIceServers
+    };
+    
+    console.log('✅ [WebRTC] 최종 RTCPeerConnection 설정:', JSON.stringify(config, null, 2));
+    
+    const pc = new RTCPeerConnection(config);
     this.peerConnections.set(remoteUserId, pc);
 
     // Add local stream tracks
