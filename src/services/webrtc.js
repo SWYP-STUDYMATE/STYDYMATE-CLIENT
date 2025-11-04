@@ -181,7 +181,7 @@ class WebRTCConnectionManager {
     switch (type) {
       case 'connected':
         // WebSocket 연결 성공 메시지
-        console.log('✅ WebSocket connected to room:', payload);
+        console.log('✅ WebSocket connected to room:', this.roomId);
         if (this.callbacks.onConnectionStateChange) {
           this.callbacks.onConnectionStateChange('connected');
         }

@@ -19,6 +19,7 @@ interface RecommendOptions {
   languageLevel?: string;
   minAge?: number;
   maxAge?: number;
+  searchQuery?: string; // 검색어 추가
   page: number;
   size: number;
 }
@@ -112,6 +113,24 @@ export async function recommendPartners(
       )`
     );
     params.push(options.languageLevel, options.languageLevel);
+  }
+
+  // 검색어 필터 추가 (이름, 영어 이름, 자기소개, 관심사 검색)
+  if (options.searchQuery && options.searchQuery.trim()) {
+    const searchTerm = `%${options.searchQuery.trim()}%`;
+    whereClauses.push(
+      `(
+        u.name LIKE ? OR 
+        u.english_name LIKE ? OR 
+        u.self_bio LIKE ? OR
+        EXISTS (
+          SELECT 1 FROM onboarding_interest oi
+          JOIN interest_types it ON it.interest_id = oi.interest_id
+          WHERE oi.user_id = u.user_id AND it.interest_name LIKE ?
+        )
+      )`
+    );
+    params.push(searchTerm, searchTerm, searchTerm, searchTerm);
   }
 
   const where = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';

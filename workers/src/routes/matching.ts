@@ -105,6 +105,7 @@ matchingRoutes.post('/partners/advanced', async (c) => {
       languageLevel: typeof filters.proficiencyLevel === 'string' ? filters.proficiencyLevel : undefined,
       minAge: typeof filters.minAge === 'number' ? filters.minAge : undefined,
       maxAge: typeof filters.maxAge === 'number' ? filters.maxAge : undefined,
+      searchQuery: typeof filters.query === 'string' ? filters.query : undefined,
       page,
       size
     });

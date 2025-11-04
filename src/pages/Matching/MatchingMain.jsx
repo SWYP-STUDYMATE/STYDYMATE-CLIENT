@@ -67,6 +67,15 @@ export default function MatchingMain() {
         initialize();
     }, [loadRecommendedPartners, fetchSentRequests]);
 
+    // 디버깅: sentRequests 데이터 구조 확인
+    useEffect(() => {
+        if (sentRequests.length > 0) {
+            console.log('[MatchingMain] 보낸 요청 데이터:', sentRequests);
+            console.log('[MatchingMain] 첫 번째 요청 예시:', sentRequests[0]);
+            console.log('[MatchingMain] 파트너 정보:', sentRequests[0]?.partner);
+        }
+    }, [sentRequests]);
+
     const handleStartMatching = async () => {
         setIsLoading(true);
         try {
@@ -102,19 +111,60 @@ export default function MatchingMain() {
     };
 
     const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
+        if (!searchQuery.trim()) {
+            showError('검색어를 입력해주세요.');
+            return;
+        }
 
         setIsLoading(true);
         try {
+            console.log('[MatchingMain] 검색 시작:', { searchQuery, filters: matchingFilters });
+            
             // Workers API를 통한 파트너 검색
             const results = await searchPartners(searchQuery, matchingFilters);
-            setSearchResults(results);
+            
+            console.log('[MatchingMain] 검색 결과:', results);
+            
+            // 결과가 배열인지 확인
+            if (Array.isArray(results)) {
+                setSearchResults(results);
+                if (results.length === 0) {
+                    showError('검색 결과가 없습니다. 다른 검색어를 시도해보세요.');
+                }
+            } else if (results?.data && Array.isArray(results.data)) {
+                setSearchResults(results.data);
+                if (results.data.length === 0) {
+                    showError('검색 결과가 없습니다. 다른 검색어를 시도해보세요.');
+                }
+            } else {
+                console.warn('[MatchingMain] 예상과 다른 검색 결과 형식:', results);
+                setSearchResults([]);
+                showError('검색 결과를 처리하는 중 오류가 발생했습니다.');
+            }
         } catch (error) {
-            console.error('Search error:', error);
+            console.error('[MatchingMain] 검색 오류:', error);
+            
+            // 에러 메시지 추출
+            let errorMessage = '매칭 파트너 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            
+            if (error?.response?.data) {
+                const errorData = error.response.data;
+                if (errorData.error?.message) {
+                    errorMessage = errorData.error.message;
+                } else if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } else if (error?.message) {
+                if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+                    errorMessage = '네트워크 연결을 확인해주세요.';
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+            
             // API 실패 시 빈 배열로 설정
             setSearchResults([]);
-            // 사용자에게 에러 메시지 표시
-            showError('매칭 파트너 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            showError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -420,28 +470,58 @@ export default function MatchingMain() {
                                 </div>
                             ) : sentRequests.length > 0 ? (
                                 <div className="space-y-4">
-                                    {sentRequests.map((request) => (
+                                    {sentRequests.map((request) => {
+                                        // 파트너 정보 추출 (백엔드 응답 구조: request.partner)
+                                        const partnerName = request.partner?.name || request.receiverName || '파트너';
+                                        const partnerImage = request.partner?.profileImageUrl || request.receiverProfileImage || '/default-avatar.png';
+                                        const partnerUserId = request.partner?.userId || request.receiverId;
+                                        
+                                        // 날짜 파싱 (안전하게 처리)
+                                        let dateDisplay = '날짜 정보 없음';
+                                        try {
+                                            if (request.createdAt) {
+                                                const date = new Date(request.createdAt);
+                                                if (!isNaN(date.getTime())) {
+                                                    dateDisplay = date.toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
+                                                    });
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.warn('날짜 파싱 실패:', request.createdAt);
+                                        }
+                                        
+                                        return (
                                         <div
                                             key={request.id || request.requestId}
-                                            className="bg-white rounded-[10px] p-4 border border-[#E7E7E7]"
+                                            className="bg-white rounded-[10px] p-4 border border-[#E7E7E7] hover:shadow-md transition-shadow cursor-pointer"
+                                            onClick={() => handleViewProfile(partnerUserId)}
                                         >
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center">
                                                     <img
-                                                        src={request.receiverProfileImage || '/default-avatar.png'}
-                                                        alt={request.receiverName || '파트너'}
-                                                        className="w-12 h-12 rounded-full object-cover mr-3"
+                                                        src={partnerImage}
+                                                        alt={partnerName}
+                                                        className="w-12 h-12 rounded-full object-cover mr-3 cursor-pointer hover:opacity-80 transition-opacity"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleViewProfile(partnerUserId);
+                                                        }}
                                                     />
                                                     <div>
-                                                        <h3 className="text-[16px] font-bold text-[#111111]">
-                                                            {request.receiverName || '파트너'}
+                                                        <h3 
+                                                            className="text-[16px] font-bold text-[#111111] cursor-pointer hover:text-[#00C471] transition-colors"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleViewProfile(partnerUserId);
+                                                            }}
+                                                        >
+                                                            {partnerName}
                                                         </h3>
                                                         <p className="text-[12px] text-[#929292]">
-                                                            {new Date(request.createdAt).toLocaleDateString('ko-KR', {
-                                                                year: 'numeric',
-                                                                month: 'long',
-                                                                day: 'numeric'
-                                                            })}
+                                                            {dateDisplay}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -469,7 +549,8 @@ export default function MatchingMain() {
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <div className="bg-white rounded-[20px] p-8 border border-[#E7E7E7] text-center">
@@ -511,16 +592,20 @@ export default function MatchingMain() {
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="이름, 관심사, 학습 목표로 검색하세요"
-                                            className="flex-1 h-12 px-4 border border-[#E7E7E7] rounded-lg focus:border-[#00C471] focus:outline-none"
+                                            className="flex-1 h-12 px-4 border border-[#E7E7E7] rounded-lg focus:border-[#00C471] focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-1 transition-all"
                                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                                         />
                                         <CommonButton
                                             onClick={handleSearch}
                                             variant="primary"
                                             disabled={isLoading || !searchQuery.trim()}
-                                            className="px-6"
+                                            fullWidth={false}
+                                            size="small"
+                                            className="h-12 min-w-[120px] flex-shrink-0"
                                             icon={<Search />}
-                                        />
+                                        >
+                                            검색
+                                        </CommonButton>
                                     </div>
                                 </div>
                             </div>

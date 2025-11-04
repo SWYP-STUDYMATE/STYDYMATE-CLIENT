@@ -84,38 +84,64 @@ export default function VideoSessionRoom() {
 
   // Attach local stream to video element when both are available
   useEffect(() => {
-    if (localStream && localVideoRef.current && !localVideoRef.current.srcObject) {
-      console.log('🔄 [VideoSessionRoom] useEffect: 로컬 스트림을 비디오 요소에 연결');
-      localVideoRef.current.srcObject = localStream;
+    if (!localStream || !localVideoRef.current) {
+      return;
+    }
 
-      localVideoRef.current.play().then(() => {
+    // 이미 스트림이 연결되어 있으면 중복 연결 방지
+    if (localVideoRef.current.srcObject === localStream) {
+      return;
+    }
+
+    console.log('🔄 [VideoSessionRoom] useEffect: 로컬 스트림을 비디오 요소에 연결');
+
+    const videoElement = localVideoRef.current;
+    videoElement.srcObject = localStream;
+
+    // 비디오 재생
+    videoElement.play()
+      .then(() => {
         console.log('✅ [VideoSessionRoom] useEffect: 로컬 비디오 재생 시작');
-      }).catch((error) => {
+
+        // 최종 상태 로그 (비디오 메타데이터 로드 대기)
+        videoElement.addEventListener('loadedmetadata', () => {
+          console.log('🎥 [VideoSessionRoom] useEffect: 로컬 비디오 최종 상태:', {
+            hasStream: !!videoElement.srcObject,
+            videoWidth: videoElement.videoWidth,
+            videoHeight: videoElement.videoHeight,
+            paused: videoElement.paused,
+            readyState: videoElement.readyState
+          });
+        }, { once: true });
+      })
+      .catch((error) => {
         console.error('❌ [VideoSessionRoom] useEffect: 로컬 비디오 재생 실패:', error);
       });
-
-      // Log final state
-      setTimeout(() => {
-        if (localVideoRef.current) {
-          console.log('🎥 [VideoSessionRoom] useEffect: 로컬 비디오 최종 상태:', {
-            hasStream: !!localVideoRef.current.srcObject,
-            videoWidth: localVideoRef.current.videoWidth,
-            videoHeight: localVideoRef.current.videoHeight,
-            paused: localVideoRef.current.paused,
-            readyState: localVideoRef.current.readyState
-          });
-        }
-      }, 500);
-    }
-  }, [localStream, connectionState]);
+  }, [localStream]);
 
   // Attach remote stream to video element when both are available
   useEffect(() => {
-    if (remoteStream && remoteVideoRef.current && !remoteVideoRef.current.srcObject) {
-      console.log('🔄 [VideoSessionRoom] useEffect: 원격 스트림을 비디오 요소에 연결');
-      remoteVideoRef.current.srcObject = remoteStream;
+    if (!remoteStream || !remoteVideoRef.current) {
+      return;
     }
-  }, [remoteStream, connectionState]);
+
+    // 이미 스트림이 연결되어 있으면 중복 연결 방지
+    if (remoteVideoRef.current.srcObject === remoteStream) {
+      return;
+    }
+
+    console.log('🔄 [VideoSessionRoom] useEffect: 원격 스트림을 비디오 요소에 연결');
+    remoteVideoRef.current.srcObject = remoteStream;
+
+    // 원격 비디오 재생 (자동 재생)
+    remoteVideoRef.current.play()
+      .then(() => {
+        console.log('✅ [VideoSessionRoom] useEffect: 원격 비디오 재생 시작');
+      })
+      .catch((error) => {
+        console.error('❌ [VideoSessionRoom] useEffect: 원격 비디오 재생 실패:', error);
+      });
+  }, [remoteStream]);
 
   const initializeCall = async () => {
     try {
@@ -224,48 +250,7 @@ export default function VideoSessionRoom() {
       console.log('🎥 [VideoSessionRoom] 비디오 트랙:', stream.getVideoTracks());
       console.log('🎥 [VideoSessionRoom] 오디오 트랙:', stream.getAudioTracks());
       log.info('로컬 스트림 수신', null, 'VIDEO_SESSION');
-      setLocalStream(stream); // ✅ 상태 업데이트 (자막용)
-
-      // Retry logic to wait for video element to be mounted
-      const attachStream = (retryCount = 0) => {
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-          console.log('✅ [VideoSessionRoom] 로컬 비디오 요소에 스트림 연결 (시도:', retryCount + 1, ')');
-
-          // Force video to play
-          localVideoRef.current.play().then(() => {
-            console.log('✅ [VideoSessionRoom] 로컬 비디오 재생 시작');
-          }).catch((error) => {
-            console.error('❌ [VideoSessionRoom] 로컬 비디오 재생 실패:', error);
-          });
-
-          // Log video element state after a short delay
-          setTimeout(() => {
-            if (localVideoRef.current) {
-              console.log('🎥 [VideoSessionRoom] 로컬 비디오 요소 최종 상태:', {
-                srcObject: !!localVideoRef.current.srcObject,
-                videoWidth: localVideoRef.current.videoWidth,
-                videoHeight: localVideoRef.current.videoHeight,
-                paused: localVideoRef.current.paused,
-                muted: localVideoRef.current.muted,
-                readyState: localVideoRef.current.readyState,
-                networkState: localVideoRef.current.networkState,
-                currentTime: localVideoRef.current.currentTime,
-                classList: localVideoRef.current.className,
-                hidden: localVideoRef.current.classList.contains('hidden')
-              });
-            }
-          }, 1000);
-        } else if (retryCount < 10) {
-          // Retry after 100ms if video element is not yet mounted (max 10 attempts = 1 second)
-          console.warn(`⚠️ [VideoSessionRoom] 로컬 비디오 ref가 null입니다. ${100}ms 후 재시도... (${retryCount + 1}/10)`);
-          setTimeout(() => attachStream(retryCount + 1), 100);
-        } else {
-          console.error('❌ [VideoSessionRoom] 로컬 비디오 ref 마운트 실패 (10회 재시도 후)');
-        }
-      };
-
-      attachStream();
+      setLocalStream(stream); // ✅ 상태 업데이트 (자막용 + useEffect 트리거)
     });
 
     // Remote stream callback
@@ -273,29 +258,16 @@ export default function VideoSessionRoom() {
       console.log('✅ [VideoSessionRoom] 원격 스트림 수신', { userId, stream });
       log.info('원격 스트림 수신', { userId }, 'VIDEO_SESSION');
 
-      // Set first remote stream for subtitles
+      // Set first remote stream for subtitles and main video
       if (remoteVideosRef.current.size === 0) {
-        setRemoteStream(stream); // ✅ 상태 업데이트 (자막용)
-
-        // 메인 비디오 요소에도 연결
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = stream;
-          console.log('✅ [VideoSessionRoom] 원격 비디오 요소에 스트림 연결');
-        }
+        setRemoteStream(stream); // ✅ 상태 업데이트 (자막용 + useEffect 트리거)
       }
 
-      // Create or update video element for remote participant
-      let videoElement = remoteVideosRef.current.get(userId);
-      if (!videoElement) {
-        videoElement = document.createElement('video');
-        videoElement.autoplay = true;
-        videoElement.playsInline = true;
-        videoElement.id = `remote-video-${userId}`;
+      // Store stream in Map for multi-participant rendering
+      remoteVideosRef.current.set(userId, stream);
 
-        remoteVideosRef.current.set(userId, videoElement);
-      }
-
-      videoElement.srcObject = stream;
+      // Force re-render to update participant videos
+      setParticipants(prev => new Map(prev));
     });
 
     // Remote stream removed callback
@@ -716,50 +688,12 @@ export default function VideoSessionRoom() {
             </CommonButton>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-6xl">
-            {/* Remote Video (Partner) */}
-            <div className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video">
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-
-              {/* Partner Info Overlay */}
-              <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">
-                <div className="flex items-center gap-3">
-                  {partnerInfo ? (
-                    <>
-                      <img
-                        src={partnerInfo.avatar}
-                        alt={partnerInfo.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="text-white font-medium">{partnerInfo.name}</p>
-                        <p className="text-[var(--black-200)] text-sm">Level {partnerInfo.level}</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-10 h-10 rounded-full bg-gray-300 animate-pulse"></div>
-                      <div>
-                        <p className="text-white font-medium">Loading...</p>
-                        <p className="text-[var(--black-200)] text-sm">Partner info</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Remote user indicators */}
-              <div className="absolute top-4 right-4 flex items-center gap-2">
-                {/* Add remote user status indicators here */}
-              </div>
-            </div>
-
-            {/* Local Video (Self) */}
+          <div className={`grid gap-6 w-full max-w-6xl ${
+            participants.size === 0 ? 'grid-cols-1 max-w-2xl' :
+            participants.size === 1 ? 'grid-cols-1 lg:grid-cols-2' :
+            'grid-cols-2 lg:grid-cols-2'
+          }`}>
+            {/* Local Video (Self) - 항상 표시 */}
             <div className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video">
               <video
                 ref={localVideoRef}
@@ -780,6 +714,11 @@ export default function VideoSessionRoom() {
                 </div>
               )}
 
+              {/* Local user info */}
+              <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-2 px-3">
+                <p className="text-white text-sm font-medium">나 (You)</p>
+              </div>
+
               {/* Local user indicators */}
               <div className="absolute bottom-4 right-4 flex items-center gap-2">
                 {isMuted && (
@@ -789,6 +728,74 @@ export default function VideoSessionRoom() {
                 )}
               </div>
             </div>
+
+            {/* Remote Videos (All Participants) */}
+            {Array.from(participants.values()).map((participant) => {
+              const stream = remoteVideosRef.current.get(participant.userId);
+
+              return (
+                <div
+                  key={participant.userId}
+                  className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video"
+                >
+                  <video
+                    ref={(el) => {
+                      if (el && stream && !el.srcObject) {
+                        console.log(`🔗 [VideoSessionRoom] 참가자 ${participant.userId} 스트림 연결`);
+                        el.srcObject = stream;
+                        el.play().catch(err => console.error('원격 비디오 재생 실패:', err));
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* 스트림이 없으면 플레이스홀더 표시 */}
+                  {!stream && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-[var(--green-500)] rounded-full flex items-center justify-center mx-auto mb-3">
+                          <span className="text-white font-bold text-2xl">
+                            {participant.userName?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        </div>
+                        <p className="text-[var(--black-200)] text-sm">연결 중...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Partner Info Overlay */}
+                  <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[var(--green-500)] flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">
+                          {participant.userName?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{participant.userName || 'Anonymous'}</p>
+                        <p className="text-[var(--black-200)] text-sm">참가자</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Remote user status indicators */}
+                  <div className="absolute top-4 right-4 flex items-center gap-2">
+                    {!participant.audioEnabled && (
+                      <div className="bg-[rgba(234,67,53,0.8)] p-2 rounded-full">
+                        <span className="text-white text-xs">🔇</span>
+                      </div>
+                    )}
+                    {participant.isScreenSharing && (
+                      <div className="bg-[rgba(66,133,244,0.8)] p-2 rounded-full">
+                        <Monitor className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -348,17 +348,29 @@ export default function ProfilePage() {
   useEffect(() => {
     let isActive = true;
 
-    loadProfileFromServer().catch((error) => {
-      console.error('프로필 정보를 불러오지 못했습니다.', error);
-    });
+    const loadProfile = async () => {
+      try {
+        await loadProfileFromServer();
+      } catch (error) {
+        console.error('[ProfilePage] 프로필 정보를 불러오지 못했습니다:', error);
+        // 프로필 로드 실패는 에러 모달을 표시하지 않고 조용히 처리
+        // 다른 데이터는 계속 로드 시도
+      }
+    };
+
+    loadProfile();
 
     const fetchLanguageInfo = async () => {
       setLanguageLoading(true);
       try {
+        console.log('[ProfilePage] 언어 정보 로드 시작...');
         const response = await getUserLanguageInfo();
+        console.log('[ProfilePage] 언어 정보 응답:', response);
+        
         let profilePayload = transformUserLanguageInfoResponse(response?.data ?? response);
 
         if (!hasLanguageData(profilePayload)) {
+          console.log('[ProfilePage] 언어 데이터가 없어 온보딩 데이터 확인 중...');
           const onboarding = await getOnboardingData();
           const fallbackProfile = transformOnboardingDataToLanguageProfile(onboarding?.data ?? onboarding);
           if (hasLanguageData(fallbackProfile)) {
@@ -367,9 +379,26 @@ export default function ProfilePage() {
         }
         if (!isActive) return;
         setLanguageProfile(profilePayload);
+        console.log('[ProfilePage] 언어 정보 로드 완료:', profilePayload);
       } catch (error) {
-        console.error('언어 정보를 불러오지 못했습니다.', error);
-        if (isActive) showError('언어 정보를 불러오는 데 실패했습니다.');
+        console.error('[ProfilePage] 언어 정보를 불러오지 못했습니다:', error);
+        console.error('[ProfilePage] 에러 상세:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status
+        });
+        if (isActive) {
+          // 에러 메시지 구체화
+          let errorMessage = '언어 정보를 불러오는 데 실패했습니다.';
+          if (error?.response?.status === 401) {
+            errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+          } else if (error?.response?.status === 403) {
+            errorMessage = '언어 정보를 조회할 권한이 없습니다.';
+          } else if (error?.message?.includes('Network Error')) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+          }
+          showError(errorMessage);
+        }
         if (isActive) setLanguageProfile({ teachableLanguages: [], learningLanguages: [], interests: [] });
       } finally {
         if (isActive) setLanguageLoading(false);
@@ -380,6 +409,7 @@ export default function ProfilePage() {
       setStatsLoading(true);
       setStatsError(null);
       try {
+        console.log('[ProfilePage] 학습 통계 로드 시작...');
         const [statsResult] = await Promise.allSettled([
           getStudyStats('month')
         ]);
@@ -387,24 +417,38 @@ export default function ProfilePage() {
         if (!isActive) return;
 
         if (statsResult.status === 'fulfilled') {
+          console.log('[ProfilePage] 학습 통계 응답:', statsResult.value);
           const { learningStats: normalizedStats, languageProgress: languages, dailyStats } = normalizeStudyStats(statsResult.value);
           setLearningStats(normalizedStats);
           setLanguageProgress(languages);
 
           // dailyStats가 있으면 사용, 없으면 빈 배열
           setWeeklyActivity(normalizeWeeklyActivity(dailyStats || []));
+          console.log('[ProfilePage] 학습 통계 로드 완료');
         } else {
+          console.warn('[ProfilePage] 학습 통계 로드 실패:', statsResult.reason);
           setLearningStats(defaultLearningStats);
           setLanguageProgress([]);
           setWeeklyActivity([]);
         }
 
         if (statsResult.status === 'rejected') {
+          const error = statsResult.reason;
+          console.error('[ProfilePage] 학습 통계 에러 상세:', {
+            message: error?.message,
+            response: error?.response?.data,
+            status: error?.response?.status
+          });
           setStatsError('데이터를 불러오는 데 실패했습니다.');
         }
       } catch (error) {
         if (!isActive) return;
-        console.error('학습 통계를 불러오지 못했습니다.', error);
+        console.error('[ProfilePage] 학습 통계를 불러오지 못했습니다:', error);
+        console.error('[ProfilePage] 에러 상세:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status
+        });
         setStatsError('데이터를 불러오는 데 실패했습니다.');
         setLearningStats(defaultLearningStats);
         setLanguageProgress([]);
@@ -417,9 +461,11 @@ export default function ProfilePage() {
     const fetchSettings = async () => {
       setSettingsLoading(true);
       try {
+        console.log('[ProfilePage] 사용자 설정 로드 시작...');
         const response = await getUserSettings();
         if (!isActive) return;
 
+        console.log('[ProfilePage] 사용자 설정 응답:', response);
         const data = response?.data ?? response;
         setUserSettings(data);
         setNotificationSettings({
@@ -427,9 +473,24 @@ export default function ProfilePage() {
           push: Boolean(data?.notifications?.push),
           sms: Boolean(data?.notifications?.sms)
         });
+        console.log('[ProfilePage] 사용자 설정 로드 완료');
       } catch (error) {
-        console.error('사용자 설정을 불러오지 못했습니다.', error);
-        if (isActive) showError('사용자 설정을 불러오는 데 실패했습니다.');
+        console.error('[ProfilePage] 사용자 설정을 불러오지 못했습니다:', error);
+        console.error('[ProfilePage] 에러 상세:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status
+        });
+        if (isActive) {
+          // 에러 메시지 구체화
+          let errorMessage = '사용자 설정을 불러오는 데 실패했습니다.';
+          if (error?.response?.status === 401) {
+            errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+          } else if (error?.message?.includes('Network Error')) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+          }
+          showError(errorMessage);
+        }
       } finally {
         if (isActive) setSettingsLoading(false);
       }
@@ -438,12 +499,29 @@ export default function ProfilePage() {
     const fetchFiles = async () => {
       setFilesLoading(true);
       try {
+        console.log('[ProfilePage] 파일 목록 로드 시작...');
         const response = await fetchMyChatFiles();
         if (!isActive) return;
+        console.log('[ProfilePage] 파일 목록 응답:', response);
         setUserFiles(normalizeFiles(response));
+        console.log('[ProfilePage] 파일 목록 로드 완료:', normalizeFiles(response).length, '개');
       } catch (error) {
-        console.error('사용자 파일을 불러오지 못했습니다.', error);
-        if (isActive) showError('파일 목록을 불러오는 데 실패했습니다.');
+        console.error('[ProfilePage] 사용자 파일을 불러오지 못했습니다:', error);
+        console.error('[ProfilePage] 에러 상세:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status
+        });
+        if (isActive) {
+          // 에러 메시지 구체화
+          let errorMessage = '파일 목록을 불러오는 데 실패했습니다.';
+          if (error?.response?.status === 401) {
+            errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+          } else if (error?.message?.includes('Network Error')) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+          }
+          showError(errorMessage);
+        }
         if (isActive) setUserFiles([]);
       } finally {
         if (isActive) setFilesLoading(false);

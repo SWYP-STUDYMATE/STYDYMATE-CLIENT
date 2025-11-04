@@ -28,7 +28,6 @@ export default function ChatWindow({
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedImageFiles, setSelectedImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
@@ -511,8 +510,6 @@ export default function ChatWindow({
         input={input}
         setInput={setInput}
         sendMessage={sendMessage}
-        showEmojiPicker={showEmojiPicker}
-        setShowEmojiPicker={setShowEmojiPicker}
         selectedImageFiles={selectedImageFiles}
         imagePreviews={imagePreviews}
         handleFileChange={handleFileChange}

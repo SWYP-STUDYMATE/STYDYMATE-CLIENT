@@ -1,14 +1,11 @@
 import React, { useState } from "react";
-import { Mic, Paperclip, X, Smile } from "lucide-react";
-import Picker from "emoji-picker-react";
+import { Mic, Paperclip, X, Send } from "lucide-react";
 import VoiceRecorder from "./VoiceRecorder";
 
 export default function ChatInputArea({
   input,
   setInput,
   sendMessage,
-  showEmojiPicker,
-  setShowEmojiPicker,
   selectedImageFiles,
   imagePreviews,
   handleFileChange,
@@ -19,12 +16,6 @@ export default function ChatInputArea({
 }) {
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [isComposing, setIsComposing] = useState(false); // 한글 입력 조합 상태
-
-  // 이모지 클릭 핸들러 수정
-  const handleEmojiSelect = (emojiObject) => {
-    setInput((prev) => prev + emojiObject.emoji);
-    setShowEmojiPicker(false); // 이모지 선택 후 피커 닫기
-  };
 
   const handleVoiceSend = (audioData) => {
     sendMessage("", [], audioData);
@@ -57,32 +48,35 @@ export default function ChatInputArea({
     // 한글 조합 중일 때는 Enter 키로 메시지 전송하지 않음
     if (e.key === "Enter" && !e.shiftKey && !isComposing) {
       e.preventDefault();
-      sendMessage(input, selectedImageFiles, null);
-      setInput("");
-      // 메시지 전송 시 타이핑 상태 중단
-      if (onTypingStop) {
-        onTypingStop();
-      }
+      handleSend();
     }
   };
 
+  const handleSend = () => {
+    // 메시지가 비어있고 이미지도 없으면 전송하지 않음
+    if (!input.trim() && selectedImageFiles.length === 0) {
+      return;
+    }
+    
+    sendMessage(input, selectedImageFiles, null);
+    setInput("");
+    // 메시지 전송 시 타이핑 상태 중단
+    if (onTypingStop) {
+      onTypingStop();
+    }
+  };
 
+  const canSend = input.trim().length > 0 || selectedImageFiles.length > 0;
 
   return (
-    <div className="mt-4 flex flex-col px-4">
-      {/* 이모지 피커를 입력창 위에 표시 */}
-      {showEmojiPicker && (
-        <div className="mb-2">
-          <Picker onEmojiClick={handleEmojiSelect} />
-        </div>
-      )}
-
+    <div className="mt-4 flex flex-col px-4 pb-4">
+      {/* 이미지 미리보기 */}
       {imagePreviews.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 p-2 border rounded-lg bg-gray-50">
+        <div className="flex flex-wrap gap-2 mb-3 p-3 border border-[#E7E7E7] rounded-lg bg-[#FAFAFA]">
           {imagePreviews.map((src, idx) => (
             <div
               key={idx}
-              className="relative w-20 h-20 rounded-lg overflow-hidden"
+              className="relative w-20 h-20 rounded-lg overflow-hidden border border-[#E7E7E7]"
             >
               <img
                 src={src}
@@ -91,7 +85,7 @@ export default function ChatInputArea({
               />
               <button
                 onClick={() => removeImagePreview(idx)}
-                className="absolute top-0.5 right-0.5 bg-black bg-opacity-50 text-white rounded-full p-0.5 hover:bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-1 transition-all"
+                className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full p-1 hover:bg-opacity-80 focus:outline-none transition-all"
                 aria-label={`이미지 미리보기 ${idx + 1} 삭제`}
                 type="button"
               >
@@ -101,24 +95,29 @@ export default function ChatInputArea({
           ))}
         </div>
       )}
-      <div className="flex items-center">
-        <div className="relative flex-1 flex items-center bg-gray-100 rounded-lg px-4 py-2">
-          <button
-            onClick={() => fileInputRef.current.click()}
-            className="mr-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors"
-            aria-label="이미지 첨부"
-            type="button"
-          >
-            <Paperclip className="w-5 h-5 text-gray-500" />
-          </button>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            className="hidden"
-          />
+
+      {/* 입력 영역 */}
+      <div className="flex items-end gap-2">
+        {/* 이미지 첨부 버튼 */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex-shrink-0 p-2.5 rounded-lg bg-white border border-[#E7E7E7] hover:bg-[#F1F3F5] focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-1 transition-colors"
+          aria-label="이미지 첨부"
+          type="button"
+        >
+          <Paperclip className="w-5 h-5 text-[#666666]" />
+        </button>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+          ref={fileInputRef}
+          className="hidden"
+        />
+
+        {/* 입력창 */}
+        <div className="flex-1 relative">
           <input
             type="text"
             value={input}
@@ -126,22 +125,31 @@ export default function ChatInputArea({
             onKeyDown={handleKeyDown}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
-            placeholder="Type your message"
-            className="flex-1 bg-transparent outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 rounded px-2 py-1"
+            placeholder="메시지를 입력하세요..."
+            className="w-full px-4 py-3 bg-white border border-[#E7E7E7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:border-transparent transition-all text-[14px] text-[#111111] placeholder:text-[#929292]"
             aria-label="메시지 입력"
           />
-          <button
-            onClick={() => setShowEmojiPicker((v) => !v)}
-            className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 transition-colors"
-            aria-label={showEmojiPicker ? "이모지 피커 닫기" : "이모지 피커 열기"}
-            type="button"
-          >
-            <Smile className="w-5 h-5 text-gray-500" />
-          </button>
         </div>
+
+        {/* 전송 버튼 */}
+        <button
+          onClick={handleSend}
+          disabled={!canSend}
+          className={`flex-shrink-0 p-2.5 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-1 ${
+            canSend
+              ? "bg-[#00C471] hover:bg-[#00B064] text-white cursor-pointer"
+              : "bg-[#E7E7E7] text-[#929292] cursor-not-allowed"
+          }`}
+          aria-label="메시지 전송"
+          type="button"
+        >
+          <Send className="w-5 h-5" />
+        </button>
+
+        {/* 음성 녹음 버튼 */}
         <button
           onClick={() => setShowVoiceRecorder(true)}
-          className="ml-4 p-3 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2"
+          className="flex-shrink-0 p-2.5 rounded-lg bg-[#4A90E2] hover:bg-[#357ABD] text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#4A90E2] focus:ring-offset-1"
           aria-label="음성 메시지 녹음"
           type="button"
         >

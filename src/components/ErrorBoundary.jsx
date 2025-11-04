@@ -14,6 +14,10 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('[ErrorBoundary] captured error', error, errorInfo);
+    console.error('[ErrorBoundary] error message:', error?.message);
+    console.error('[ErrorBoundary] error name:', error?.name);
+    console.error('[ErrorBoundary] error stack:', error?.stack);
+    console.error('[ErrorBoundary] component stack:', errorInfo?.componentStack);
 
     try {
       const matches = Array.from(
@@ -59,7 +63,46 @@ class ErrorBoundary extends React.Component {
         return <Fallback error={this.state.error} retry={this.handleRetry} />;
       }
 
-      const userMessage = getUserFriendlyMessage(this.state.error);
+      // 에러 메시지 추출 (개선된 버전)
+      let userMessage = '오류가 발생했습니다. 다시 시도해주세요.';
+      try {
+        const error = this.state.error;
+        
+        // getUserFriendlyMessage 함수 사용 시도
+        try {
+          const friendlyMessage = getUserFriendlyMessage(error);
+          if (friendlyMessage && friendlyMessage !== '오류가 발생했습니다. 다시 시도해주세요.') {
+            userMessage = friendlyMessage;
+          }
+        } catch (e) {
+          console.warn('[ErrorBoundary] getUserFriendlyMessage 실패:', e);
+        }
+        
+        // 직접 에러 메시지 추출 시도
+        if (!userMessage || userMessage === '오류가 발생했습니다. 다시 시도해주세요.') {
+          if (error?.message && typeof error.message === 'string' && error.message.trim()) {
+            // 기술적인 에러 메시지가 아닌 경우에만 사용
+            const techErrors = ['TypeError', 'ReferenceError', 'SyntaxError', 'Network Error'];
+            const isTechError = techErrors.some(tech => error.message.includes(tech));
+            
+            if (!isTechError && !error.message.includes('Failed to fetch dynamically imported module')) {
+              userMessage = error.message;
+            }
+          }
+          
+          // response 데이터에서 메시지 추출
+          if (error?.response?.data) {
+            const errorData = error.response.data;
+            if (errorData.error?.message) {
+              userMessage = errorData.error.message;
+            } else if (errorData.message) {
+              userMessage = errorData.message;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[ErrorBoundary] 에러 메시지 추출 실패:', e);
+      }
 
       return (
         <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-6">
