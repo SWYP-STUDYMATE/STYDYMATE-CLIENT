@@ -6,10 +6,11 @@ import SubtitleDisplay, { SubtitleController } from '../../components/SubtitleDi
 import RealtimeSubtitlePanel from '../../components/RealtimeSubtitlePanel';
 import TranslatedSubtitles from '../../components/TranslatedSubtitles';
 import CommonButton from '../../components/CommonButton';
-import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor } from 'lucide-react';
+import { Loader2, Signal, SignalZero, Users, Maximize2, Minimize2, Monitor, Clock, AlertTriangle } from 'lucide-react';
 import { webrtcManager } from '../../services/webrtc';
 import { webrtcAPI } from '../../api/webrtc';
 import { log } from '../../utils/logger';
+import { useSessionTimeControl } from '../../hooks/useSessionTimeControl';
 
 export default function VideoSessionRoom() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function VideoSessionRoom() {
 
   // Partner info (로드된 세션 데이터에서 가져옴)
   const [partnerInfo, setPartnerInfo] = useState(null);
+  const [sessionMetadata, setSessionMetadata] = useState(null);
 
   // WebRTC refs
   const localVideoRef = useRef(null);
@@ -48,6 +50,9 @@ export default function VideoSessionRoom() {
   const [connectionStats, setConnectionStats] = useState({});
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+
+  // Session time control hook
+  const { remainingMinutes, showEndWarning, sessionAccessInfo, dismissWarning } = useSessionTimeControl(sessionMetadata, roomId);
 
   useEffect(() => {
     // Check if Picture-in-Picture API is supported
@@ -272,6 +277,15 @@ export default function VideoSessionRoom() {
 
       if (info) {
         const metadata = info.metadata || {};
+
+        // Load session time metadata
+        if (metadata.scheduledStartTime || metadata.scheduledEndTime) {
+          setSessionMetadata({
+            scheduledStartTime: metadata.scheduledStartTime,
+            scheduledEndTime: metadata.scheduledEndTime
+          });
+        }
+
         const currentUserId = localStorage.getItem('userId');
         const participants = info.participants || [];
 
@@ -700,6 +714,32 @@ export default function VideoSessionRoom() {
 
   return (
     <div className="min-h-screen bg-[var(--black-600)] flex flex-col">
+      {/* Session End Warning */}
+      {showEndWarning && remainingMinutes !== null && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+          <div className="bg-[rgba(234,67,53,0.95)] backdrop-blur-sm rounded-lg p-4 shadow-lg flex items-center gap-3 min-w-[320px]">
+            <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-white font-medium">
+                {remainingMinutes <= 1
+                  ? '세션이 곧 종료됩니다!'
+                  : `세션이 ${remainingMinutes}분 후 종료됩니다`}
+              </p>
+              <p className="text-white/80 text-sm mt-1">
+                시간이 되면 자동으로 세션이 종료됩니다
+              </p>
+            </div>
+            <button
+              onClick={dismissWarning}
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label="경고 닫기"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-[var(--black-400)] border-b border-[var(--black-400)] px-6 py-4">
         <div className="flex items-center justify-between">
@@ -737,9 +777,17 @@ export default function VideoSessionRoom() {
 
             {/* Duration */}
             {connectionState === 'connected' && (
-              <div className="text-white font-mono">
-                {formatDuration(duration)}
-              </div>
+              <>
+                <div className="text-white font-mono">
+                  {formatDuration(duration)}
+                </div>
+                {remainingMinutes !== null && remainingMinutes > 0 && (
+                  <div className={`flex items-center gap-1 ${remainingMinutes <= 5 ? 'text-[var(--red)]' : 'text-[var(--black-200)]'}`}>
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">남은 시간: {remainingMinutes}분</span>
+                  </div>
+                )}
+              </>
             )}
 
             {/* PiP Button */}

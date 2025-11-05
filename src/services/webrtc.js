@@ -796,6 +796,32 @@ class WebRTCConnectionManager {
         return;
       }
       
+      // signaling state 확인
+      const signalingState = pc.signalingState;
+      console.log('🔍 [WebRTC] Current signaling state:', signalingState);
+      
+      // 이미 stable 상태면 answer를 설정할 수 없음 (이미 처리되었거나 offer가 없는 상태)
+      if (signalingState === 'stable') {
+        console.warn('⚠️ [WebRTC] Cannot set remote answer: signaling state is already stable');
+        // remote description이 이미 설정되어 있는지 확인
+        if (pc.remoteDescription) {
+          console.log('✅ [WebRTC] Remote description already set, skipping answer');
+          return;
+        } else {
+          console.warn('⚠️ [WebRTC] Signaling state is stable but no remote description - this is unexpected');
+        }
+      }
+      
+      // have-local-offer 상태가 아니면 answer를 받을 수 없음
+      if (signalingState !== 'have-local-offer') {
+        console.warn(`⚠️ [WebRTC] Unexpected signaling state for answer: ${signalingState}. Expected: have-local-offer`);
+        // 이미 answered 상태일 수 있음
+        if (signalingState === 'stable') {
+          console.log('✅ [WebRTC] Already in stable state, answer may have been processed');
+          return;
+        }
+      }
+      
       // payload는 서버에서 { type, from, data: answer } 형식으로 받았고
       // data 필드가 직접 SDP 객체 { type: 'answer', sdp: '...' }입니다
       if (!payload) {
@@ -824,17 +850,74 @@ class WebRTCConnectionManager {
           try {
             // candidateData가 { to, candidate } 형식일 수 있으므로 처리
             let candidate = candidateData;
-            if (candidateData && typeof candidateData === 'object') {
+            
+            // 문자열인 경우 파싱
+            if (typeof candidateData === 'string') {
+              candidate = {
+                candidate: candidateData,
+                sdpMid: null,
+                sdpMLineIndex: null
+              };
+              // sdpMid와 sdpMLineIndex 추론
+              if (candidateData.includes('audio') || candidateData.includes('rtp')) {
+                candidate.sdpMLineIndex = 0;
+                candidate.sdpMid = '0';
+              } else if (candidateData.includes('video')) {
+                candidate.sdpMLineIndex = 1;
+                candidate.sdpMid = '1';
+              } else {
+                candidate.sdpMLineIndex = 0;
+                candidate.sdpMid = '0';
+              }
+            }
+            // 객체인 경우
+            else if (candidateData && typeof candidateData === 'object') {
               if (candidateData.candidate && candidateData.to) {
                 candidate = candidateData.candidate;
+                // candidate가 문자열인 경우 객체로 변환
+                if (typeof candidate === 'string') {
+                  candidate = {
+                    candidate: candidate,
+                    sdpMid: null,
+                    sdpMLineIndex: null
+                  };
+                  if (candidate.candidate.includes('audio') || candidate.candidate.includes('rtp')) {
+                    candidate.sdpMLineIndex = 0;
+                    candidate.sdpMid = '0';
+                  } else if (candidate.candidate.includes('video')) {
+                    candidate.sdpMLineIndex = 1;
+                    candidate.sdpMid = '1';
+                  } else {
+                    candidate.sdpMLineIndex = 0;
+                    candidate.sdpMid = '0';
+                  }
+                }
               } else if (candidateData.candidate && !candidateData.to) {
                 candidate = candidateData.candidate;
+                // candidate가 문자열인 경우 객체로 변환
+                if (typeof candidate === 'string') {
+                  candidate = {
+                    candidate: candidate,
+                    sdpMid: null,
+                    sdpMLineIndex: null
+                  };
+                  if (candidate.candidate.includes('audio') || candidate.candidate.includes('rtp')) {
+                    candidate.sdpMLineIndex = 0;
+                    candidate.sdpMid = '0';
+                  } else if (candidate.candidate.includes('video')) {
+                    candidate.sdpMLineIndex = 1;
+                    candidate.sdpMid = '1';
+                  } else {
+                    candidate.sdpMLineIndex = 0;
+                    candidate.sdpMid = '0';
+                  }
+                }
               }
               
               // sdpMid와 sdpMLineIndex가 모두 null이면 기본값 설정
-              if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+              if (candidate && typeof candidate === 'object' && candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
                 const candidateStr = candidate.candidate || '';
-                if (candidateStr.includes('audio')) {
+                if (candidateStr.includes('audio') || candidateStr.includes('rtp')) {
                   candidate.sdpMLineIndex = 0;
                   candidate.sdpMid = '0';
                 } else if (candidateStr.includes('video')) {
@@ -845,6 +928,12 @@ class WebRTCConnectionManager {
                   candidate.sdpMid = '0';
                 }
               }
+            }
+            
+            // candidate가 유효한 객체인지 확인
+            if (!candidate || typeof candidate !== 'object' || !candidate.candidate) {
+              console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate가 유효하지 않음:', candidateData);
+              continue;
             }
             
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -891,7 +980,10 @@ class WebRTCConnectionManager {
         let candidateToQueue = payload;
         if (payload && typeof payload === 'object' && payload.candidate && payload.to) {
           candidateToQueue = payload.candidate;
+        } else if (payload && typeof payload === 'object' && payload.candidate && !payload.to) {
+          candidateToQueue = payload.candidate;
         }
+        // payload 자체가 문자열인 경우 그대로 저장
         if (!this.pendingIceCandidates.has(from)) {
           this.pendingIceCandidates.set(from, []);
         }
@@ -912,18 +1004,82 @@ class WebRTCConnectionManager {
         // { to, candidate } 형식인지 확인
         if (payload.candidate && payload.to) {
           console.log('🔍 [WebRTC] {to, candidate} 형식 감지, candidate 필드 추출');
-          candidate = payload.candidate;
+          // sdpMid와 sdpMLineIndex가 payload에 있으면 보존
+          candidate = {
+            candidate: payload.candidate,
+            sdpMid: payload.sdpMid !== undefined ? payload.sdpMid : null,
+            sdpMLineIndex: payload.sdpMLineIndex !== undefined ? payload.sdpMLineIndex : null
+          };
         }
         // candidate 필드가 직접 있는 경우
         else if (payload.candidate && !payload.to) {
           console.log('🔍 [WebRTC] {candidate} 형식 감지, candidate 필드 사용');
-          candidate = payload.candidate;
+          // sdpMid와 sdpMLineIndex가 payload에 있으면 보존
+          candidate = {
+            candidate: payload.candidate,
+            sdpMid: payload.sdpMid !== undefined ? payload.sdpMid : null,
+            sdpMLineIndex: payload.sdpMLineIndex !== undefined ? payload.sdpMLineIndex : null
+          };
         }
         // payload 자체가 candidate 객체인 경우
         else if (payload.candidate || payload.sdpMid !== undefined || payload.sdpMLineIndex !== undefined) {
           console.log('🔍 [WebRTC] 직접 candidate 객체 형식');
           candidate = payload;
         }
+      }
+      
+      // candidate가 문자열인 경우 파싱 (서버에서 직접 문자열로 보낼 수 있음)
+      if (typeof candidate === 'string') {
+        console.log('🔍 [WebRTC] Candidate가 문자열 형식, 파싱 필요:', candidate.substring(0, 80));
+        // candidate 문자열을 파싱하여 RTCIceCandidateInit 객체로 변환
+        // 형식: "candidate:foundation component protocol priority ip port typ type ..."
+        const candidateStr = candidate;
+        if (!candidateStr.includes('candidate:')) {
+          console.warn('⚠️ [WebRTC] Invalid candidate string format (missing candidate: prefix):', candidateStr.substring(0, 80));
+          return;
+        }
+        
+        // payload에 sdpMid와 sdpMLineIndex가 있으면 사용, 없으면 추론
+        let sdpMid = null;
+        let sdpMLineIndex = null;
+        
+        if (payload && typeof payload === 'object') {
+          sdpMid = payload.sdpMid !== undefined ? payload.sdpMid : null;
+          sdpMLineIndex = payload.sdpMLineIndex !== undefined ? payload.sdpMLineIndex : null;
+        }
+        
+        // candidate 문자열에서 sdpMid와 sdpMLineIndex 추출 시도
+        // 일반적으로 sdpMid와 sdpMLineIndex는 candidate 문자열에 포함되지 않으므로
+        // 기본값을 사용하거나 SDP에서 추론해야 함
+        candidate = {
+          candidate: candidateStr,
+          sdpMid: sdpMid,
+          sdpMLineIndex: sdpMLineIndex
+        };
+        
+        // sdpMid와 sdpMLineIndex가 모두 null이면 추론
+        if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+          // sdpMid와 sdpMLineIndex를 추론 (candidate 문자열에서 직접 추론 불가능하므로 기본값 사용)
+          // 실제로는 이전에 수신한 candidate들에서 패턴을 찾거나 SDP를 분석해야 하지만,
+          // 여기서는 기본값으로 처리
+          if (candidateStr.includes('audio') || candidateStr.includes('rtp')) {
+            candidate.sdpMLineIndex = 0;
+            candidate.sdpMid = '0';
+          } else if (candidateStr.includes('video')) {
+            candidate.sdpMLineIndex = 1;
+            candidate.sdpMid = '1';
+          } else {
+            // 기본값으로 0 설정 (대부분의 경우 첫 번째 m-line이 audio)
+            candidate.sdpMLineIndex = 0;
+            candidate.sdpMid = '0';
+          }
+        }
+        
+        console.log('✅ [WebRTC] 문자열 candidate를 객체로 변환:', {
+          candidate: candidateStr.substring(0, 50),
+          sdpMid: candidate.sdpMid,
+          sdpMLineIndex: candidate.sdpMLineIndex
+        });
       }
       
       // candidate 객체 검증

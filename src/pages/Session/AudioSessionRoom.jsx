@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import VideoControls from '../../components/VideoControls';
-import { Phone, PhoneIncoming, PhoneOutgoing, Clock, Signal, SignalLow, Loader2, MessageSquare, Languages } from 'lucide-react';
+import { Phone, PhoneIncoming, PhoneOutgoing, Clock, Signal, SignalLow, Loader2, MessageSquare, Languages, AlertTriangle } from 'lucide-react';
 import { webrtcManager } from '../../services/webrtc';
 import { log } from '../../utils/logger';
 import CommonButton from '../../components/CommonButton';
 import TranslatedSubtitles from '../../components/TranslatedSubtitles';
 import RealtimeSubtitles from '../../components/RealtimeSubtitles';
 import RealtimeSubtitlePanel from '../../components/RealtimeSubtitlePanel';
+import { useSessionTimeControl } from '../../hooks/useSessionTimeControl';
+import { webrtcAPI } from '../../api/webrtc';
 
 export default function AudioSessionRoom() {
   const navigate = useNavigate();
@@ -24,12 +26,35 @@ export default function AudioSessionRoom() {
   const [translationEnabled, setTranslationEnabled] = useState(true);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState(new Map());
+  const [sessionMetadata, setSessionMetadata] = useState(null);
 
   const intervalRef = useRef(null);
   const statsIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
   const localAudioRef = useRef(null);
   const remoteAudiosRef = useRef(new Map());
+
+  // Session time control hook
+  const { remainingMinutes, showEndWarning, sessionAccessInfo, dismissWarning } = useSessionTimeControl(sessionMetadata, roomId);
+
+  // Load session info
+  useEffect(() => {
+    const loadSessionInfo = async () => {
+      try {
+        const info = await webrtcAPI.getRoomInfo(roomId);
+        if (info && info.metadata) {
+          setSessionMetadata({
+            scheduledStartTime: info.metadata.scheduledStartTime,
+            scheduledEndTime: info.metadata.scheduledEndTime
+          });
+        }
+      } catch (error) {
+        log.error('세션 정보 로드 실패', error, 'AUDIO_SESSION');
+      }
+    };
+
+    loadSessionInfo();
+  }, [roomId]);
 
   // Initialize audio session
   useEffect(() => {
@@ -395,6 +420,32 @@ export default function AudioSessionRoom() {
 
   return (
     <div className="min-h-screen bg-[var(--black-600)] flex flex-col">
+      {/* Session End Warning */}
+      {showEndWarning && remainingMinutes !== null && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+          <div className="bg-[rgba(234,67,53,0.95)] backdrop-blur-sm rounded-lg p-4 shadow-lg flex items-center gap-3 min-w-[320px]">
+            <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-white font-medium">
+                {remainingMinutes <= 1
+                  ? '세션이 곧 종료됩니다!'
+                  : `세션이 ${remainingMinutes}분 후 종료됩니다`}
+              </p>
+              <p className="text-white/80 text-sm mt-1">
+                시간이 되면 자동으로 세션이 종료됩니다
+              </p>
+            </div>
+            <button
+              onClick={dismissWarning}
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label="경고 닫기"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 헤더 */}
       <div className="bg-[var(--black-700)] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -413,6 +464,12 @@ export default function AudioSessionRoom() {
                 <div className="text-sm text-[var(--black-50)]">
                   참가자: {participants.size + 1}명
                 </div>
+                {remainingMinutes !== null && remainingMinutes > 0 && (
+                  <div className={`flex items-center gap-1 ${remainingMinutes <= 5 ? 'text-[var(--red)]' : 'text-[var(--black-200)]'}`}>
+                    <Clock className="w-4 h-4" />
+                    <span>남은 시간: {remainingMinutes}분</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
