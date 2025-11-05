@@ -807,21 +807,20 @@ export default function VideoSessionRoom() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        {connectionState === 'connecting' ? (
-          <div className="text-center">
-            <Loader2 className="w-16 h-16 text-[var(--green-500)] animate-spin mx-auto mb-4" />
-            <p className="text-white text-lg mb-2">연결 중...</p>
-            <p className="text-[var(--black-200)] text-sm">잠시만 기다려주세요</p>
+      <div className="flex-1 flex items-center justify-center p-8 relative">
+        {/* Connection Status Overlay - 연결 상태와 관계없이 비디오는 항상 렌더링 */}
+        {(connectionState === 'connecting' || connectionState === 'reconnecting') && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 pointer-events-none">
+            <div className="text-center">
+              <Loader2 className={`w-16 h-16 ${connectionState === 'connecting' ? 'text-[var(--green-500)]' : 'text-[var(--warning-yellow)]'} animate-spin mx-auto mb-4`} />
+              <p className="text-white text-lg mb-2">{connectionState === 'connecting' ? '연결 중...' : '연결 복구 중...'}</p>
+              <p className="text-[var(--black-200)] text-sm">{connectionState === 'connecting' ? '잠시만 기다려주세요' : '네트워크 연결을 복구하고 있습니다'}</p>
+            </div>
           </div>
-        ) : connectionState === 'reconnecting' ? (
-          <div className="text-center">
-            <Loader2 className="w-16 h-16 text-[var(--warning-yellow)] animate-spin mx-auto mb-4" />
-            <p className="text-white text-lg mb-2">연결 복구 중...</p>
-            <p className="text-[var(--black-200)] text-sm">네트워크 연결을 복구하고 있습니다</p>
-          </div>
-        ) : connectionState === 'failed' ? (
-          <div className="text-center">
+        )}
+
+        {connectionState === 'failed' ? (
+          <div className="text-center z-20 relative">
             <SignalZero className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <p className="text-white text-lg mb-2">연결 실패</p>
             <p className="text-[var(--black-200)] text-sm mb-4">네트워크 연결을 확인해주세요</p>
@@ -844,7 +843,7 @@ export default function VideoSessionRoom() {
             remoteVideosRef.current.size === 3 ? 'grid-cols-2 lg:grid-cols-2' : // 나 + 3명 (2x2 격자)
             'grid-cols-2 lg:grid-cols-3' // 나 + 4명 이상
           }`}>
-            {/* Local Video (Self) - 항상 표시 */}
+            {/* Local Video (Self) - 연결 상태와 관계없이 항상 표시 */}
             <div className="relative bg-[var(--black-400)] rounded-[20px] overflow-hidden aspect-video">
               <video
                 ref={localVideoRef}
