@@ -405,14 +405,16 @@ export default function VideoSessionRoom() {
 
       const currentUserId = localStorage.getItem('userId') || 'guest';
       if (participant.userId !== currentUserId) {
-        console.log('🔄 [VideoSessionRoom] 파트너 정보 업데이트:', participant.userName || participant.name);
+        const participantName = participant.userName || participant.name || '게스트';
+        console.log('🔄 [VideoSessionRoom] 파트너 정보 업데이트:', participantName);
         
         // 참가자 정보가 있으면 더 자세한 정보로 업데이트
+        // "대기 중..." 상태를 명확히 업데이트
         setPartnerInfo((prev) => {
-          const participantName = participant.userName || participant.name;
+          // 참가자가 실제로 입장했으므로 "대기 중..."이 아닌 실제 이름으로 업데이트
           return {
-            name: participantName || prev?.name || '게스트',
-            avatar: prev?.avatar || participant.avatar || '/assets/basicProfilePic.png',
+            name: participantName,
+            avatar: participant.avatar || prev?.avatar || '/assets/basicProfilePic.png',
             level: participant.level || prev?.level || null,
             nativeLanguage: participant.nativeLanguage || prev?.nativeLanguage || null,
             learningLanguage: participant.learningLanguage || prev?.learningLanguage || null
@@ -439,6 +441,29 @@ export default function VideoSessionRoom() {
         // 파트너가 나가면 파트너 정보 초기화
         setPartnerInfo(null);
       }
+    });
+
+    // Participant updated callback (음소거, 카메라 상태 등)
+    webrtcManager.on('onParticipantUpdated', (participant) => {
+      console.log('🔄 [VideoSessionRoom] 참가자 상태 업데이트:', participant);
+      log.info('참가자 상태 업데이트', participant, 'VIDEO_SESSION');
+
+      // 참가자 상태 업데이트
+      setParticipants(prev => {
+        const updated = new Map(prev);
+        if (updated.has(participant.userId)) {
+          // 기존 참가자 정보 업데이트
+          const existing = updated.get(participant.userId);
+          updated.set(participant.userId, {
+            ...existing,
+            ...participant
+          });
+        } else {
+          // 새로운 참가자로 추가
+          updated.set(participant.userId, participant);
+        }
+        return updated;
+      });
     });
 
     // Connection state change callback
@@ -688,6 +713,7 @@ export default function VideoSessionRoom() {
     webrtcManager.off('onRemoteStreamRemoved');
     webrtcManager.off('onParticipantJoined');
     webrtcManager.off('onParticipantLeft');
+    webrtcManager.off('onParticipantUpdated');
     webrtcManager.off('onConnectionStateChange');
     webrtcManager.off('onError');
     webrtcManager.off('onChatMessage');
@@ -854,13 +880,16 @@ export default function VideoSessionRoom() {
                 style={{ display: 'block' }}
               />
 
+              {/* 카메라 꺼짐 상태 UI (명확한 표시) */}
               {!isCameraOn && (
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none bg-[var(--black-400)]">
                   <div className="text-center">
-                    <div className="w-24 h-24 bg-[var(--black-400)] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-[var(--black-200)] text-3xl">👤</span>
+                    <div className="w-24 h-24 bg-[var(--black-300)] rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-12 h-12 text-[var(--black-200)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                    <p className="text-[var(--black-200)]">카메라가 꺼져있습니다</p>
+                    <p className="text-[var(--black-200)] text-sm font-medium">카메라가 꺼져있습니다</p>
                   </div>
                 </div>
               )}
@@ -873,8 +902,12 @@ export default function VideoSessionRoom() {
               {/* Local user indicators */}
               <div className="absolute bottom-4 right-4 flex items-center gap-2">
                 {isMuted && (
-                  <div className="bg-[rgba(234,67,53,0.8)] px-3 py-1 rounded-full">
-                    <span className="text-white text-sm">음소거</span>
+                  <div className="bg-[rgba(234,67,53,0.9)] backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                    <span className="text-white text-xs font-medium">음소거</span>
                   </div>
                 )}
               </div>
@@ -889,6 +922,12 @@ export default function VideoSessionRoom() {
               const displayName = partnerInfo?.name || participant?.userName || participant?.name || '게스트';
               const displayInitial = displayName.charAt(0).toUpperCase();
               const isGuest = !participant?.userName && !participant?.name && !partnerInfo?.name;
+              
+              // 카메라 상태 확인 (participant의 videoEnabled 또는 스트림의 비디오 트랙 상태)
+              const isVideoEnabled = participant?.videoEnabled !== false && 
+                                    stream.getVideoTracks().some(track => track.enabled && track.readyState === 'live');
+              const isAudioEnabled = participant?.audioEnabled !== false && 
+                                     stream.getAudioTracks().some(track => track.enabled && track.readyState === 'live');
               
               return (
                 <div
@@ -905,8 +944,22 @@ export default function VideoSessionRoom() {
                     }}
                     autoPlay
                     playsInline
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${!isVideoEnabled ? 'opacity-0 pointer-events-none' : ''}`}
                   />
+
+                  {/* 카메라 꺼짐 상태 UI (로컬 비디오와 동일한 스타일) */}
+                  {!isVideoEnabled && (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none bg-[var(--black-400)]">
+                      <div className="text-center">
+                        <div className="w-24 h-24 bg-[var(--black-300)] rounded-full flex items-center justify-center mx-auto mb-4">
+                          <svg className="w-12 h-12 text-[var(--black-200)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-[var(--black-200)] text-sm font-medium">카메라가 꺼져있습니다</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Partner Info Overlay */}
                   <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg p-3 min-w-[200px]">
@@ -960,14 +1013,19 @@ export default function VideoSessionRoom() {
 
                   {/* Remote user status indicators */}
                   <div className="absolute top-4 right-4 flex items-center gap-2">
-                    {participant && !participant.audioEnabled && (
-                      <div className="bg-[rgba(234,67,53,0.8)] p-2 rounded-full">
-                        <span className="text-white text-xs">🔇</span>
+                    {!isAudioEnabled && (
+                      <div className="bg-[rgba(234,67,53,0.9)] backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                        </svg>
+                        <span className="text-white text-xs font-medium">음소거</span>
                       </div>
                     )}
                     {participant?.isScreenSharing && (
-                      <div className="bg-[rgba(66,133,244,0.8)] p-2 rounded-full">
+                      <div className="bg-[rgba(66,133,244,0.9)] backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
                         <Monitor className="w-4 h-4 text-white" />
+                        <span className="text-white text-xs font-medium">화면 공유</span>
                       </div>
                     )}
                   </div>

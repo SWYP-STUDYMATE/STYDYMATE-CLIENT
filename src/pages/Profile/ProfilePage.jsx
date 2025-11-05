@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Camera,
@@ -307,7 +307,10 @@ export default function ProfilePage() {
   const [userFiles, setUserFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
 
-  const primaryLanguage = languageProgress?.[0] ?? null;
+  // languageProgress가 배열이고 첫 번째 요소가 유효한지 확인
+  const primaryLanguage = Array.isArray(languageProgress) && languageProgress.length > 0 
+    ? (languageProgress[0] && typeof languageProgress[0] === 'object' ? languageProgress[0] : null)
+    : null;
   const {
     achievements: allAchievements,
     stats: achievementStats,
@@ -322,21 +325,19 @@ export default function ProfilePage() {
 
   // ⚠️ React Error #185 방지: useState로 안정적으로 관리
   const [recentAchievements, setRecentAchievements] = useState([]);
+  const previousAchievementsRef = useRef(null);
 
+  // ⚠️ React Error #185 해결: useMemo 제거하고 직접 계산으로 변경
+  // React 19에서 useMemo cascading 패턴이 무한 루프를 일으킬 수 있음
   // allAchievements가 변경될 때만 recentAchievements 업데이트
-  // 배열 내용 변경 감지를 위해 JSON.stringify 사용 (성능 최적화)
-  const achievementsKey = useMemo(() => {
-    if (!safeAllAchievements.length) return '';
-    // 완료된 성취만 포함하여 키 생성
-    const completed = safeAllAchievements
-      .filter(item => item?.isCompleted)
-      .map(item => `${item.id}-${item.completedAt || ''}`)
-      .sort()
-      .join(',');
-    return completed;
-  }, [safeAllAchievements]);
-
   useEffect(() => {
+    // 참조 동등성 체크로 불필요한 업데이트 방지
+    if (previousAchievementsRef.current === safeAllAchievements) {
+      return;
+    }
+
+    previousAchievementsRef.current = safeAllAchievements;
+
     if (safeAllAchievements.length === 0) {
       setRecentAchievements([]);
       return;
@@ -363,7 +364,7 @@ export default function ProfilePage() {
       console.error('[ProfilePage] recentAchievements 처리 오류:', error);
       setRecentAchievements([]);
     }
-  }, [achievementsKey, safeAllAchievements]); // achievementsKey 변경 시에만 실행
+  }, [safeAllAchievements]); // safeAllAchievements 직접 사용
 
   useEffect(() => {
     let isActive = true;
@@ -387,14 +388,56 @@ export default function ProfilePage() {
         const response = await getUserLanguageInfo();
         console.log('[ProfilePage] 언어 정보 응답:', response);
         
-        let profilePayload = transformUserLanguageInfoResponse(response?.data ?? response);
+        // null 체크 추가: getUserLanguageInfo가 null을 반환할 수 있음
+        const responseData = response !== null && response !== undefined 
+          ? (response?.data ?? response) 
+          : null;
+        
+        let profilePayload = responseData 
+          ? transformUserLanguageInfoResponse(responseData)
+          : { teachableLanguages: [], learningLanguages: [], interests: [] };
+
+        // profilePayload가 유효한 객체인지 확인
+        if (!profilePayload || typeof profilePayload !== 'object') {
+          profilePayload = { teachableLanguages: [], learningLanguages: [], interests: [] };
+        }
+
+        // 배열이 유효한지 확인
+        if (!Array.isArray(profilePayload.teachableLanguages)) {
+          profilePayload.teachableLanguages = [];
+        }
+        if (!Array.isArray(profilePayload.learningLanguages)) {
+          profilePayload.learningLanguages = [];
+        }
+        if (!Array.isArray(profilePayload.interests)) {
+          profilePayload.interests = [];
+        }
 
         if (!hasLanguageData(profilePayload)) {
           console.log('[ProfilePage] 언어 데이터가 없어 온보딩 데이터 확인 중...');
-          const onboarding = await getOnboardingData();
-          const fallbackProfile = transformOnboardingDataToLanguageProfile(onboarding?.data ?? onboarding);
-          if (hasLanguageData(fallbackProfile)) {
-            profilePayload = fallbackProfile;
+          try {
+            const onboarding = await getOnboardingData();
+            const onboardingData = onboarding?.data ?? onboarding;
+            if (onboardingData) {
+              const fallbackProfile = transformOnboardingDataToLanguageProfile(onboardingData);
+              if (fallbackProfile && hasLanguageData(fallbackProfile)) {
+                // fallbackProfile도 안전하게 정규화
+                profilePayload = {
+                  teachableLanguages: Array.isArray(fallbackProfile.teachableLanguages) 
+                    ? fallbackProfile.teachableLanguages 
+                    : [],
+                  learningLanguages: Array.isArray(fallbackProfile.learningLanguages) 
+                    ? fallbackProfile.learningLanguages 
+                    : [],
+                  interests: Array.isArray(fallbackProfile.interests) 
+                    ? fallbackProfile.interests 
+                    : []
+                };
+              }
+            }
+          } catch (onboardingError) {
+            console.warn('[ProfilePage] 온보딩 데이터 로드 실패 (무시):', onboardingError);
+            // 온보딩 데이터 로드 실패는 치명적이지 않으므로 무시
           }
         }
         if (!isActive) return;
@@ -436,9 +479,15 @@ export default function ProfilePage() {
 
         if (!isActive) return;
 
-        if (statsResult.status === 'fulfilled') {
+        if (statsResult.status === 'fulfilled' && statsResult.value !== null && statsResult.value !== undefined) {
           console.log('[ProfilePage] 학습 통계 응답:', statsResult.value);
-          const { learningStats: normalizedStats, languageProgress: languages, dailyStats } = normalizeStudyStats(statsResult.value);
+          const normalized = normalizeStudyStats(statsResult.value);
+          
+          // 안전하게 구조 분해 및 값 검증
+          const normalizedStats = normalized?.learningStats || defaultLearningStats;
+          const languages = Array.isArray(normalized?.languageProgress) ? normalized.languageProgress : [];
+          const dailyStats = normalized?.dailyStats;
+          
           setLearningStats(normalizedStats);
           setLanguageProgress(languages);
 
@@ -446,20 +495,20 @@ export default function ProfilePage() {
           setWeeklyActivity(normalizeWeeklyActivity(dailyStats || []));
           console.log('[ProfilePage] 학습 통계 로드 완료');
         } else {
-          console.warn('[ProfilePage] 학습 통계 로드 실패:', statsResult.reason);
+          console.warn('[ProfilePage] 학습 통계 로드 실패:', statsResult.reason || 'null response');
           setLearningStats(defaultLearningStats);
           setLanguageProgress([]);
           setWeeklyActivity([]);
-        }
-
-        if (statsResult.status === 'rejected') {
-          const error = statsResult.reason;
-          console.error('[ProfilePage] 학습 통계 에러 상세:', {
-            message: error?.message,
-            response: error?.response?.data,
-            status: error?.response?.status
-          });
-          setStatsError('데이터를 불러오는 데 실패했습니다.');
+          
+          if (statsResult.status === 'rejected') {
+            const error = statsResult.reason;
+            console.error('[ProfilePage] 학습 통계 에러 상세:', {
+              message: error?.message,
+              response: error?.response?.data,
+              status: error?.response?.status
+            });
+            setStatsError('데이터를 불러오는 데 실패했습니다.');
+          }
         }
       } catch (error) {
         if (!isActive) return;
@@ -486,13 +535,24 @@ export default function ProfilePage() {
         if (!isActive) return;
 
         console.log('[ProfilePage] 사용자 설정 응답:', response);
-        const data = response?.data ?? response;
-        setUserSettings(data);
-        setNotificationSettings({
-          email: Boolean(data?.notifications?.email),
-          push: Boolean(data?.notifications?.push),
-          sms: Boolean(data?.notifications?.sms)
-        });
+        
+        // null 체크 및 안전한 데이터 추출
+        const data = response !== null && response !== undefined
+          ? (response?.data ?? response)
+          : null;
+        
+        if (data && typeof data === 'object') {
+          setUserSettings(data);
+          setNotificationSettings({
+            email: Boolean(data?.notifications?.email),
+            push: Boolean(data?.notifications?.push),
+            sms: Boolean(data?.notifications?.sms)
+          });
+        } else {
+          // 유효한 데이터가 없으면 기본값 설정
+          setUserSettings(null);
+          setNotificationSettings({ email: true, push: true, sms: false });
+        }
         console.log('[ProfilePage] 사용자 설정 로드 완료');
       } catch (error) {
         console.error('[ProfilePage] 사용자 설정을 불러오지 못했습니다:', error);
@@ -511,6 +571,11 @@ export default function ProfilePage() {
           }
           showError(errorMessage);
         }
+        // 에러 발생 시 기본값 설정
+        if (isActive) {
+          setUserSettings(null);
+          setNotificationSettings({ email: true, push: true, sms: false });
+        }
       } finally {
         if (isActive) setSettingsLoading(false);
       }
@@ -523,8 +588,16 @@ export default function ProfilePage() {
         const response = await fetchMyChatFiles();
         if (!isActive) return;
         console.log('[ProfilePage] 파일 목록 응답:', response);
-        setUserFiles(normalizeFiles(response));
-        console.log('[ProfilePage] 파일 목록 로드 완료:', normalizeFiles(response).length, '개');
+        
+        // response가 배열인지 확인하고 안전하게 정규화
+        const normalizedFiles = Array.isArray(response) 
+          ? normalizeFiles(response)
+          : (response !== null && response !== undefined
+              ? normalizeFiles([response])
+              : []);
+        
+        setUserFiles(normalizedFiles);
+        console.log('[ProfilePage] 파일 목록 로드 완료:', normalizedFiles.length, '개');
       } catch (error) {
         console.error('[ProfilePage] 사용자 파일을 불러오지 못했습니다:', error);
         console.error('[ProfilePage] 에러 상세:', {
@@ -937,9 +1010,14 @@ export default function ProfilePage() {
             <ErrorBoundary fallback={null}>
               <div className="bg-white rounded-[20px] p-6 border border-[#E7E7E7]">
                 <h3 className="text-[18px] font-bold text-[#111111] mb-4">언어별 진도</h3>
-                {languageProgress.length > 0 ? (
+                {Array.isArray(languageProgress) && languageProgress.length > 0 ? (
                   <div className="space-y-4">
                     {languageProgress.map((item, index) => {
+                      // item이 유효한 객체인지 확인
+                      if (!item || typeof item !== 'object') {
+                        return null;
+                      }
+                      
                       const languageKey = typeof item.language === 'string' 
                         ? item.language 
                         : (item.language?.name || item.language?.label || item.language?.language || `language-${index}`);
@@ -950,7 +1028,7 @@ export default function ProfilePage() {
                         ? item.language 
                         : (item.language?.name || item.language?.label || item.language?.language || '언어');
                       return (
-                        <div key={languageKey}>
+                        <div key={`lang-progress-${languageKey}-${index}`}>
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[14px] text-[#606060]">
                               {safeLanguage}

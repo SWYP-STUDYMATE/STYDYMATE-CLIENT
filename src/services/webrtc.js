@@ -19,6 +19,7 @@ class WebRTCConnectionManager {
       onRemoteStreamRemoved: null,
       onParticipantJoined: null,
       onParticipantLeft: null,
+      onParticipantUpdated: null,
       onConnectionStateChange: null,
       onError: null,
       onChatMessage: null,
@@ -276,6 +277,20 @@ class WebRTCConnectionManager {
         }
         break;
 
+      case 'participant-updated':
+        // 참가자 상태 업데이트 (음소거, 카메라 등)
+        const updatedParticipant = participant || payload || messageData;
+        if (updatedParticipant) {
+          console.log('🔄 [WebRTC] 참가자 상태 업데이트:', updatedParticipant);
+          if (this.callbacks.onParticipantUpdated) {
+            const normalizedParticipant = this.normalizeParticipant(updatedParticipant);
+            if (normalizedParticipant) {
+              this.callbacks.onParticipantUpdated(normalizedParticipant);
+            }
+          }
+        }
+        break;
+
       default:
         console.warn('Unknown message type:', type, data);
     }
@@ -472,7 +487,8 @@ class WebRTCConnectionManager {
       return {
         ...participant,
         userId: participant.id,
-        userName: participant.name || participant.userName || 'Anonymous'
+        name: participant.name || participant.userName || 'Anonymous',
+        userName: participant.userName || participant.name || 'Anonymous'
       };
     }
 
@@ -481,6 +497,7 @@ class WebRTCConnectionManager {
       return {
         userId: participant,
         id: participant,
+        name: 'Anonymous',
         userName: 'Anonymous'
       };
     }
@@ -499,10 +516,18 @@ class WebRTCConnectionManager {
     // Notify UI about all participants
     if (participants && participants.length > 0) {
       participants.forEach(participant => {
-        if (participant.userId && participant.userId !== this.userId) {
-          console.log('➕ [WebRTC] 기존 참가자 알림:', participant);
+        // participant 데이터 정규화 (id 또는 userId 지원)
+        const normalizedParticipant = this.normalizeParticipant(participant);
+        
+        if (!normalizedParticipant) {
+          console.warn('⚠️ [WebRTC] 참가자 데이터 정규화 실패:', participant);
+          return;
+        }
+
+        if (normalizedParticipant.userId && normalizedParticipant.userId !== this.userId) {
+          console.log('➕ [WebRTC] 기존 참가자 알림:', normalizedParticipant);
           if (this.callbacks.onParticipantJoined) {
-            this.callbacks.onParticipantJoined(participant);
+            this.callbacks.onParticipantJoined(normalizedParticipant);
           }
         }
       });
@@ -510,9 +535,17 @@ class WebRTCConnectionManager {
 
     // Create peer connections for existing participants
     for (const participant of participants) {
-      if (participant.userId && participant.userId !== this.userId) {
-        console.log('🔗 [WebRTC] 피어 연결 생성 시작:', participant.userId);
-        await this.createPeerConnection(participant.userId, true);
+      // participant 데이터 정규화
+      const normalizedParticipant = this.normalizeParticipant(participant);
+      
+      if (!normalizedParticipant) {
+        console.warn('⚠️ [WebRTC] 참가자 데이터 정규화 실패 (피어 연결 생성 스킵):', participant);
+        continue;
+      }
+
+      if (normalizedParticipant.userId && normalizedParticipant.userId !== this.userId) {
+        console.log('🔗 [WebRTC] 피어 연결 생성 시작:', normalizedParticipant.userId);
+        await this.createPeerConnection(normalizedParticipant.userId, true);
       }
     }
   }
@@ -1197,6 +1230,12 @@ class WebRTCConnectionManager {
       this.localStream.getAudioTracks().forEach(track => {
         track.enabled = enabled;
       });
+      
+      // 서버에 상태 전송
+      this.sendMessage({
+        type: 'toggle-audio',
+        data: { enabled }
+      });
     }
   }
 
@@ -1208,6 +1247,12 @@ class WebRTCConnectionManager {
     if (this.localStream) {
       this.localStream.getVideoTracks().forEach(track => {
         track.enabled = enabled;
+      });
+      
+      // 서버에 상태 전송
+      this.sendMessage({
+        type: 'toggle-video',
+        data: { enabled }
       });
     }
   }

@@ -191,7 +191,11 @@ export const getUserScheduleInfo = async () => {
 export const getUserScheduleInfoById = async (userId) => {
   try {
     const response = await api.get(`/users/${userId}/schedule-info`);
-    return response.data?.data ?? response.data;
+    // 응답 구조: { success: true, data: { schedules: [...] }, meta: {...} }
+    // 또는 직접: { schedules: [...] }
+    const responseData = response.data?.data ?? response.data;
+    console.log('getUserScheduleInfoById response:', responseData);
+    return responseData;
   } catch (error) {
     console.error('Get user schedule info by id error:', error);
     throw error;

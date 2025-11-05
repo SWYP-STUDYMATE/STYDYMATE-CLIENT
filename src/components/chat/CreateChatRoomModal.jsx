@@ -146,7 +146,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                   onClick={() => handleInputChange('roomType', 'GROUP')}
                   className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                     formData.roomType === 'GROUP'
-                      ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
+                      ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#111111]'
                       : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                   }`}
                   disabled={isLoading}
@@ -162,7 +162,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                   onClick={() => handleInputChange('roomType', 'DIRECT')}
                   className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                     formData.roomType === 'DIRECT'
-                      ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
+                      ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#111111]'
                       : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                   }`}
                   disabled={isLoading}
@@ -189,7 +189,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                       onClick={() => handleInputChange('isPublic', true)}
                       className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                         formData.isPublic
-                          ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
+                          ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#111111]'
                           : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                       }`}
                       disabled={isLoading}
@@ -205,7 +205,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                       onClick={() => handleInputChange('isPublic', false)}
                       className={`flex items-center justify-center space-x-2 h-[48px] px-4 rounded-[6px] border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                         !formData.isPublic
-                          ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
+                          ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#111111]'
                           : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                       }`}
                       disabled={isLoading}
@@ -231,7 +231,7 @@ const CreateChatRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
                         onClick={() => handleInputChange('maxParticipants', num)}
                         className={`h-[40px] rounded-[6px] border-2 text-[14px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#00C471] focus:ring-offset-2 ${
                           formData.maxParticipants === num
-                            ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#00C471]'
+                            ? 'border-[#00C471] bg-[#00C471] bg-opacity-5 text-[#111111]'
                             : 'border-[#E7E7E7] text-[#606060] hover:border-[#CED4DA]'
                         }`}
                         disabled={isLoading}

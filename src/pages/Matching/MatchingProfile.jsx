@@ -65,11 +65,18 @@ export default function MatchingProfile() {
                     // 온보딩 summary와 스케줄 정보도 함께 가져오기
                     try {
                         const [scheduleData, onboardingSummary, languageInfo, motivationInfo] = await Promise.all([
-                            getUserScheduleInfoById(userId).catch(() => ({ schedules: [] })),
+                            getUserScheduleInfoById(userId).catch((err) => {
+                                console.error('Failed to fetch schedule info:', err);
+                                return { schedules: [] };
+                            }),
                             getOnboardingSummaryById(userId).catch(() => null),
                             getUserLanguageInfoById(userId).catch(() => null),
                             getUserMotivationInfoById(userId).catch(() => null)
                         ]);
+                        
+                        // 디버깅: 스케줄 데이터 확인
+                        console.log('Schedule data:', scheduleData);
+                        console.log('Schedule data schedules:', scheduleData?.schedules);
                         
                         // 온보딩 데이터로 업데이트
                         if (onboardingSummary || languageInfo || motivationInfo) {
@@ -78,9 +85,12 @@ export default function MatchingProfile() {
                         }
                         
                         // 스케줄 정보 포맷팅
-                        if (scheduleData?.schedules) {
+                        if (scheduleData?.schedules && Array.isArray(scheduleData.schedules) && scheduleData.schedules.length > 0) {
                             const formattedAvailability = formatSchedules(scheduleData.schedules);
+                            console.log('Formatted availability:', formattedAvailability);
                             setUser(prev => ({ ...prev, availability: formattedAvailability }));
+                        } else {
+                            console.warn('No schedules found or empty array');
                         }
                     } catch (error) {
                         console.warn('Failed to fetch additional info:', error);
@@ -94,17 +104,28 @@ export default function MatchingProfile() {
                 // matchedUsers에 없으면 API 호출
                 const [profileData, scheduleData, onboardingSummary, languageInfo, motivationInfo] = await Promise.all([
                     getUserProfile(userId),
-                    getUserScheduleInfoById(userId).catch(() => ({ schedules: [] })), // 실패해도 계속 진행
+                    getUserScheduleInfoById(userId).catch((err) => {
+                        console.error('Failed to fetch schedule info:', err);
+                        return { schedules: [] };
+                    }), // 실패해도 계속 진행
                     getOnboardingSummaryById(userId).catch(() => null), // 실패해도 계속 진행
                     getUserLanguageInfoById(userId).catch(() => null), // 실패해도 계속 진행
                     getUserMotivationInfoById(userId).catch(() => null) // 실패해도 계속 진행
                 ]);
                 
+                // 디버깅: 스케줄 데이터 확인
+                console.log('Schedule data:', scheduleData);
+                console.log('Schedule data schedules:', scheduleData?.schedules);
+                
                 const mappedUser = mapUserData(profileData, onboardingSummary, languageInfo, motivationInfo);
                 
                 // 스케줄 정보 포맷팅
-                if (scheduleData?.schedules) {
-                    mappedUser.availability = formatSchedules(scheduleData.schedules);
+                if (scheduleData?.schedules && Array.isArray(scheduleData.schedules) && scheduleData.schedules.length > 0) {
+                    const formattedAvailability = formatSchedules(scheduleData.schedules);
+                    console.log('Formatted availability:', formattedAvailability);
+                    mappedUser.availability = formattedAvailability;
+                } else {
+                    console.warn('No schedules found or empty array');
                 }
                 
                 setUser(mappedUser);
@@ -123,8 +144,11 @@ export default function MatchingProfile() {
     // 스케줄 데이터를 표시 형식으로 변환
     const formatSchedules = (schedules) => {
         if (!Array.isArray(schedules) || schedules.length === 0) {
+            console.warn('formatSchedules: Empty or invalid schedules array');
             return [];
         }
+
+        console.log('formatSchedules: Input schedules:', schedules);
 
         // 요일별로 그룹화
         const dayMap = {
@@ -139,19 +163,32 @@ export default function MatchingProfile() {
 
         const grouped = {};
         schedules.forEach(schedule => {
-            const dayInfo = dayMap[schedule.dayOfWeek] || { name: schedule.dayOfWeek, order: 99 };
+            console.log('Processing schedule:', schedule);
+            const dayOfWeek = schedule.dayOfWeek || schedule.day_of_week;
+            const classTime = schedule.classTime || schedule.class_time;
+            
+            if (!dayOfWeek) {
+                console.warn('Schedule missing dayOfWeek:', schedule);
+                return;
+            }
+            
+            const dayInfo = dayMap[dayOfWeek] || { name: dayOfWeek, order: 99 };
             const dayName = dayInfo.name;
             if (!grouped[dayName]) {
                 grouped[dayName] = { times: [], order: dayInfo.order };
             }
-            if (schedule.classTime) {
-                grouped[dayName].times.push(schedule.classTime);
+            if (classTime) {
+                grouped[dayName].times.push(classTime);
+            } else {
+                console.warn('Schedule missing classTime for', dayOfWeek, ':', schedule);
             }
         });
 
+        console.log('Grouped schedules:', grouped);
+
         // 형식 변환: [{ day: "월요일", times: ["19:00-21:00"] }]
         // 요일 순서대로 정렬 (일요일이 맨 앞)
-        return Object.entries(grouped)
+        const result = Object.entries(grouped)
             .map(([day, data]) => ({
                 day,
                 times: data.times.length > 0 ? data.times : [],
@@ -159,6 +196,9 @@ export default function MatchingProfile() {
             }))
             .filter(item => item.times.length > 0) // 시간이 있는 것만 표시
             .sort((a, b) => a.order - b.order); // 요일 순서대로 정렬
+        
+        console.log('formatSchedules: Final result:', result);
+        return result;
     };
 
     // 온보딩 summary 데이터로 프로필 정보를 보강

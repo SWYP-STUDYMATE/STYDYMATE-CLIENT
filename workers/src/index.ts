@@ -158,7 +158,7 @@ app.use('*', async (c, next) => {
       // 기본값 반환
       return allowedOrigins[0];
     },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Key'],
     exposeHeaders: ['Content-Length', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
     maxAge: 86400,
