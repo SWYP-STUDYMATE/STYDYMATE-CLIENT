@@ -762,17 +762,99 @@ class WebRTCConnectionManager {
           try {
             // candidateData가 { to, candidate } 형식일 수 있으므로 처리
             let candidate = candidateData;
-            if (candidateData && typeof candidateData === 'object') {
+            
+            // 문자열인 경우 파싱
+            if (typeof candidateData === 'string') {
+              candidate = {
+                candidate: candidateData,
+                sdpMid: null,
+                sdpMLineIndex: null
+              };
+              // sdpMid와 sdpMLineIndex 추론
+              if (candidateData.includes('audio') || candidateData.includes('rtp')) {
+                candidate.sdpMLineIndex = 0;
+                candidate.sdpMid = '0';
+              } else if (candidateData.includes('video')) {
+                candidate.sdpMLineIndex = 1;
+                candidate.sdpMid = '1';
+              } else {
+                candidate.sdpMLineIndex = 0;
+                candidate.sdpMid = '0';
+              }
+            }
+            // 객체인 경우
+            else if (candidateData && typeof candidateData === 'object') {
               if (candidateData.candidate && candidateData.to) {
                 candidate = candidateData.candidate;
+                // candidate가 문자열인 경우 객체로 변환
+                if (typeof candidate === 'string') {
+                  candidate = {
+                    candidate: candidate,
+                    sdpMid: candidateData.sdpMid !== undefined ? candidateData.sdpMid : null,
+                    sdpMLineIndex: candidateData.sdpMLineIndex !== undefined ? candidateData.sdpMLineIndex : null
+                  };
+                  if (!candidate.sdpMid && !candidate.sdpMLineIndex) {
+                    if (candidate.candidate.includes('audio') || candidate.candidate.includes('rtp')) {
+                      candidate.sdpMLineIndex = 0;
+                      candidate.sdpMid = '0';
+                    } else if (candidate.candidate.includes('video')) {
+                      candidate.sdpMLineIndex = 1;
+                      candidate.sdpMid = '1';
+                    } else {
+                      candidate.sdpMLineIndex = 0;
+                      candidate.sdpMid = '0';
+                    }
+                  }
+                } else {
+                  // candidate가 이미 객체인 경우
+                  candidate = {
+                    candidate: candidate.candidate || candidate,
+                    sdpMid: candidate.sdpMid !== undefined ? candidate.sdpMid : (candidateData.sdpMid !== undefined ? candidateData.sdpMid : null),
+                    sdpMLineIndex: candidate.sdpMLineIndex !== undefined ? candidate.sdpMLineIndex : (candidateData.sdpMLineIndex !== undefined ? candidateData.sdpMLineIndex : null)
+                  };
+                }
               } else if (candidateData.candidate && !candidateData.to) {
                 candidate = candidateData.candidate;
+                // candidate가 문자열인 경우 객체로 변환
+                if (typeof candidate === 'string') {
+                  candidate = {
+                    candidate: candidate,
+                    sdpMid: candidateData.sdpMid !== undefined ? candidateData.sdpMid : null,
+                    sdpMLineIndex: candidateData.sdpMLineIndex !== undefined ? candidateData.sdpMLineIndex : null
+                  };
+                  if (!candidate.sdpMid && !candidate.sdpMLineIndex) {
+                    if (candidate.candidate.includes('audio') || candidate.candidate.includes('rtp')) {
+                      candidate.sdpMLineIndex = 0;
+                      candidate.sdpMid = '0';
+                    } else if (candidate.candidate.includes('video')) {
+                      candidate.sdpMLineIndex = 1;
+                      candidate.sdpMid = '1';
+                    } else {
+                      candidate.sdpMLineIndex = 0;
+                      candidate.sdpMid = '0';
+                    }
+                  }
+                } else {
+                  // candidate가 이미 객체인 경우, sdpMid와 sdpMLineIndex 보존
+                  candidate = {
+                    candidate: candidate.candidate || candidate,
+                    sdpMid: candidate.sdpMid !== undefined ? candidate.sdpMid : (candidateData.sdpMid !== undefined ? candidateData.sdpMid : null),
+                    sdpMLineIndex: candidate.sdpMLineIndex !== undefined ? candidate.sdpMLineIndex : (candidateData.sdpMLineIndex !== undefined ? candidateData.sdpMLineIndex : null)
+                  };
+                }
+              } else if (candidateData.candidate || candidateData.sdpMid !== undefined || candidateData.sdpMLineIndex !== undefined) {
+                // 이미 RTCIceCandidateInit 형식인 경우
+                candidate = {
+                  candidate: candidateData.candidate || '',
+                  sdpMid: candidateData.sdpMid !== undefined ? candidateData.sdpMid : null,
+                  sdpMLineIndex: candidateData.sdpMLineIndex !== undefined ? candidateData.sdpMLineIndex : null
+                };
               }
               
               // sdpMid와 sdpMLineIndex가 모두 null이면 기본값 설정
-              if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
+              if (candidate && candidate.candidate && candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
                 const candidateStr = candidate.candidate || '';
-                if (candidateStr.includes('audio')) {
+                if (candidateStr.includes('audio') || candidateStr.includes('rtp')) {
                   candidate.sdpMLineIndex = 0;
                   candidate.sdpMid = '0';
                 } else if (candidateStr.includes('video')) {
@@ -785,9 +867,15 @@ class WebRTCConnectionManager {
               }
             }
             
+            // candidate 유효성 검사
+            if (!candidate || !candidate.candidate) {
+              console.warn('⚠️ [WebRTC] 유효하지 않은 candidate:', candidateData);
+              continue;
+            }
+            
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch (err) {
-            console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate 처리 실패:', err);
+            console.warn('⚠️ [WebRTC] 대기 중인 ICE candidate 처리 실패:', err, 'candidateData:', candidateData);
           }
         }
         this.pendingIceCandidates.delete(from);
@@ -1258,45 +1346,106 @@ class WebRTCConnectionManager {
   }
 
   /**
-   * Switch media device
-   * @param {string} kind - Device kind ('audioinput' or 'videoinput')
-   * @param {string} deviceId - Device ID
+   * Toggle screen sharing
+   * @param {boolean} enabled - Whether screen sharing is enabled
    */
-  async switchDevice(kind, deviceId) {
+  toggleScreenShare(enabled) {
+    // 서버에 화면 공유 상태 전송
+    this.sendMessage({
+      type: 'toggle-screen-share',
+      data: { enabled }
+    });
+  }
+
+  /**
+   * Switch media device or replace track
+   * @param {string} kind - Device kind ('audioinput' or 'videoinput')
+   * @param {string|MediaStreamTrack} deviceIdOrTrack - Device ID or MediaStreamTrack object
+   */
+  async switchDevice(kind, deviceIdOrTrack) {
     try {
-      const constraints = {
-        audio: kind === 'audioinput' ? { deviceId } : this.localStream.getAudioTracks().length > 0,
-        video: kind === 'videoinput' ? { deviceId } : this.localStream.getVideoTracks().length > 0,
-      };
+      let newTrack;
+      let newStream = null;
 
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      // Replace tracks in peer connections
-      const newTrack = kind === 'audioinput' 
-        ? newStream.getAudioTracks()[0]
-        : newStream.getVideoTracks()[0];
+      // If deviceIdOrTrack is a MediaStreamTrack, use it directly (for screen sharing)
+      if (deviceIdOrTrack instanceof MediaStreamTrack) {
+        newTrack = deviceIdOrTrack;
+        console.log(`🔄 [WebRTC] 트랙 직접 교체 (${kind}):`, newTrack.label);
+      } else {
+        // Otherwise, get media from device
+        const constraints = {
+          audio: kind === 'audioinput' ? { deviceId: deviceIdOrTrack } : this.localStream?.getAudioTracks().length > 0,
+          video: kind === 'videoinput' ? { deviceId: deviceIdOrTrack } : this.localStream?.getVideoTracks().length > 0,
+        };
+
+        newStream = await navigator.mediaDevices.getUserMedia(constraints);
         
+        // Get the track from the new stream
+        newTrack = kind === 'audioinput' 
+          ? newStream.getAudioTracks()[0]
+          : newStream.getVideoTracks()[0];
+      }
+      
+      if (!newTrack) {
+        throw new Error(`Failed to get ${kind} track`);
+      }
+
+      // Find and replace old track
       const oldTrack = kind === 'audioinput'
-        ? this.localStream.getAudioTracks()[0]
-        : this.localStream.getVideoTracks()[0];
+        ? this.localStream?.getAudioTracks()[0]
+        : this.localStream?.getVideoTracks()[0];
 
-      this.peerConnections.forEach(pc => {
-        const sender = pc.getSenders().find(s => s.track === oldTrack);
-        if (sender) {
-          sender.replaceTrack(newTrack);
+      if (!oldTrack) {
+        console.warn(`⚠️ [WebRTC] 기존 ${kind} 트랙을 찾을 수 없습니다`);
+        // If no old track, just add the new one
+        if (this.localStream && newTrack) {
+          this.localStream.addTrack(newTrack);
+          // Add track to all peer connections
+          this.peerConnections.forEach(pc => {
+            pc.addTrack(newTrack, this.localStream);
+          });
         }
-      });
+      } else {
+        // Replace tracks in peer connections
+        this.peerConnections.forEach(pc => {
+          const sender = pc.getSenders().find(s => s.track === oldTrack);
+          if (sender) {
+            sender.replaceTrack(newTrack);
+            console.log(`✅ [WebRTC] 피어 연결에서 트랙 교체 완료 (${kind})`);
+          } else {
+            // If sender not found, add track instead
+            pc.addTrack(newTrack, this.localStream);
+            console.log(`➕ [WebRTC] 피어 연결에 트랙 추가 (${kind})`);
+          }
+        });
 
-      // Update local stream
-      this.localStream.removeTrack(oldTrack);
-      this.localStream.addTrack(newTrack);
-      oldTrack.stop();
+        // Update local stream
+        if (this.localStream) {
+          this.localStream.removeTrack(oldTrack);
+          this.localStream.addTrack(newTrack);
+          oldTrack.stop();
+          console.log(`🔄 [WebRTC] 로컬 스트림에서 트랙 교체 완료 (${kind})`);
+        }
+      }
 
-      if (this.callbacks.onLocalStream) {
+      // Stop the stream if it was created (not screen sharing)
+      if (newStream && newTrack !== deviceIdOrTrack) {
+        // Stop other tracks in the stream that we didn't use
+        newStream.getTracks().forEach(track => {
+          if (track !== newTrack) {
+            track.stop();
+          }
+        });
+      }
+
+      // Notify callback
+      if (this.callbacks.onLocalStream && this.localStream) {
         this.callbacks.onLocalStream(this.localStream);
       }
+
+      console.log(`✅ [WebRTC] 디바이스/트랙 교체 완료 (${kind})`);
     } catch (error) {
-      console.error('Failed to switch device:', error);
+      console.error('❌ [WebRTC] Failed to switch device:', error);
       this.handleError('Failed to switch device', error);
       throw error;
     }

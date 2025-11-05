@@ -576,30 +576,110 @@ export default function VideoSessionRoom() {
           audio: false
         });
 
+        // Store original camera track for later restoration
+        const originalVideoTrack = localStream?.getVideoTracks()[0];
+        
         // Switch to screen share (webrtcManager will handle track replacement)
         await webrtcManager.switchDevice('videoinput', screenStream.getVideoTracks()[0]);
         
-        // Listen for screen share end
-        screenStream.getVideoTracks()[0].onended = () => {
+        // Store screen share track reference
+        const screenTrack = screenStream.getVideoTracks()[0];
+        
+        // Listen for screen share end (user clicks stop in browser UI)
+        screenTrack.onended = async () => {
           setIsScreenSharing(false);
           log.info('화면 공유 자동 종료', null, 'VIDEO_SESSION');
+          
+          // Return to camera
+          if (originalVideoTrack && !originalVideoTrack.ended) {
+            // If original track is still valid, restore it
+            await webrtcManager.switchDevice('videoinput', originalVideoTrack);
+          } else {
+            // Otherwise, get new camera stream
+            try {
+              const cameraConstraints = {
+                video: {
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                  facingMode: 'user'
+                },
+                audio: false
+              };
+              const cameraStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
+              await webrtcManager.switchDevice('videoinput', cameraStream.getVideoTracks()[0]);
+              // Stop unused tracks
+              cameraStream.getTracks().forEach(track => {
+                if (track !== cameraStream.getVideoTracks()[0]) {
+                  track.stop();
+                }
+              });
+            } catch (cameraError) {
+              log.error('카메라 복원 실패', cameraError, 'VIDEO_SESSION');
+            }
+          }
+          
+          // Notify server about screen sharing state
+          webrtcManager.toggleScreenShare(false);
+          
+          // Notify participants
+          webrtcManager.sendChatMessage('screen-share-stopped');
         };
 
         setIsScreenSharing(true);
         log.info('화면 공유 시작', null, 'VIDEO_SESSION');
 
+        // Notify server about screen sharing state
+        webrtcManager.toggleScreenShare(true);
+        
         // Notify participants via chat
         webrtcManager.sendChatMessage('screen-share-started');
       } else {
-        // Stop screen sharing and return to camera
+        // Stop screen sharing manually
+        const currentVideoTrack = localStream?.getVideoTracks()[0];
+        
+        // Stop screen share track
+        if (currentVideoTrack && currentVideoTrack.label.includes('screen')) {
+          currentVideoTrack.stop();
+        }
+        
         setIsScreenSharing(false);
         log.info('화면 공유 중지', null, 'VIDEO_SESSION');
+        
+        // Return to camera
+        try {
+          const cameraConstraints = {
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              facingMode: 'user'
+            },
+            audio: false
+          };
+          const cameraStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
+          await webrtcManager.switchDevice('videoinput', cameraStream.getVideoTracks()[0]);
+          // Stop unused tracks
+          cameraStream.getTracks().forEach(track => {
+            if (track !== cameraStream.getVideoTracks()[0]) {
+              track.stop();
+            }
+          });
+        } catch (cameraError) {
+          log.error('카메라 복원 실패', cameraError, 'VIDEO_SESSION');
+        }
+        
+        // Notify server about screen sharing state
+        webrtcManager.toggleScreenShare(false);
         
         // Notify participants
         webrtcManager.sendChatMessage('screen-share-stopped');
       }
     } catch (error) {
       log.error('화면 공유 오류', error, 'VIDEO_SESSION');
+      
+      // If user cancels the screen share dialog, reset state
+      if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
+        setIsScreenSharing(false);
+      }
     }
   };
 
@@ -992,12 +1072,25 @@ export default function VideoSessionRoom() {
                               console.error(`❌ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 실패:`, err);
                               // 메타데이터 로드 후 재시도
                               el.addEventListener('loadedmetadata', () => {
+                                console.log(`📹 [VideoSessionRoom] 참가자 ${userId} 비디오 메타데이터 로드 완료`);
                                 el.play().catch(e => console.error('재시도 실패:', e));
+                              }, { once: true });
+                              
+                              // canplay 이벤트로도 재시도
+                              el.addEventListener('canplay', () => {
+                                console.log(`▶️ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 가능`);
+                                el.play().catch(e => console.error('canplay 재시도 실패:', e));
                               }, { once: true });
                             }
                           };
                           
                           playVideo();
+                        } else {
+                          // 이미 같은 스트림이 연결되어 있으면 재생 상태 확인
+                          if (el.paused) {
+                            console.log(`⏸️ [VideoSessionRoom] 참가자 ${userId} 비디오가 일시정지 상태, 재생 시도`);
+                            el.play().catch(err => console.error('일시정지 상태 재생 실패:', err));
+                          }
                         }
                       }
                     }}

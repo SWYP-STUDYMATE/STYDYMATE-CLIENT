@@ -70,17 +70,22 @@ export function useRealtimeTranscription({
       }
 
       const result = await response.json();
+      
+      // API 응답 형식 확인: transcription 또는 text 필드 사용
+      const transcriptText = result.transcription || result.text || result.transcript || '';
+      
       console.log('✅ [useRealtimeTranscription] 전사 결과 수신', {
-        hasText: !!result.text,
-        textLength: result.text?.length,
+        hasText: !!transcriptText,
+        textLength: transcriptText?.length,
         language: result.language,
-        confidence: result.confidence
+        confidence: result.confidence,
+        fullResult: result // 전체 응답 확인
       });
       
-      if (result.text && result.text.trim()) {
+      if (transcriptText && transcriptText.trim()) {
         const transcript = {
           id: `transcript-${Date.now()}`,
-          text: result.text.trim(),
+          text: transcriptText.trim(),
           timestamp: new Date().toISOString(),
           language: result.language || language,
           confidence: result.confidence,
