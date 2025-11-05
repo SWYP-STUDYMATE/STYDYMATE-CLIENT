@@ -346,6 +346,17 @@ export default function VideoSessionRoom() {
     // Remote stream callback
     webrtcManager.on('onRemoteStream', (userId, stream) => {
       console.log('✅ [VideoSessionRoom] 원격 스트림 수신', { userId, stream });
+      console.log('🎥 [VideoSessionRoom] 원격 스트림 상세:', {
+        streamId: stream.id,
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
+        videoTracksInfo: stream.getVideoTracks().map(t => ({
+          id: t.id,
+          enabled: t.enabled,
+          readyState: t.readyState,
+          muted: t.muted
+        }))
+      });
       log.info('원격 스트림 수신', { userId }, 'VIDEO_SESSION');
 
       // Set first remote stream for subtitles and main video
@@ -923,11 +934,32 @@ export default function VideoSessionRoom() {
               const displayInitial = displayName.charAt(0).toUpperCase();
               const isGuest = !participant?.userName && !participant?.name && !partnerInfo?.name;
               
-              // 카메라 상태 확인 (participant의 videoEnabled 또는 스트림의 비디오 트랙 상태)
-              const isVideoEnabled = participant?.videoEnabled !== false && 
-                                    stream.getVideoTracks().some(track => track.enabled && track.readyState === 'live');
+              // 카메라 상태 확인 (스트림의 비디오 트랙 상태를 우선 확인)
+              // 비디오 트랙이 활성화되어 있으면 카메라가 켜져있는 것으로 간주
+              const hasVideoTracks = stream.getVideoTracks().length > 0;
+              const hasActiveVideoTrack = hasVideoTracks && 
+                stream.getVideoTracks().some(track => track.enabled && track.readyState === 'live');
+              
+              // 스트림 상태를 우선 확인
+              // 비디오 트랙이 활성화되어 있으면 participant 정보와 관계없이 카메라가 켜져있는 것으로 간주
+              // 비디오 트랙이 없거나 모두 비활성화되어 있으면 카메라가 꺼져있는 것으로 간주
+              const isVideoEnabled = hasActiveVideoTrack;
+              
               const isAudioEnabled = participant?.audioEnabled !== false && 
                                      stream.getAudioTracks().some(track => track.enabled && track.readyState === 'live');
+              
+              console.log(`🔍 [VideoSessionRoom] 참가자 ${userId} 비디오 상태:`, {
+                hasVideoTracks,
+                hasActiveVideoTrack,
+                isVideoEnabled,
+                participantVideoEnabled: participant?.videoEnabled,
+                streamId: stream.id,
+                videoTracks: stream.getVideoTracks().map(t => ({
+                  enabled: t.enabled,
+                  readyState: t.readyState,
+                  muted: t.muted
+                }))
+              });
               
               return (
                 <div
@@ -936,10 +968,37 @@ export default function VideoSessionRoom() {
                 >
                   <video
                     ref={(el) => {
-                      if (el && stream && !el.srcObject) {
-                        console.log(`🔗 [VideoSessionRoom] 참가자 ${userId} 스트림 연결`);
-                        el.srcObject = stream;
-                        el.play().catch(err => console.error('원격 비디오 재생 실패:', err));
+                      if (el && stream) {
+                        // 스트림이 변경되었거나 아직 연결되지 않은 경우에만 업데이트
+                        if (el.srcObject !== stream) {
+                          console.log(`🔗 [VideoSessionRoom] 참가자 ${userId} 스트림 연결`, {
+                            streamId: stream.id,
+                            videoTracks: stream.getVideoTracks().length,
+                            audioTracks: stream.getAudioTracks().length,
+                            videoTracksEnabled: stream.getVideoTracks().map(t => ({ 
+                              enabled: t.enabled, 
+                              readyState: t.readyState,
+                              muted: t.muted
+                            }))
+                          });
+                          el.srcObject = stream;
+                          
+                          // 비디오 재생 시도
+                          const playVideo = async () => {
+                            try {
+                              await el.play();
+                              console.log(`✅ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 시작`);
+                            } catch (err) {
+                              console.error(`❌ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 실패:`, err);
+                              // 메타데이터 로드 후 재시도
+                              el.addEventListener('loadedmetadata', () => {
+                                el.play().catch(e => console.error('재시도 실패:', e));
+                              }, { once: true });
+                            }
+                          };
+                          
+                          playVideo();
+                        }
                       }
                     }}
                     autoPlay

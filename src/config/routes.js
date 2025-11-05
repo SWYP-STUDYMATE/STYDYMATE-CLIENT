@@ -287,6 +287,18 @@ export const routes = [
     layout: true,
   },
   {
+    path: '/matching/requests/received',
+    component: MatchingMain,
+    type: ROUTE_TYPES.PROTECTED,
+    layout: true,
+  },
+  {
+    path: '/matching/requests/sent',
+    component: MatchingMain,
+    type: ROUTE_TYPES.PROTECTED,
+    layout: true,
+  },
+  {
     path: '/matching/profile/:userId',
     component: MatchingProfile,
     type: ROUTE_TYPES.PROTECTED,

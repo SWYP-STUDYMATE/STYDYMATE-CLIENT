@@ -22,11 +22,23 @@ export function useRealtimeTranscription({
 
   // 오디오 청크 처리
   const processAudioChunk = useCallback(async () => {
-    if (audioChunksRef.current.length === 0 || processingRef.current) return;
+    if (audioChunksRef.current.length === 0 || processingRef.current) {
+      if (audioChunksRef.current.length === 0) {
+        console.log('⏭️ [useRealtimeTranscription] 오디오 청크가 없어 처리 건너뜀');
+      }
+      return;
+    }
     
     processingRef.current = true;
     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    const blobSize = audioBlob.size;
     audioChunksRef.current = [];
+
+    console.log('📤 [useRealtimeTranscription] 오디오 청크 전송 시작', {
+      blobSize,
+      language,
+      apiUrl: `${API_URL}/api/v1/whisper/transcribe`
+    });
 
     try {
       const formData = new FormData();
@@ -41,11 +53,29 @@ export function useRealtimeTranscription({
         body: formData
       });
 
+      console.log('📥 [useRealtimeTranscription] API 응답 수신', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [useRealtimeTranscription] API 응답 실패', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
         throw new Error(`Transcription failed: ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('✅ [useRealtimeTranscription] 전사 결과 수신', {
+        hasText: !!result.text,
+        textLength: result.text?.length,
+        language: result.language,
+        confidence: result.confidence
+      });
       
       if (result.text && result.text.trim()) {
         const transcript = {
@@ -156,21 +186,37 @@ export function useRealtimeTranscription({
 
   // 전사 시작
   const startTranscription = useCallback(async (stream) => {
+    console.log('🎙️ [useRealtimeTranscription] startTranscription 호출됨', {
+      hasStream: !!stream,
+      streamId: stream?.id
+    });
+
     if (!stream) {
-      // 스트림이 없으면 조용히 반환 (에러 로그 없음)
+      console.warn('⚠️ [useRealtimeTranscription] 스트림이 없어 전사를 시작할 수 없습니다.');
       return;
     }
 
     // 오디오 트랙 상태 사전 확인
     const audioTracks = stream.getAudioTracks();
+    console.log('🎵 [useRealtimeTranscription] 오디오 트랙 확인', {
+      totalTracks: audioTracks.length,
+      enabledTracks: audioTracks.filter(t => t.enabled && t.readyState === 'live').length,
+      tracks: audioTracks.map(t => ({
+        id: t.id,
+        enabled: t.enabled,
+        readyState: t.readyState,
+        muted: t.muted
+      }))
+    });
+
     if (audioTracks.length === 0) {
-      // 오디오 트랙이 없으면 조용히 반환 (에러 로그 없음)
+      console.warn('⚠️ [useRealtimeTranscription] 오디오 트랙이 없어 전사를 시작할 수 없습니다.');
       return;
     }
 
     const enabledTracks = audioTracks.filter(track => track.enabled && track.readyState === 'live');
     if (enabledTracks.length === 0) {
-      // 오디오 트랙이 비활성화되어 있으면 조용히 반환 (에러 로그 없음)
+      console.warn('⚠️ [useRealtimeTranscription] 활성화된 오디오 트랙이 없어 전사를 시작할 수 없습니다. 오디오를 켜주세요.');
       return;
     }
 
@@ -195,6 +241,11 @@ export function useRealtimeTranscription({
 
       setIsTranscribing(true);
       log.info('실시간 전사 시작', { language, chunkDuration }, 'TRANSCRIPTION');
+      console.log('✅ [useRealtimeTranscription] 전사 시작 성공', {
+        recorderState: recorder.state,
+        language,
+        chunkDuration
+      });
 
     } catch (err) {
       // initializeRecorder에서 발생한 에러만 로깅 (오디오 트랙 관련 에러는 이미 위에서 처리됨)

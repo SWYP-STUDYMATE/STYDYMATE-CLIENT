@@ -43,11 +43,15 @@ export default function TranslatedSubtitles({
   } = useRealtimeTranscription({
     language: sourceLanguage,
     onTranscript: (transcript) => {
+      console.log('📝 [TranslatedSubtitles] 로컬 자막 수신:', transcript);
       setLocalSubtitle({
         text: transcript.text,
         speaker: 'local',
         language: transcript.language
       });
+    },
+    onError: (error) => {
+      console.error('❌ [TranslatedSubtitles] 로컬 전사 에러:', error);
     }
   });
 
@@ -59,11 +63,15 @@ export default function TranslatedSubtitles({
   } = useRealtimeTranscription({
     language: sourceLanguage,
     onTranscript: (transcript) => {
+      console.log('📝 [TranslatedSubtitles] 원격 자막 수신:', transcript);
       setRemoteSubtitle({
         text: transcript.text,
         speaker: 'remote',
         language: transcript.language
       });
+    },
+    onError: (error) => {
+      console.error('❌ [TranslatedSubtitles] 원격 전사 에러:', error);
     }
   });
 
@@ -135,13 +143,41 @@ export default function TranslatedSubtitles({
   // 스트림 변경 시 자동 시작
   useEffect(() => {
     if (localStream && !isLocalTranscribing) {
-      toggleLocalTranscription(localStream);
+      console.log('🎤 [TranslatedSubtitles] 로컬 스트림 자동 전사 시작 시도', {
+        streamId: localStream.id,
+        audioTracks: localStream.getAudioTracks().length,
+        audioTracksEnabled: localStream.getAudioTracks().filter(t => t.enabled && t.readyState === 'live').length
+      });
+      try {
+        await toggleLocalTranscription(localStream);
+        console.log('✅ [TranslatedSubtitles] 로컬 전사 시작 성공');
+      } catch (error) {
+        console.error('❌ [TranslatedSubtitles] 로컬 전사 시작 실패:', error);
+      }
+    } else if (!localStream) {
+      console.log('⏳ [TranslatedSubtitles] 로컬 스트림 대기 중');
+    } else if (isLocalTranscribing) {
+      console.log('ℹ️ [TranslatedSubtitles] 로컬 전사 이미 진행 중');
     }
   }, [localStream, isLocalTranscribing, toggleLocalTranscription]);
 
   useEffect(() => {
     if (remoteStream && !isRemoteTranscribing) {
-      toggleRemoteTranscription(remoteStream);
+      console.log('🎤 [TranslatedSubtitles] 원격 스트림 자동 전사 시작 시도', {
+        streamId: remoteStream.id,
+        audioTracks: remoteStream.getAudioTracks().length,
+        audioTracksEnabled: remoteStream.getAudioTracks().filter(t => t.enabled && t.readyState === 'live').length
+      });
+      try {
+        await toggleRemoteTranscription(remoteStream);
+        console.log('✅ [TranslatedSubtitles] 원격 전사 시작 성공');
+      } catch (error) {
+        console.error('❌ [TranslatedSubtitles] 원격 전사 시작 실패:', error);
+      }
+    } else if (!remoteStream) {
+      console.log('⏳ [TranslatedSubtitles] 원격 스트림 대기 중');
+    } else if (isRemoteTranscribing) {
+      console.log('ℹ️ [TranslatedSubtitles] 원격 전사 이미 진행 중');
     }
   }, [remoteStream, isRemoteTranscribing, toggleRemoteTranscription]);
 

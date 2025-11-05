@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Search,
     Users,
@@ -10,7 +10,8 @@ import {
     Target,
     ChevronRight,
     Filter,
-    Sparkles
+    Sparkles,
+    Inbox
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
 import MatchingProfileCard from '../../components/MatchingProfileCard';
@@ -22,6 +23,7 @@ import { getAIBestMatches } from '../../api/matching';
 
 export default function MatchingMain() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [activeTab, setActiveTab] = useState('recommended');
     const { showError, showSuccess, ToastContainer } = useToast();
     const [showFilters, setShowFilters] = useState(false);
@@ -38,9 +40,13 @@ export default function MatchingMain() {
         isSearching,
         matchingFilters,
         sentRequests,
+        receivedRequests,
         startMatching,
         fetchRecommendedPartners,
         fetchSentRequests,
+        fetchReceivedRequests,
+        acceptMatch,
+        rejectMatch,
         setMatchingFilters,
         searchPartners,
     } = useMatchingStore();
@@ -56,16 +62,31 @@ export default function MatchingMain() {
         }
     }, [fetchRecommendedPartners]);
 
+    // URL 경로에 따라 activeTab 설정
+    useEffect(() => {
+        const pathname = location.pathname;
+        if (pathname === '/matching/requests/received') {
+            setActiveTab('received');
+        } else if (pathname === '/matching/requests/sent') {
+            setActiveTab('sent');
+        } else if (pathname === '/matching') {
+            // /matching 경로는 기본적으로 추천 탭
+            // 검색 탭은 내부 상태로 관리되므로 URL 변경 시 추천으로 리셋
+            setActiveTab('recommended');
+        }
+    }, [location.pathname]);
+
     useEffect(() => {
         // 컴포넌트 마운트 시 추천 파트너 및 보낸 요청 목록 가져오기
         const initialize = async () => {
             await Promise.all([
                 loadRecommendedPartners(),
-                fetchSentRequests('pending') // pending 상태의 보낸 요청만 조회
+                fetchSentRequests('pending'), // pending 상태의 보낸 요청만 조회
+                fetchReceivedRequests('pending') // pending 상태의 받은 요청만 조회
             ]);
         };
         initialize();
-    }, [loadRecommendedPartners, fetchSentRequests]);
+    }, [loadRecommendedPartners, fetchSentRequests, fetchReceivedRequests]);
 
     // 디버깅: sentRequests 데이터 구조 확인
     useEffect(() => {
@@ -247,6 +268,36 @@ export default function MatchingMain() {
         }
     };
 
+    const handleAcceptRequest = async (requestId) => {
+        setIsLoading(true);
+        try {
+            await acceptMatch(requestId);
+            showSuccess('매칭 요청을 수락했습니다.');
+            // 받은 요청 목록 새로고침
+            await fetchReceivedRequests('pending');
+        } catch (error) {
+            console.error('Accept match request error:', error);
+            showError('요청 수락 중 오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRejectRequest = async (requestId) => {
+        setIsLoading(true);
+        try {
+            await rejectMatch(requestId);
+            showSuccess('매칭 요청을 거절했습니다.');
+            // 받은 요청 목록 새로고침
+            await fetchReceivedRequests('pending');
+        } catch (error) {
+            console.error('Reject match request error:', error);
+            showError('요청 거절 중 오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#FAFAFA]">
             {/* Header */}
@@ -287,7 +338,10 @@ export default function MatchingMain() {
             <div className="bg-white border-b border-[#E7E7E7] overflow-x-auto">
                 <div className="flex min-w-full">
                     <button
-                        onClick={() => setActiveTab('recommended')}
+                        onClick={() => {
+                            setActiveTab('recommended');
+                            navigate('/matching');
+                        }}
                         className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
                             activeTab === 'recommended'
                                 ? 'text-[#00C471] border-[#00C471]'
@@ -300,7 +354,10 @@ export default function MatchingMain() {
                         </div>
                     </button>
                     <button
-                        onClick={() => setActiveTab('sent')}
+                        onClick={() => {
+                            setActiveTab('sent');
+                            navigate('/matching/requests/sent');
+                        }}
                         className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
                             activeTab === 'sent'
                                 ? 'text-[#00C471] border-[#00C471]'
@@ -313,6 +370,27 @@ export default function MatchingMain() {
                             {sentRequests.length > 0 && (
                                 <span className="ml-1 px-1 sm:px-1.5 py-0.5 bg-[#00C471] text-white text-[9px] sm:text-[10px] rounded-full">
                                     {sentRequests.length}
+                                </span>
+                            )}
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveTab('received');
+                            navigate('/matching/requests/received');
+                        }}
+                        className={`flex-1 py-3 text-[12px] sm:text-[14px] font-medium border-b-2 transition-colors whitespace-nowrap touch-manipulation ${
+                            activeTab === 'received'
+                                ? 'text-[#00C471] border-[#00C471]'
+                                : 'text-[#929292] border-transparent'
+                        }`}
+                    >
+                        <div className="flex items-center justify-center space-x-1">
+                            <Inbox className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>받은 요청</span>
+                            {receivedRequests.length > 0 && (
+                                <span className="ml-1 px-1 sm:px-1.5 py-0.5 bg-[#00C471] text-white text-[9px] sm:text-[10px] rounded-full">
+                                    {receivedRequests.length}
                                 </span>
                             )}
                         </div>
@@ -567,6 +645,134 @@ export default function MatchingMain() {
                                     >
                                         파트너 찾기
                                     </CommonButton>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : activeTab === 'received' ? (
+                    // 받은 요청 탭
+                    <>
+                        <div className="mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-[18px] font-bold text-[#111111]">받은 매칭 요청</h2>
+                                <button
+                                    onClick={() => fetchReceivedRequests('pending')}
+                                    className="text-[14px] text-[#00C471] font-medium"
+                                    disabled={isLoading}
+                                >
+                                    새로고침
+                                </button>
+                            </div>
+
+                            {isLoading ? (
+                                <div className="text-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00C471] mx-auto mb-4"></div>
+                                    <p className="text-[14px] text-[#666666]">요청 목록을 불러오는 중...</p>
+                                </div>
+                            ) : receivedRequests.length > 0 ? (
+                                <div className="space-y-4">
+                                    {receivedRequests.map((request) => {
+                                        // 발신자 정보 추출 (받은 요청이므로 sender가 파트너)
+                                        const senderName = request.sender?.name || request.senderName || request.partner?.name || '파트너';
+                                        const senderImage = request.sender?.profileImageUrl || request.senderProfileImage || request.partner?.profileImageUrl || '/default-avatar.png';
+                                        const senderUserId = request.sender?.userId || request.senderId || request.partner?.userId;
+                                        
+                                        // 날짜 파싱 (안전하게 처리)
+                                        let dateDisplay = '날짜 정보 없음';
+                                        try {
+                                            if (request.createdAt) {
+                                                const date = new Date(request.createdAt);
+                                                if (!isNaN(date.getTime())) {
+                                                    dateDisplay = date.toLocaleDateString('ko-KR', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
+                                                    });
+                                                }
+                                            }
+                                        } catch (e) {
+                                            console.warn('날짜 파싱 실패:', request.createdAt);
+                                        }
+                                        
+                                        return (
+                                        <div
+                                            key={request.id || request.requestId}
+                                            className="bg-white rounded-[10px] p-4 border border-[#E7E7E7] hover:shadow-md transition-shadow"
+                                        >
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center flex-1">
+                                                    <img
+                                                        src={senderImage}
+                                                        alt={senderName}
+                                                        className="w-12 h-12 rounded-full object-cover mr-3 cursor-pointer hover:opacity-80 transition-opacity"
+                                                        onClick={() => handleViewProfile(senderUserId)}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <h3 
+                                                            className="text-[16px] font-bold text-[#111111] cursor-pointer hover:text-[#00C471] transition-colors"
+                                                            onClick={() => handleViewProfile(senderUserId)}
+                                                        >
+                                                            {senderName}
+                                                        </h3>
+                                                        <p className="text-[12px] text-[#929292]">
+                                                            {dateDisplay}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {request.status === 'pending' && (
+                                                    <span className="px-3 py-1 bg-[#E6F9F1] text-[#00C471] text-[12px] font-medium rounded-full ml-3">
+                                                        대기 중
+                                                    </span>
+                                                )}
+                                                {request.status === 'accepted' && (
+                                                    <span className="px-3 py-1 bg-[#E6F9F1] text-[#00C471] text-[12px] font-medium rounded-full ml-3">
+                                                        수락됨
+                                                    </span>
+                                                )}
+                                                {request.status === 'rejected' && (
+                                                    <span className="px-3 py-1 bg-[#F1F3F5] text-[#929292] text-[12px] font-medium rounded-full ml-3">
+                                                        거절됨
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {request.message && (
+                                                <div className="mt-3 p-3 bg-[#F1F3F5] rounded-lg mb-3">
+                                                    <p className="text-[14px] text-[#666666]">{request.message}</p>
+                                                </div>
+                                            )}
+                                            {request.status === 'pending' && (
+                                                <div className="flex space-x-2 mt-3">
+                                                    <CommonButton
+                                                        onClick={() => handleAcceptRequest(request.id || request.requestId)}
+                                                        variant="primary"
+                                                        className="flex-1"
+                                                        disabled={isLoading}
+                                                    >
+                                                        수락
+                                                    </CommonButton>
+                                                    <CommonButton
+                                                        onClick={() => handleRejectRequest(request.id || request.requestId)}
+                                                        variant="secondary"
+                                                        className="flex-1"
+                                                        disabled={isLoading}
+                                                    >
+                                                        거절
+                                                    </CommonButton>
+                                                </div>
+                                            )}
+                                        </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-[20px] p-8 border border-[#E7E7E7] text-center">
+                                    <Inbox className="w-12 h-12 text-[#929292] mx-auto mb-4" />
+                                    <h3 className="text-[16px] font-bold text-[#111111] mb-2">
+                                        받은 매칭 요청이 없습니다
+                                    </h3>
+                                    <p className="text-[14px] text-[#666666] mb-4">
+                                        다른 사용자가 당신에게 매칭 요청을 보내면 여기에 표시됩니다.
+                                    </p>
                                 </div>
                             )}
                         </div>
