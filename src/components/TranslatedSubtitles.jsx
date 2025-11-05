@@ -148,12 +148,14 @@ export default function TranslatedSubtitles({
         audioTracks: localStream.getAudioTracks().length,
         audioTracksEnabled: localStream.getAudioTracks().filter(t => t.enabled && t.readyState === 'live').length
       });
-      try {
-        await toggleLocalTranscription(localStream);
-        console.log('✅ [TranslatedSubtitles] 로컬 전사 시작 성공');
-      } catch (error) {
-        console.error('❌ [TranslatedSubtitles] 로컬 전사 시작 실패:', error);
-      }
+      (async () => {
+        try {
+          await toggleLocalTranscription(localStream);
+          console.log('✅ [TranslatedSubtitles] 로컬 전사 시작 성공');
+        } catch (error) {
+          console.error('❌ [TranslatedSubtitles] 로컬 전사 시작 실패:', error);
+        }
+      })();
     } else if (!localStream) {
       console.log('⏳ [TranslatedSubtitles] 로컬 스트림 대기 중');
     } else if (isLocalTranscribing) {
@@ -168,12 +170,14 @@ export default function TranslatedSubtitles({
         audioTracks: remoteStream.getAudioTracks().length,
         audioTracksEnabled: remoteStream.getAudioTracks().filter(t => t.enabled && t.readyState === 'live').length
       });
-      try {
-        await toggleRemoteTranscription(remoteStream);
-        console.log('✅ [TranslatedSubtitles] 원격 전사 시작 성공');
-      } catch (error) {
-        console.error('❌ [TranslatedSubtitles] 원격 전사 시작 실패:', error);
-      }
+      (async () => {
+        try {
+          await toggleRemoteTranscription(remoteStream);
+          console.log('✅ [TranslatedSubtitles] 원격 전사 시작 성공');
+        } catch (error) {
+          console.error('❌ [TranslatedSubtitles] 원격 전사 시작 실패:', error);
+        }
+      })();
     } else if (!remoteStream) {
       console.log('⏳ [TranslatedSubtitles] 원격 스트림 대기 중');
     } else if (isRemoteTranscribing) {
