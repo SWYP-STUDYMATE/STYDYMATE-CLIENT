@@ -441,6 +441,8 @@ export interface SessionCreatePayload {
     levelRequirement?: string;
     scheduledAt: string; // ISO string
     durationMinutes: number;
+    scheduledStartTime?: string; // ISO string - 세션 접속 가능 시작 시간
+    scheduledEndTime?: string; // ISO string - 세션 접속 가능 종료 시간
     maxParticipants?: number;
     isRecurring?: boolean;
     recurrencePattern?: string;
@@ -475,6 +477,8 @@ export interface SessionResponseType {
     levelRequirement?: string;
     scheduledAt: string;
     durationMinutes: number;
+    scheduledStartTime?: string;
+    scheduledEndTime?: string;
     maxParticipants?: number;
     currentParticipants: number;
     status: string;

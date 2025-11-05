@@ -913,12 +913,12 @@ export default function VideoSessionRoom() {
 
                   {/* Remote user status indicators */}
                   <div className="absolute top-4 right-4 flex items-center gap-2">
-                    {!participant.audioEnabled && (
+                    {participant && !participant.audioEnabled && (
                       <div className="bg-[rgba(234,67,53,0.8)] p-2 rounded-full">
                         <span className="text-white text-xs">🔇</span>
                       </div>
                     )}
-                    {participant.isScreenSharing && (
+                    {participant?.isScreenSharing && (
                       <div className="bg-[rgba(66,133,244,0.8)] p-2 rounded-full">
                         <Monitor className="w-4 h-4 text-white" />
                       </div>

@@ -831,7 +831,22 @@ export default function ProfilePage() {
             </ErrorBoundary>
 
             <ErrorBoundary fallback={null}>
-              <WeeklyActivityChart data={weeklyActivity} loading={statsLoading} error={statsError && typeof statsError === 'object' ? (statsError.message || statsError.error || String(statsError)) : (typeof statsError === 'string' ? statsError : null)} />
+              <WeeklyActivityChart 
+                data={weeklyActivity} 
+                loading={statsLoading} 
+                error={(() => {
+                  if (!statsError) return null;
+                  if (typeof statsError === 'string') return statsError;
+                  if (typeof statsError === 'object') {
+                    // 에러 객체에서 안전하게 메시지 추출
+                    const errorMsg = statsError.message || statsError.error || statsError.reason;
+                    if (typeof errorMsg === 'string' && errorMsg.trim()) return errorMsg;
+                    // toDisplayText를 사용하여 안전하게 변환
+                    return toDisplayText(statsError, null);
+                  }
+                  return null;
+                })()} 
+              />
             </ErrorBoundary>
 
             <ErrorBoundary fallback={null}>

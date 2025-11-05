@@ -161,19 +161,26 @@ export default function ProfileSearch({ onProfileSelect, className = '' }) {
       </div>
     </div>
 
-      {error && !isLoading && (
-        <div className="px-4 py-3 border-b border-[#FFE0E0] bg-[#FFF5F5] flex items-center gap-2 text-[#C53030] text-[14px]">
-          <AlertTriangle className="w-4 h-4" />
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={() => searchProfiles(debouncedQuery, filters)}
-            className="ml-auto text-[#8B0000] underline"
-          >
-            다시 시도
-          </button>
-        </div>
-      )}
+      {error && !isLoading && (() => {
+        // 안전하게 에러 메시지 추출
+        const errorMessage = typeof error === 'string' 
+          ? error 
+          : (error?.message || error?.error || '프로필 검색 중 오류가 발생했습니다.');
+        
+        return (
+          <div className="px-4 py-3 border-b border-[#FFE0E0] bg-[#FFF5F5] flex items-center gap-2 text-[#C53030] text-[14px]">
+            <AlertTriangle className="w-4 h-4" />
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => searchProfiles(debouncedQuery, filters)}
+              className="ml-auto text-[#8B0000] underline"
+            >
+              다시 시도
+            </button>
+          </div>
+        );
+      })()}
 
       {/* 필터 옵션 */}
       {isFilterOpen && (

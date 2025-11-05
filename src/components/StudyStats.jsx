@@ -132,10 +132,15 @@ const StudyStats = ({ data = null, loading = false, errorMessage = null }) => {
   }
 
   if (error) {
+    // 안전하게 에러 메시지 추출
+    const errorMessage = typeof error === 'string' 
+      ? error 
+      : (error?.message || error?.error || '학습 통계를 불러오지 못했습니다.');
+    
     return (
       <div className="grid grid-cols-1 gap-4">
         <div className="bg-white border border-[#E6F9F1] rounded-[10px] p-6 flex items-center justify-center min-h-[110px] sm:min-h-[150px]">
-          <p className="text-center text-[#929292] text-sm sm:text-base leading-[20px] sm:leading-[24px]">{error}</p>
+          <p className="text-center text-[#929292] text-sm sm:text-base leading-[20px] sm:leading-[24px]">{errorMessage}</p>
         </div>
       </div>
     );

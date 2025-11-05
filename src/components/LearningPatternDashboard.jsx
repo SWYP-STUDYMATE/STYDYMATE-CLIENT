@@ -43,10 +43,15 @@ const LearningPatternDashboard = ({ userId, monthsBack = 3 }) => {
   }
 
   if (error) {
+    // 안전하게 에러 메시지 추출
+    const errorMessage = typeof error === 'string' 
+      ? error 
+      : (error?.message || error?.error || '학습 패턴 분석을 불러오지 못했습니다.');
+    
     return (
       <div className="bg-[#FAFAFA] p-6 rounded-lg text-center">
         <div className="text-[#EA4335] mb-2">분석 실패</div>
-        <div className="text-sm text-[#929292]">{error}</div>
+        <div className="text-sm text-[#929292]">{errorMessage}</div>
       </div>
     );
   }

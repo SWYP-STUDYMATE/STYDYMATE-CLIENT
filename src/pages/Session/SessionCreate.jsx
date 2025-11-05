@@ -35,7 +35,9 @@ export default function SessionCreate() {
     language: 'ko', // 기본 언어
     isPrivate: false,
     allowRecording: true,
-    autoTranscription: false
+    autoTranscription: false,
+    scheduledStartTime: '', // 세션 시작 시간
+    scheduledEndTime: '' // 세션 종료 시간
   });
 
   // 매체 권한 확인 (버튼 클릭 시에만 요청)
@@ -138,7 +140,25 @@ export default function SessionCreate() {
         return;
       }
 
-      // 3. Workers API를 통한 룸 생성
+      // 3. 시간 검증
+      if (sessionConfig.scheduledStartTime && sessionConfig.scheduledEndTime) {
+        const startTime = new Date(sessionConfig.scheduledStartTime).getTime();
+        const endTime = new Date(sessionConfig.scheduledEndTime).getTime();
+
+        if (startTime >= endTime) {
+          setError('종료 시간은 시작 시간보다 나중이어야 합니다.');
+          setIsCreating(false);
+          return;
+        }
+
+        if (endTime - startTime < 5 * 60 * 1000) {
+          setError('세션은 최소 5분 이상이어야 합니다.');
+          setIsCreating(false);
+          return;
+        }
+      }
+
+      // 4. Workers API를 통한 룸 생성
       const roomData = await webrtcAPI.createRoom({
         roomType: sessionConfig.roomType,
         maxParticipants: sessionConfig.maxParticipants,
@@ -149,6 +169,8 @@ export default function SessionCreate() {
           isPrivate: sessionConfig.isPrivate,
           allowRecording: sessionConfig.allowRecording,
           autoTranscription: sessionConfig.autoTranscription,
+          scheduledStartTime: sessionConfig.scheduledStartTime || undefined,
+          scheduledEndTime: sessionConfig.scheduledEndTime || undefined,
           createdBy: localStorage.getItem('userId') || 'anonymous',
           hostName: localStorage.getItem('userName') || 'Host',
           createdByName: localStorage.getItem('userName') || 'Host',
@@ -458,7 +480,7 @@ export default function SessionCreate() {
                   <select
                     value={sessionConfig.maxParticipants}
                     onChange={(e) => handleConfigChange('maxParticipants', parseInt(e.target.value))}
-                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg 
+                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
                              focus:border-[var(--black-500)] focus:outline-none text-[16px] appearance-none"
                   >
                     {[2, 3, 4, 5, 6, 7, 8].map(num => (
@@ -477,7 +499,7 @@ export default function SessionCreate() {
                   <select
                     value={sessionConfig.language}
                     onChange={(e) => handleConfigChange('language', e.target.value)}
-                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg 
+                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
                              focus:border-[var(--black-500)] focus:outline-none text-[16px] appearance-none"
                   >
                     <option value="ko">한국어</option>
@@ -491,6 +513,49 @@ export default function SessionCreate() {
                 </div>
               </div>
             </div>
+
+            {/* 세션 시간 설정 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
+                  시작 시간
+                </label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
+                  <input
+                    type="datetime-local"
+                    value={sessionConfig.scheduledStartTime}
+                    onChange={(e) => handleConfigChange('scheduledStartTime', e.target.value)}
+                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
+                             focus:border-[var(--black-500)] focus:outline-none text-[16px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
+                  종료 시간
+                </label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
+                  <input
+                    type="datetime-local"
+                    value={sessionConfig.scheduledEndTime}
+                    onChange={(e) => handleConfigChange('scheduledEndTime', e.target.value)}
+                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
+                             focus:border-[var(--black-500)] focus:outline-none text-[16px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {sessionConfig.scheduledStartTime && sessionConfig.scheduledEndTime && (
+              <div className="bg-[var(--green-50)] rounded-lg p-3">
+                <p className="text-[12px] text-[var(--black-400)]">
+                  세션은 {sessionConfig.scheduledStartTime}부터 {sessionConfig.scheduledEndTime}까지 접속 가능합니다.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

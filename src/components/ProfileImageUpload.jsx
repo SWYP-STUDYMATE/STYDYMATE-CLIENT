@@ -223,11 +223,18 @@ export default function ProfileImageUpload({ isOpen, onClose }) {
         )}
 
         {/* 에러 메시지 */}
-        {error && (
-          <div className="mt-4 p-3 bg-[#FEE2E2] border border-[#FCA5A5] rounded-[12px]">
-            <p className="text-[14px] text-[#DC2626]">{error}</p>
-          </div>
-        )}
+        {error && (() => {
+          // 안전하게 에러 메시지 추출
+          const errorMessage = typeof error === 'string' 
+            ? error 
+            : (error?.message || error?.error || '업로드 중 오류가 발생했습니다.');
+          
+          return (
+            <div className="mt-4 p-3 bg-[#FEE2E2] border border-[#FCA5A5] rounded-[12px]">
+              <p className="text-[14px] text-[#DC2626]">{errorMessage}</p>
+            </div>
+          );
+        })()}
 
         {/* 업로드 진행률 */}
         {isUploading && (

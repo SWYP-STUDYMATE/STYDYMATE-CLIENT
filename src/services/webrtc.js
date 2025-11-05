@@ -943,13 +943,26 @@ class WebRTCConnectionManager {
         console.log('✅ [WebRTC] ICE gathering 완료 (null/empty candidate string)');
         return;
       }
-      
+
+      // ICE candidate 문자열 검증
+      const candidateStr = candidate.candidate || '';
+
+      // TCP candidate with port 9 필터링 (잘못된 형식)
+      if (candidateStr.includes('tcp') && candidateStr.includes(' 9 typ ')) {
+        console.warn('⚠️ [WebRTC] Invalid TCP candidate with port 9 skipped:', candidateStr.substring(0, 80));
+        return;
+      }
+
+      // 필수 필드 검증
+      if (!candidateStr.includes('candidate:')) {
+        console.warn('⚠️ [WebRTC] Invalid candidate format (missing candidate: prefix):', candidateStr.substring(0, 80));
+        return;
+      }
+
       // sdpMid와 sdpMLineIndex가 모두 null이면 기본값 설정 시도
       if (candidate.sdpMid === null && candidate.sdpMLineIndex === null) {
         console.warn('⚠️ [WebRTC] sdpMid와 sdpMLineIndex가 모두 null, 기본값 설정 시도');
         // SDP에서 m-line 인덱스 추정 시도 (보수적 접근)
-        // candidate 문자열에서 "m=" 라인 번호 확인
-        const candidateStr = candidate.candidate || '';
         if (candidateStr.includes('audio')) {
           candidate.sdpMLineIndex = 0;
           candidate.sdpMid = '0';
@@ -962,9 +975,17 @@ class WebRTCConnectionManager {
           candidate.sdpMid = '0';
         }
       }
-      
-      // RTCIceCandidate 생성 및 추가
-      await pc.addIceCandidate(new RTCIceCandidate(candidate));
+
+      // RTCIceCandidate 생성 및 추가 (try-catch로 개별 candidate 오류 처리)
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (candidateError) {
+        console.warn('⚠️ [WebRTC] Failed to add ICE candidate (skipping):', {
+          error: candidateError.message,
+          candidate: candidateStr.substring(0, 80)
+        });
+        return;
+      }
       console.log('✅ [WebRTC] ICE candidate 추가 성공:', { 
         from, 
         candidate: candidate.candidate?.substring(0, 50),

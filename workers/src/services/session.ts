@@ -410,6 +410,8 @@ interface SessionRow {
   level_requirement: string | null;
   scheduled_at: string;
   duration_minutes: number;
+  scheduled_start_time: string | null;
+  scheduled_end_time: string | null;
   max_participants: number | null;
   current_participants: number | null;
   status: string;
@@ -484,6 +486,9 @@ function mapSessionRow(row: any, currentUserId?: string): SessionResponseType {
   const startDate = scheduledAt ? new Date(scheduledAt) : null;
   const startedAt = row.started_at ?? undefined;
   const endedAt = row.ended_at ?? undefined;
+  const scheduledStartTime = row.scheduled_start_time ?? undefined;
+  const scheduledEndTime = row.scheduled_end_time ?? undefined;
+  const now = Date.now();
 
   let canJoin: boolean | undefined;
   let isHost: boolean | undefined;
@@ -491,9 +496,19 @@ function mapSessionRow(row: any, currentUserId?: string): SessionResponseType {
   if (currentUserId) {
     isHost = row.host_user_id === currentUserId;
     isParticipant = row.guest_user_id === currentUserId;
+
+    // 시간 기반 접속 가능 여부 검증
+    let isWithinTimeWindow = true;
+    if (scheduledStartTime && scheduledEndTime) {
+      const startTime = new Date(scheduledStartTime).getTime();
+      const endTime = new Date(scheduledEndTime).getTime();
+      isWithinTimeWindow = now >= startTime && now <= endTime;
+    }
+
     canJoin =
       row.status === SESSION_STATUS.SCHEDULED &&
       !isHost &&
+      isWithinTimeWindow &&
       Number(row.current_participants ?? 0) < Number(row.max_participants ?? 1);
   }
 
@@ -513,6 +528,8 @@ function mapSessionRow(row: any, currentUserId?: string): SessionResponseType {
     levelRequirement: row.level_requirement ?? undefined,
     scheduledAt: scheduledAt,
     durationMinutes: duration,
+    scheduledStartTime: scheduledStartTime,
+    scheduledEndTime: scheduledEndTime,
     maxParticipants: row.max_participants !== null ? Number(row.max_participants) : undefined,
     currentParticipants: Number(row.current_participants ?? 0),
     status: row.status,
@@ -597,6 +614,8 @@ export async function createSession(
   const sessionType = payload.sessionType ?? payload.sessionType ?? 'VIDEO';
   const scheduledAt = payload.scheduledAt;
   const durationMinutes = payload.durationMinutes ?? payload.duration ?? 30;
+  const scheduledStartTime = payload.scheduledStartTime ?? null;
+  const scheduledEndTime = payload.scheduledEndTime ?? null;
   const maxParticipants = payload.maxParticipants ?? (payload.partnerId ? 2 : 1);
   const isPublic = payload.isPublic ?? !payload.partnerId;
   const languageCode = payload.languageCode ?? payload.language ?? null;
@@ -626,6 +645,8 @@ export async function createSession(
         level_requirement,
         scheduled_at,
         duration_minutes,
+        scheduled_start_time,
+        scheduled_end_time,
         max_participants,
         current_participants,
         status,
@@ -639,7 +660,7 @@ export async function createSession(
         preparation_notes,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       hostUserId,
@@ -652,6 +673,8 @@ export async function createSession(
       payload.levelRequirement ?? null,
       scheduledAt,
       durationMinutes,
+      scheduledStartTime,
+      scheduledEndTime,
       maxParticipants,
       SESSION_STATUS.SCHEDULED,
       meetingUrl,

@@ -124,13 +124,18 @@ export default function WeeklyActivityChart({
     }
 
     if (error) {
+        // 안전하게 에러 메시지 추출
+        const errorMessage = typeof error === 'string' 
+            ? error 
+            : (error?.message || error?.error || '주간 활동 데이터를 불러오지 못했습니다.');
+        
         return (
             <div className="bg-white rounded-[20px] p-6 border border-[var(--black-50)]">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[18px] font-bold text-[var(--black-500)]">주간 활동</h3>
                     <span className="text-[12px] text-[var(--black-200)]">이번 주</span>
                 </div>
-                <p className="text-[14px] text-[var(--black-300)]">주간 활동 데이터를 불러오지 못했습니다.</p>
+                <p className="text-[14px] text-[var(--black-300)]">{errorMessage}</p>
             </div>
         );
     }
