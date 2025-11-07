@@ -22,6 +22,14 @@ async function processAudioChunk(
     options: WhisperOptions = {}
 ): Promise<WhisperResponse> {
     try {
+        console.log('🎙️ [AI Service] Whisper 청크 처리 시작', {
+            chunkSize: audioChunk.byteLength,
+            chunkSizeKB: Math.round(audioChunk.byteLength / 1024),
+            task: options.task || 'transcribe',
+            language: options.language || 'auto',
+            vadFilter: options.vad_filter !== false
+        });
+
         const response = await ai.run('@cf/openai/whisper-large-v3-turbo', {
             audio: [...new Uint8Array(audioChunk)] as any,
             task: options.task || 'transcribe',
@@ -31,9 +39,26 @@ async function processAudioChunk(
             prefix: options.prefix
         });
 
+        console.log('✅ [AI Service] Whisper 응답 수신', {
+            hasText: !!response.text,
+            textLength: response.text?.length,
+            wordCount: response.word_count
+        });
+
         return response;
     } catch (error) {
-        log.error('Whisper chunk processing error', error as Error, { component: 'AI_SERVICE' });
+        console.error('❌ [AI Service] Whisper 청크 처리 실패', {
+            error: error instanceof Error ? error.message : String(error),
+            errorName: error instanceof Error ? error.name : 'Unknown',
+            errorStack: error instanceof Error ? error.stack : undefined,
+            chunkSize: audioChunk.byteLength,
+            options
+        });
+        log.error('Whisper chunk processing error', error as Error, {
+            component: 'AI_SERVICE',
+            chunkSize: audioChunk.byteLength,
+            options
+        });
         return { text: '[Error transcribing chunk]', word_count: 0 };
     }
 }

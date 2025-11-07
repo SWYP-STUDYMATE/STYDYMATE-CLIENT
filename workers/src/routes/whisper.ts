@@ -17,14 +17,27 @@ app.post('/transcribe', async (c) => {
         let audioBuffer: ArrayBuffer;
         let options: WhisperOptions = {};
 
+        console.log('📥 [Whisper Route] 전사 요청 수신', {
+            contentType,
+            hasAI: !!c.env.AI
+        });
+
         if (contentType?.includes('multipart/form-data')) {
             // FormData로 오디오 파일과 옵션 받기
             const formData = await c.req.formData();
             const audioFile = formData.get('audio') as File | null;
 
             if (!audioFile) {
+                console.error('❌ [Whisper Route] 오디오 파일이 제공되지 않음');
                 return c.json({ error: 'No audio file provided' }, 400);
             }
+
+            console.log('📦 [Whisper Route] FormData 파싱 완료', {
+                fileName: audioFile.name,
+                fileType: audioFile.type,
+                fileSize: audioFile.size,
+                fileSizeKB: Math.round(audioFile.size / 1024)
+            });
 
             audioBuffer = await audioFile.arrayBuffer();
 
@@ -42,6 +55,8 @@ app.post('/transcribe', async (c) => {
                 initial_prompt: initialPrompt,
                 prefix: prefix
             };
+
+            console.log('⚙️ [Whisper Route] 전사 옵션', options);
         } else if (contentType?.includes('application/json')) {
             // JSON으로 base64 오디오 받기
             const body = await c.req.json<{
@@ -50,6 +65,7 @@ app.post('/transcribe', async (c) => {
             }>();
 
             if (!body.audio) {
+                console.error('❌ [Whisper Route] 오디오 데이터가 제공되지 않음');
                 return c.json({ error: 'No audio data provided' }, 400);
             }
 
@@ -61,18 +77,47 @@ app.post('/transcribe', async (c) => {
             }
             audioBuffer = bytes.buffer;
             options = body.options || {};
+
+            console.log('📦 [Whisper Route] JSON base64 파싱 완료', {
+                audioSizeKB: Math.round(audioBuffer.byteLength / 1024),
+                options
+            });
         } else {
             // 직접 바이너리 데이터
             audioBuffer = await c.req.arrayBuffer();
+            console.log('📦 [Whisper Route] 바이너리 데이터 수신', {
+                audioSizeKB: Math.round(audioBuffer.byteLength / 1024)
+            });
         }
 
         // 파일 크기 확인 (최대 25MB)
         if (audioBuffer.byteLength > 25 * 1024 * 1024) {
+            console.error('❌ [Whisper Route] 오디오 파일이 너무 큼', {
+                sizeMB: Math.round(audioBuffer.byteLength / (1024 * 1024))
+            });
             return c.json({ error: 'Audio file too large. Maximum size is 25MB' }, 400);
         }
 
+        // 빈 오디오 체크
+        if (audioBuffer.byteLength === 0) {
+            console.error('❌ [Whisper Route] 빈 오디오 데이터');
+            return c.json({ error: 'Empty audio data provided' }, 400);
+        }
+
+        console.log('🚀 [Whisper Route] AI 처리 시작', {
+            audioSizeKB: Math.round(audioBuffer.byteLength / 1024),
+            willChunk: audioBuffer.byteLength > 1024 * 1024
+        });
+
         // Whisper 처리
         const result = await processAudio(c.env.AI, audioBuffer, options);
+
+        console.log('✅ [Whisper Route] AI 처리 완료', {
+            hasText: !!result.text,
+            textLength: result.text?.length,
+            wordCount: result.word_count,
+            chunks: result.chunks
+        });
 
         // 응답
         return c.json({
@@ -86,6 +131,11 @@ app.post('/transcribe', async (c) => {
         });
 
     } catch (error) {
+        console.error('❌ [Whisper Route] 전사 실패', {
+            error: error instanceof Error ? error.message : String(error),
+            errorName: error instanceof Error ? error.name : 'Unknown',
+            errorStack: error instanceof Error ? error.stack : undefined
+        });
         log.error('Transcription error', error as Error, { component: 'WHISPER_SERVICE' });
         return c.json({
             error: 'Transcription failed',

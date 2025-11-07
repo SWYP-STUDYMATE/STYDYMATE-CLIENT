@@ -90,10 +90,6 @@ export default function VideoSessionRoom() {
   // Attach local stream to video element when both are available
   useEffect(() => {
     if (!localStream || !localVideoRef.current) {
-      console.log('⏳ [VideoSessionRoom] useEffect: 로컬 스트림 또는 비디오 요소 대기 중', {
-        hasStream: !!localStream,
-        hasVideoRef: !!localVideoRef.current
-      });
       return;
     }
 
@@ -101,11 +97,10 @@ export default function VideoSessionRoom() {
     
     // 이미 같은 스트림이 연결되어 있으면 중복 연결 방지
     if (videoElement.srcObject === localStream) {
-      console.log('ℹ️ [VideoSessionRoom] useEffect: 이미 같은 스트림이 연결되어 있음');
       return;
     }
 
-    console.log('🔄 [VideoSessionRoom] useEffect: 로컬 스트림을 비디오 요소에 연결', {
+    console.log('🔄 [VideoSessionRoom] 로컬 스트림 연결', {
       streamId: localStream.id,
       videoTracks: localStream.getVideoTracks().length,
       audioTracks: localStream.getAudioTracks().length
@@ -128,42 +123,14 @@ export default function VideoSessionRoom() {
     
     if (playPromise !== undefined) {
       playPromise
-        .then(() => {
-          console.log('✅ [VideoSessionRoom] useEffect: 로컬 비디오 재생 시작');
-
-          // 최종 상태 로그 (비디오 메타데이터 로드 대기)
-          const handleLoadedMetadata = () => {
-            console.log('🎥 [VideoSessionRoom] useEffect: 로컬 비디오 최종 상태:', {
-              hasStream: !!videoElement.srcObject,
-              videoWidth: videoElement.videoWidth,
-              videoHeight: videoElement.videoHeight,
-              paused: videoElement.paused,
-              readyState: videoElement.readyState,
-              muted: videoElement.muted
-            });
-          };
-          
-          if (videoElement.readyState >= 2) {
-            // 이미 메타데이터가 로드된 경우
-            handleLoadedMetadata();
-          } else {
-            videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-          }
-        })
         .catch((error) => {
-          console.error('❌ [VideoSessionRoom] useEffect: 로컬 비디오 재생 실패:', error);
-          console.error('❌ [VideoSessionRoom] 에러 상세:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          });
+          console.error('❌ [VideoSessionRoom] 로컬 비디오 재생 실패:', error);
         });
     }
 
     // 클린업 함수
     return () => {
       if (videoElement.srcObject === localStream) {
-        console.log('🧹 [VideoSessionRoom] useEffect: 로컬 비디오 연결 정리');
         videoElement.srcObject = null;
       }
     };
@@ -180,16 +147,12 @@ export default function VideoSessionRoom() {
       return;
     }
 
-    console.log('🔄 [VideoSessionRoom] useEffect: 원격 스트림을 비디오 요소에 연결');
     remoteVideoRef.current.srcObject = remoteStream;
 
     // 원격 비디오 재생 (자동 재생)
     remoteVideoRef.current.play()
-      .then(() => {
-        console.log('✅ [VideoSessionRoom] useEffect: 원격 비디오 재생 시작');
-      })
       .catch((error) => {
-        console.error('❌ [VideoSessionRoom] useEffect: 원격 비디오 재생 실패:', error);
+        console.error('❌ [VideoSessionRoom] 원격 비디오 재생 실패:', error);
       });
   }, [remoteStream]);
 
@@ -1028,19 +991,6 @@ export default function VideoSessionRoom() {
               const isAudioEnabled = participant?.audioEnabled !== false && 
                                      stream.getAudioTracks().some(track => track.enabled && track.readyState === 'live');
               
-              console.log(`🔍 [VideoSessionRoom] 참가자 ${userId} 비디오 상태:`, {
-                hasVideoTracks,
-                hasActiveVideoTrack,
-                isVideoEnabled,
-                participantVideoEnabled: participant?.videoEnabled,
-                streamId: stream.id,
-                videoTracks: stream.getVideoTracks().map(t => ({
-                  enabled: t.enabled,
-                  readyState: t.readyState,
-                  muted: t.muted
-                }))
-              });
-              
               return (
                 <div
                   key={userId}
@@ -1051,34 +1001,21 @@ export default function VideoSessionRoom() {
                       if (el && stream) {
                         // 스트림이 변경되었거나 아직 연결되지 않은 경우에만 업데이트
                         if (el.srcObject !== stream) {
-                          console.log(`🔗 [VideoSessionRoom] 참가자 ${userId} 스트림 연결`, {
-                            streamId: stream.id,
-                            videoTracks: stream.getVideoTracks().length,
-                            audioTracks: stream.getAudioTracks().length,
-                            videoTracksEnabled: stream.getVideoTracks().map(t => ({ 
-                              enabled: t.enabled, 
-                              readyState: t.readyState,
-                              muted: t.muted
-                            }))
-                          });
                           el.srcObject = stream;
                           
                           // 비디오 재생 시도
                           const playVideo = async () => {
                             try {
                               await el.play();
-                              console.log(`✅ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 시작`);
                             } catch (err) {
                               console.error(`❌ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 실패:`, err);
                               // 메타데이터 로드 후 재시도
                               el.addEventListener('loadedmetadata', () => {
-                                console.log(`📹 [VideoSessionRoom] 참가자 ${userId} 비디오 메타데이터 로드 완료`);
                                 el.play().catch(e => console.error('재시도 실패:', e));
                               }, { once: true });
                               
                               // canplay 이벤트로도 재시도
                               el.addEventListener('canplay', () => {
-                                console.log(`▶️ [VideoSessionRoom] 참가자 ${userId} 비디오 재생 가능`);
                                 el.play().catch(e => console.error('canplay 재시도 실패:', e));
                               }, { once: true });
                             }
@@ -1088,7 +1025,6 @@ export default function VideoSessionRoom() {
                         } else {
                           // 이미 같은 스트림이 연결되어 있으면 재생 상태 확인
                           if (el.paused) {
-                            console.log(`⏸️ [VideoSessionRoom] 참가자 ${userId} 비디오가 일시정지 상태, 재생 시도`);
                             el.play().catch(err => console.error('일시정지 상태 재생 실패:', err));
                           }
                         }

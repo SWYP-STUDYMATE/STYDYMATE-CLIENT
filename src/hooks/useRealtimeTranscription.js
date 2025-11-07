@@ -60,13 +60,25 @@ export function useRealtimeTranscription({
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        let errorDetails;
+        try {
+          errorDetails = await response.json();
+        } catch {
+          errorDetails = await response.text();
+        }
+
         console.error('❌ [useRealtimeTranscription] API 응답 실패', {
           status: response.status,
           statusText: response.statusText,
-          errorText
+          errorDetails,
+          headers: Object.fromEntries(response.headers.entries())
         });
-        throw new Error(`Transcription failed: ${response.statusText}`);
+
+        const errorMessage = typeof errorDetails === 'object'
+          ? (errorDetails.message || errorDetails.error || response.statusText)
+          : errorDetails;
+
+        throw new Error(`Transcription failed: ${errorMessage}`);
       }
 
       const result = await response.json();
@@ -109,6 +121,14 @@ export function useRealtimeTranscription({
         }, 4000);
       }
     } catch (err) {
+      console.error('❌ [useRealtimeTranscription] 청크 처리 중 예외 발생', {
+        errorName: err?.name,
+        errorMessage: err?.message,
+        errorStack: err?.stack,
+        blobSize,
+        language
+      });
+
       const errorMessage = err.message || '자막 생성 중 오류가 발생했습니다.';
       setError(errorMessage);
       if (onError) {
