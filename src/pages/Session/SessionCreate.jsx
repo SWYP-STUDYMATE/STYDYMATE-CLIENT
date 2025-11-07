@@ -25,6 +25,15 @@ export default function SessionCreate() {
   const [createdRoom, setCreatedRoom] = useState(null);
   const [error, setError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [mediaPermissions, setMediaPermissions] = useState({
+    audio: null,
+    video: null,
+    checked: false
+  });
+
+  // 임시 시간 상태 (확인 전)
+  const [tempStartTime, setTempStartTime] = useState('');
+  const [tempEndTime, setTempEndTime] = useState('');
 
   // 세션 설정
   const [sessionConfig, setSessionConfig] = useState({
@@ -40,6 +49,34 @@ export default function SessionCreate() {
     scheduledEndTime: '' // 세션 종료 시간
   });
 
+  // 시간을 30분 단위로 반올림하는 함수
+  const roundTo30Minutes = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    
+    const date = new Date(dateTimeString);
+    const minutes = date.getMinutes();
+    const roundedMinutes = Math.round(minutes / 30) * 30;
+    
+    date.setMinutes(roundedMinutes);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    
+    // 만약 60분이 되면 시간을 올림
+    if (date.getMinutes() === 60) {
+      date.setMinutes(0);
+      date.setHours(date.getHours() + 1);
+    }
+    
+    // datetime-local 형식으로 변환
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  };
+
   // 현재 시간을 30분 단위로 반올림한 ISO 형식으로 반환
   const getRoundedCurrentTime = () => {
     const now = new Date();
@@ -49,6 +86,12 @@ export default function SessionCreate() {
     roundedTime.setMinutes(roundedMinutes);
     roundedTime.setSeconds(0);
     roundedTime.setMilliseconds(0);
+    
+    // 만약 60분이 되면 시간을 올림
+    if (roundedTime.getMinutes() === 60) {
+      roundedTime.setMinutes(0);
+      roundedTime.setHours(roundedTime.getHours() + 1);
+    }
     
     // ISO 형식을 datetime-local 형식으로 변환 (YYYY-MM-DDTHH:mm)
     const year = roundedTime.getFullYear();
@@ -62,22 +105,121 @@ export default function SessionCreate() {
 
   // 시작 시간을 기반으로 종료 시간의 최소값 계산
   const getMinEndTime = () => {
-    if (!sessionConfig.scheduledStartTime) {
+    const startTime = tempStartTime || sessionConfig.scheduledStartTime;
+    if (!startTime) {
       return getRoundedCurrentTime();
     }
     
-    const startTime = new Date(sessionConfig.scheduledStartTime);
+    const startDate = new Date(startTime);
     // 시작 시간에 30분 추가
-    startTime.setMinutes(startTime.getMinutes() + 30);
+    startDate.setMinutes(startDate.getMinutes() + 30);
     
-    const year = startTime.getFullYear();
-    const month = String(startTime.getMonth() + 1).padStart(2, '0');
-    const day = String(startTime.getDate()).padStart(2, '0');
-    const hours = String(startTime.getHours()).padStart(2, '0');
-    const mins = String(startTime.getMinutes()).padStart(2, '0');
+    const year = startDate.getFullYear();
+    const month = String(startDate.getMonth() + 1).padStart(2, '0');
+    const day = String(startDate.getDate()).padStart(2, '0');
+    const hours = String(startDate.getHours()).padStart(2, '0');
+    const mins = String(startDate.getMinutes()).padStart(2, '0');
     
     return `${year}-${month}-${day}T${hours}:${mins}`;
   };
+
+  // 시작 시간을 기반으로 종료 시간의 최대값 계산 (2시간)
+  const getMaxEndTime = () => {
+    const startTime = tempStartTime || sessionConfig.scheduledStartTime;
+    if (!startTime) {
+      return '';
+    }
+    
+    const startDate = new Date(startTime);
+    // 시작 시간에 2시간 추가
+    startDate.setHours(startDate.getHours() + 2);
+    
+    const year = startDate.getFullYear();
+    const month = String(startDate.getMonth() + 1).padStart(2, '0');
+    const day = String(startDate.getDate()).padStart(2, '0');
+    const hours = String(startDate.getHours()).padStart(2, '0');
+    const mins = String(startDate.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  };
+
+  // 시간 선택 확인 버튼 핸들러
+  const handleConfirmTime = () => {
+    // 시작 시간이 없으면 기존 설정된 시간 사용
+    const startTimeToUse = tempStartTime || sessionConfig.scheduledStartTime;
+    
+    if (!startTimeToUse) {
+      setError('시작 시간을 선택해주세요.');
+      return;
+    }
+
+    // 시작 시간을 30분 단위로 반올림
+    const roundedStartTime = roundTo30Minutes(startTimeToUse);
+    
+    // 시작 시간이 현재 시간보다 이전인지 확인
+    const startDate = new Date(roundedStartTime);
+    const now = new Date();
+    if (startDate <= now) {
+      setError('시작 시간은 현재 시간 이후로 선택해주세요.');
+      return;
+    }
+
+    // 종료 시간이 선택된 경우
+    const endTimeToUse = tempEndTime || sessionConfig.scheduledEndTime;
+    if (endTimeToUse) {
+      const roundedEndTime = roundTo30Minutes(endTimeToUse);
+      const endDate = new Date(roundedEndTime);
+      
+      // 종료 시간이 시작 시간보다 이전인지 확인
+      if (endDate <= startDate) {
+        setError('종료 시간은 시작 시간보다 30분 이상 이후로 선택해주세요.');
+        return;
+      }
+
+      // 최소 30분 이상인지 확인
+      const duration = endDate.getTime() - startDate.getTime();
+      if (duration < 30 * 60 * 1000) {
+        setError('세션은 최소 30분 이상이어야 합니다.');
+        return;
+      }
+
+      // 최대 2시간(120분) 이하인지 확인
+      if (duration > 120 * 60 * 1000) {
+        setError('세션은 최대 2시간까지만 가능합니다.');
+        return;
+      }
+
+      setSessionConfig(prev => ({
+        ...prev,
+        scheduledStartTime: roundedStartTime,
+        scheduledEndTime: roundedEndTime
+      }));
+    } else {
+      // 종료 시간이 선택되지 않은 경우 시작 시간만 저장
+      setSessionConfig(prev => ({
+        ...prev,
+        scheduledStartTime: roundedStartTime,
+        scheduledEndTime: ''
+      }));
+    }
+
+    // 임시 상태 초기화
+    setTempStartTime('');
+    setTempEndTime('');
+    setError('');
+  };
+
+  // 시간 선택 취소 버튼 핸들러
+  const handleCancelTime = () => {
+    setTempStartTime('');
+    setTempEndTime('');
+    setError('');
+  };
+
+  // 컴포넌트 마운트 시 권한 확인
+  useEffect(() => {
+    checkMediaPermissions();
+  }, []);
 
   // 선택한 세션 타입에 따라 권한 상태 표시용으로만 사용
   const checkMediaPermissions = async () => {
@@ -183,8 +325,16 @@ export default function SessionCreate() {
           return;
         }
 
-        if (endTime - startTime < 5 * 60 * 1000) {
-          setError('세션은 최소 5분 이상이어야 합니다.');
+        const duration = endTime - startTime;
+        
+        if (duration < 30 * 60 * 1000) {
+          setError('세션은 최소 30분 이상이어야 합니다.');
+          setIsCreating(false);
+          return;
+        }
+
+        if (duration > 120 * 60 * 1000) {
+          setError('세션은 최대 2시간까지만 가능합니다.');
           setIsCreating(false);
           return;
         }
@@ -569,57 +719,199 @@ export default function SessionCreate() {
             </div>
 
             {/* 세션 시간 설정 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
-                  시작 시간
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
-                  <input
-                    type="datetime-local"
-                    value={sessionConfig.scheduledStartTime}
-                    onChange={(e) => handleConfigChange('scheduledStartTime', e.target.value)}
-                    min={getRoundedCurrentTime()}
-                    step="1800"
-                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
-                             focus:border-[var(--black-500)] focus:outline-none text-[16px]"
-                  />
-                </div>
-                <p className="text-[12px] text-[var(--black-200)] mt-1">30분 단위로 선택 가능</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[14px] font-medium text-[var(--black-500)]">세션 시간</h3>
+                {(tempStartTime || tempEndTime) && (
+                  <span className="text-[12px] text-[var(--black-300)]">
+                    변경사항이 있습니다
+                  </span>
+                )}
               </div>
 
-              <div>
-                <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
-                  종료 시간
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
-                  <input
-                    type="datetime-local"
-                    value={sessionConfig.scheduledEndTime}
-                    onChange={(e) => handleConfigChange('scheduledEndTime', e.target.value)}
-                    min={getMinEndTime()}
-                    step="1800"
-                    disabled={!sessionConfig.scheduledStartTime}
-                    className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
-                             focus:border-[var(--black-500)] focus:outline-none text-[16px]
-                             disabled:bg-[var(--black-50)] disabled:cursor-not-allowed"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
+                    시작 시간
+                  </label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
+                    <input
+                      type="datetime-local"
+                      value={tempStartTime || sessionConfig.scheduledStartTime}
+                      onChange={(e) => {
+                        const rounded = roundTo30Minutes(e.target.value);
+                        setTempStartTime(rounded);
+                        setError('');
+                      }}
+                      min={getRoundedCurrentTime()}
+                      step="1800"
+                      className={`w-full h-[56px] pl-12 pr-4 border rounded-lg
+                               focus:outline-none text-[16px] transition-colors
+                               ${tempStartTime && tempStartTime !== sessionConfig.scheduledStartTime
+                                 ? 'border-[var(--blue)] bg-[rgba(66,133,244,0.05)]'
+                                 : 'border-[var(--black-50)] focus:border-[var(--black-500)]'
+                               }`}
+                    />
+                  </div>
+                  <p className="text-[12px] text-[var(--black-200)] mt-1">
+                    {tempStartTime || sessionConfig.scheduledStartTime ? (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-[var(--black-400)]">
+                          {new Date(tempStartTime || sessionConfig.scheduledStartTime).toLocaleString('ko-KR', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false 
+                          })}
+                        </span>
+                        {tempStartTime && tempStartTime !== sessionConfig.scheduledStartTime && (
+                          <span className="text-[var(--blue)]">(변경됨)</span>
+                        )}
+                      </span>
+                    ) : (
+                      '30분 단위로 선택 가능 (현재 시간 이후)'
+                    )}
+                  </p>
                 </div>
-                <p className="text-[12px] text-[var(--black-200)] mt-1">
-                  {sessionConfig.scheduledStartTime ? '30분 단위로 선택 가능' : '시작 시간을 먼저 선택하세요'}
-                </p>
+
+                <div>
+                  <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
+                    종료 시간
+                  </label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
+                    <input
+                      type="datetime-local"
+                      value={tempEndTime || sessionConfig.scheduledEndTime}
+                      onChange={(e) => {
+                        const rounded = roundTo30Minutes(e.target.value);
+                        setTempEndTime(rounded);
+                        setError('');
+                      }}
+                      min={getMinEndTime()}
+                      max={getMaxEndTime()}
+                      step="1800"
+                      disabled={!tempStartTime && !sessionConfig.scheduledStartTime}
+                      className={`w-full h-[56px] pl-12 pr-4 border rounded-lg
+                               focus:outline-none text-[16px] transition-colors
+                               ${tempEndTime && tempEndTime !== sessionConfig.scheduledEndTime
+                                 ? 'border-[var(--blue)] bg-[rgba(66,133,244,0.05)]'
+                                 : 'border-[var(--black-50)] focus:border-[var(--black-500)]'
+                               }
+                               ${!tempStartTime && !sessionConfig.scheduledStartTime
+                                 ? 'bg-[var(--black-50)] cursor-not-allowed'
+                                 : ''
+                               }`}
+                    />
+                  </div>
+                  <p className="text-[12px] text-[var(--black-200)] mt-1">
+                    {tempEndTime || sessionConfig.scheduledEndTime ? (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-[var(--black-400)]">
+                          {new Date(tempEndTime || sessionConfig.scheduledEndTime).toLocaleString('ko-KR', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false 
+                          })}
+                        </span>
+                        {tempEndTime && tempEndTime !== sessionConfig.scheduledEndTime && (
+                          <span className="text-[var(--blue)]">(변경됨)</span>
+                        )}
+                      </span>
+                    ) : (
+                      tempStartTime || sessionConfig.scheduledStartTime 
+                        ? '30분 단위로 선택 가능 (시작 시간 + 30분 이후, 최대 2시간)' 
+                        : '시작 시간을 먼저 선택하세요'
+                    )}
+                  </p>
+                </div>
               </div>
+
+              {/* 세션 지속 시간 표시 */}
+              {(tempStartTime && tempEndTime) || (sessionConfig.scheduledStartTime && sessionConfig.scheduledEndTime) ? (
+                <div className="bg-[var(--neutral-100)] rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-[var(--black-300)]">세션 지속 시간</span>
+                    <span className="text-[14px] font-semibold text-[var(--black-500)]">
+                      {(() => {
+                        const start = tempStartTime || sessionConfig.scheduledStartTime;
+                        const end = tempEndTime || sessionConfig.scheduledEndTime;
+                        if (!start || !end) return '';
+                        const duration = new Date(end).getTime() - new Date(start).getTime();
+                        const hours = Math.floor(duration / (60 * 60 * 1000));
+                        const minutes = (duration % (60 * 60 * 1000)) / (60 * 1000);
+                        if (hours > 0) {
+                          return `${hours}시간 ${minutes}분`;
+                        }
+                        return `${minutes}분`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* 확인/취소 버튼 - 항상 표시하되, 변경사항이 있을 때만 활성화 */}
+              <div className="flex gap-3 pt-2">
+                <CommonButton
+                  onClick={handleConfirmTime}
+                  variant="primary"
+                  className="flex-1"
+                  disabled={!tempStartTime && !tempEndTime && !sessionConfig.scheduledStartTime}
+                >
+                  {tempStartTime || tempEndTime ? '시간 확인' : sessionConfig.scheduledStartTime ? '시간 수정' : '시간 설정'}
+                </CommonButton>
+                {(tempStartTime || tempEndTime) && (
+                  <CommonButton
+                    onClick={handleCancelTime}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    취소
+                  </CommonButton>
+                )}
+              </div>
+
+              {/* 설정된 시간 표시 */}
+              {sessionConfig.scheduledStartTime && !tempStartTime && !tempEndTime && (
+                <div className="bg-[var(--green-50)] border border-[var(--green-200)] rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-[var(--green-500)] mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[12px] font-medium text-[var(--green-700)] mb-1">
+                        시간이 설정되었습니다
+                      </p>
+                      <p className="text-[12px] text-[var(--black-400)]">
+                        {new Date(sessionConfig.scheduledStartTime).toLocaleString('ko-KR', { 
+                          year: 'numeric', 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          hour12: false 
+                        })}
+                        {sessionConfig.scheduledEndTime && (
+                          <> ~ {new Date(sessionConfig.scheduledEndTime).toLocaleString('ko-KR', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: false 
+                          })}</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {sessionConfig.scheduledStartTime && sessionConfig.scheduledEndTime && (
-              <div className="bg-[var(--green-50)] rounded-lg p-3">
-                <p className="text-[12px] text-[var(--black-400)]">
-                  세션은 {sessionConfig.scheduledStartTime}부터 {sessionConfig.scheduledEndTime}까지 접속 가능합니다.
-                </p>
-              </div>
-            )}
           </div>
         </div>
 

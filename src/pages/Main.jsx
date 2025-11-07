@@ -242,22 +242,24 @@ export default function Main() {
 
       const snapshot = buildProfileSnapshot(userInfo, userProfile);
 
-      useProfileStore.setState((current) => ({
-        ...current,
-        englishName: snapshot.englishName ?? current.englishName,
-        name: userInfo?.koreanName ?? snapshot.englishName ?? current.name,
-        residence: snapshot.residence ?? current.residence,
-        profileImage: snapshot.profileImage ?? current.profileImage,
-        intro: userProfile?.selfBio ?? current.intro,
-        birthYear: snapshot.birthYear,
-        languageLevel: snapshot.languageLevel,
-        targetLanguage: snapshot.targetLanguage,
-      }));
-
-      return { snapshot, error: null };
+      // ✅ Zustand store 업데이트를 return 객체에 포함 (React Hook 규칙 준수)
+      return {
+        snapshot,
+        error: null,
+        storeUpdate: {
+          englishName: snapshot.englishName,
+          name: userInfo?.koreanName ?? snapshot.englishName,
+          residence: snapshot.residence,
+          profileImage: snapshot.profileImage,
+          intro: userProfile?.selfBio,
+          birthYear: snapshot.birthYear,
+          languageLevel: snapshot.languageLevel,
+          targetLanguage: snapshot.targetLanguage,
+        }
+      };
     } catch (error) {
       console.error("프로필 로드 실패:", error);
-      return { snapshot: null, error: "프로필 정보를 불러오지 못했습니다." };
+      return { snapshot: null, error: "프로필 정보를 불러오지 못했습니다.", storeUpdate: null };
     }
   }, []);
 
@@ -349,6 +351,14 @@ export default function Main() {
 
     console.log('✅ [initializeMainData] 모든 데이터 로드 완료, setState 1회만 실행');
 
+    // ✅ Zustand store 업데이트 (React Hook 규칙 준수)
+    if (profileResult.storeUpdate) {
+      useProfileStore.setState((current) => ({
+        ...current,
+        ...profileResult.storeUpdate,
+      }));
+    }
+
     setState((prev) => ({
       ...prev,
       loading: false,
@@ -402,11 +412,14 @@ export default function Main() {
 
   const displayName = toDisplayText(state.profile?.englishName, "사용자");
 
-  // userAge 계산 (useMemo 제거)
-  const parsed = state.profile?.birthYear ? Number(state.profile.birthYear) : null;
-  const userAge = parsed && !Number.isNaN(parsed)
-    ? Math.max(0, new Date().getFullYear() - parsed)
-    : null;
+  // userAge 계산: 즉시 계산 (다른 컴포넌트와 동일한 패턴)
+  const userAge = (() => {
+    const parsed = state.profile?.birthYear ? Number(state.profile.birthYear) : null;
+    if (parsed && !Number.isNaN(parsed)) {
+      return Math.max(0, new Date().getFullYear() - parsed);
+    }
+    return null;
+  })();
 
   // greetingLevel 계산 (useMemo 제거 - 배열 접근이 참조 불안정성을 일으킴)
   const directLevel = state.profile?.languageLevel
