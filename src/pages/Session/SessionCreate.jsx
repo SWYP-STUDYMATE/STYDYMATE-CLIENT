@@ -40,12 +40,44 @@ export default function SessionCreate() {
     scheduledEndTime: '' // 세션 종료 시간
   });
 
-  // 매체 권한 확인 (버튼 클릭 시에만 요청)
-  const [mediaPermissions, setMediaPermissions] = useState({
-    audio: null,
-    video: null,
-    checked: false
-  });
+  // 현재 시간을 30분 단위로 반올림한 ISO 형식으로 반환
+  const getRoundedCurrentTime = () => {
+    const now = new Date();
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 30) * 30;
+    const roundedTime = new Date(now);
+    roundedTime.setMinutes(roundedMinutes);
+    roundedTime.setSeconds(0);
+    roundedTime.setMilliseconds(0);
+    
+    // ISO 형식을 datetime-local 형식으로 변환 (YYYY-MM-DDTHH:mm)
+    const year = roundedTime.getFullYear();
+    const month = String(roundedTime.getMonth() + 1).padStart(2, '0');
+    const day = String(roundedTime.getDate()).padStart(2, '0');
+    const hours = String(roundedTime.getHours()).padStart(2, '0');
+    const mins = String(roundedTime.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  };
+
+  // 시작 시간을 기반으로 종료 시간의 최소값 계산
+  const getMinEndTime = () => {
+    if (!sessionConfig.scheduledStartTime) {
+      return getRoundedCurrentTime();
+    }
+    
+    const startTime = new Date(sessionConfig.scheduledStartTime);
+    // 시작 시간에 30분 추가
+    startTime.setMinutes(startTime.getMinutes() + 30);
+    
+    const year = startTime.getFullYear();
+    const month = String(startTime.getMonth() + 1).padStart(2, '0');
+    const day = String(startTime.getDate()).padStart(2, '0');
+    const hours = String(startTime.getHours()).padStart(2, '0');
+    const mins = String(startTime.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  };
 
   // 선택한 세션 타입에 따라 권한 상태 표시용으로만 사용
   const checkMediaPermissions = async () => {
@@ -229,6 +261,28 @@ export default function SessionCreate() {
 
   // 설정 변경 핸들러 (권한 요청 포함)
   const handleConfigChange = async (field, value) => {
+    // 시작 시간이 변경되면 종료 시간 검증
+    if (field === 'scheduledStartTime') {
+      setSessionConfig(prev => {
+        const updated = {
+          ...prev,
+          [field]: value
+        };
+        
+        // 종료 시간이 시작 시간보다 이전이면 초기화
+        if (updated.scheduledEndTime && value) {
+          const startTime = new Date(value).getTime();
+          const endTime = new Date(updated.scheduledEndTime).getTime();
+          if (endTime <= startTime) {
+            updated.scheduledEndTime = '';
+          }
+        }
+        
+        return updated;
+      });
+      return;
+    }
+    
     // 1. 먼저 상태 업데이트
     setSessionConfig(prev => ({
       ...prev,
@@ -526,10 +580,13 @@ export default function SessionCreate() {
                     type="datetime-local"
                     value={sessionConfig.scheduledStartTime}
                     onChange={(e) => handleConfigChange('scheduledStartTime', e.target.value)}
+                    min={getRoundedCurrentTime()}
+                    step="1800"
                     className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
                              focus:border-[var(--black-500)] focus:outline-none text-[16px]"
                   />
                 </div>
+                <p className="text-[12px] text-[var(--black-200)] mt-1">30분 단위로 선택 가능</p>
               </div>
 
               <div>
@@ -542,10 +599,17 @@ export default function SessionCreate() {
                     type="datetime-local"
                     value={sessionConfig.scheduledEndTime}
                     onChange={(e) => handleConfigChange('scheduledEndTime', e.target.value)}
+                    min={getMinEndTime()}
+                    step="1800"
+                    disabled={!sessionConfig.scheduledStartTime}
                     className="w-full h-[56px] pl-12 pr-4 border border-[var(--black-50)] rounded-lg
-                             focus:border-[var(--black-500)] focus:outline-none text-[16px]"
+                             focus:border-[var(--black-500)] focus:outline-none text-[16px]
+                             disabled:bg-[var(--black-50)] disabled:cursor-not-allowed"
                   />
                 </div>
+                <p className="text-[12px] text-[var(--black-200)] mt-1">
+                  {sessionConfig.scheduledStartTime ? '30분 단위로 선택 가능' : '시작 시간을 먼저 선택하세요'}
+                </p>
               </div>
             </div>
 
