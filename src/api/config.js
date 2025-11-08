@@ -155,6 +155,7 @@ export const API_ENDPOINTS = {
 
     // WebRTC 화상 통화
     WEBRTC: {
+      BASE: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room`,
       CREATE_ROOM: `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/create`,
       JOIN_ROOM: (roomId) => `${API_CONFIG.WORKERS_API}${API_CONFIG.API_VERSION}/room/${roomId}/join`,
       LEAVE_ROOM: (roomId) =>

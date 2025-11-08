@@ -80,6 +80,13 @@ JWT_SECRET = "c3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZH
 INTERNAL_SECRET = "studymate-internal-secret-2024"
 WORKERS_INTERNAL_SECRET = "studymate-internal-secret-2024"
 
+# Cloudflare TURN API 크레덴셜 (동적 자격 증명 생성용)
+# Dashboard → Calls → TURN에서 발급
+# ⚠️ 주의: 이 값은 민감 정보이므로 GitHub에 커밋 시 주의 필요
+# 프로덕션 배포 시 wrangler secret put 사용 권장
+CLOUDFLARE_TURN_TOKEN_ID = ""  # TURN 토큰 ID (예: afb3aec97894ed29c88a0975653409d2)
+CLOUDFLARE_TURN_API_TOKEN = ""  # TURN API 토큰 (예: c8efd3df...)
+
 # Production 환경
 [env.production]
 name = "studymate-api-production"
@@ -149,6 +156,15 @@ REFRESH_TOKEN_TTL_SECONDS = "604800"
 JWT_SECRET = "c3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRlc3R1ZHltYXRl"
 INTERNAL_SECRET = "studymate-internal-secret-2024"
 WORKERS_INTERNAL_SECRET = "studymate-internal-secret-2024"
+
+# Cloudflare TURN API 크레덴셜 (프로덕션 - 동적 자격 증명 생성용)
+# Dashboard → Calls → TURN에서 발급
+# ⚠️ 주의: 이 값은 민감 정보이므로 GitHub에 커밋 시 주의 필요
+# 보안 강화를 위해 wrangler secret put 사용 권장:
+#   wrangler secret put CLOUDFLARE_TURN_TOKEN_ID --env production
+#   wrangler secret put CLOUDFLARE_TURN_API_TOKEN --env production
+CLOUDFLARE_TURN_TOKEN_ID = ""  # TURN 토큰 ID
+CLOUDFLARE_TURN_API_TOKEN = ""  # TURN API 토큰
 
 # Production Routes
 [[env.production.routes]]

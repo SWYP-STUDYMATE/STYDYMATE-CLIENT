@@ -21,7 +21,7 @@ export default function AILearningSummaryCard({ progressSummary, loading }) {
     currentLevel: progressSummary.currentLevel || '-',
     sessionsThisWeek: progressSummary.sessionsThisWeek || 0,
     consistency: progressSummary.consistency
-      ? `${Math.round(progressSummary.consistency * 100)}%`
+      ? `${Math.floor(progressSummary.consistency * 100)}%`
       : '-',
     nextMilestone: progressSummary.nextMilestone || null,
     isFallback: progressSummary.fallback || false

@@ -29,27 +29,13 @@ export class WebRTCRoom extends DurableObject {
         allowRecording: false,
         autoMuteOnJoin: false,
         stunServers: [
+          // Cloudflare STUN (anycast - 최적 경로 자동 선택)
+          { urls: 'stun:stun.cloudflare.com:3478' },
+          // Google STUN (백업)
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun.cloudflare.com:3478' }
+          { urls: 'stun:stun2.l.google.com:19302' }
         ],
-        turnServers: [
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turn:freestun.net:3478',
-            username: 'free',
-            credential: 'free'
-          }
-        ],
+        turnServers: this.getTurnServers(env),
         recordingSettings: {
           enabled: true,
           autoStart: false,
@@ -176,6 +162,57 @@ export class WebRTCRoom extends DurableObject {
     }, userId);
     
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  /**
+   * TURN 서버 설정 생성 (환경변수 기반)
+   *
+   * ⚠️ 비용 절감 전략:
+   * - TURN은 최후의 수단 (직접 P2P 실패 시에만 사용)
+   * - ICE 우선순위: STUN (무료) → TURN (유료)
+   * - 브라우저가 자동으로 최적 경로 선택 (iceTransportPolicy 기본값 사용)
+   */
+  private getTurnServers(env: any): RTCIceServer[] {
+    const servers: RTCIceServer[] = [];
+
+    // Cloudflare TURN (프로덕션 - anycast로 최적 경로 자동 선택)
+    if (env.CLOUDFLARE_TURN_USERNAME && env.CLOUDFLARE_TURN_PASSWORD) {
+      // UDP TURN (기본, 성능 우수, 낮은 레이턴시)
+      servers.push({
+        urls: 'turn:turn.cloudflare.com:3478',
+        username: env.CLOUDFLARE_TURN_USERNAME,
+        credential: env.CLOUDFLARE_TURN_PASSWORD
+      });
+
+      // TCP TURN (UDP 차단 환경용 백업)
+      servers.push({
+        urls: 'turn:turn.cloudflare.com:3478?transport=tcp',
+        username: env.CLOUDFLARE_TURN_USERNAME,
+        credential: env.CLOUDFLARE_TURN_PASSWORD
+      });
+
+      console.log('✅ [TURN] Cloudflare TURN 활성화 (비용 발생 - P2P 실패 시에만 사용)');
+    }
+
+    // 백업 TURN 서버들 (Cloudflare TURN이 없을 때)
+    if (servers.length === 0) {
+      // OpenRelay (무료, 개발용, 불안정)
+      servers.push(
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      );
+      console.warn('⚠️ [TURN] Cloudflare TURN 미설정 → OpenRelay 백업 사용');
+    }
+
+    return servers;
   }
 
   private async handleInit(request: Request): Promise<Response> {

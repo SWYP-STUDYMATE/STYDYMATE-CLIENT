@@ -16,6 +16,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
+import DateTimePicker from '../../components/DateTimePicker';
 import { webrtcAPI } from '../../api/webrtc';
 import { log } from '../../utils/logger';
 
@@ -734,44 +735,20 @@ export default function SessionCreate() {
                   <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
                     시작 시간
                   </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
-                    <input
-                      type="datetime-local"
-                      value={tempStartTime || sessionConfig.scheduledStartTime}
-                      onChange={(e) => {
-                        const rounded = roundTo30Minutes(e.target.value);
-                        setTempStartTime(rounded);
-                        setError('');
-                      }}
-                      min={getRoundedCurrentTime()}
-                      step="1800"
-                      className={`w-full h-[56px] pl-12 pr-4 border rounded-lg
-                               focus:outline-none text-[16px] transition-colors
-                               ${tempStartTime && tempStartTime !== sessionConfig.scheduledStartTime
-                                 ? 'border-[var(--blue)] bg-[rgba(66,133,244,0.05)]'
-                                 : 'border-[var(--black-50)] focus:border-[var(--black-500)]'
-                               }`}
-                    />
-                  </div>
+                  <DateTimePicker
+                    value={tempStartTime || sessionConfig.scheduledStartTime}
+                    onChange={(value) => {
+                      setTempStartTime(value);
+                      setError('');
+                    }}
+                    min={getRoundedCurrentTime()}
+                    placeholder="시작 시간 선택"
+                  />
                   <p className="text-[12px] text-[var(--black-200)] mt-1">
-                    {tempStartTime || sessionConfig.scheduledStartTime ? (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-[var(--black-400)]">
-                          {new Date(tempStartTime || sessionConfig.scheduledStartTime).toLocaleString('ko-KR', { 
-                            year: 'numeric', 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: false 
-                          })}
-                        </span>
-                        {tempStartTime && tempStartTime !== sessionConfig.scheduledStartTime && (
-                          <span className="text-[var(--blue)]">(변경됨)</span>
-                        )}
-                      </span>
-                    ) : (
+                    {tempStartTime && tempStartTime !== sessionConfig.scheduledStartTime && (
+                      <span className="text-[var(--blue)]">(변경됨)</span>
+                    )}
+                    {!tempStartTime && !sessionConfig.scheduledStartTime && (
                       '30분 단위로 선택 가능 (현재 시간 이후)'
                     )}
                   </p>
@@ -781,50 +758,22 @@ export default function SessionCreate() {
                   <label className="block text-[14px] font-medium text-[var(--black-500)] mb-2">
                     종료 시간
                   </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--black-200)]" />
-                    <input
-                      type="datetime-local"
-                      value={tempEndTime || sessionConfig.scheduledEndTime}
-                      onChange={(e) => {
-                        const rounded = roundTo30Minutes(e.target.value);
-                        setTempEndTime(rounded);
-                        setError('');
-                      }}
-                      min={getMinEndTime()}
-                      max={getMaxEndTime()}
-                      step="1800"
-                      disabled={!tempStartTime && !sessionConfig.scheduledStartTime}
-                      className={`w-full h-[56px] pl-12 pr-4 border rounded-lg
-                               focus:outline-none text-[16px] transition-colors
-                               ${tempEndTime && tempEndTime !== sessionConfig.scheduledEndTime
-                                 ? 'border-[var(--blue)] bg-[rgba(66,133,244,0.05)]'
-                                 : 'border-[var(--black-50)] focus:border-[var(--black-500)]'
-                               }
-                               ${!tempStartTime && !sessionConfig.scheduledStartTime
-                                 ? 'bg-[var(--black-50)] cursor-not-allowed'
-                                 : ''
-                               }`}
-                    />
-                  </div>
+                  <DateTimePicker
+                    value={tempEndTime || sessionConfig.scheduledEndTime}
+                    onChange={(value) => {
+                      setTempEndTime(value);
+                      setError('');
+                    }}
+                    min={getMinEndTime()}
+                    max={getMaxEndTime()}
+                    disabled={!tempStartTime && !sessionConfig.scheduledStartTime}
+                    placeholder="종료 시간 선택"
+                  />
                   <p className="text-[12px] text-[var(--black-200)] mt-1">
-                    {tempEndTime || sessionConfig.scheduledEndTime ? (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-[var(--black-400)]">
-                          {new Date(tempEndTime || sessionConfig.scheduledEndTime).toLocaleString('ko-KR', { 
-                            year: 'numeric', 
-                            month: '2-digit', 
-                            day: '2-digit', 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: false 
-                          })}
-                        </span>
-                        {tempEndTime && tempEndTime !== sessionConfig.scheduledEndTime && (
-                          <span className="text-[var(--blue)]">(변경됨)</span>
-                        )}
-                      </span>
-                    ) : (
+                    {tempEndTime && tempEndTime !== sessionConfig.scheduledEndTime && (
+                      <span className="text-[var(--blue)]">(변경됨)</span>
+                    )}
+                    {!tempEndTime && !sessionConfig.scheduledEndTime && (
                       tempStartTime || sessionConfig.scheduledStartTime 
                         ? '30분 단위로 선택 가능 (시작 시간 + 30분 이후, 최대 2시간)' 
                         : '시작 시간을 먼저 선택하세요'
