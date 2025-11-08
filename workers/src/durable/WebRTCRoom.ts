@@ -35,7 +35,7 @@ export class WebRTCRoom extends DurableObject {
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' }
         ],
-        turnServers: this.getTurnServers(env),
+        turnServers: [], // 동적으로 생성 (API 호출 필요)
         recordingSettings: {
           enabled: true,
           autoStart: false,
@@ -165,54 +165,76 @@ export class WebRTCRoom extends DurableObject {
   }
 
   /**
-   * TURN 서버 설정 생성 (환경변수 기반)
+   * Cloudflare TURN 동적 크레덴셜 생성 (단기 자격 증명)
    *
-   * ⚠️ 비용 절감 전략:
+   * ⚠️ 보안 및 비용 절감 전략:
+   * - 각 사용자마다 단기 크레덴셜 생성 (서버 사이드에서만 처리)
+   * - TTL 기반 자동 만료 (기본 24시간)
    * - TURN은 최후의 수단 (직접 P2P 실패 시에만 사용)
-   * - ICE 우선순위: STUN (무료) → TURN (유료)
-   * - 브라우저가 자동으로 최적 경로 선택 (iceTransportPolicy 기본값 사용)
+   *
+   * @param env - Cloudflare 환경 변수 (TURN_TOKEN_ID, TURN_API_TOKEN)
+   * @param ttl - 크레덴셜 유효 시간 (초 단위, 기본 86400 = 24시간)
+   * @returns ICE 서버 배열 (STUN + TURN with credentials)
    */
-  private getTurnServers(env: any): RTCIceServer[] {
-    const servers: RTCIceServer[] = [];
+  private async generateTurnCredentials(env: any, ttl: number = 86400): Promise<RTCIceServer[]> {
+    const tokenId = env.CLOUDFLARE_TURN_TOKEN_ID;
+    const apiToken = env.CLOUDFLARE_TURN_API_TOKEN;
 
-    // Cloudflare TURN (프로덕션 - anycast로 최적 경로 자동 선택)
-    if (env.CLOUDFLARE_TURN_USERNAME && env.CLOUDFLARE_TURN_PASSWORD) {
-      // UDP TURN (기본, 성능 우수, 낮은 레이턴시)
-      servers.push({
-        urls: 'turn:turn.cloudflare.com:3478',
-        username: env.CLOUDFLARE_TURN_USERNAME,
-        credential: env.CLOUDFLARE_TURN_PASSWORD
-      });
+    // Cloudflare TURN API 크레덴셜이 설정되어 있는 경우
+    if (tokenId && apiToken) {
+      try {
+        const response = await fetch(
+          `https://rtc.live.cloudflare.com/v1/turn/keys/${tokenId}/credentials/generate-ice-servers`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ttl })
+          }
+        );
 
-      // TCP TURN (UDP 차단 환경용 백업)
-      servers.push({
-        urls: 'turn:turn.cloudflare.com:3478?transport=tcp',
-        username: env.CLOUDFLARE_TURN_USERNAME,
-        credential: env.CLOUDFLARE_TURN_PASSWORD
-      });
-
-      console.log('✅ [TURN] Cloudflare TURN 활성화 (비용 발생 - P2P 실패 시에만 사용)');
-    }
-
-    // 백업 TURN 서버들 (Cloudflare TURN이 없을 때)
-    if (servers.length === 0) {
-      // OpenRelay (무료, 개발용, 불안정)
-      servers.push(
-        {
-          urls: 'turn:openrelay.metered.ca:80',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
-        },
-        {
-          urls: 'turn:openrelay.metered.ca:443',
-          username: 'openrelayproject',
-          credential: 'openrelayproject'
+        if (!response.ok) {
+          throw new Error(`Cloudflare TURN API 오류: ${response.status}`);
         }
-      );
-      console.warn('⚠️ [TURN] Cloudflare TURN 미설정 → OpenRelay 백업 사용');
+
+        const data = await response.json() as { iceServers: RTCIceServer[] };
+        console.log('✅ [TURN] Cloudflare 동적 크레덴셜 생성 완료 (TTL:', ttl, '초)');
+        return data.iceServers;
+      } catch (error) {
+        console.error('❌ [TURN] Cloudflare API 호출 실패:', error);
+        // API 실패 시 백업 서버로 fallback
+      }
     }
 
-    return servers;
+    // Fallback: 백업 STUN/TURN 서버 (Cloudflare API 미사용 또는 실패 시)
+    console.warn('⚠️ [TURN] Cloudflare API 미설정 → 백업 서버 사용');
+    return this.getFallbackIceServers();
+  }
+
+  /**
+   * 백업 ICE 서버 설정 (Cloudflare API 사용 불가 시)
+   */
+  private getFallbackIceServers(): RTCIceServer[] {
+    return [
+      // STUN 서버 (무료)
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+
+      // OpenRelay TURN (무료, 개발용, 불안정)
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ];
   }
 
   private async handleInit(request: Request): Promise<Response> {
@@ -674,18 +696,39 @@ export class WebRTCRoom extends DurableObject {
     });
   }
 
+  /**
+   * ICE 서버 정보 반환 (동적 TURN 크레덴셜 포함)
+   *
+   * Cloudflare TURN API를 호출하여 단기 자격 증명 생성
+   * - 보안: 서버 사이드에서만 API 토큰 사용
+   * - 비용: TTL 기반 자동 만료로 비용 절감
+   * - 성능: Cloudflare Anycast로 최적 경로 자동 선택
+   */
   private async handleIceServers(): Promise<Response> {
-    const iceServers = [
-      ...this.roomData.settings.stunServers || [],
-      ...this.roomData.settings.turnServers || []
-    ];
+    try {
+      // Cloudflare TURN 동적 크레덴셜 생성 (TTL 24시간)
+      const iceServers = await this.generateTurnCredentials(this.env, 86400);
 
-    return new Response(JSON.stringify({
-      iceServers,
-      ttl: 3600 // ICE 서버 정보 TTL (1시간)
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+      return new Response(JSON.stringify({
+        iceServers,
+        ttl: 86400, // 크레덴셜 유효 시간 (24시간)
+        source: 'cloudflare-turn-api'
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error('❌ [ICE] ICE 서버 정보 생성 실패:', error);
+
+      // Fallback: 백업 서버 반환
+      const fallbackServers = this.getFallbackIceServers();
+      return new Response(JSON.stringify({
+        iceServers: fallbackServers,
+        ttl: 3600,
+        source: 'fallback'
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   private async handleMetrics(): Promise<Response> {

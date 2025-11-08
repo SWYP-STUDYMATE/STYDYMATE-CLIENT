@@ -143,6 +143,62 @@ turnServers: this.getTurnServers(env), // TURN은 마지막
 
 ---
 
+---
+
+## 🔐 보안 및 인증 (구현 완료)
+
+### ✅ Cloudflare TURN 동적 크레덴셜 (Short-lived Credentials)
+
+**위치**: `workers/src/durable/WebRTCRoom.ts:167-238`
+
+**기능**:
+- Cloudflare TURN API를 통한 단기 자격 증명 생성
+- 서버 사이드에서만 API 토큰 사용 (클라이언트 노출 방지)
+- TTL 기반 자동 만료 (기본 24시간)
+
+**API 엔드포인트**:
+```
+POST https://rtc.live.cloudflare.com/v1/turn/keys/{TOKEN_ID}/credentials/generate-ice-servers
+Authorization: Bearer {API_TOKEN}
+Content-Type: application/json
+
+{
+  "ttl": 86400
+}
+```
+
+**응답 형식**:
+```json
+{
+  "iceServers": [
+    {
+      "urls": [
+        "stun:stun.cloudflare.com:3478",
+        "turn:turn.cloudflare.com:3478?transport=udp",
+        "turn:turn.cloudflare.com:3478?transport=tcp",
+        "turns:turn.cloudflare.com:5349?transport=tcp"
+      ],
+      "username": "단기_사용자명",
+      "credential": "단기_비밀번호"
+    }
+  ]
+}
+```
+
+**보안 이점**:
+- ✅ API 토큰이 클라이언트에 노출되지 않음
+- ✅ 각 사용자마다 별도 크레덴셜 생성
+- ✅ TTL 만료 후 자동 무효화
+- ✅ 크레덴셜 탈취 시에도 시간 제한적 피해
+
+**설정 방법**:
+1. Cloudflare Dashboard → Calls → TURN
+2. "Create TURN Key" 클릭
+3. `CLOUDFLARE_TURN_TOKEN_ID`와 `CLOUDFLARE_TURN_API_TOKEN` 발급
+4. `wrangler.toml` 또는 `wrangler secret put`으로 설정
+
+---
+
 ## 🔧 추가 최적화 방안
 
 ### 4️⃣ 세션 재사용 (구현 예정)

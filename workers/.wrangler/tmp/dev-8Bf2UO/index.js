@@ -36106,7 +36106,8 @@ var WebRTCRoom = class extends DurableObject {
           { urls: "stun:stun1.l.google.com:19302" },
           { urls: "stun:stun2.l.google.com:19302" }
         ],
-        turnServers: this.getTurnServers(env2),
+        turnServers: [],
+        // 동적으로 생성 (API 호출 필요)
         recordingSettings: {
           enabled: true,
           autoStart: false,
@@ -36207,44 +36208,67 @@ var WebRTCRoom = class extends DurableObject {
     return new Response(null, { status: 101, webSocket: client });
   }
   /**
-   * TURN 서버 설정 생성 (환경변수 기반)
+   * Cloudflare TURN 동적 크레덴셜 생성 (단기 자격 증명)
    *
-   * ⚠️ 비용 절감 전략:
+   * ⚠️ 보안 및 비용 절감 전략:
+   * - 각 사용자마다 단기 크레덴셜 생성 (서버 사이드에서만 처리)
+   * - TTL 기반 자동 만료 (기본 24시간)
    * - TURN은 최후의 수단 (직접 P2P 실패 시에만 사용)
-   * - ICE 우선순위: STUN (무료) → TURN (유료)
-   * - 브라우저가 자동으로 최적 경로 선택 (iceTransportPolicy 기본값 사용)
+   *
+   * @param env - Cloudflare 환경 변수 (TURN_TOKEN_ID, TURN_API_TOKEN)
+   * @param ttl - 크레덴셜 유효 시간 (초 단위, 기본 86400 = 24시간)
+   * @returns ICE 서버 배열 (STUN + TURN with credentials)
    */
-  getTurnServers(env2) {
-    const servers = [];
-    if (env2.CLOUDFLARE_TURN_USERNAME && env2.CLOUDFLARE_TURN_PASSWORD) {
-      servers.push({
-        urls: "turn:turn.cloudflare.com:3478",
-        username: env2.CLOUDFLARE_TURN_USERNAME,
-        credential: env2.CLOUDFLARE_TURN_PASSWORD
-      });
-      servers.push({
-        urls: "turn:turn.cloudflare.com:3478?transport=tcp",
-        username: env2.CLOUDFLARE_TURN_USERNAME,
-        credential: env2.CLOUDFLARE_TURN_PASSWORD
-      });
-      console.log("\u2705 [TURN] Cloudflare TURN \uD65C\uC131\uD654 (\uBE44\uC6A9 \uBC1C\uC0DD - P2P \uC2E4\uD328 \uC2DC\uC5D0\uB9CC \uC0AC\uC6A9)");
-    }
-    if (servers.length === 0) {
-      servers.push(
-        {
-          urls: "turn:openrelay.metered.ca:80",
-          username: "openrelayproject",
-          credential: "openrelayproject"
-        },
-        {
-          urls: "turn:openrelay.metered.ca:443",
-          username: "openrelayproject",
-          credential: "openrelayproject"
+  async generateTurnCredentials(env2, ttl = 86400) {
+    const tokenId = env2.CLOUDFLARE_TURN_TOKEN_ID;
+    const apiToken = env2.CLOUDFLARE_TURN_API_TOKEN;
+    if (tokenId && apiToken) {
+      try {
+        const response = await fetch(
+          `https://rtc.live.cloudflare.com/v1/turn/keys/${tokenId}/credentials/generate-ice-servers`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ ttl })
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`Cloudflare TURN API \uC624\uB958: ${response.status}`);
         }
-      );
-      console.warn("\u26A0\uFE0F [TURN] Cloudflare TURN \uBBF8\uC124\uC815 \u2192 OpenRelay \uBC31\uC5C5 \uC0AC\uC6A9");
+        const data = await response.json();
+        console.log("\u2705 [TURN] Cloudflare \uB3D9\uC801 \uD06C\uB808\uB374\uC15C \uC0DD\uC131 \uC644\uB8CC (TTL:", ttl, "\uCD08)");
+        return data.iceServers;
+      } catch (error48) {
+        console.error("\u274C [TURN] Cloudflare API \uD638\uCD9C \uC2E4\uD328:", error48);
+      }
     }
-    return servers;
+    console.warn("\u26A0\uFE0F [TURN] Cloudflare API \uBBF8\uC124\uC815 \u2192 \uBC31\uC5C5 \uC11C\uBC84 \uC0AC\uC6A9");
+    return this.getFallbackIceServers();
+  }
+  /**
+   * 백업 ICE 서버 설정 (Cloudflare API 사용 불가 시)
+   */
+  getFallbackIceServers() {
+    return [
+      // STUN 서버 (무료)
+      { urls: "stun:stun.cloudflare.com:3478" },
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" },
+      // OpenRelay TURN (무료, 개발용, 불안정)
+      {
+        urls: "turn:openrelay.metered.ca:80",
+        username: "openrelayproject",
+        credential: "openrelayproject"
+      },
+      {
+        urls: "turn:openrelay.metered.ca:443",
+        username: "openrelayproject",
+        credential: "openrelayproject"
+      }
+    ];
   }
   async handleInit(request) {
     try {
@@ -36611,18 +36635,36 @@ var WebRTCRoom = class extends DurableObject {
       }
     });
   }
+  /**
+   * ICE 서버 정보 반환 (동적 TURN 크레덴셜 포함)
+   *
+   * Cloudflare TURN API를 호출하여 단기 자격 증명 생성
+   * - 보안: 서버 사이드에서만 API 토큰 사용
+   * - 비용: TTL 기반 자동 만료로 비용 절감
+   * - 성능: Cloudflare Anycast로 최적 경로 자동 선택
+   */
   async handleIceServers() {
-    const iceServers = [
-      ...this.roomData.settings.stunServers || [],
-      ...this.roomData.settings.turnServers || []
-    ];
-    return new Response(JSON.stringify({
-      iceServers,
-      ttl: 3600
-      // ICE 서버 정보 TTL (1시간)
-    }), {
-      headers: { "Content-Type": "application/json" }
-    });
+    try {
+      const iceServers = await this.generateTurnCredentials(this.env, 86400);
+      return new Response(JSON.stringify({
+        iceServers,
+        ttl: 86400,
+        // 크레덴셜 유효 시간 (24시간)
+        source: "cloudflare-turn-api"
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (error48) {
+      console.error("\u274C [ICE] ICE \uC11C\uBC84 \uC815\uBCF4 \uC0DD\uC131 \uC2E4\uD328:", error48);
+      const fallbackServers = this.getFallbackIceServers();
+      return new Response(JSON.stringify({
+        iceServers: fallbackServers,
+        ttl: 3600,
+        source: "fallback"
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
   }
   async handleMetrics() {
     this.updateMetrics("message");
