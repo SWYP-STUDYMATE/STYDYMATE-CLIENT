@@ -328,6 +328,18 @@ export default function Main() {
 
     console.log('✅ [initializeMainData] 모든 데이터 로드 완료, setState 1회만 실행');
 
+    // ✅ Zustand store 업데이트 (useEffect 외부에서 직접 호출)
+    if (profileResult.snapshot) {
+      useProfileStore.setState({
+        englishName: profileResult.snapshot.englishName,
+        residence: profileResult.snapshot.residence,
+        profileImage: profileResult.snapshot.profileImage,
+        birthYear: profileResult.snapshot.birthYear,
+        languageLevel: profileResult.snapshot.languageLevel,
+        targetLanguage: profileResult.snapshot.targetLanguage,
+      });
+    }
+
     // ✅ React 표준 패턴: 값을 직접 setState에 전달 (useMemo는 컴포넌트 레벨에서 사용)
     setState((prev) => ({
       ...prev,
@@ -355,24 +367,11 @@ export default function Main() {
     loadAchievementsSection,
   ]);
 
+  // ✅ 무한 루프 방지: 첫 마운트 시에만 실행
   useEffect(() => {
     initializeMainData();
-  }, [initializeMainData]);
-
-  // ✅ Profile 변경 시 Zustand store 업데이트 (무한 루프 방지를 위해 별도 useEffect로 분리)
-  useEffect(() => {
-    if (state.profile) {
-      useProfileStore.setState((current) => ({
-        ...current,
-        englishName: state.profile.englishName,
-        residence: state.profile.residence,
-        profileImage: state.profile.profileImage,
-        birthYear: state.profile.birthYear,
-        languageLevel: state.profile.languageLevel,
-        targetLanguage: state.profile.targetLanguage,
-      }));
-    }
-  }, [state.profile]); // state.profile이 변경될 때만 실행
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 빈 배열로 첫 마운트에만 실행
 
   const handleRefreshAchievements = useCallback(async () => {
     setState((prev) => ({ ...prev, achievementsLoading: true }));
