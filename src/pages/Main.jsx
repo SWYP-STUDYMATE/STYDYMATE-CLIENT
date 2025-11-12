@@ -146,44 +146,6 @@ export default function Main() {
   const [state, setState] = useState(INITIAL_MAIN_STATE);
   const isMountedRef = useRef(true);
 
-  // 참조 안정성을 위한 이전 상태 캐시
-  const stateCache = useRef({
-    profile: null,
-    studyStats: null,
-    languageProfile: null,
-    mates: null,
-    achievements: null,
-    achievementsStats: null,
-    progressSummary: null,
-  });
-
-  // 참조 안정성 헬퍼: 내용이 같으면 캐시된 참조 반환
-  const stabilizeRef = useCallback((key, newValue) => {
-    if (!newValue) {
-      console.log(`[stabilizeRef:${key}] null 값, null 반환`);
-      return null;
-    }
-
-    const cached = stateCache.current[key];
-    if (!cached) {
-      console.log(`[stabilizeRef:${key}] 캐시 없음, 새 값 저장`);
-      stateCache.current[key] = newValue;
-      return newValue;
-    }
-
-    // 얕은 비교로 성능 최적화
-    const isSame = JSON.stringify(cached) === JSON.stringify(newValue);
-    if (isSame) {
-      console.log(`[stabilizeRef:${key}] 동일한 데이터, 캐시된 참조 반환 ✅`);
-      return cached; // 기존 참조 유지
-    }
-
-    // 다르면 새 값으로 캐시 업데이트
-    console.log(`[stabilizeRef:${key}] 데이터 변경 감지, 새 참조 저장`);
-    stateCache.current[key] = newValue;
-    return newValue;
-  }, []);
-
   useEffect(() => () => {
     isMountedRef.current = false;
   }, []);
@@ -366,30 +328,23 @@ export default function Main() {
 
     console.log('✅ [initializeMainData] 모든 데이터 로드 완료, setState 1회만 실행');
 
-    // ✅ Zustand store 업데이트 (React Hook 규칙 준수)
-    if (profileResult.storeUpdate) {
-      useProfileStore.setState((current) => ({
-        ...current,
-        ...profileResult.storeUpdate,
-      }));
-    }
-
+    // ✅ React 표준 패턴: 값을 직접 setState에 전달 (useMemo는 컴포넌트 레벨에서 사용)
     setState((prev) => ({
       ...prev,
       loading: false,
-      profile: stabilizeRef('profile', profileResult.snapshot),
+      profile: profileResult.snapshot,
       profileError: profileResult.error,
-      studyStats: stabilizeRef('studyStats', studyStatsResult.data),
+      studyStats: studyStatsResult.data,
       studyStatsError: studyStatsResult.error,
-      languageProfile: stabilizeRef('languageProfile', languageProfileResult.data),
+      languageProfile: languageProfileResult.data,
       languageProfileError: languageProfileResult.error,
-      mates: stabilizeRef('mates', matesResult.data),
+      mates: matesResult.data,
       matesError: matesResult.error,
-      achievements: stabilizeRef('achievements', achievementsResult.data),
-      achievementsStats: stabilizeRef('achievementsStats', achievementsResult.stats),
+      achievements: achievementsResult.data,
+      achievementsStats: achievementsResult.stats,
       achievementsError: achievementsResult.error,
       achievementsLoading: false,
-      progressSummary: stabilizeRef('progressSummary', progressSummaryResult),
+      progressSummary: progressSummaryResult,
       progressSummaryLoading: false,
     }));
   }, [
@@ -398,12 +353,26 @@ export default function Main() {
     loadLanguageProfileSection,
     loadMatesSection,
     loadAchievementsSection,
-    stabilizeRef,
   ]);
 
   useEffect(() => {
     initializeMainData();
   }, [initializeMainData]);
+
+  // ✅ Profile 변경 시 Zustand store 업데이트 (무한 루프 방지를 위해 별도 useEffect로 분리)
+  useEffect(() => {
+    if (state.profile) {
+      useProfileStore.setState((current) => ({
+        ...current,
+        englishName: state.profile.englishName,
+        residence: state.profile.residence,
+        profileImage: state.profile.profileImage,
+        birthYear: state.profile.birthYear,
+        languageLevel: state.profile.languageLevel,
+        targetLanguage: state.profile.targetLanguage,
+      }));
+    }
+  }, [state.profile]); // state.profile이 변경될 때만 실행
 
   const handleRefreshAchievements = useCallback(async () => {
     setState((prev) => ({ ...prev, achievementsLoading: true }));
@@ -413,18 +382,17 @@ export default function Main() {
       return;
     }
 
+    // ✅ React 표준 패턴: 값을 직접 setState에 전달
     setState((prev) => ({
       ...prev,
-      achievements: stabilizeRef('achievements', achievementsResult.data),
-      achievementsStats: stabilizeRef('achievementsStats', achievementsResult.stats),
+      achievements: achievementsResult.data,
+      achievementsStats: achievementsResult.stats,
       achievementsError: achievementsResult.error,
       achievementsLoading: false,
     }));
-  }, [loadAchievementsSection, stabilizeRef]);
+  }, [loadAchievementsSection]);
 
-  // ⚠️ useMemo 완전 제거: React 19에서 참조 불안정성으로 인한 무한 루프 방지
-  // stabilizeRef가 상태 참조를 안정화하므로 직접 계산해도 성능 문제 없음
-
+  // ✅ 컴포넌트 레벨 값 계산 (React 표준 패턴)
   const displayName = toDisplayText(state.profile?.englishName, "사용자");
 
   // userAge 계산: 즉시 계산 (다른 컴포넌트와 동일한 패턴)
