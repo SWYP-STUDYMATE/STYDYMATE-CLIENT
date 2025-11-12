@@ -188,12 +188,24 @@ export default function Main() {
     isMountedRef.current = false;
   }, []);
 
+  // ✅ 무한 루프 방지: 처리 완료 플래그 ref 추가
+  const queryProcessedRef = useRef(false);
+
   useEffect(() => {
     if (!search) {
+      queryProcessedRef.current = false;
       return;
     }
 
+    // 이미 처리된 query string인지 확인 (무한 루프 방지)
     const params = new URLSearchParams(search);
+    const hasSensitiveKeys = SENSITIVE_QUERY_KEYS.some(key => params.has(key));
+
+    // 민감한 키가 없으면 이미 처리된 것으로 간주
+    if (!hasSensitiveKeys && queryProcessedRef.current) {
+      return;
+    }
+
     const accessToken = params.get("accessToken");
     const refreshToken = params.get("refreshToken");
     const autoLoginParam = params.get("autoLogin");
@@ -223,12 +235,15 @@ export default function Main() {
 
     if (sanitizedChanged) {
       const nextSearch = sanitized.toString();
+      queryProcessedRef.current = true; // 처리 완료 마킹
       navigate({
         pathname: location.pathname,
         search: nextSearch ? `?${nextSearch}` : "",
       }, { replace: true });
+    } else {
+      queryProcessedRef.current = true;
     }
-  }, [search, navigate]);
+  }, [search, navigate, location.pathname]);
 
   const loadProfileSection = useCallback(async () => {
     try {
