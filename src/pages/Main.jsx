@@ -205,19 +205,25 @@ export default function Main() {
     } else {
       queryProcessedRef.current = true;
     }
-  }, [search, navigate, location.pathname]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]); // ✅ search만 의존 - navigate와 location.pathname 제거로 무한 루프 방지
 
   const loadProfileSection = useCallback(async () => {
+    console.log("🔄 [Main] loadProfileSection 시작");
     try {
-      const [userInfoResponse, userProfileResponse] = await Promise.all([
-        getUserInfo(),
-        getUserProfile(),
-      ]);
+      console.log("🔄 [Main] getUserInfo() 호출");
+      const userInfoResponse = await getUserInfo();
+      console.log("✅ [Main] getUserInfo() 응답:", userInfoResponse);
+
+      console.log("🔄 [Main] getUserProfile() 호출");
+      const userProfileResponse = await getUserProfile();
+      console.log("✅ [Main] getUserProfile() 응답:", userProfileResponse);
 
       const userInfo = userInfoResponse?.data ?? userInfoResponse ?? {};
       const userProfile = userProfileResponse?.data ?? userProfileResponse ?? {};
 
       const snapshot = buildProfileSnapshot(userInfo, userProfile);
+      console.log("✅ [Main] Profile snapshot 생성:", snapshot);
 
       // ✅ Zustand store 업데이트를 return 객체에 포함 (React Hook 규칙 준수)
       return {
@@ -235,69 +241,90 @@ export default function Main() {
         }
       };
     } catch (error) {
-      console.error("프로필 로드 실패:", error);
+      console.error("❌ [Main] loadProfileSection 실패:", error);
       return { snapshot: null, error: "프로필 정보를 불러오지 못했습니다.", storeUpdate: null };
     }
   }, []);
 
   const loadStudyStatsSection = useCallback(async () => {
+    console.log("🔄 [Main] loadStudyStatsSection 시작");
     try {
       const response = await getStudyStats("month");
+      console.log("✅ [Main] getStudyStats() 응답:", response);
       const payload = response?.data ?? response ?? null;
       return { data: payload, error: null };
     } catch (error) {
-      console.error("학습 통계 로드 실패:", error);
+      console.error("❌ [Main] loadStudyStatsSection 실패:", error);
       return { data: null, error: "학습 통계를 불러오지 못했습니다." };
     }
   }, []);
 
   const loadLanguageProfileSection = useCallback(async () => {
+    console.log("🔄 [Main] loadLanguageProfileSection 시작");
     try {
       const response = await getOnboardingData();
+      console.log("✅ [Main] getOnboardingData() 응답:", response);
       const payload = response?.data ?? response ?? null;
       const transformed = transformOnboardingDataToLanguageProfile(payload);
+      console.log("✅ [Main] Language profile 변환:", transformed);
       return { data: transformed, error: null };
     } catch (error) {
-      console.error("언어 프로필 로드 실패:", error);
+      console.error("❌ [Main] loadLanguageProfileSection 실패:", error);
       return { data: null, error: "언어 프로필을 불러오지 못했습니다." };
     }
   }, []);
 
   const loadMatesSection = useCallback(async () => {
+    console.log("🔄 [Main] loadMatesSection 시작");
     try {
       const response = await getMatches(1, 4);
+      console.log("✅ [Main] getMatches() 응답:", response);
       const payload = response?.data ?? response ?? {};
       const rawContent = Array.isArray(payload?.data)
         ? payload.data
         : payload?.content ?? [];
 
-      return { data: transformMatches(rawContent), error: null };
+      const transformed = transformMatches(rawContent);
+      console.log("✅ [Main] Mates 변환:", transformed);
+      return { data: transformed, error: null };
     } catch (error) {
-      console.error("매칭 데이터 로드 실패:", error);
+      console.error("❌ [Main] loadMatesSection 실패:", error);
       return { data: [], error: "매칭 데이터를 불러오지 못했습니다." };
     }
   }, []);
 
   const loadAchievementsSection = useCallback(async () => {
+    console.log("🔄 [Main] loadAchievementsSection 시작");
     try {
-      const [achievementsResponse, statsResponse] = await Promise.all([
-        getMyAchievements(),
-        getMyAchievementStats().catch(() => null),
-      ]);
+      console.log("🔄 [Main] getMyAchievements() 호출");
+      const achievementsResponse = await getMyAchievements();
+      console.log("✅ [Main] getMyAchievements() 응답:", achievementsResponse);
+
+      console.log("🔄 [Main] getMyAchievementStats() 호출");
+      const statsResponse = await getMyAchievementStats().catch((err) => {
+        console.log("⚠️ [Main] getMyAchievementStats() 실패 (무시됨):", err);
+        return null;
+      });
+      console.log("✅ [Main] getMyAchievementStats() 응답:", statsResponse);
 
       const achievementsPayload = achievementsResponse?.data ?? achievementsResponse;
       const normalized = normalizeAchievements(achievementsPayload);
       const statsPayload = statsResponse ? statsResponse?.data ?? statsResponse : null;
 
+      console.log("✅ [Main] Achievements 정규화:", { normalized, statsPayload });
       return { data: normalized, stats: statsPayload, error: null };
     } catch (error) {
-      console.error("업적 로드 실패:", error);
+      console.error("❌ [Main] loadAchievementsSection 실패:", error);
       return { data: [], stats: null, error: "성취 배지를 불러오지 못했습니다." };
     }
   }, []);
 
+  // ✅ useCallback 제거하고 의존성 문제 해결
   const initializeMainData = useCallback(async () => {
+    console.log("🚀 [Main] initializeMainData 시작");
     setState((prev) => ({ ...prev, loading: true, progressSummaryLoading: true }));
+
+    console.log("🔄 [Main] 모든 API를 병렬로 호출 시작...");
 
     // 🔄 모든 데이터 병렬 로드 (불필요한 렌더링 방지)
     const [
@@ -315,18 +342,32 @@ export default function Main() {
       loadAchievementsSection(),
       // progressSummary도 함께 로드
       getProgressSummary()
-        .then((response) => response?.data ?? response)
+        .then((response) => {
+          console.log("✅ [Main] getProgressSummary() 응답:", response);
+          return response?.data ?? response;
+        })
         .catch((error) => {
-          console.error('Failed to load progress summary:', error);
+          console.error('❌ [Main] getProgressSummary() 실패:', error);
           return null;
         }),
     ]);
 
+    console.log("✅ [Main] 모든 API 호출 완료");
+    console.log("📊 [Main] 결과 요약:", {
+      profile: profileResult.snapshot ? "성공" : "실패",
+      studyStats: studyStatsResult.data ? "성공" : "실패",
+      languageProfile: languageProfileResult.data ? "성공" : "실패",
+      mates: matesResult.data?.length || 0 + "개",
+      achievements: achievementsResult.data?.length || 0 + "개",
+      progressSummary: progressSummaryResult ? "성공" : "실패",
+    });
+
     if (!isMountedRef.current) {
+      console.log("⚠️ [Main] 컴포넌트가 언마운트됨, setState 취소");
       return;
     }
 
-    console.log('✅ [initializeMainData] 모든 데이터 로드 완료, setState 1회만 실행');
+    console.log('✅ [Main] setState 실행 (1회)');
 
     // ✅ Zustand store 업데이트 (useEffect 외부에서 직접 호출)
     if (profileResult.snapshot) {
@@ -359,13 +400,7 @@ export default function Main() {
       progressSummary: progressSummaryResult,
       progressSummaryLoading: false,
     }));
-  }, [
-    loadProfileSection,
-    loadStudyStatsSection,
-    loadLanguageProfileSection,
-    loadMatesSection,
-    loadAchievementsSection,
-  ]);
+  }, []); // ✅ 빈 배열: 함수 자체는 한 번만 생성
 
   // ✅ 무한 루프 방지: 첫 마운트 시에만 실행
   useEffect(() => {
@@ -389,7 +424,7 @@ export default function Main() {
       achievementsError: achievementsResult.error,
       achievementsLoading: false,
     }));
-  }, [loadAchievementsSection]);
+  }, []); // ✅ 빈 배열: 클로저로 loadAchievementsSection 접근
 
   // ✅ 컴포넌트 레벨 값 계산 (React 표준 패턴)
   const displayName = toDisplayText(state.profile?.englishName, "사용자");

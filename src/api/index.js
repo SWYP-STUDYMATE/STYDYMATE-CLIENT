@@ -82,30 +82,59 @@ api.interceptors.response.use(
     const duration = response.config.startTime ? Date.now() - response.config.startTime : 0;
     const method = response.config.method?.toUpperCase() || 'UNKNOWN';
     const url = response.config.url || 'unknown';
-    
+
+    // 🔍 디버깅: 응답 성공 로그
+    console.log("✅ [API Response Success]");
+    console.log("✅ URL:", url);
+    console.log("✅ Status:", response.status);
+    console.log("✅ Data:", response.data);
+    console.log("✅ Duration:", duration + "ms");
+
     log.api(method, url, response.status, duration);
-    
+
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
 
     // 에러 로깅
-    const duration = originalRequest.startTime ? Date.now() - originalRequest.startTime : 0;
-    const method = originalRequest.method?.toUpperCase() || 'UNKNOWN';
-    const url = originalRequest.url || 'unknown';
+    const duration = originalRequest?.startTime ? Date.now() - originalRequest.startTime : 0;
+    const method = originalRequest?.method?.toUpperCase() || 'UNKNOWN';
+    const url = originalRequest?.url || 'unknown';
+
+    // 🔴 상세한 에러 로그 (콘솔에서 네트워크 탭 대신 확인)
+    console.group("🔴 [API Response Error] " + url);
+    console.log("📍 URL:", url);
+    console.log("📍 Method:", method);
+    console.log("📍 Duration:", duration + "ms");
+
+    if (error.response) {
+      // 서버가 응답했지만 에러 상태 코드
+      console.log("📍 Status:", error.response.status);
+      console.log("📍 Status Text:", error.response.statusText);
+      console.log("📍 Response Headers:", error.response.headers);
+      console.log("📍 Response Data:", error.response.data);
+    } else if (error.request) {
+      // 요청은 보냈지만 응답을 받지 못함
+      console.log("📍 Error Type: 응답 없음 (No Response)");
+      console.log("📍 Request:", error.request);
+      console.log("📍 Possible causes:");
+      console.log("   - 네트워크 연결 문제");
+      console.log("   - CORS 문제");
+      console.log("   - 서버가 응답하지 않음");
+      console.log("   - 타임아웃");
+    } else {
+      // 요청 설정 중 에러 발생
+      console.log("📍 Error Type: 요청 설정 실패 (Request Setup Failed)");
+      console.log("📍 Error Message:", error.message);
+    }
+
+    console.log("📍 Full Error:", error);
+    console.groupEnd();
 
     // 401 에러는 토큰 재발급 시도 전에만 로깅 (예상 가능한 에러)
-    const isExpected401 = error.response?.status === 401 && 
+    const isExpected401 = error.response?.status === 401 &&
                           (url.includes('/onboarding-status') || url.includes('/auth/'));
-    
-    if (!isExpected401) {
-      // 🔍 디버깅 로그 (예상되지 않은 에러에만)
-      console.log("🔍 [API Response Error Interceptor]");
-      console.log("🔍 Error occurred for:", method, url);
-      console.log("🔍 Error status:", error.response?.status);
-      console.log("🔍 Error data:", error.response?.data);
-    }
 
     if (error.response) {
       log.api(method, url, error.response.status, duration);

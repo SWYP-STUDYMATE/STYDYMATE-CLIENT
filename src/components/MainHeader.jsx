@@ -4,6 +4,7 @@ import NotificationTestPanel from './NotificationTestPanel';
 import NotificationBadge from './NotificationBadge';
 
 export default function MainHeader() {
+  console.count('[MainHeader] render');
   const [showTestPanel, setShowTestPanel] = useState(false);
 
   return (

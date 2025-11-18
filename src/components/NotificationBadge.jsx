@@ -1,24 +1,31 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { shallow } from 'zustand/shallow';
 import useNotificationStore from '../store/notificationStore';
 
-const NotificationBadge = ({ 
+const NotificationBadge = ({
   className = "",
   size = "md",
   showZero = false,
   onClick,
   refreshInterval = 30000 // 30초마다 업데이트
 }) => {
+  console.count('[NotificationBadge] render');
   const navigate = useNavigate();
-  const { unreadCount, loading } = useNotificationStore(
-    (state) => ({
-      unreadCount: state.unreadCount,
-      loading: state.loading,
-    }),
-    shallow
-  );
+
+  // ⚠️ CRITICAL: Zustand selector 무한 루프 방지 패턴
+  //
+  // ❌ 절대 사용 금지:
+  // const { unreadCount, loading } = useNotificationStore(
+  //   (state) => ({ unreadCount: state.unreadCount, loading: state.loading }),
+  //   shallow
+  // );
+  // → 매 렌더링마다 새 객체 생성 → shallow 비교 무의미 → 무한 루프
+  //
+  // ✅ 올바른 방법: 각 값을 개별적으로 선택
+  // → Primitive 값 반환 → 참조 안정적 → 값 변경 시에만 리렌더링
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const loading = useNotificationStore((state) => state.loading);
   const loadUnreadCount = useNotificationStore((state) => state.loadUnreadCount);
 
   useEffect(() => {
