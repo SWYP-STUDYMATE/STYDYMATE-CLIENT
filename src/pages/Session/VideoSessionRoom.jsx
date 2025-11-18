@@ -971,25 +971,44 @@ export default function VideoSessionRoom() {
             {Array.from(remoteVideosRef.current.entries()).map(([userId, stream]) => {
               // participants Map에서 해당 userId의 참가자 정보 가져오기
               const participant = participants.get(userId);
-              
+
               // 파트너 정보가 있으면 우선 사용, 없으면 participant 정보 사용
               const displayName = partnerInfo?.name || participant?.userName || participant?.name || '게스트';
               const displayInitial = displayName.charAt(0).toUpperCase();
               const isGuest = !participant?.userName && !participant?.name && !partnerInfo?.name;
-              
-              // 카메라 상태 확인 (스트림의 비디오 트랙 상태를 우선 확인)
-              // 비디오 트랙이 활성화되어 있으면 카메라가 켜져있는 것으로 간주
-              const hasVideoTracks = stream.getVideoTracks().length > 0;
-              const hasActiveVideoTrack = hasVideoTracks && 
-                stream.getVideoTracks().some(track => track.enabled && track.readyState === 'live');
-              
-              // 스트림 상태를 우선 확인
-              // 비디오 트랙이 활성화되어 있으면 participant 정보와 관계없이 카메라가 켜져있는 것으로 간주
-              // 비디오 트랙이 없거나 모두 비활성화되어 있으면 카메라가 꺼져있는 것으로 간주
-              const isVideoEnabled = hasActiveVideoTrack;
-              
-              const isAudioEnabled = participant?.audioEnabled !== false && 
-                                     stream.getAudioTracks().some(track => track.enabled && track.readyState === 'live');
+
+              // 비디오 트랙 상세 로깅
+              const videoTracks = stream.getVideoTracks();
+              const audioTracks = stream.getAudioTracks();
+
+              console.log(`📹 [VideoSessionRoom] 참가자 ${userId} 비디오 트랙:`, videoTracks.map(t => ({
+                id: t.id,
+                label: t.label,
+                enabled: t.enabled,
+                readyState: t.readyState,
+                muted: t.muted,
+                kind: t.kind
+              })));
+
+              // 카메라 상태 확인 - 스트림이 있으면 기본적으로 활성화된 것으로 간주
+              // readyState가 'live'이고 enabled가 true인 비디오 트랙이 하나라도 있으면 표시
+              const hasVideoTracks = videoTracks.length > 0;
+              const hasActiveVideoTrack = hasVideoTracks &&
+                videoTracks.some(track => track.enabled && track.readyState === 'live');
+
+              // ✅ 수정: 스트림이 있으면 일단 활성화된 것으로 간주 (participant 상태보다 스트림 상태 우선)
+              // 비디오 트랙이 있고 readyState가 'ended'가 아니면 표시
+              const isVideoEnabled = hasVideoTracks &&
+                videoTracks.some(track => track.readyState !== 'ended');
+
+              console.log(`✅ [VideoSessionRoom] 참가자 ${userId} 비디오 활성화:`, isVideoEnabled, {
+                hasVideoTracks,
+                hasActiveVideoTrack,
+                trackStates: videoTracks.map(t => t.readyState)
+              });
+
+              const isAudioEnabled = audioTracks.length > 0 &&
+                                     audioTracks.some(track => track.enabled && track.readyState === 'live');
               
               return (
                 <div
