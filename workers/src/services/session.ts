@@ -1459,12 +1459,13 @@ export async function getSessionStats(
     if (!lastSessionAt || row.scheduled_at > lastSessionAt) {
       lastSessionAt = row.scheduled_at;
     }
-    const otherUser = row.host_user_id === userId ? row.guest_user_id : row.host_user_id;
-    if (otherUser) partners.add(otherUser);
     if (row.status === SESSION_STATUS.COMPLETED) {
       completed += 1;
       monthlyMinutes += Number(row.duration_minutes ?? 0);
       completedDates.add(new Date(row.scheduled_at).toISOString().slice(0, 10));
+      // ✅ FIX: 완료된 세션의 파트너만 "활성 파트너"로 카운트
+      const otherUser = row.host_user_id === userId ? row.guest_user_id : row.host_user_id;
+      if (otherUser) partners.add(otherUser);
     } else if (row.status === SESSION_STATUS.CANCELLED) {
       cancelled += 1;
     } else if (row.status === SESSION_STATUS.SCHEDULED) {
@@ -1475,7 +1476,22 @@ export async function getSessionStats(
   const averageDuration = completed > 0 ? monthlyMinutes / completed : 0;
   const streakDays = (() => {
     if (completedDates.size === 0) return 0;
-    const cursor = new Date();
+
+    // ✅ FIX: 1일 유예기간 추가 (오늘/어제까지 허용)
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const yesterdayKey = yesterday.toISOString().slice(0, 10);
+
+    // 오늘이나 어제에 세션이 있는지 확인
+    const hasRecentSession = completedDates.has(todayKey) || completedDates.has(yesterdayKey);
+    if (!hasRecentSession) {
+      return 0; // 오늘/어제 모두 세션 없음 → 연속 학습일 종료
+    }
+
+    // 연속 학습일 계산 (어제부터 역순으로)
+    const cursor = new Date(yesterday);
     let streak = 0;
     for (;;) {
       const key = cursor.toISOString().slice(0, 10);
