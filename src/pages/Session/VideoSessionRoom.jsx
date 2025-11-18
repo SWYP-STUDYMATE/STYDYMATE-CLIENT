@@ -794,6 +794,19 @@ export default function VideoSessionRoom() {
 
   return (
     <div className="min-h-screen bg-[var(--black-600)] flex flex-col">
+      {/* Session Access Denied Warning */}
+      {sessionAccessInfo && !sessionAccessInfo.canJoin && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+          <div className="bg-[rgba(234,67,53,0.95)] backdrop-blur-sm rounded-lg p-4 shadow-lg flex items-center gap-3 min-w-[320px]">
+            <AlertTriangle className="w-6 h-6 text-white flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-white font-medium">세션 접속 불가</p>
+              <p className="text-white/80 text-sm mt-1">{sessionAccessInfo.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Session End Warning */}
       {showEndWarning && remainingMinutes !== null && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
@@ -832,6 +845,24 @@ export default function VideoSessionRoom() {
                 {remoteVideosRef.current.size + 1}명 참가 중
               </span>
             </div>
+
+            {/* 세션 시간 정보 */}
+            {sessionMetadata?.scheduledStartTime && sessionMetadata?.scheduledEndTime && (
+              <div className="flex items-center gap-2 text-[var(--black-200)] text-sm">
+                <Clock className="w-4 h-4" />
+                <span>
+                  {new Date(sessionMetadata.scheduledStartTime).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                  {' - '}
+                  {new Date(sessionMetadata.scheduledEndTime).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -1191,7 +1222,11 @@ export default function VideoSessionRoom() {
           showSettings={false}
           showFullscreen={false}
           showParticipants={false}
-          className={connectionState !== 'connected' ? 'opacity-50 pointer-events-none' : ''}
+          className={
+            (connectionState !== 'connected' || sessionAccessInfo?.canJoin === false)
+              ? 'opacity-50 pointer-events-none'
+              : ''
+          }
           variant="dark"
         />
       </div>

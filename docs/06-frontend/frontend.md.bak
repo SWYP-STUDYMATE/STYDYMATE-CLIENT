@@ -1,0 +1,1725 @@
+# 프론트엔드 개발 가이드
+
+**최종 업데이트**: 2025-01-13
+
+## 📋 개요
+
+STUDYMATE-CLIENT 프로젝트의 프론트엔드 개발 가이드입니다. 디자인 시스템, 컴포넌트 구조, 라우팅, 상태 관리, API 연동 방법을 정의합니다.
+
+## 🎨 디자인 시스템
+
+### 색상 팔레트
+
+**⚠️ 중요: 모든 UI 구현 시 반드시 이 색상만 사용할 것**
+
+#### Green 계열 (Primary Brand Color)
+```css
+--green-50: #E6F9F1;
+--green-500: #00C471;  /* 메인 브랜드 컬러 */
+--green-600: #00B267;
+```
+
+#### Black 계열 (Text & UI)
+```css
+--black-50: #E7E7E7;   /* 테두리 */
+--black-200: #929292;  /* 보조 텍스트 */
+--black-500: #111111;  /* 메인 텍스트 */
+```
+
+#### 기타 필수 색상
+```css
+--white: #FFFFFF;          /* 카드 배경 */
+--background: #FAFAFA;     /* 페이지 배경 */
+--naver: #03C75A;          /* 네이버 로그인 */
+--red: #EA4335;            /* 에러/경고 */
+--blue: #4285F4;           /* 정보/링크 */
+--gray-border: #CED4DA;    /* 기본 테두리 */
+```
+
+### 타이포그래피
+- **Font Family**: Pretendard
+- **Letter Spacing**: `-0.025em` (전역)
+- **제목**: H1 (32px, bold, 42px line-height)
+- **본문**: Large (18px, bold, 28px), Medium (16px, medium, 24px), Small (14px)
+
+### 간격 시스템
+- **페이지 여백**: 24px (좌우)
+- **섹션 간격**: 32px, 40px
+- **컴포넌트 간격**: 12px, 16px, 20px, 24px
+- **내부 패딩**: 14px, 16px
+
+### 버튼 스타일
+- **높이**: 56px (기본)
+- **Border Radius**: 6px
+- **Font**: 18px, bold
+- **Variants**:
+  - Primary: 검정 배경 → hover 시 회색
+  - Success: 연두 배경 → hover 시 진한 초록
+  - Complete: 초록 배경 → hover 시 진한 초록
+  - Secondary: 회색 배경 → hover 시 검정
+  - Disabled: `bg-[#F1F3F5]`, `text-[#929292]`
+
+### 입력 필드 스타일
+- **높이**: 56px
+- **Border**: 1px solid #CED4DA, focus 시 #111111
+- **Padding**: 0 16px
+- **Font**: 16px, medium
+
+## 🏗️ 프로젝트 구조
+
+```
+src/
+├── api/           # API 통신 레이어
+│   ├── index.js   # Axios 인스턴스 및 인터셉터
+│   ├── user.js
+│   ├── onboarding.js
+│   ├── sessions.js
+│   └── ...
+├── components/    # 재사용 컴포넌트
+│   ├── common/    # 공통 컴포넌트
+│   │   ├── CommonButton.jsx
+│   │   ├── Modal.jsx
+│   │   └── ...
+│   ├── layout/    # 레이아웃 컴포넌트
+│   │   ├── MainHeader.jsx
+│   │   ├── BottomNav.jsx
+│   │   └── ...
+│   └── ...
+├── hooks/         # 커스텀 훅
+│   ├── useAuth.js
+│   ├── useModal.js
+│   └── ...
+├── pages/         # 페이지 컴포넌트
+│   ├── Login.jsx
+│   ├── Main.jsx
+│   ├── Profile.jsx
+│   └── ...
+├── store/         # 상태 관리 (Zustand)
+│   ├── userStore.js
+│   ├── profileStore.js
+│   ├── notificationStore.js
+│   └── ...
+├── utils/         # 유틸리티 함수
+│   ├── validation.js
+│   ├── format.js
+│   └── ...
+└── services/      # 비즈니스 로직
+    ├── websocket.js
+    └── ...
+```
+
+## 🚦 라우팅 구조
+
+**총 86+ 라우트** | 라우트 타입: `PUBLIC` (인증 불필요), `AUTH` (로그인만 필요), `PROTECTED` (로그인 + 온보딩 완료 필요)
+
+### PUBLIC 라우트 (5개)
+```javascript
+'/' - Login (exact)
+'/login/oauth2/code/naver' - Navercallback (네이버 OAuth)
+'/login/oauth2/code/google' - GoogleCallback (구글 OAuth)
+'/agreement' - Agreement (약관 동의)
+'/signup-complete' - SignupComplete (회원가입 완료)
+```
+
+### AUTH 라우트 (5개 - 온보딩)
+```javascript
+'/onboarding-info/:step' - OnboardingInfoRouter (1-4단계)
+'/onboarding-lang/:step' - ObLangRouter (학습 언어 설정)
+'/onboarding-int/:step' - ObIntRouter (관심사 선택)
+'/onboarding-partner/:step' - ObPartnerRouter (파트너 선호도)
+'/onboarding-schedule/:step' - ObScheduleRouter (스케줄 설정)
+```
+
+### PROTECTED 라우트 (76개)
+
+#### 레벨 테스트 (7개, Layout 없음)
+```javascript
+'/level-test' - LevelTestStart
+'/level-test/check' - LevelTestCheck
+'/level-test/recording' - LevelTestRecording
+'/level-test/connection' - LevelTestCheck
+'/level-test/question/:id' - LevelTestRecording
+'/level-test/complete' - LevelTestComplete
+'/level-test/result' - LevelTestResult
+```
+
+#### 세션 (7개, Layout 없음)
+```javascript
+'/session/audio-check' - AudioConnectionCheck
+'/session/video/:roomId' - VideoSessionRoom
+'/session/video-check' - VideoConnectionCheck
+'/session/audio/:roomId' - AudioSessionRoom
+'/session/video-controls-demo' - VideoControlsDemo
+'/sessions' - SessionList (Layout 포함)
+'/session' - SessionList (Layout 포함)
+```
+
+#### 세션 관리 (4개, Layout 포함)
+```javascript
+'/sessions/create' - SessionCreate
+'/sessions/calendar' - SessionCalendar
+'/session/schedule/new' - SessionScheduleNew
+'/sessions/:sessionId' - SessionDetails (동적)
+```
+
+#### 메인 앱 (6개, Layout 포함)
+```javascript
+'/main' - Main
+'/chat' - ChatPage
+'/schedule' - Schedule
+'/profile' - ProfilePage
+'/analytics' - AnalyticsPage
+'/mates' - MatesPage
+```
+
+#### 매칭 (4개, Layout 포함)
+```javascript
+'/matching' - MatchingMain
+'/matching/requests/received' - MatchingMain
+'/matching/requests/sent' - MatchingMain
+'/matching/profile/:userId' - MatchingProfile
+```
+
+#### Settings (9개, Layout 포함)
+```javascript
+'/settings' - SettingsMain
+'/settings/account' - AccountSettings
+'/settings/notifications' - NotificationSettings
+'/settings/privacy' - PrivacySettings
+'/settings/security' - SecuritySettings
+'/settings/language' - LanguageSettings
+'/settings/data' - DataSettings
+'/settings/login-history' - LoginHistory
+'/settings/delete-account' - DeleteAccount
+```
+
+#### Notifications (2개, Layout 포함)
+```javascript
+'/notifications' - NotificationList
+'/notifications/center' - NotificationCenter
+```
+
+#### Achievements (1개, Layout 포함)
+```javascript
+'/achievements' - AchievementsPage
+```
+
+### 라우트 설정 구조
+
+```javascript
+// src/config/routes.js
+export const ROUTE_TYPES = {
+  PUBLIC: 'public',        // 인증 불필요
+  AUTH: 'auth',            // 로그인만 필요 (온보딩 미완료 허용)
+  PROTECTED: 'protected',  // 로그인 + 온보딩 완료 필요
+};
+
+export const routes = [
+  {
+    path: '/main',
+    component: Main,
+    type: ROUTE_TYPES.PROTECTED,
+    layout: true,  // MainHeader + BottomNav 포함
+  },
+  // ... 86+ 라우트
+];
+```
+
+### 라우트 보호 및 리다이렉션
+
+```javascript
+// OnboardingProtectedRoute.jsx
+// - 미로그인 사용자 → '/' 리다이렉션
+// - 온보딩 미완료 → '/onboarding-info/1' 리다이렉션
+// - 온보딩 완료 → PROTECTED 라우트 접근 가능
+
+// 로그인 사용자 온보딩 플로우:
+1. 로그인 성공 → 온보딩 상태 확인
+2. 온보딩 미완료 → /onboarding-info/1
+3. 모든 단계 완료 → /main
+4. 이후 PROTECTED 라우트 자유 접근
+```
+
+## 🗂️ 상태 관리 (Zustand)
+
+**총 13개 Store** | 모두 `persist` 미들웨어 사용
+
+### ⚠️ CRITICAL: Zustand 무한 루프 방지 패턴
+
+```javascript
+// ✅ 올바른 방법: 각 값을 개별적으로 선택
+const unreadCount = useNotificationStore((state) => state.unreadCount);
+const loading = useNotificationStore((state) => state.loading);
+const loadUnreadCount = useNotificationStore((state) => state.loadUnreadCount);
+
+// ❌ 절대 사용 금지: 객체 selector + shallow
+// const { unreadCount, loading } = useNotificationStore(
+//   (state) => ({ unreadCount: state.unreadCount, loading: state.loading }),
+//   shallow
+// );
+// → 매 렌더링마다 새 객체 생성 → 무한 루프
+// 참고: docs/99-logs/failure-patterns/2025-01-13-zustand-infinite-loop.md
+```
+
+### Store 목록 및 상태 구조
+
+#### 1. `themeStore.js` - 다크모드 테마 관리
+```javascript
+{
+  isDarkMode: false,           // 다크모드 활성화 여부
+  systemTheme: false,          // 시스템 테마 설정
+
+  // Actions
+  toggleTheme() - 테마 전환
+  setTheme(isDark) - 테마 직접 설정
+  useSystemTheme() - 시스템 테마 따르기
+  initializeTheme() - 초기화 + 시스템 변경 감지
+}
+
+// 사용 예시
+const isDarkMode = useThemeStore((state) => state.isDarkMode);
+const toggleTheme = useThemeStore((state) => state.toggleTheme);
+
+// persist: 'theme-storage'
+// onRehydrate: DOM 클래스 자동 적용
+```
+
+#### 2. `notificationStore.js` - 실시간 알림 관리 (⭐ 324줄, WebSocket 통합)
+```javascript
+{
+  notifications: [],           // 알림 목록
+  unreadCount: 0,             // 읽지 않은 알림 수
+  loading: false,             // 로딩 상태
+  error: null,                // 에러
+  filter: {                   // 필터 설정
+    type: null,               // 알림 타입
+    isRead: null              // 읽음 상태
+  },
+  pagination: {               // 페이지네이션
+    page: 1,
+    size: 20,
+    totalPages: 1,
+    hasMore: false
+  },
+  realtimeSettings: {         // 실시간 설정
+    enabled: true,
+    soundEnabled: true,
+    vibrationEnabled: false
+  },
+
+  // Actions
+  loadNotifications(params) - 알림 목록 로드
+  loadUnreadCount() - 읽지 않은 수 조회
+  markAsRead(id) - 읽음 처리
+  markAllAsRead() - 전체 읽음
+  deleteNotification(id) - 알림 삭제
+  addNotification(notification) - 실시간 알림 추가 (WebSocket)
+  updateNotification(id, updates) - 알림 업데이트
+  setFilter(filter) - 필터 설정
+  getGroupedNotifications() - 그룹화된 알림 조회
+}
+
+// 사용 예시 (⚠️ 반드시 개별 selector 사용)
+const unreadCount = useNotificationStore((state) => state.unreadCount);
+const loading = useNotificationStore((state) => state.loading);
+const loadNotifications = useNotificationStore((state) => state.loadNotifications);
+
+// persist: 'notification-storage'
+// WebSocket 연동: addNotification()으로 실시간 알림 추가
+```
+
+#### 3. `sessionStore.js` - 세션 + 캘린더 통합 (⭐ 297줄)
+```javascript
+{
+  sessions: [],               // 세션 목록
+  upcomingSessions: [],       // 예정된 세션
+  currentSession: null,       // 현재 세션
+  calendar: {                 // 캘린더 데이터
+    events: [],               // 이벤트 목록
+    slots: []                 // 사용 가능한 시간 슬롯
+  },
+  loading: false,
+  error: null,
+
+  // Actions
+  loadCalendar(year, month) - 캘린더 로드
+  loadSessions() - 세션 목록 로드
+  loadUpcomingSessions() - 예정 세션 로드
+  startSession(sessionId) - 세션 시작
+  endSession(sessionId) - 세션 종료
+  updateSession(sessionId, updates) - 세션 업데이트
+  clearSessions() - 세션 초기화
+}
+
+// 사용 예시
+const sessions = useSessionStore((state) => state.sessions);
+const calendar = useSessionStore((state) => state.calendar);
+const loadCalendar = useSessionStore((state) => state.loadCalendar);
+
+// persist: 'session-storage'
+// Calendar API 연동
+```
+
+#### 4. `matchingStore.js` - 매칭 시스템 (⭐ 457줄, 복잡한 로직)
+```javascript
+{
+  partners: [],               // 추천 파트너 목록
+  sentRequests: [],           // 보낸 매칭 요청
+  receivedRequests: [],       // 받은 매칭 요청
+  matches: [],                // 매칭 완료 목록
+  filters: {                  // 필터
+    languages: [],
+    levels: [],
+    interests: [],
+    availability: null
+  },
+  isMatching: false,          // 매칭 진행 중
+  loading: false,
+  error: null,
+
+  // Actions
+  startMatching() - 매칭 시작
+  sendMatchRequest(userId) - 매칭 요청 보내기
+  acceptMatch(matchId) - 매칭 수락
+  rejectMatch(matchId) - 매칭 거절
+  fetchRecommendedPartners(filters) - 추천 파트너 조회
+  searchPartners(query) - 파트너 검색
+  updateFilters(filters) - 필터 업데이트
+  analyzePartnerCompatibility(partnerId) - 호환성 분석
+  clearMatching() - 매칭 상태 초기화
+}
+
+// 사용 예시
+const partners = useMatchingStore((state) => state.partners);
+const sentRequests = useMatchingStore((state) => state.sentRequests);
+const sendMatchRequest = useMatchingStore((state) => state.sendMatchRequest);
+
+// persist: 'matching-storage'
+// 중복 요청 방지 로직 포함
+```
+
+#### 5. `achievementStore.js` - 업적 시스템
+```javascript
+{
+  achievements: [],           // 전체 업적 목록
+  myAchievements: [],         // 내 업적
+  completedAchievements: [], // 완료한 업적
+  inProgressAchievements: [], // 진행 중 업적
+  stats: {                    // 통계
+    totalAchievements: 0,
+    completedCount: 0,
+    inProgressCount: 0,
+    points: 0
+  },
+  loading: false,
+  error: null,
+
+  // Actions
+  loadAchievements() - 업적 목록 로드
+  loadMyAchievements() - 내 업적 로드
+  updateProgress(id, progress) - 진행도 업데이트
+  claimReward(id) - 보상 수령
+  trackEvent(event) - 이벤트 추적
+}
+
+// persist: 'achievement-storage'
+```
+
+#### 6. `toastStore.js` - 토스트 알림
+```javascript
+{
+  toasts: [],                 // 토스트 목록 (자동 제거)
+  maxToasts: 3,               // 최대 표시 개수
+
+  // Actions
+  addToast(toast) - 토스트 추가
+  removeToast(id) - 토스트 제거
+  clearToasts() - 전체 제거
+}
+
+// toast 구조
+{
+  id: string,
+  type: 'success' | 'error' | 'info' | 'warning',
+  message: string,
+  duration: number (ms, 기본 3000)
+}
+
+// persist: 'toast-storage'
+```
+
+#### 7. `profileStore.js` - 프로필
+```javascript
+{
+  englishName: '',
+  residence: '',
+  profileImage: null,
+  intro: '',
+
+  // Actions
+  setEnglishName(name)
+  setResidence(residence)
+  setProfileImage(image)
+  setIntro(intro)
+  clearProfile()
+}
+
+// persist: 'profile-storage'
+```
+
+#### 8. `levelTestStore.js` - 레벨 테스트
+```javascript
+{
+  currentQuestion: null,
+  answers: [],
+  testId: null,
+  result: null,
+  loading: false,
+
+  // Actions
+  startTest()
+  submitAnswer(answer)
+  finishTest()
+  loadResult()
+  clearTest()
+}
+
+// persist: 'level-test-storage'
+```
+
+#### 9. `langInfoStore.js` - 언어 정보
+```javascript
+{
+  nativeLanguage: '',
+  learningLanguage: '',
+  proficiencyLevel: '',
+
+  // Actions
+  setNativeLanguage(lang)
+  setLearningLanguage(lang)
+  setProficiencyLevel(level)
+  clearLanguageInfo()
+}
+
+// persist: 'lang-info-storage'
+```
+
+#### 10. `motivationStore.js` - 동기부여
+```javascript
+{
+  goals: [],
+  motivations: [],
+  dailyStreak: 0,
+  weeklyGoal: null,
+
+  // Actions
+  addGoal(goal)
+  updateGoal(id, updates)
+  incrementStreak()
+  setWeeklyGoal(goal)
+}
+
+// persist: 'motivation-storage'
+```
+
+#### 11. `partnerStore.js` - 파트너 선호도
+```javascript
+{
+  preferredGender: '',
+  preferredAge: { min: 18, max: 100 },
+  preferredCountries: [],
+  preferredInterests: [],
+
+  // Actions
+  setPreferredGender(gender)
+  setPreferredAge(ageRange)
+  setPreferredCountries(countries)
+  setPreferredInterests(interests)
+  clearPartnerPreferences()
+}
+
+// persist: 'partner-storage'
+```
+
+#### 12. `createStore.js` - Store 생성 유틸리티
+```javascript
+// Zustand store 생성 헬퍼 함수
+// 반복되는 persist 설정 자동화
+```
+
+#### 13. `index.js` - Store Export Aggregator
+```javascript
+// 모든 Store를 중앙에서 export
+export { default as useThemeStore } from './themeStore';
+export { default as useNotificationStore } from './notificationStore';
+// ... 나머지 Store들
+```
+
+### Store 사용 Best Practices
+
+#### 1. 개별 Selector 패턴 (필수)
+```javascript
+// ✅ CORRECT
+const unreadCount = useNotificationStore((state) => state.unreadCount);
+const loading = useNotificationStore((state) => state.loading);
+
+// ❌ NEVER USE
+const { unreadCount, loading } = useNotificationStore(
+  (state) => ({ unreadCount: state.unreadCount, loading: state.loading })
+);
+```
+
+#### 2. Actions는 함수 참조로
+```javascript
+// ✅ CORRECT
+const loadNotifications = useNotificationStore((state) => state.loadNotifications);
+
+useEffect(() => {
+  loadNotifications();
+}, [loadNotifications]); // 함수 참조는 안정적
+```
+
+#### 3. Persist 활용
+```javascript
+// 모든 Store는 localStorage에 자동 저장
+// 페이지 새로고침 후에도 상태 유지
+// Storage Key: '{store-name}-storage'
+```
+
+#### 4. WebSocket 연동 (notificationStore)
+```javascript
+// WebSocket에서 실시간 알림 수신 시
+const addNotification = useNotificationStore((state) => state.addNotification);
+
+socket.on('notification', (notification) => {
+  addNotification(notification);
+});
+```
+
+### Store 간 통신
+
+#### 방법 1: 직접 호출
+```javascript
+import { useSessionStore } from '../store';
+import { useNotificationStore } from '../store';
+
+const handleSessionComplete = () => {
+  // Session Store 업데이트
+  useSessionStore.getState().endSession(sessionId);
+
+  // Notification Store에 알림 추가
+  useNotificationStore.getState().addNotification({
+    type: 'success',
+    message: '세션이 완료되었습니다'
+  });
+};
+```
+
+#### 방법 2: Custom Hook
+```javascript
+const useSessionCompletion = () => {
+  const endSession = useSessionStore((state) => state.endSession);
+  const addNotification = useNotificationStore((state) => state.addNotification);
+
+  return (sessionId) => {
+    endSession(sessionId);
+    addNotification({
+      type: 'success',
+      message: '세션이 완료되었습니다'
+    });
+  };
+};
+```
+
+## 🔌 API 연동
+
+**총 19개 API 모듈** | Workers 백엔드 `https://api.languagemate.kr`와 통신
+
+### Axios 인스턴스 설정
+```javascript
+// src/api/index.js
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.languagemate.kr';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request 인터셉터 (JWT 토큰 자동 추가 + 검증)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    // JWT 만료 체크
+    try {
+      const decoded = jwtDecode(token);
+      const now = Date.now() / 1000;
+      if (decoded.exp && decoded.exp < now) {
+        // 토큰 만료 - 새로고침 필요
+        window.dispatchEvent(new CustomEvent('auth:token-expired'));
+      } else {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('JWT decode error:', error);
+    }
+  }
+  return config;
+});
+
+// Response 인터셉터 (토큰 자동 갱신 + WebSocket 재연결)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
+            refreshToken
+          });
+          localStorage.setItem('accessToken', data.accessToken);
+
+          // WebSocket 재연결 이벤트 발행
+          window.dispatchEvent(new CustomEvent('auth:token-refreshed', {
+            detail: { token: data.accessToken }
+          }));
+
+          error.config.headers.Authorization = `Bearer ${data.accessToken}`;
+          return axios.request(error.config);
+        } catch {
+          localStorage.clear();
+          window.location.href = '/';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+```
+
+### API 모듈 목록 및 주요 함수
+
+#### 1. `auth.js` - 인증
+```javascript
+// 로그인 & 회원가입
+naverLogin() - 네이버 OAuth 로그인
+googleLogin() - 구글 OAuth 로그인
+logout() - 로그아웃
+refreshToken(refreshToken) - 토큰 갱신
+```
+
+#### 2. `user.js` - 사용자 관리
+```javascript
+getProfile() - 사용자 프로필 조회
+updateProfile(profileData) - 프로필 업데이트
+uploadProfileImage(file) - 프로필 이미지 업로드
+getMyInfo() - 내 정보 조회
+```
+
+#### 3. `onboarding.js` - 온보딩
+```javascript
+saveOnboardingStep(step, data) - 온보딩 단계 저장
+getOnboardingStatus() - 온보딩 진행 상태 조회
+completeOnboarding() - 온보딩 완료 처리
+```
+
+#### 4. `analytics.js` - 분석 (⭐ 12개 함수)
+```javascript
+getDashboardData() - 대시보드 전체 데이터
+getStudyStats(params) - 학습 통계
+getSessionActivity(params) - 세션 활동 내역
+getLevelTestHistory() - 레벨 테스트 기록
+getMatchingStats() - 매칭 통계
+getAIUsageStats() - AI 사용 통계
+getPerformanceStats() - 성능 통계
+sendAnalyticsEvents(events) - 분석 이벤트 전송
+connectToMetricsStream() - 실시간 메트릭 스트림 (WebSocket)
+getLearningPattern() - 학습 패턴 분석
+getProgressSummary() - 진도 요약
+getLearningRecommendations() - 학습 추천
+```
+
+#### 5. `settings.js` - 설정 (⭐ 15개 함수)
+```javascript
+// 계정 설정
+getAccountSettings() - 계정 설정 조회
+updateAccountSettings(data) - 계정 설정 업데이트
+
+// 알림 설정
+getNotificationSettings() - 알림 설정 조회
+updateNotificationSettings(data) - 알림 설정 업데이트
+
+// 프라이버시 설정
+getPrivacySettings() - 프라이버시 설정 조회
+updatePrivacySettings(data) - 프라이버시 설정 업데이트
+
+// 언어 설정
+getLanguageSettings() - 언어 설정 조회
+updateLanguageSettings(data) - 언어 설정 업데이트
+
+// 보안
+changePassword(oldPassword, newPassword) - 비밀번호 변경
+getTwoFactorSettings() - 2FA 설정 조회
+enableTwoFactor() - 2FA 활성화
+disableTwoFactor() - 2FA 비활성화
+
+// 데이터
+exportUserData() - 사용자 데이터 내보내기
+getLoginHistory() - 로그인 기록
+deleteAccount() - 계정 삭제
+```
+
+#### 6. `achievement.js` - 업적 (⭐ 12개 함수)
+```javascript
+// 조회
+getAllAchievements() - 전체 업적 목록
+getAchievementsByCategory(category) - 카테고리별 업적
+getMyAchievements() - 내 업적
+getMyCompletedAchievements() - 완료한 업적
+getMyInProgressAchievements() - 진행 중 업적
+getMyAchievementStats() - 업적 통계
+
+// 진행 관리
+updateAchievementProgress(id, progress) - 진행도 업데이트
+incrementAchievementProgress(id, amount) - 진행도 증가
+claimAchievementReward(id) - 보상 수령
+
+// 시스템
+initializeAchievements() - 업적 초기화
+checkAchievementCompletion(id) - 완료 여부 확인
+trackAchievementEvent(event) - 이벤트 추적
+
+// Achievement Categories: STUDY, SOCIAL, MILESTONE, SPECIAL, STREAK
+```
+
+#### 7. `groupSession.js` - 그룹 세션 (⭐ 14개 함수)
+```javascript
+// 생성 & 참가
+createGroupSession(sessionData) - 그룹 세션 생성
+joinGroupSession(sessionId) - 세션 참가
+joinGroupSessionByCode(code) - 코드로 참가
+leaveGroupSession(sessionId) - 세션 나가기
+
+// 관리
+startGroupSession(sessionId) - 세션 시작
+endGroupSession(sessionId) - 세션 종료
+cancelGroupSession(sessionId) - 세션 취소
+updateGroupSession(sessionId, data) - 세션 정보 업데이트
+kickParticipant(sessionId, userId) - 참가자 강퇴
+
+// 조회
+getGroupSessionDetails(sessionId) - 세션 상세 조회
+getPublicGroupSessions(filters) - 공개 세션 목록
+getMyGroupSessions() - 내 세션 목록
+getUpcomingGroupSessions() - 예정된 세션
+getOngoingGroupSessions() - 진행 중 세션
+
+// 피드백
+submitSessionFeedback(sessionId, feedback) - 피드백 제출
+
+// Session Types: VIDEO, AUDIO, TEXT
+// Session Status: SCHEDULED, ONGOING, COMPLETED, CANCELLED
+```
+
+#### 8. `notifications.js` - 알림
+```javascript
+getNotifications(params) - 알림 목록 조회 (페이지네이션)
+getUnreadNotificationCount() - 읽지 않은 알림 수
+markNotificationAsRead(notificationId) - 읽음 처리
+markAllNotificationsAsRead() - 전체 읽음 처리
+deleteNotification(notificationId) - 알림 삭제
+```
+
+#### 9. `matching.js` - 매칭
+```javascript
+getRecommendedPartners(filters) - 추천 파트너 조회
+sendMatchRequest(userId) - 매칭 요청
+acceptMatch(matchId) - 매칭 수락
+rejectMatch(matchId) - 매칭 거절
+getMyMatches() - 내 매칭 목록
+getMatchRequests() - 받은 매칭 요청
+```
+
+#### 10. `session.js` - 1:1 세션
+```javascript
+createSession(sessionData) - 세션 생성
+joinSession(sessionId) - 세션 참가
+getSessionDetails(sessionId) - 세션 상세
+getUpcomingSessions() - 예정된 세션
+getSessionHistory() - 세션 기록
+```
+
+#### 11. `levelTest.js` - 레벨 테스트
+```javascript
+startLevelTest() - 레벨 테스트 시작
+submitLevelTest(answers) - 답안 제출
+getLevelTestResult() - 결과 조회
+getLevelTestHistory() - 기록 조회
+```
+
+#### 12. `chat.js` - 채팅
+```javascript
+getChatRooms() - 채팅방 목록
+getChatMessages(roomId) - 메시지 조회
+sendMessage(roomId, message) - 메시지 전송
+createChatRoom(userData) - 채팅방 생성
+```
+
+#### 13. `profile.js` - 프로필 확장
+```javascript
+getPublicProfile(userId) - 공개 프로필 조회
+updateLanguageProfile(data) - 언어 프로필 업데이트
+updateInterests(interests) - 관심사 업데이트
+```
+
+#### 14. `pronunciation.js` - 발음 평가
+```javascript
+evaluatePronunciation(audioBlob) - 발음 평가 (Whisper AI)
+getPronunciationHistory() - 평가 기록
+```
+
+#### 15. `webrtc.js` - WebRTC 시그널링
+```javascript
+createOffer(sessionId) - Offer 생성
+createAnswer(sessionId, offer) - Answer 생성
+addIceCandidate(sessionId, candidate) - ICE 후보 추가
+```
+
+#### 16. `groupSessionAI.js` - AI 그룹 세션
+```javascript
+generateSessionSummary(sessionId) - AI 세션 요약 (Llama)
+getAIRecommendations(sessionId) - AI 추천사항
+```
+
+#### 17. `config.js` - 설정 조회
+```javascript
+getAppConfig() - 앱 설정 조회
+```
+
+#### 18. `onboard.js` (deprecated, onboarding.js 사용)
+```javascript
+// onboarding.js와 중복, 마이그레이션 필요
+```
+
+#### 19. `index.js` - Axios 인스턴스
+```javascript
+// 메인 API 인스턴스 (위 참조)
+```
+
+### API 사용 예제
+
+#### Analytics Dashboard
+```javascript
+import { getDashboardData, getStudyStats } from '../api/analytics';
+
+// 대시보드 데이터 로드
+const Dashboard = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const data = await getDashboardData();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+      }
+    };
+    loadDashboard();
+  }, []);
+
+  // ...
+};
+```
+
+#### Settings Management
+```javascript
+import { getNotificationSettings, updateNotificationSettings } from '../api/settings';
+
+const NotificationSettings = () => {
+  const [settings, setSettings] = useState(null);
+
+  const loadSettings = async () => {
+    const data = await getNotificationSettings();
+    setSettings(data);
+  };
+
+  const saveSettings = async (newSettings) => {
+    await updateNotificationSettings(newSettings);
+    loadSettings(); // 재로드
+  };
+};
+```
+
+#### Achievement Tracking
+```javascript
+import { trackAchievementEvent, incrementAchievementProgress } from '../api/achievement';
+
+// 세션 완료 시 업적 진행도 업데이트
+const handleSessionComplete = async () => {
+  await trackAchievementEvent({
+    type: 'SESSION_COMPLETED',
+    sessionId: session.id
+  });
+
+  await incrementAchievementProgress('first-10-sessions', 1);
+};
+```
+
+## 🎭 공통 컴포넌트
+
+### CommonButton
+```jsx
+// src/components/common/CommonButton.jsx
+const CommonButton = ({ variant, children, onClick, loading, ...props }) => {
+  const baseClasses = "h-14 rounded-md px-6 text-lg font-bold transition-colors duration-200";
+
+  const variantClasses = {
+    primary: "bg-[#111111] text-white hover:bg-[#414141]",
+    success: "bg-[#E6F9F1] text-[#111111] hover:bg-[#B0EDD3]",
+    complete: "bg-[#00C471] text-white hover:bg-[#00B267]",
+    secondary: "bg-[#E7E7E7] text-[#111111] hover:bg-[#111111] hover:text-white",
+    disabled: "bg-[#F1F3F5] text-[#929292] cursor-not-allowed"
+  };
+
+  return (
+    <button
+      className={`${baseClasses} ${variantClasses[variant]}`}
+      onClick={onClick}
+      disabled={variant === 'disabled' || loading}
+      {...props}
+    >
+      {loading && <span className="mr-2">⏳</span>}
+      {children}
+    </button>
+  );
+};
+
+export default CommonButton;
+```
+
+## 🧩 UI 컴포넌트 라이브러리
+
+**위치**: `src/components/ui/`
+
+프로젝트 전반에서 사용되는 재사용 가능한 UI 컴포넌트 라이브러리입니다. 접근성, 성능 최적화, UX 개선에 중점을 둔 15개의 컴포넌트를 제공합니다.
+
+> **참고**: 각 컴포넌트의 상세 사용법은 [📄 페이지별 문서화](#-페이지별-문서화) 섹션에서 실제 사용 사례와 함께 설명합니다.
+
+### 📱 Accessibility (접근성)
+
+| 컴포넌트 | 파일 | 설명 |
+|---------|------|------|
+| **AccessibleButton** | `AccessibleButton.jsx` (132줄) | WCAG 2.1 AA 준수 버튼. 키보드 네비게이션, 스크린 리더, 44px 터치 영역 지원 |
+| **AccessibleInput** | `AccessibleInput.jsx` (264줄) | 접근성 향상 입력 필드. 자동 ID 생성, aria-describedby 연결, 에러/도움말 표시 |
+| **KeyboardNavigableList** | `KeyboardNavigableList.jsx` (233줄) | 화살표 키로 탐색 가능한 리스트. SimpleTextList, CardList 변형 포함 |
+
+### 🔔 Modals (모달)
+
+| 컴포넌트 | 파일 | 설명 |
+|---------|------|------|
+| **AlertModal** | `AlertModal.jsx` (98줄) | 단순 알림 모달 (확인 버튼만). info/success/error/warning 타입 지원 |
+| **ConfirmModal** | `ConfirmModal.jsx` (113줄) | 확인/취소 모달. confirm/danger/warning 타입, 커스텀 버튼 텍스트 |
+| **CustomConfirm** | `CustomConfirm.jsx` (82줄) | 경량 확인 팝업. 이모지 아이콘 (❓⚠️✅) 사용 |
+
+### ⚠️ Error & Feedback (에러 및 피드백)
+
+| 컴포넌트 | 파일 | 설명 |
+|---------|------|------|
+| **ErrorMessage** | `ErrorMessage.jsx` (250줄) | 4가지 변형: ErrorMessage, ErrorToast, NetworkError, EmptyState. 재시도 버튼 포함 |
+| **Toast** | `Toast.jsx` (83줄) | 자동 해제 알림 토스트. 6가지 위치, 3초 기본 지속 시간, role="alert" |
+
+### ⚡ Performance (성능 최적화)
+
+| 컴포넌트 | 파일 | 설명 |
+|---------|------|------|
+| **LazyBoundary** | `LazyBoundary.jsx` (225줄) | 8가지 전문화 경계: Page, Component, Modal, Chart, Media, Form, List. Suspense + ErrorBoundary |
+| **LazyImage** | `LazyImage.jsx` (278줄) | 5가지 변형: LazyImage, LazyAvatar, LazyCardImage, LazyGalleryImage, LazyBackgroundImage. Intersection Observer 기반 |
+| **LazyList** | `LazyList.jsx` (260줄) | 3가지 변형: LazyList (점진 로딩), InfiniteScrollList (무한 스크롤), VirtualizedList (가상화) |
+| **OptimizedImage** | `OptimizedImage.jsx` (120줄) | WebP/AVIF 자동 변환. srcset 생성 (400w/800w/1200w), 반응형 이미지 |
+
+### 🔄 Loading (로딩 상태)
+
+| 컴포넌트 | 파일 | 설명 |
+|---------|------|------|
+| **LoadingSpinner** | `LoadingSpinner.jsx` (186줄) | 4가지 변형: LoadingSpinner, InlineSpinner, SkeletonLoader, CardSkeleton. 3가지 크기 |
+
+### 🎯 UX Enhancement (UX 개선)
+
+| 컴포넌트 | 파일 | 설명 |
+|---------|------|------|
+| **PullToRefresh** | `PullToRefresh.jsx` (158줄) | 3가지 변형: PullToRefresh, SimplePullToRefresh, ListPullToRefresh. 임계값 80px |
+| **SwipeNavigation** | `SwipeNavigation.jsx` (273줄) | 3가지 변형: SwipeNavigation, ImageCarousel, SwipeableTabs. 키보드 단축키 지원 |
+
+### 공통 특징
+
+- **접근성**: 모든 컴포넌트 WCAG 2.1 AA 준수, aria-* 속성 완비
+- **성능**: Intersection Observer, 가상화, 코드 스플리팅 적극 활용
+- **반응형**: 모바일 우선 설계, 터치 최적화 (최소 44px)
+- **Custom Hooks**: `src/hooks/` 디렉토리의 전문화된 hook 사용
+- **유틸리티**: `src/utils/accessibility` 헬퍼 함수 활용
+
+## 📄 페이지별 문서화
+
+**위치**: `src/pages/`
+
+애플리케이션의 모든 페이지 컴포넌트를 기능별로 분류하여 문서화합니다. 각 페이지는 라우트 경로, 사용하는 Store, API 모듈, 주요 컴포넌트를 함께 설명합니다.
+
+---
+  message="파일 크기가 너무 큽니다"
+  onDismiss={() => setShowToast(false)}
+  duration={5000}
+/>
+
+// 빈 상태
+<EmptyState
+  icon={<SearchIcon className="w-16 h-16" />}
+  title="검색 결과 없음"
+  message="다른 키워드로 검색해보세요"
+  actionText="검색 재시도"
+  onAction={handleNewSearch}
+/>
+```
+
+**타입별 스타일**:
+- `error`: 빨강 (bg-red-50, border-red-200)
+- `warning`: 노랑 (bg-yellow-50, border-yellow-200)
+- `info`: 파랑 (bg-blue-50, border-blue-200)
+- `network`: 주황 (bg-orange-50, border-orange-200)
+
+---
+
+#### Toast
+**파일**: `src/components/ui/Toast.jsx` (83줄)
+
+간단한 토스트 알림 컴포넌트로, 자동으로 사라집니다.
+
+**Props**:
+```typescript
+{
+  message: string;
+  type?: 'info' | 'success' | 'error' | 'warning';  // 기본값: 'info'
+  duration?: number;                // 기본값: 3000ms
+  onClose?: Function;
+  position?: 'top-right' | 'top-left' | 'bottom-right' |
+             'bottom-left' | 'top-center' | 'bottom-center';  // 기본값: 'top-right'
+}
+```
+
+**사용 예제**:
+```jsx
+// toastStore와 함께 사용
+import { useToastStore } from '../store/toastStore';
+
+const { addToast } = useToastStore();
+
+addToast({
+  type: 'success',
+  message: '저장되었습니다',
+  duration: 3000
+});
+
+// 수동 사용
+<Toast
+  message="알림이 전송되었습니다"
+  type="info"
+  position="top-center"
+  onClose={() => setShowToast(false)}
+/>
+```
+
+**특징**:
+- 자동 타이머로 사라짐
+- 6가지 위치 옵션
+- 접근성: role="alert", aria-live="assertive"
+
+---
+
+### ⚡ Performance (성능 최적화)
+
+#### LazyBoundary
+**파일**: `src/components/ui/LazyBoundary.jsx` (225줄)
+
+React Suspense와 Error Boundary를 결합한 지연 로딩 래퍼 컴포넌트입니다.
+
+**컴포넌트**:
+- `LazyBoundary`: 기본 경계
+- `PageLazyBoundary`: 페이지 레벨
+- `ComponentLazyBoundary`: 컴포넌트 레벨
+- `ModalLazyBoundary`: 모달용
+- `ChartLazyBoundary`: 차트/그래프용
+- `MediaLazyBoundary`: 미디어용
+- `FormLazyBoundary`: 폼용
+- `ListLazyBoundary`: 리스트용
+
+**Props**:
+```typescript
+{
+  children: ReactNode;
+  fallback?: ReactNode;
+  fallbackMessage?: string;         // 기본값: '페이지를 불러오는 중...'
+  fullscreen?: boolean;             // 기본값: false
+  className?: string;
+  onError?: (error, errorInfo) => void;
+}
+```
+
+**사용 예제**:
+```jsx
+// 페이지 레벨
+<PageLazyBoundary pageName="프로필">
+  <ProfilePage />
+</PageLazyBoundary>
+
+// 차트 컴포넌트
+<ChartLazyBoundary>
+  <AnalyticsChart data={chartData} />
+</ChartLazyBoundary>
+
+// 리스트 (스켈레톤 5개)
+<ListLazyBoundary itemCount={5}>
+  <UserList />
+</ListLazyBoundary>
+
+// 커스텀 폴백
+<LazyBoundary
+  fallback={<CustomSpinner />}
+  onError={(error) => logError(error)}
+>
+  <HeavyComponent />
+</LazyBoundary>
+```
+
+**특징**:
+- 에러 발생 시 새로고침 버튼 제공
+- 각 용도별 최적화된 스켈레톤 UI
+- LoadingSpinner, 접근성 유틸리티 활용
+
+---
+
+#### LazyImage
+**파일**: `src/components/ui/LazyImage.jsx` (278줄)
+
+Intersection Observer 기반 지연 로딩 이미지 컴포넌트입니다.
+
+**컴포넌트**:
+- `LazyImage`: 기본 이미지
+- `LazyAvatar`: 아바타 이미지
+- `LazyCardImage`: 카드 이미지
+- `LazyGalleryImage`: 갤러리 이미지
+- `LazyBackgroundImage`: 배경 이미지
+
+**Props (LazyImage)**:
+```typescript
+{
+  src: string;
+  alt?: string;
+  placeholder?: string;
+  className?: string;
+  width?: string | number;
+  height?: string | number;
+  eager?: boolean;                  // 기본값: false
+  rootMargin?: number;              // 기본값: 100px
+  onLoad?: Function;
+  onError?: Function;
+  showSkeleton?: boolean;           // 기본값: true
+  style?: object;
+}
+```
+
+**사용 예제**:
+```jsx
+// 기본 사용
+<LazyImage
+  src="/images/profile.jpg"
+  alt="사용자 프로필"
+  width={200}
+  height={200}
+  placeholder="/images/placeholder.png"
+/>
+
+// 아바타
+<LazyAvatar
+  src={user.avatar}
+  alt={user.name}
+  size="medium"
+  fallbackText={user.name}
+/>
+
+// 카드 이미지
+<LazyCardImage
+  src="/images/card.jpg"
+  alt="카드 이미지"
+  aspectRatio="16/9"
+/>
+
+// 갤러리 (클릭 가능)
+<LazyGalleryImage
+  src="/images/full.jpg"
+  thumbnail="/images/thumb.jpg"
+  alt="갤러리 이미지"
+  onClick={(src) => openLightbox(src)}
+/>
+
+// 배경 이미지
+<LazyBackgroundImage
+  src="/images/hero.jpg"
+  overlayClass="bg-black/40"
+>
+  <h1>환영합니다</h1>
+</LazyBackgroundImage>
+```
+
+**특징**:
+- useLazyImage hook 활용
+- 에러 시 "다시 시도" 버튼
+- 로딩 중 스켈레톤 표시
+- 페이드 인 애니메이션
+
+---
+
+#### LazyList
+**파일**: `src/components/ui/LazyList.jsx` (260줄)
+
+대용량 리스트 최적화를 위한 지연 로딩 및 가상화 컴포넌트입니다.
+
+**컴포넌트**:
+- `LazyList`: 기본 지연 로딩 리스트
+- `InfiniteScrollList`: 무한 스크롤
+- `VirtualizedList`: 가상화 리스트
+
+**Props (LazyList)**:
+```typescript
+{
+  items: Array<any>;
+  renderItem: (item, index) => ReactNode;
+  initialCount?: number;            // 기본값: 10
+  loadMoreCount?: number;           // 기본값: 5
+  className?: string;
+  itemClassName?: string;
+  emptyMessage?: string;
+  showSkeleton?: boolean;           // 기본값: true
+}
+```
+
+**사용 예제**:
+```jsx
+// 기본 지연 로딩
+<LazyList
+  items={notifications}
+  renderItem={(item) => <NotificationItem data={item} />}
+  initialCount={20}
+  loadMoreCount={10}
+/>
+
+// 무한 스크롤
+<InfiniteScrollList
+  items={posts}
+  renderItem={(post) => <PostCard post={post} />}
+  fetchNextPage={loadMorePosts}
+  hasNextPage={hasMore}
+  isFetchingNextPage={isLoading}
+/>
+
+// 가상화 리스트 (대용량 데이터용)
+<VirtualizedList
+  items={largeDataset}
+  renderItem={(item) => <DataRow data={item} />}
+  itemHeight={80}
+  containerHeight={600}
+  overscan={5}
+/>
+```
+
+**Props (InfiniteScrollList)**:
+```typescript
+{
+  items: Array<any>;
+  renderItem: (item, index) => ReactNode;
+  fetchNextPage: Function;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  className?: string;
+  itemClassName?: string;
+  emptyMessage?: string;
+  loadingMessage?: string;
+  showSkeleton?: boolean;
+}
+```
+
+**Props (VirtualizedList)**:
+```typescript
+{
+  items: Array<any>;
+  renderItem: (item, index) => ReactNode;
+  itemHeight?: number;              // 기본값: 80
+  containerHeight?: number;         // 기본값: 400
+  overscan?: number;                // 기본값: 5
+  className?: string;
+}
+```
+
+**특징**:
+- useLazyList, useInfiniteScroll hook 활용
+- 접근성: role="list", aria-setsize, aria-posinset
+- 스크린 리더용 상태 안내
+
+---
+
+#### OptimizedImage
+**파일**: `src/components/ui/OptimizedImage.jsx` (120줄)
+
+WebP/AVIF 자동 변환 및 반응형 이미지를 제공하는 최적화 컴포넌트입니다.
+
+**Props**:
+```typescript
+{
+  src: string;                      // 필수
+  alt: string;                      // 필수
+  width?: string | number;
+  height?: string | number;
+  className?: string;
+  lazy?: boolean;                   // 기본값: true
+  placeholder?: boolean;            // 기본값: true
+  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';  // 기본값: 'cover'
+  onLoad?: Function;
+  onError?: Function;
+}
+```
+
+**사용 예제**:
+```jsx
+<OptimizedImage
+  src="/assets/banner.jpg"
+  alt="배너 이미지"
+  width="100%"
+  height={400}
+  objectFit="cover"
+  lazy={true}
+/>
+
+// 즉시 로딩 (LCP 최적화)
+<OptimizedImage
+  src="/assets/hero.jpg"
+  alt="히어로 이미지"
+  lazy={false}
+  placeholder={false}
+/>
+```
+
+**특징**:
+- srcset 자동 생성 (400w, 800w, 1200w)
+- WebP 포맷 자동 적용
+- Placeholder 애니메이션
+- 에러 시 기본 이미지 표시
+
+---
+
+### 🔄 Loading (로딩)
+
+#### LoadingSpinner
+**파일**: `src/components/ui/LoadingSpinner.jsx` (186줄)
+
+모바일 최적화된 로딩 스피너 및 스켈레톤 컴포넌트입니다.
+
+**컴포넌트**:
+- `LoadingSpinner`: 기본 스피너
+- `InlineSpinner`: 인라인 스피너
+- `SkeletonLoader`: 스켈레톤 로더
+- `CardSkeleton`: 카드 스켈레톤
+
+**Props (LoadingSpinner)**:
+```typescript
+{
+  size?: 'small' | 'medium' | 'large';  // 기본값: 'medium'
+  color?: string;                       // 기본값: '#00C471'
+  message?: string;                     // 기본값: '로딩 중...'
+  className?: string;
+  overlay?: boolean;                    // 기본값: false
+  fullscreen?: boolean;                 // 기본값: false
+}
+```
+
+**사용 예제**:
+```jsx
+// 기본 스피너
+<LoadingSpinner
+  size="large"
+  message="데이터를 불러오는 중..."
+/>
+
+// 오버레이
+<LoadingSpinner overlay={true} />
+
+// 전체 화면
+<LoadingSpinner fullscreen={true} />
+
+// 인라인 (버튼 내부 등)
+<InlineSpinner size="small" />
+
+// 스켈레톤 로더
+<SkeletonLoader width="100%" height="20px" lines={3} />
+
+// 카드 스켈레톤
+<CardSkeleton />
+```
+
+**Props (SkeletonLoader)**:
+```typescript
+{
+  width?: string;                   // 기본값: '100%'
+  height?: string;                  // 기본값: '20px'
+  className?: string;
+  rounded?: boolean;                // 기본값: false
+  lines?: number;                   // 기본값: 1
+}
+```
+
+**특징**:
+- 3가지 크기: small (4×4), medium (8×8), large (12×12)
+- 색상 커스터마이징 가능
+- 접근성: role="status", aria-label, aria-live
+
+---
+
+### 🎯 UX Enhancement (UX 개선)
+
+#### PullToRefresh
+**파일**: `src/components/ui/PullToRefresh.jsx` (158줄)
+
+모바일 친화적인 풀 투 리프레시 컴포넌트입니다.
+
+**컴포넌트**:
+- `PullToRefresh`: 기본 풀 투 리프레시
+- `SimplePullToRefresh`: 간단한 래퍼
+- `ListPullToRefresh`: 리스트 전용
+
+**Props**:
+```typescript
+{
+  children: ReactNode;
+  onRefresh: () => Promise<void>;   // async 함수
+  className?: string;
+  threshold?: number;               // 기본값: 80px
+  maxPullDistance?: number;         // 기본값: 120px
+  disabled?: boolean;               // 기본값: false
+  messages?: {
+    pullToRefresh?: string;
+    releaseToRefresh?: string;
+    refreshing?: string;
+  };
+}
+```
+
+**사용 예제**:
+```jsx
+// 기본 사용
+<PullToRefresh
+  onRefresh={async () => {
+    await fetchData();
+  }}
+>
+  <ContentList />
+</PullToRefresh>
+
+// 리스트 전용
+<ListPullToRefresh
+  items={notifications}
+  renderItem={(item) => <NotificationItem data={item} />}
+  onRefresh={handleRefresh}
+  emptyMessage="알림이 없습니다"
+/>
+
+// 커스텀 메시지
+<PullToRefresh
+  onRefresh={handleRefresh}
+  messages={{
+    pullToRefresh: '아래로 당겨서 새로고침',
+    releaseToRefresh: '손을 떼면 새로고침됩니다',
+    refreshing: '업데이트 중...'
+  }}
+>
+  <Content />
+</PullToRefresh>
+```
+
+**특징**:
+- usePullToRefresh hook 활용
+- 아이콘: RefreshCw (로딩), ArrowDown (당기기)
+- 접근성: createGestureHint, createLoadingAriaProps
+
+---
+
+#### SwipeNavigation
+**파일**: `src/components/ui/SwipeNavigation.jsx` (273줄)
+
+스와이프 제스처 및 키보드로 네비게이션 가능한 컴포넌트입니다.
+
+**컴포넌트**:
+- `SwipeNavigation`: 기본 스와이프 네비게이션
+- `ImageCarousel`: 이미지 캐러셀
+- `SwipeableTabs`: 탭 스와이프
+
+**Props (SwipeNavigation)**:
+```typescript
+{
+  items: Array<any>;
+  initialIndex?: number;            // 기본값: 0
+  onIndexChange?: (index) => void;
+  showIndicators?: boolean;         // 기본값: true
+  showNavButtons?: boolean;         // 기본값: true
+  className?: string;
+}
+```
+
+**사용 예제**:
+```jsx
+// 기본 스와이프
+<SwipeNavigation
+  items={[
+    <Slide1 />,
+    <Slide2 />,
+    <Slide3 />
+  ]}
+  onIndexChange={(index) => setCurrentSlide(index)}
+/>
+
+// 이미지 캐러셀
+<ImageCarousel
+  images={[
+    { src: '/img1.jpg', alt: '이미지 1', caption: '설명 1' },
+    { src: '/img2.jpg', alt: '이미지 2', caption: '설명 2' }
+  ]}
+  showThumbnails={true}
+/>
+
+// 탭 스와이프
+<SwipeableTabs
+  tabs={[
+    { label: '전체', content: <AllContent /> },
+    { label: '읽지 않음', content: <UnreadContent /> },
+    { label: '중요', content: <ImportantContent /> }
+  ]}
+/>
+```
+
+**키보드 단축키**:
+- `← ArrowLeft`: 이전 항목
+- `→ ArrowRight`: 다음 항목
+
+**스와이프 설정**:
+- 최소 거리: 50px
+- 최대 시간: 300ms
+
+**특징**:
+- useSwipeGesture, useKeyboardNavigation hook 활용
+- 접근성: role="region", aria-label, createGestureHint
+- 순환 네비게이션 지원
+
+---
+
+## 🌐 WebSocket 연결
+
+```javascript
+// src/services/websocket.js
+import SockJS from 'sockjs-client';
+import { Stomp } from '@stomp/stompjs';
+
+class WebSocketService {
+  connect(token) {
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
+    this.stompClient = Stomp.over(socket);
+
+    this.stompClient.connect(
+      { Authorization: `Bearer ${token}` },
+      () => {
+        console.log('WebSocket 연결 성공');
+        this.subscribeToChannels();
+      },
+      (error) => {
+        console.error('WebSocket 연결 실패:', error);
+      }
+    );
+  }
+
+  subscribeToChannels() {
+    // 개인 메시지 구독
+    this.stompClient.subscribe('/user/queue/messages', (message) => {
+      const data = JSON.parse(message.body);
+      // 메시지 처리
+    });
+
+    // 채팅방 메시지 구독
+    this.stompClient.subscribe('/topic/chat/{roomId}', (message) => {
+      const data = JSON.parse(message.body);
+      // 채팅 메시지 처리
+    });
+  }
+
+  sendMessage(destination, message) {
+    this.stompClient.send(destination, {}, JSON.stringify(message));
+  }
+
+  disconnect() {
+    if (this.stompClient) {
+      this.stompClient.disconnect();
+    }
+  }
+}
+
+export default new WebSocketService();
+```
+
+## ⚠️ 주의사항 및 Best Practices
+
+### 1. Zustand Selector 패턴 (CRITICAL)
+- **절대 사용 금지**: 객체를 반환하는 selector
+- **올바른 방법**: 각 값을 개별 selector로 선택
+- **참조**: `docs/99-logs/failure-patterns/2025-01-13-zustand-infinite-loop.md`
+
+### 2. API 통신
+- JWT 토큰은 인터셉터가 자동 처리
+- 에러 처리는 통합 에러 핸들러 사용
+- 로딩 상태는 로컬 state로 관리
+
+### 3. 스타일링
+- 정의된 색상 팔레트만 사용
+- 간격은 4px 배수 시스템 준수
+- CommonButton 등 공통 컴포넌트 재사용
+- Tailwind CSS 유틸리티 클래스 활용
+
+### 4. 성능 최적화
+- 이미지는 WebP 사용, 자동 리사이징
+- Lazy loading 적용
+- 불필요한 리렌더링 방지 (React.memo, useMemo, useCallback)
+- 번들 크기 최적화
+
+## ✅ 개발 체크리스트
+
+### 새 컴포넌트 개발 시
+- [ ] 정의된 색상 팔레트만 사용
+- [ ] 간격 시스템(4px 배수) 준수
+- [ ] CommonButton 등 공통 컴포넌트 재사용
+- [ ] Zustand selector는 개별 선택 패턴 사용
+- [ ] 56px 버튼/입력 필드 높이
+- [ ] 6px 기본 border-radius
+- [ ] transition 효과 적용
+- [ ] 반응형 디자인 고려
+- [ ] 로딩/에러 상태 처리
+
+### API 연동 시
+- [ ] API 모듈 사용 (직접 axios 호출 금지)
+- [ ] 에러 처리 구현
+- [ ] 로딩 상태 관리
+- [ ] 토큰 만료 처리 (인터셉터가 자동 처리)
+
+---
+
+*이 가이드는 STUDYMATE 프론트엔드 개발의 표준을 정의하며, 모든 개발자는 이 가이드를 준수해야 합니다. 문의사항은 프론트엔드 팀에게 연락하세요.*

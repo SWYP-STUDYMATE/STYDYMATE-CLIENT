@@ -28,28 +28,40 @@
 - 읽음 확인
 
 ### 학습 관리
-- 세션 스케줄링
-- 학습 통계 대시보드
-- 성취 배지 시스템
-- 언어 교환 파트너 매칭
+- 세션 스케줄링 및 캘린더
+- **학습 통계 대시보드** (Recharts 시각화, 실시간 메트릭)
+- **성취 배지 시스템** (9개 카테고리, 6개 티어, XP 보상)
+- 언어 교환 파트너 매칭 및 호환성 분석
+
+### 설정 및 개인화
+- **7개 설정 카테고리** (Account, Notifications, Privacy, Language, Security, Data, Login History)
+- **2FA 인증** (QR 코드, TOTP 6자리)
+- **다크 모드** (준비 단계 - 미활성화, 시스템 테마 감지)
+- GDPR/PIPA 준수 데이터 관리
+- 3단계 계정 삭제 프로세스
 
 ## 🛠 기술 스택
 
 ### Frontend
-- **Framework**: React 18
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Routing**: React Router v6
+- **Framework**: React 19.1.0
+- **Build Tool**: Vite 7.0.4
+- **Styling**: Tailwind CSS 4.1.11
+- **State Management**: Zustand 5.0.6 (13개 Store, 5분 캐시 TTL)
+- **Routing**: React Router DOM 7.6.3
+- **HTTP Client**: Axios 1.10.0
+- **WebSocket**: SockJS Client 1.6.1 + StompJS 2.3.3
+- **Charts**: Recharts 2.x (LineChart, BarChart, PieChart, AreaChart)
 - **UI Icons**: Lucide React
 - **WebRTC**: Native WebRTC API
+- **Font**: Pretendard
 
 ### Backend (Cloudflare Workers)
 - **Runtime**: Cloudflare Workers
-- **Framework**: Hono
-- **Database**: Durable Objects
-- **Storage**: R2 (파일), KV (캐싱)
-- **AI**: Workers AI (Whisper, LLM)
+- **Framework**: Hono 4.x
+- **Database**: Cloudflare D1 (SQLite)
+- **Durable Objects**: WebRTC Room, UserPresence, ChatHub
+- **Storage**: R2 (파일/미디어), KV (캐싱/세션)
+- **AI**: Workers AI (Whisper, Llama 3.1 8B)
 - **Analytics**: Cloudflare Analytics Engine
 
 ## 📦 설치 및 실행
@@ -187,10 +199,30 @@ npm run test:coverage
 
 ## 📝 문서
 
-- [배포 가이드](./docs/DEPLOYMENT.md)
-- [아키텍처 문서](./docs/ARCHITECTURE.md)
-- [QA 체크리스트](./docs/QA_CHECKLIST.md)
-- [Workers 배포](./workers/DEPLOYMENT.md)
+### 필수 개발 가이드
+- **[CLAUDE.md](./CLAUDE.md)** - 프로젝트 전반 개발 가이드 (Task Master, 디자인 시스템, 개발 규칙)
+
+### 📚 통합 문서 (각 폴더당 1개)
+- **[Overview](./docs/01-overview/overview.md)** - 프로젝트 비전, 목표, 용어사전
+- **[Requirements](./docs/02-requirements/requirements.md)** - 비즈니스 목표, 기능/비기능 요구사항, 사용자 스토리
+- **[Architecture](./docs/03-architecture/architecture.md)** ⚡ - 시스템 아키텍처, Zustand 상태 관리, WebSocket 실시간 통신, 캐시 계층
+- **[API Specification](./docs/04-api/api.md)** - 모든 REST API 엔드포인트, 세션 타입, LLM 통합
+- **[Database](./docs/05-database/database.md)** - D1 테이블 스키마, Workers KV, R2 구조
+- **[Frontend Guide](./docs/06-frontend/frontend.md)** ⚠️ - React 컴포넌트, Zustand 무한 루프 패턴, 디자인 시스템
+- **[Backend Guide](./docs/07-backend/backend.md)** - AI 캐싱, Zod 검증, WebSocket 아키텍처
+- **[Infrastructure](./docs/08-infrastructure/infrastructure.md)** - Cloudflare Pages 배포, CI/CD, 모니터링
+- **[Decisions](./docs/10-decisions/decisions.md)** - ADR, 기술 결정 기록
+
+### 🎨 프론트엔드 시스템별 상세 문서
+**⚡ 최신 추가 (2025-01-18)**
+- **[Settings System](./docs/06-frontend/settings-system.md)** - 7개 카테고리, 2FA, 계정 삭제, GDPR/PIPA 준수
+- **[Achievement System](./docs/06-frontend/achievements-system.md)** - 9개 카테고리, 6개 티어, XP 보상, 자동 추적
+- **[Theme System](./docs/06-frontend/theme-system.md)** - 다크 모드 (준비 단계), 시스템 테마 감지, 활성화 가이드
+- **[Analytics Dashboard](./docs/06-frontend/analytics-dashboard.md)** - Recharts 시각화, WebSocket 실시간 메트릭, 안전한 데이터 추출
+
+### 🔍 로그 및 패턴
+- **[Failure Patterns](./docs/99-logs/failure-patterns/)** - 실패 패턴 및 해결 방법
+  - [Zustand 무한 루프](./docs/99-logs/failure-patterns/2025-01-13-zustand-infinite-loop.md) ⚠️ **필수 숙지**
 
 ## 🤝 기여하기
 

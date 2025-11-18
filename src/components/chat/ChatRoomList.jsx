@@ -90,7 +90,15 @@ export default function ChatRoomList({
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-[#111111] truncate">{name}</p>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <p className="font-medium text-[#111111] truncate">{name}</p>
+                        {/* 방장 배지 */}
+                        {room.isOwner && (
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-[#E6F9F1] text-[#00C471] rounded flex-shrink-0">
+                            방장
+                          </span>
+                        )}
+                      </div>
                       {isParticipating && room.unreadCount > 0 && (
                         <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-[#EA4335] rounded-full ml-2 flex-shrink-0">
                           {room.unreadCount > 99 ? '99+' : room.unreadCount}

@@ -312,6 +312,8 @@ export interface ChatRoomSummary {
     isPublic: boolean;
     maxParticipants?: number;
     participants: ChatParticipant[];
+    createdBy: string;      // 채팅방 생성자 user_id
+    isOwner?: boolean;      // 현재 사용자가 방장인지 여부
     lastMessage?: string;
     lastMessageAt?: string;
 }

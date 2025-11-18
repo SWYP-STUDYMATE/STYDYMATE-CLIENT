@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_WORKERS_API_URL || 'https://api.languagemat
 
 export function useRealtimeTranscription({
   language = 'auto',
-  chunkDuration = 2000, // 2초마다 처리
+  chunkDuration = 3000, // ✅ 3초마다 처리 (안정성 향상)
   onTranscript,
   onError
 } = {}) {
@@ -28,11 +28,22 @@ export function useRealtimeTranscription({
       }
       return;
     }
-    
+
     processingRef.current = true;
     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
     const blobSize = audioBlob.size;
     audioChunksRef.current = [];
+
+    // ✅ 최소 청크 크기 체크 (5KB 미만 무시 - 너무 작은 오디오)
+    if (blobSize < 5120) {
+      console.warn('⚠️ [useRealtimeTranscription] 청크가 너무 작아 무시', {
+        blobSize,
+        blobSizeKB: Math.round(blobSize / 1024),
+        minSizeKB: 5
+      });
+      processingRef.current = false;
+      return;
+    }
 
     console.log('📤 [useRealtimeTranscription] 오디오 청크 전송 시작', {
       blobSize,
@@ -82,10 +93,10 @@ export function useRealtimeTranscription({
       }
 
       const result = await response.json();
-      
+
       // API 응답 형식 확인: transcription 또는 text 필드 사용
       const transcriptText = result.transcription || result.text || result.transcript || '';
-      
+
       console.log('✅ [useRealtimeTranscription] 전사 결과 수신', {
         hasText: !!transcriptText,
         textLength: transcriptText?.length,
@@ -93,32 +104,62 @@ export function useRealtimeTranscription({
         confidence: result.confidence,
         fullResult: result // 전체 응답 확인
       });
-      
-      if (transcriptText && transcriptText.trim()) {
+
+      // ✅ 에러 메시지 필터링 (Workers AI 에러 응답 무시)
+      const errorPatterns = [
+        '[Error transcribing chunk]',
+        '🔄',
+        '[청크 전사 오류]',
+        '[부분 전사 오류]',
+        'Error transcribing',
+        'transcription failed'
+      ];
+
+      const isErrorMessage = errorPatterns.some(pattern =>
+        transcriptText?.toLowerCase().includes(pattern.toLowerCase())
+      );
+
+      if (isErrorMessage) {
+        console.warn('⚠️ [useRealtimeTranscription] 에러 메시지 감지 - 무시', {
+          text: transcriptText
+        });
+        return; // 에러 메시지는 자막으로 표시하지 않음
+      }
+
+      // ✅ 의미 있는 텍스트만 처리 (최소 3글자 이상, 공백 제외)
+      const trimmedText = transcriptText?.trim() || '';
+      const meaningfulText = trimmedText.replace(/\s+/g, ''); // 공백 제거
+
+      if (trimmedText && meaningfulText.length >= 3) {
         const transcript = {
           id: `transcript-${Date.now()}`,
-          text: transcriptText.trim(),
+          text: trimmedText,
           timestamp: new Date().toISOString(),
           language: result.language || language,
           confidence: result.confidence,
           duration: result.duration,
           words: result.words
         };
-        
+
         setCurrentTranscript(transcript);
         setTranscripts(prev => [...prev, transcript]);
-        
+
         // 콜백 호출
         if (onTranscript) {
           onTranscript(transcript);
         }
-        
+
         // 일정 시간 후 현재 자막 제거
         setTimeout(() => {
-          setCurrentTranscript(prev => 
+          setCurrentTranscript(prev =>
             prev?.id === transcript.id ? null : prev
           );
         }, 4000);
+      } else if (trimmedText) {
+        console.log('⏭️ [useRealtimeTranscription] 의미 없는 텍스트 무시', {
+          text: trimmedText,
+          meaningfulLength: meaningfulText.length
+        });
       }
     } catch (err) {
       console.error('❌ [useRealtimeTranscription] 청크 처리 중 예외 발생', {
@@ -175,7 +216,7 @@ export function useRealtimeTranscription({
     // MediaRecorder 옵션 설정
     const options = {
       mimeType: 'audio/webm;codecs=opus',
-      audioBitsPerSecond: 16000
+      audioBitsPerSecond: 64000 // ✅ 16 kbps → 64 kbps (Whisper 권장 비트레이트)
     };
 
     // 지원되는 MIME 타입 확인

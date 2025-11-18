@@ -272,13 +272,36 @@ export default function ChatWindow({
 
   const handleLeaveRoom = async () => {
     try {
+      // 방장 권한 체크
+      if (room.isOwner && room.participants.length > 1) {
+        alert("다른 참여자가 있는 동안 방장은 채팅방을 나갈 수 없습니다.");
+        return;
+      }
+
+      // 나가기 확인 메시지
+      const confirmMessage = room.participants.length === 1
+        ? "마지막 참여자입니다. 나가면 채팅방이 삭제됩니다. 계속하시겠습니까?"
+        : room.isOwner
+        ? "방장이 나가면 채팅방이 삭제됩니다. 계속하시겠습니까?"
+        : "채팅방에서 나가시겠습니까?";
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
       await leaveChatRoom(room.roomId);
       if (onLeaveRoom) {
         onLeaveRoom();
       }
     } catch (error) {
       console.error("채팅방 나가기 실패:", error);
-      showError("채팅방 나가기에 실패했습니다.");
+
+      // 백엔드 에러 메시지 표시
+      const errorMessage = error?.response?.data?.error?.message
+        || error?.response?.data?.message
+        || "채팅방 나가기에 실패했습니다.";
+
+      showError(errorMessage);
     }
   };
 

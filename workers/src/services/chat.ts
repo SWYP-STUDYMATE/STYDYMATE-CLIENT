@@ -21,6 +21,7 @@ interface ChatRoomRow {
   room_type: string;
   is_public: number;
   max_participants: number | null;
+  created_by: string;
   created_at: string;
   updated_at: string;
 }
@@ -163,7 +164,7 @@ async function ensureRoomExists(env: Env, roomId: number): Promise<ChatRoomRow> 
   return row;
 }
 
-async function mapRoom(env: Env, room: ChatRoomRow): Promise<ChatRoomSummary> {
+async function mapRoom(env: Env, room: ChatRoomRow, currentUserId?: string): Promise<ChatRoomSummary> {
   const participants = await fetchParticipants(env, room.room_id);
   const lastMessageRow = await queryFirst<{ message: string | null; created_at: string | null }>(
     env.DB,
@@ -182,6 +183,8 @@ async function mapRoom(env: Env, room: ChatRoomRow): Promise<ChatRoomSummary> {
     isPublic: toBoolean(room.is_public),
     maxParticipants: room.max_participants ?? undefined,
     participants,
+    createdBy: room.created_by,
+    isOwner: currentUserId ? currentUserId === room.created_by : undefined,
     lastMessage: lastMessageRow?.message ?? undefined,
     lastMessageAt: lastMessageRow?.created_at ?? undefined
   };
@@ -200,7 +203,7 @@ export async function listUserChatRooms(env: Env, userId: string): Promise<ChatR
 
   const summaries: ChatRoomSummary[] = [];
   for (const row of rows) {
-    summaries.push(await mapRoom(env, row));
+    summaries.push(await mapRoom(env, row, userId));
   }
   return summaries;
 }
@@ -218,7 +221,7 @@ export async function listPublicChatRooms(env: Env, userId: string): Promise<Cha
 
   const summaries: ChatRoomSummary[] = [];
   for (const row of rows) {
-    summaries.push(await mapRoom(env, row));
+    summaries.push(await mapRoom(env, row, userId));
   }
   return summaries;
 }
@@ -241,9 +244,9 @@ export async function createChatRoom(
 
   await execute(
     env.DB,
-    `INSERT INTO chat_room (room_name, room_type, is_public, max_participants, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-    [roomName.trim(), roomType, isPublic, maxParticipants, now, now]
+    `INSERT INTO chat_room (room_name, room_type, is_public, max_participants, created_by, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [roomName.trim(), roomType, isPublic, maxParticipants, creatorId, now, now]
   );
 
   const roomIdRow = await queryFirst<{ id: number }>(env.DB, 'SELECT last_insert_rowid() as id');
@@ -261,7 +264,7 @@ export async function createChatRoom(
   await transaction(env.DB, statements);
 
   const room = await ensureRoomExists(env, roomId);
-  return mapRoom(env, room);
+  return mapRoom(env, room, creatorId);
 }
 
 export async function joinChatRoom(env: Env, roomId: number, userId: string): Promise<ChatRoomSummary> {
@@ -273,16 +276,38 @@ export async function joinChatRoom(env: Env, roomId: number, userId: string): Pr
       VALUES (?, ?, ?)`,
     [roomId, userId, now]
   );
-  return mapRoom(env, room);
+  return mapRoom(env, room, userId);
 }
 
 export async function leaveChatRoom(env: Env, roomId: number, userId: string): Promise<void> {
-  await ensureRoomExists(env, roomId);
-  await execute(
-    env.DB,
-    'DELETE FROM chat_room_participant WHERE room_id = ? AND user_id = ?',
-    [roomId, userId]
-  );
+  const room = await ensureRoomExists(env, roomId);
+
+  // 방장 권한 체크: 방장은 다른 참여자가 있을 때 나갈 수 없음
+  if (room.created_by === userId) {
+    const participantCount = await queryFirst<{ count: number }>(
+      env.DB,
+      'SELECT COUNT(*) as count FROM chat_room_participant WHERE room_id = ?',
+      [roomId]
+    );
+
+    if (participantCount && participantCount.count > 1) {
+      throw new AppError(
+        '다른 참여자가 있는 동안 방장은 채팅방을 나갈 수 없습니다.',
+        403,
+        'ROOM_CREATOR_CANNOT_LEAVE'
+      );
+    }
+
+    // 방장이 마지막 참여자인 경우 채팅방 삭제
+    await execute(env.DB, 'DELETE FROM chat_room WHERE room_id = ?', [roomId]);
+  } else {
+    // 일반 참여자는 자유롭게 나갈 수 있음
+    await execute(
+      env.DB,
+      'DELETE FROM chat_room_participant WHERE room_id = ? AND user_id = ?',
+      [roomId, userId]
+    );
+  }
 }
 
 export async function listRoomMessages(

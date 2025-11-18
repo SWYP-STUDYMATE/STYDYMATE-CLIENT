@@ -27,7 +27,9 @@ export default function SessionList() {
     const [filterOpen, setFilterOpen] = useState(false);
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [activeRooms, setActiveRooms] = useState([]);
+    const [roomsError, setRoomsError] = useState(null);
     const [isJoining, setIsJoining] = useState('');
+    const [lastLoadAttempt, setLastLoadAttempt] = useState(null);
 
     const {
         sessions,
@@ -56,23 +58,57 @@ export default function SessionList() {
 
 
     // Load active WebRTC rooms
-    const loadActiveRooms = async () => {
+    const loadActiveRooms = async (isRetry = false) => {
         try {
             setLoadingRooms(true);
-            log.info('활성 룸 목록 조회 시작', null, 'SESSION_LIST');
+            setRoomsError(null);
+            setLastLoadAttempt(Date.now());
+
+            log.info('활성 룸 목록 조회 시작', { isRetry }, 'SESSION_LIST');
 
             const response = await api.get('/room/active');
             const rooms = response?.data?.data || response?.data || [];
-            setActiveRooms(Array.isArray(rooms) ? rooms : []);
-            log.info('활성 룸 목록 조회 완료', { count: Array.isArray(rooms) ? rooms.length : 0 }, 'SESSION_LIST');
+            const validRooms = Array.isArray(rooms) ? rooms : [];
+
+            setActiveRooms(validRooms);
+            log.info('활성 룸 목록 조회 완료', {
+                count: validRooms.length,
+                rooms: validRooms.map(r => ({
+                    roomId: r.roomId,
+                    type: r.roomType,
+                    participants: `${r.currentParticipants}/${r.maxParticipants}`
+                }))
+            }, 'SESSION_LIST');
+
         } catch (error) {
             // 404는 활성 룸이 없는 정상 케이스로 처리
             if (error.response?.status === 404) {
                 log.info('현재 활성 세션이 없습니다', null, 'SESSION_LIST');
                 setActiveRooms([]);
+                setRoomsError(null);
             } else {
-                log.error('활성 룸 목록 조회 실패', error, 'SESSION_LIST');
-                setActiveRooms([]);
+                const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류';
+                const errorDetail = {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    message: errorMessage,
+                    url: error.config?.url
+                };
+
+                log.error('활성 룸 목록 조회 실패', error, 'SESSION_LIST', errorDetail);
+
+                setRoomsError({
+                    message: errorMessage,
+                    status: error.response?.status,
+                    canRetry: error.response?.status !== 403 && error.response?.status !== 401
+                });
+
+                // 이전 데이터 유지 (있는 경우)
+                if (!isRetry && activeRooms.length > 0) {
+                    log.info('이전 세션 목록 유지', { count: activeRooms.length }, 'SESSION_LIST');
+                } else {
+                    setActiveRooms([]);
+                }
             }
         } finally {
             setLoadingRooms(false);
@@ -440,7 +476,7 @@ export default function SessionList() {
                                 지금 입장 가능한 세션
                             </h2>
                             <CommonButton
-                                onClick={loadActiveRooms}
+                                onClick={() => loadActiveRooms(true)}
                                 disabled={loadingRooms}
                                 loading={loadingRooms}
                                 variant="link"
@@ -452,16 +488,52 @@ export default function SessionList() {
                             </CommonButton>
                         </div>
 
+                        {/* 에러 메시지 표시 */}
+                        {roomsError && !loadingRooms && (
+                            <div className="bg-[rgba(234,67,53,0.1)] border border-[var(--red)] rounded-lg p-4 mb-4">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle className="w-5 h-5 text-[var(--red)] flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <p className="text-[var(--red)] text-[14px] font-medium mb-1">
+                                            세션 목록을 불러올 수 없습니다
+                                        </p>
+                                        <p className="text-[var(--black-300)] text-[12px] mb-3">
+                                            {roomsError.message}
+                                            {roomsError.status && ` (에러 코드: ${roomsError.status})`}
+                                        </p>
+                                        {roomsError.canRetry && (
+                                            <CommonButton
+                                                onClick={() => loadActiveRooms(true)}
+                                                variant="secondary"
+                                                size="small"
+                                                fullWidth={false}
+                                                className="text-[12px]"
+                                            >
+                                                다시 시도
+                                            </CommonButton>
+                                        )}
+                                        {activeRooms.length > 0 && (
+                                            <p className="text-[var(--black-300)] text-[11px] mt-2">
+                                                * 이전에 불러온 세션 목록을 표시하고 있습니다
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {loadingRooms ? (
                             <div className="text-center py-12">
                                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-[var(--green-500)]" />
                                 <p className="text-[14px] sm:text-[15px] md:text-[16px] text-[var(--black-200)] break-words">활성 세션을 불러오는 중...</p>
                             </div>
                         ) : activeRooms.length > 0 ? (
-                            activeRooms.map(room => (
-                                <ActiveRoomCard key={room.roomId} room={room} />
-                            ))
-                        ) : (
+                            <>
+                                {activeRooms.map(room => (
+                                    <ActiveRoomCard key={room.roomId} room={room} />
+                                ))}
+                            </>
+                        ) : !roomsError ? (
                             <div className="text-center py-12">
                                 <p className="text-[14px] sm:text-[15px] md:text-[16px] text-[var(--black-200)] mb-4 break-words">
                                     현재 활성 세션이 없습니다
@@ -483,7 +555,7 @@ export default function SessionList() {
                                     </CommonButton>
                                 </div>
                             </div>
-                        )}
+                        ) : null}
                     </>
                 ) : activeTab === 'upcoming' ? (
                     <>

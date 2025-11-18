@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Video,
@@ -31,6 +31,10 @@ export default function SessionCreate() {
     video: null,
     checked: false
   });
+
+  // 중복 클릭 방지를 위한 ref
+  const isCreatingRef = useRef(false);
+  const creationTimestamp = useRef(null);
 
   // 임시 시간 상태 (확인 전)
   const [tempStartTime, setTempStartTime] = useState('');
@@ -286,10 +290,35 @@ export default function SessionCreate() {
 
   // 세션 생성
   const handleCreateSession = async () => {
+    // 중복 클릭 방지 (1초 이내 재클릭 차단)
+    const now = Date.now();
+    if (isCreatingRef.current) {
+      log.warn('세션 생성 중복 요청 차단', { timestamp: now }, 'SESSION');
+      return;
+    }
+
+    if (creationTimestamp.current && (now - creationTimestamp.current) < 1000) {
+      log.warn('세션 생성 디바운스 차단', {
+        lastAttempt: creationTimestamp.current,
+        currentAttempt: now,
+        difference: now - creationTimestamp.current
+      }, 'SESSION');
+      return;
+    }
+
+    // 생성 플래그 설정
+    isCreatingRef.current = true;
+    creationTimestamp.current = now;
     setIsCreating(true);
     setError('');
 
     try {
+      log.info('세션 생성 시작', {
+        roomType: sessionConfig.roomType,
+        title: sessionConfig.title,
+        timestamp: now
+      }, 'SESSION');
+
       // 1. 미디어 권한 확인
       const hasAudioPermission = mediaPermissions.audio;
       const hasVideoPermission = sessionConfig.roomType === 'video' ? mediaPermissions.video : true;
@@ -297,6 +326,7 @@ export default function SessionCreate() {
       if (!hasAudioPermission || !hasVideoPermission) {
         const granted = await requestPermissions();
         if (!granted) {
+          isCreatingRef.current = false;
           setIsCreating(false);
           return;
         }
@@ -305,12 +335,14 @@ export default function SessionCreate() {
       // 2. 세션 설정 검증
       if (!sessionConfig.title.trim()) {
         setError('세션 제목을 입력해주세요.');
+        isCreatingRef.current = false;
         setIsCreating(false);
         return;
       }
 
       if (sessionConfig.maxParticipants < 2 || sessionConfig.maxParticipants > 8) {
         setError('참가자 수는 2-8명 사이로 설정해주세요.');
+        isCreatingRef.current = false;
         setIsCreating(false);
         return;
       }
@@ -322,26 +354,31 @@ export default function SessionCreate() {
 
         if (startTime >= endTime) {
           setError('종료 시간은 시작 시간보다 나중이어야 합니다.');
+          isCreatingRef.current = false;
           setIsCreating(false);
           return;
         }
 
         const duration = endTime - startTime;
-        
+
         if (duration < 30 * 60 * 1000) {
           setError('세션은 최소 30분 이상이어야 합니다.');
+          isCreatingRef.current = false;
           setIsCreating(false);
           return;
         }
 
         if (duration > 120 * 60 * 1000) {
           setError('세션은 최대 2시간까지만 가능합니다.');
+          isCreatingRef.current = false;
           setIsCreating(false);
           return;
         }
       }
 
       // 4. Workers API를 통한 룸 생성
+      log.info('WebRTC API 호출 시작', { roomType: sessionConfig.roomType }, 'SESSION');
+
       const roomData = await webrtcAPI.createRoom({
         roomType: sessionConfig.roomType,
         maxParticipants: sessionConfig.maxParticipants,
@@ -361,7 +398,11 @@ export default function SessionCreate() {
         }
       });
 
-      log.info('세션이 성공적으로 생성되었습니다', roomData, 'SESSION');
+      log.info('세션이 성공적으로 생성되었습니다', {
+        roomId: roomData.roomId || roomData.id,
+        roomType: sessionConfig.roomType,
+        duration: Date.now() - now
+      }, 'SESSION');
 
       setCreatedRoom({
         ...roomData,
@@ -371,7 +412,15 @@ export default function SessionCreate() {
     } catch (err) {
       console.error('Failed to create session:', err);
       setError(err.message || '세션 생성 중 오류가 발생했습니다.');
-      log.error('세션 생성 실패', err, 'SESSION');
+      log.error('세션 생성 실패', err, 'SESSION', {
+        roomType: sessionConfig.roomType,
+        title: sessionConfig.title,
+        errorMessage: err.message,
+        duration: Date.now() - now
+      });
+
+      // 에러 발생 시에만 플래그 초기화 (성공 시에는 페이지 이동하므로 불필요)
+      isCreatingRef.current = false;
     } finally {
       setIsCreating(false);
     }

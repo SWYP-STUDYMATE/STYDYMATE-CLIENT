@@ -25,15 +25,34 @@ docs/
 
 ### 필독 문서 (우선순위)
 1. **[마스터 PRD](../.taskmaster/docs/prd.txt)** - 전체 프로젝트 이해 (최우선!)
-2. **[스타일 가이드](06-frontend/style-guide.md)** - UI 개발 규칙
-3. **[컴포넌트 라이브러리](06-frontend/components/README.md)** - React 컴포넌트 가이드
-4. **[Cloudflare 배포 가이드](08-infrastructure/deployment-guide.md)** - 클라이언트 배포
-5. **[Workers API 문서](../../workers/README.md)** - 백엔드 API 연동
+2. **[CLAUDE.md](../CLAUDE.md)** - 프로젝트 개발 가이드 (Task Master, 디자인 시스템, 개발 규칙)
+3. **[Architecture](03-architecture/architecture.md)** ⚡ - 시스템 아키텍처, Zustand 상태 관리, WebSocket 실시간 통신
+4. **[Frontend Guide](06-frontend/frontend.md)** ⚠️ - React 컴포넌트, Zustand 무한 루프 패턴, 디자인 시스템
+5. **[API Specification](04-api/api.md)** - 모든 REST API 엔드포인트, 세션 타입, LLM 통합
+6. **[Workers API 문서](../../workers/README.md)** - 백엔드 API 연동
 
-### 프론트엔드 개발자 전용 문서
-- **[스타일 가이드](06-frontend/style-guide.md)** - 디자인 시스템, 색상 팔레트, Tailwind 설정
-- **[컴포넌트 라이브러리](06-frontend/components/README.md)** - React 컴포넌트 사용법
-- **[Cloudflare 배포](08-infrastructure/deployment-guide.md)** - Pages 배포 및 Workers 연동
+### 📚 통합 문서 (각 폴더당 1개)
+프로젝트의 모든 정보를 포함하는 통합 문서:
+- **[Overview](01-overview/overview.md)** - 프로젝트 비전, 목표, 용어사전
+- **[Requirements](02-requirements/requirements.md)** - 비즈니스 목표, 기능/비기능 요구사항, 사용자 스토리
+- **[Architecture](03-architecture/architecture.md)** ⚡ - 시스템 아키텍처, Zustand 상태 관리, WebSocket 실시간 통신, 캐시 계층
+- **[API Specification](04-api/api.md)** - 모든 REST API 엔드포인트, 세션 타입, LLM 통합
+- **[Database](05-database/database.md)** - D1 테이블 스키마, Workers KV, R2 구조
+- **[Frontend Guide](06-frontend/frontend.md)** ⚠️ - React 컴포넌트, Zustand 무한 루프 패턴, 디자인 시스템
+- **[Backend Guide](07-backend/backend.md)** - AI 캐싱, Zod 검증, WebSocket 아키텍처
+- **[Infrastructure](08-infrastructure/infrastructure.md)** - Cloudflare Pages 배포, CI/CD, 모니터링
+- **[Decisions](10-decisions/decisions.md)** - ADR, 기술 결정 기록
+
+### 🎨 프론트엔드 시스템별 상세 문서
+**⚡ 최신 추가 (2025-01-18)** - 주요 프론트엔드 시스템의 구현 세부사항:
+- **[Settings System](06-frontend/settings-system.md)** - 7개 카테고리, 2FA, 계정 삭제, GDPR/PIPA 준수
+- **[Achievement System](06-frontend/achievements-system.md)** - 9개 카테고리, 6개 티어, XP 보상, 자동 추적
+- **[Theme System](06-frontend/theme-system.md)** - 다크 모드 (준비 단계), 시스템 테마 감지, 활성화 가이드
+- **[Analytics Dashboard](06-frontend/analytics-dashboard.md)** - Recharts 시각화, WebSocket 실시간 메트릭, 안전한 데이터 추출
+
+### 🔍 로그 및 패턴
+- **[Failure Patterns](99-logs/failure-patterns/)** - 실패 패턴 및 해결 방법
+  - [Zustand 무한 루프](99-logs/failure-patterns/2025-01-13-zustand-infinite-loop.md) ⚠️ **필수 숙지**
 
 ## ⚠️ 클라이언트 개발 시 필수 참조
 
@@ -63,9 +82,18 @@ docs/
 ### 마스터 문서 (최우선)
 - **[전체 프로젝트 PRD](../.taskmaster/docs/prd.txt)** - 전체 STUDYMATE 프로젝트의 마스터 요구사항서
 
-### 06. 프론트엔드 (Frontend) - 유지
+### 06. 프론트엔드 (Frontend)
+
+#### 통합 문서
+- **[frontend.md](06-frontend/frontend.md)** ⚠️ - React 컴포넌트, Zustand 무한 루프 패턴, 디자인 시스템, API 연동
 - **[style-guide.md](06-frontend/style-guide.md)** - 디자인 시스템, 색상 팔레트, Tailwind 설정
 - **[components/README.md](06-frontend/components/README.md)** - React 컴포넌트 라이브러리
+
+#### 시스템별 상세 문서 ⚡ 최신 추가 (2025-01-18)
+- **[settings-system.md](06-frontend/settings-system.md)** - 7개 설정 카테고리, 2FA 인증, 계정 삭제, GDPR/PIPA 준수
+- **[achievements-system.md](06-frontend/achievements-system.md)** - 9개 카테고리, 6개 티어, XP 보상, 자동 추적
+- **[theme-system.md](06-frontend/theme-system.md)** - 다크 모드 (준비 단계), 시스템 테마 감지, 활성화 가이드
+- **[analytics-dashboard.md](06-frontend/analytics-dashboard.md)** - Recharts 시각화, WebSocket 실시간 메트릭
 
 ### 08. 인프라 (Infrastructure) - 클라이언트 전용
 - **[deployment-guide.md](08-infrastructure/deployment-guide.md)** - Cloudflare Pages 배포 가이드
@@ -191,6 +219,6 @@ git add . && git commit -m "feat: 기능명
 
 ---
 
-📧 **문서 관련 문의**: dev-team@studymate.com  
-🔄 **마지막 업데이트**: 2024-01-XX  
-📄 **문서 버전**: v1.0
+📧 **문서 관련 문의**: dev-team@studymate.com
+🔄 **마지막 업데이트**: 2025-01-18 (프론트엔드 시스템 문서 확장)
+📄 **문서 버전**: v2.0

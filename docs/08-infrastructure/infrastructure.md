@@ -1,25 +1,54 @@
-# STUDYMATE 모니터링 및 관찰성 가이드
+# 인프라 및 모니터링 가이드
+
+**최종 업데이트**: 2025-01-13
 
 ## 📋 개요
 
-STUDYMATE 플랫폼의 모니터링, 로깅, 알림 시스템과 관찰성(Observability) 구현을 설명합니다.
+STUDYMATE-CLIENT의 배포 인프라, CI/CD 파이프라인, 모니터링 시스템, 그리고 운영 관찰성(Observability)을 통합적으로 설명합니다.
 
-## 🏗️ 모니터링 아키텍처
+## 🏗️ 인프라 아키텍처
 
-### 기술 스택
-- **프론트엔드**: Cloudflare Analytics + Web Vitals
-- **백엔드 API**: Cloudflare Workers Analytics + Wrangler tail
-- **Node.js Workers**: Cloudflare Workers Analytics
-- **에러 트래킹**: Sentry
-- **실시간 모니터링**: Cloudflare Dashboard
-- **커스텀 메트릭**: Cloudflare Workers KV
+### 전체 배포 구조
+```mermaid
+graph TB
+    subgraph "Developer"
+        DEV[개발자 로컬]
+        GIT[GitHub Repository]
+    end
+
+    subgraph "CI/CD Pipeline"
+        GHA[GitHub Actions]
+        BUILD[Build Process]
+        TEST[Test Suite]
+    end
+
+    subgraph "Cloudflare Pages"
+        CF_BUILD[Cloudflare Build]
+        CF_DEPLOY[Cloudflare Deploy]
+        CF_CDN[Global CDN]
+    end
+
+    subgraph "Production"
+        PROD[languagemate.kr]
+        PREVIEW[preview.languagemate.kr]
+    end
+
+    DEV --> GIT
+    GIT --> GHA
+    GHA --> BUILD --> TEST
+    TEST --> CF_BUILD
+    CF_BUILD --> CF_DEPLOY
+    CF_DEPLOY --> CF_CDN
+    CF_CDN --> PROD
+    CF_CDN --> PREVIEW
+```
 
 ### 모니터링 계층
 ```
 STUDYMATE Monitoring Stack
 ├── Infrastructure Level
 │   ├── Cloudflare Edge Analytics
-│   ├── DNS Resolution Metrics  
+│   ├── DNS Resolution Metrics
 │   ├── CDN Cache Hit Rates
 │   └── SSL/TLS Performance
 ├── Application Level
@@ -38,6 +67,284 @@ STUDYMATE Monitoring Stack
     ├── Rate Limit Violations
     └── Data Access Patterns
 ```
+
+### 기술 스택
+- **프론트엔드 배포**: Cloudflare Pages
+- **백엔드 배포**: Cloudflare Workers
+- **모니터링**: Cloudflare Analytics + Web Vitals
+- **에러 트래킹**: Sentry
+- **실시간 모니터링**: Cloudflare Dashboard
+- **커스텀 메트릭**: Cloudflare Workers KV
+
+## 🌐 Cloudflare Pages 설정
+
+### 프로젝트 설정
+```yaml
+# Cloudflare Pages 설정
+Project Name: studymate-client
+Build Command: npm run build
+Build Output Directory: dist
+Root Directory: /
+Node.js Version: 18.x
+
+# Environment Variables (Production)
+VITE_API_URL: https://api.languagemate.kr
+VITE_WS_URL: wss://api.languagemate.kr/ws
+VITE_ENV: production
+
+# Environment Variables (Preview)
+VITE_API_URL: https://api-staging.languagemate.kr
+VITE_WS_URL: wss://api-staging.languagemate.kr/ws
+VITE_ENV: staging
+```
+
+### 도메인 설정
+```bash
+# Custom Domains
+Production: languagemate.kr
+Preview: preview.languagemate.kr
+
+# SSL/TLS
+Mode: Full (strict)
+Always Use HTTPS: Enabled
+Minimum TLS Version: 1.2
+```
+
+### Build 설정
+```yaml
+# Build Configuration
+Build System: v2
+Build Image: default
+
+# Build Commands
+Install Command: npm ci
+Build Command: npm run build
+Output Directory: dist
+
+# Node.js Settings
+Node.js Version: 18.17.1
+Package Manager: npm
+```
+
+## 🔄 CI/CD 파이프라인
+
+### GitHub Actions Workflow
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: studymate-client
+          directory: dist
+          branch: ${{ github.ref_name }}
+```
+
+### 브랜치별 배포 전략
+```yaml
+# Branch Deployment Strategy
+main:
+  target: Production (languagemate.kr)
+  environment: production
+  auto_deploy: true
+
+develop:
+  target: Preview (preview.languagemate.kr)
+  environment: staging
+  auto_deploy: true
+
+feature/*:
+  target: Preview URL
+  environment: preview
+  auto_deploy: on_pull_request
+```
+
+## 📦 빌드 프로세스
+
+### 로컬 빌드
+```bash
+# 개발 환경 실행
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 빌드 미리보기
+npm run preview
+
+# 타입 체크
+npm run typecheck
+
+# 린팅
+npm run lint
+
+# 테스트 실행
+npm run test
+```
+
+### 빌드 최적화
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    target: 'es2015',
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@headlessui/react', 'lucide-react'],
+          utils: ['axios', 'zustand', 'jwt-decode']
+        }
+      }
+    }
+  },
+  define: {
+    'process.env': process.env
+  }
+});
+```
+
+## 🔐 환경 변수 관리
+
+### 환경별 변수 설정
+```bash
+# .env.local (개발환경)
+VITE_API_URL=http://localhost:8080
+VITE_WS_URL=ws://localhost:8080/ws
+VITE_ENV=development
+
+# .env.staging (스테이징)
+VITE_API_URL=https://api-staging.languagemate.kr
+VITE_WS_URL=wss://api-staging.languagemate.kr/ws
+VITE_ENV=staging
+
+# .env.production (프로덕션)
+VITE_API_URL=https://api.languagemate.kr
+VITE_WS_URL=wss://api.languagemate.kr/ws
+VITE_ENV=production
+```
+
+### GitHub Secrets 설정
+```bash
+# GitHub Repository Secrets
+CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+VITE_API_URL=https://api.languagemate.kr
+VITE_WS_URL=wss://api.languagemate.kr/ws
+
+# 민감하지 않은 변수는 환경별 설정 파일 사용
+```
+
+## 🚀 배포 명령어
+
+### Wrangler CLI를 사용한 수동 배포
+```bash
+# Wrangler 설치 및 로그인
+npm install -g wrangler
+wrangler login
+
+# 프로덕션 배포
+npm run build
+wrangler pages deploy dist --project-name=studymate-client --branch=main
+
+# 프리뷰 배포
+npm run build
+wrangler pages deploy dist --project-name=studymate-client --branch=preview
+
+# 배포 상태 확인
+wrangler pages deployment list --project-name=studymate-client
+```
+
+### 배포 스크립트
+```json
+{
+  "scripts": {
+    "deploy:prod": "npm run build && wrangler pages deploy dist --project-name=studymate-client --branch=main",
+    "deploy:staging": "npm run build && wrangler pages deploy dist --project-name=studymate-client --branch=develop",
+    "deploy:preview": "npm run build && wrangler pages deploy dist --project-name=studymate-client"
+  }
+}
+```
+
+## 🔍 배포 후 검증
+
+### 자동 검증 스크립트
+```bash
+#!/bin/bash
+# deploy-check.sh
+
+echo "🚀 Starting deployment verification..."
+
+# Health check
+echo "📡 Checking site availability..."
+curl -f https://languagemate.kr || exit 1
+
+# Performance check
+echo "⚡ Running Lighthouse audit..."
+lighthouse https://languagemate.kr --chrome-flags="--headless" --output=json --quiet
+
+# API connectivity check
+echo "🔌 Testing API connectivity..."
+curl -f https://api.languagemate.kr/health || exit 1
+
+echo "✅ Deployment verification completed successfully!"
+```
+
+### 수동 검증 체크리스트
+- [ ] 사이트 접속 가능 (https://languagemate.kr)
+- [ ] 네이버 OAuth 로그인 작동
+- [ ] API 통신 정상 작동
+- [ ] WebSocket 연결 성공
+- [ ] 반응형 디자인 확인 (모바일/태블릿/데스크톱)
+- [ ] 주요 기능 테스트 (로그인, 온보딩, 채팅)
+- [ ] 성능 메트릭 확인 (Core Web Vitals)
+- [ ] 에러 로그 확인
 
 ## 📊 프론트엔드 모니터링
 
@@ -59,11 +366,11 @@ interface VitalMetric {
 class WebVitalsTracker {
   private metrics: Map<string, VitalMetric> = new Map();
   private sendBeacon: boolean = navigator.sendBeacon !== undefined;
-  
+
   constructor() {
     this.initializeTracking();
   }
-  
+
   private initializeTracking() {
     // Core Web Vitals 추적
     getCLS(this.handleMetric.bind(this, 'CLS'));
@@ -71,20 +378,20 @@ class WebVitalsTracker {
     getFCP(this.handleMetric.bind(this, 'FCP'));
     getLCP(this.handleMetric.bind(this, 'LCP'));
     getTTFB(this.handleMetric.bind(this, 'TTFB'));
-    
+
     // 페이지 언로드 시 메트릭 전송
     window.addEventListener('beforeunload', this.sendMetrics.bind(this));
   }
-  
+
   private handleMetric(name: string, metric: VitalMetric) {
     this.metrics.set(name, metric);
-    
+
     // 실시간으로 중요한 메트릭 전송
     if (name === 'LCP' || name === 'FID') {
       this.sendSingleMetric(name, metric);
     }
   }
-  
+
   private sendSingleMetric(name: string, metric: VitalMetric) {
     const data = {
       name,
@@ -95,7 +402,7 @@ class WebVitalsTracker {
       userId: this.getUserId(),
       sessionId: this.getSessionId()
     };
-    
+
     // Cloudflare Analytics로 전송
     if (this.sendBeacon) {
       navigator.sendBeacon('/api/analytics/web-vitals', JSON.stringify(data));
@@ -108,7 +415,7 @@ class WebVitalsTracker {
       }).catch(console.warn);
     }
   }
-  
+
   private sendMetrics() {
     const metricsData = Array.from(this.metrics.entries()).map(([name, metric]) => ({
       name,
@@ -119,14 +426,13 @@ class WebVitalsTracker {
       userId: this.getUserId(),
       sessionId: this.getSessionId()
     }));
-    
+
     if (metricsData.length > 0) {
       navigator.sendBeacon('/api/analytics/web-vitals-batch', JSON.stringify(metricsData));
     }
   }
-  
+
   private getUserId(): string | null {
-    // Zustand store에서 사용자 ID 가져오기
     const authState = localStorage.getItem('auth-storage');
     if (authState) {
       try {
@@ -138,7 +444,7 @@ class WebVitalsTracker {
     }
     return null;
   }
-  
+
   private getSessionId(): string {
     let sessionId = sessionStorage.getItem('session-id');
     if (!sessionId) {
@@ -168,9 +474,8 @@ class UserAnalytics {
   private flushTimer: number | null = null;
   private readonly BATCH_SIZE = 10;
   private readonly FLUSH_INTERVAL = 5000; // 5초
-  
+
   track(event: UserEvent) {
-    // 이벤트를 큐에 추가
     this.eventQueue.push({
       ...event,
       timestamp: Date.now(),
@@ -178,15 +483,14 @@ class UserAnalytics {
       sessionId: this.getSessionId(),
       page: window.location.pathname
     });
-    
-    // 배치 크기 도달 시 즉시 전송
+
     if (this.eventQueue.length >= this.BATCH_SIZE) {
       this.flush();
     } else {
       this.scheduleFlush();
     }
   }
-  
+
   // 주요 이벤트들
   trackPageView(page: string) {
     this.track({
@@ -195,7 +499,7 @@ class UserAnalytics {
       label: page
     });
   }
-  
+
   trackSessionStart(sessionType: 'audio' | 'video', partnerId: string) {
     this.track({
       action: 'session_start',
@@ -204,7 +508,7 @@ class UserAnalytics {
       customDimensions: { partnerId }
     });
   }
-  
+
   trackMatchingRequest(partnerId: string, compatibility: number) {
     this.track({
       action: 'matching_request',
@@ -213,7 +517,7 @@ class UserAnalytics {
       customDimensions: { partnerId }
     });
   }
-  
+
   trackLevelTestComplete(language: string, level: string, score: number) {
     this.track({
       action: 'level_test_complete',
@@ -222,7 +526,7 @@ class UserAnalytics {
       value: score
     });
   }
-  
+
   trackError(error: string, context: string) {
     this.track({
       action: 'error',
@@ -231,27 +535,26 @@ class UserAnalytics {
       customDimensions: { context }
     });
   }
-  
+
   private scheduleFlush() {
     if (this.flushTimer) return;
-    
+
     this.flushTimer = window.setTimeout(() => {
       this.flush();
     }, this.FLUSH_INTERVAL);
   }
-  
+
   private flush() {
     if (this.eventQueue.length === 0) return;
-    
+
     const events = [...this.eventQueue];
     this.eventQueue = [];
-    
+
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
-    
-    // Cloudflare Workers로 이벤트 배치 전송
+
     fetch('/api/analytics/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -259,7 +562,7 @@ class UserAnalytics {
       keepalive: true
     }).catch(console.warn);
   }
-  
+
   private getUserId(): string | null {
     const authState = localStorage.getItem('auth-storage');
     if (authState) {
@@ -272,7 +575,7 @@ class UserAnalytics {
     }
     return null;
   }
-  
+
   private getSessionId(): string {
     let sessionId = sessionStorage.getItem('session-id');
     if (!sessionId) {
@@ -288,15 +591,15 @@ export const userAnalytics = new UserAnalytics();
 // React Hook으로 쉽게 사용
 export function useAnalytics() {
   const trackPageView = (page: string) => userAnalytics.trackPageView(page);
-  const trackSessionStart = (type: 'audio' | 'video', partnerId: string) => 
+  const trackSessionStart = (type: 'audio' | 'video', partnerId: string) =>
     userAnalytics.trackSessionStart(type, partnerId);
-  const trackMatchingRequest = (partnerId: string, compatibility: number) => 
+  const trackMatchingRequest = (partnerId: string, compatibility: number) =>
     userAnalytics.trackMatchingRequest(partnerId, compatibility);
-  const trackLevelTestComplete = (language: string, level: string, score: number) => 
+  const trackLevelTestComplete = (language: string, level: string, score: number) =>
     userAnalytics.trackLevelTestComplete(language, level, score);
-  const trackError = (error: string, context: string) => 
+  const trackError = (error: string, context: string) =>
     userAnalytics.trackError(error, context);
-  
+
   return {
     trackPageView,
     trackSessionStart,
@@ -313,11 +616,11 @@ export function useAnalytics() {
 class PerformanceMonitor {
   private observer: PerformanceObserver | null = null;
   private networkObserver: PerformanceObserver | null = null;
-  
+
   constructor() {
     this.initializeObservers();
   }
-  
+
   private initializeObservers() {
     // Long Task 감지
     if ('PerformanceObserver' in window) {
@@ -330,13 +633,13 @@ class PerformanceMonitor {
           }
         });
       });
-      
+
       try {
         this.observer.observe({ entryTypes: ['longtask', 'navigation'] });
       } catch (e) {
         console.warn('PerformanceObserver not supported');
       }
-      
+
       // 네트워크 요청 모니터링
       this.networkObserver = new PerformanceObserver((list) => {
         list.getEntries().forEach(entry => {
@@ -345,7 +648,7 @@ class PerformanceMonitor {
           }
         });
       });
-      
+
       try {
         this.networkObserver.observe({ entryTypes: ['resource'] });
       } catch (e) {
@@ -353,7 +656,7 @@ class PerformanceMonitor {
       }
     }
   }
-  
+
   private reportLongTask(entry: PerformanceEntry) {
     const data = {
       type: 'long_task',
@@ -362,7 +665,7 @@ class PerformanceMonitor {
       page: window.location.pathname,
       timestamp: Date.now()
     };
-    
+
     // 5초 이상의 긴 작업은 즉시 보고
     if (entry.duration > 5000) {
       this.sendAlert('critical_performance_issue', data);
@@ -370,7 +673,7 @@ class PerformanceMonitor {
       this.logPerformanceData(data);
     }
   }
-  
+
   private reportNavigationTiming(entry: PerformanceNavigationTiming) {
     const data = {
       type: 'navigation',
@@ -381,22 +684,22 @@ class PerformanceMonitor {
       page: window.location.pathname,
       timestamp: Date.now()
     };
-    
+
     this.logPerformanceData(data);
   }
-  
+
   private analyzeResourceTiming(entry: PerformanceResourceTiming) {
     // 느린 API 요청 감지
     if (entry.name.includes('/api/') && entry.duration > 3000) {
       this.reportSlowAPI(entry);
     }
-    
+
     // 큰 리소스 감지
     if (entry.transferSize && entry.transferSize > 1024 * 1024) { // 1MB 초과
       this.reportLargeResource(entry);
     }
   }
-  
+
   private reportSlowAPI(entry: PerformanceResourceTiming) {
     const data = {
       type: 'slow_api',
@@ -407,10 +710,10 @@ class PerformanceMonitor {
       transferSize: entry.transferSize,
       timestamp: Date.now()
     };
-    
+
     this.sendAlert('slow_api_response', data);
   }
-  
+
   private reportLargeResource(entry: PerformanceResourceTiming) {
     const data = {
       type: 'large_resource',
@@ -419,22 +722,22 @@ class PerformanceMonitor {
       duration: entry.duration,
       timestamp: Date.now()
     };
-    
+
     this.logPerformanceData(data);
   }
-  
+
   private getFirstPaint(): number | null {
     const paintEntries = performance.getEntriesByType('paint');
     const firstPaint = paintEntries.find(entry => entry.name === 'first-paint');
     return firstPaint ? firstPaint.startTime : null;
   }
-  
+
   private getFirstContentfulPaint(): number | null {
     const paintEntries = performance.getEntriesByType('paint');
     const firstContentfulPaint = paintEntries.find(entry => entry.name === 'first-contentful-paint');
     return firstContentfulPaint ? firstContentfulPaint.startTime : null;
   }
-  
+
   private logPerformanceData(data: any) {
     fetch('/api/analytics/performance', {
       method: 'POST',
@@ -443,7 +746,7 @@ class PerformanceMonitor {
       keepalive: true
     }).catch(console.warn);
   }
-  
+
   private sendAlert(alertType: string, data: any) {
     fetch('/api/alerts/performance', {
       method: 'POST',
@@ -458,7 +761,7 @@ class PerformanceMonitor {
       keepalive: true
     }).catch(console.warn);
   }
-  
+
   // 메모리 사용량 모니터링
   getMemoryInfo() {
     if ('memory' in performance) {
@@ -472,7 +775,7 @@ class PerformanceMonitor {
     }
     return null;
   }
-  
+
   // 주기적 메모리 체크
   startMemoryMonitoring() {
     setInterval(() => {
@@ -483,7 +786,7 @@ class PerformanceMonitor {
         if (usagePercent > 0.8) {
           this.sendAlert('high_memory_usage', memoryInfo);
         }
-        
+
         this.logPerformanceData({
           type: 'memory_usage',
           ...memoryInfo
@@ -513,65 +816,65 @@ interface WorkerMetrics {
 
 class WorkersAnalytics {
   constructor(private kv: KVNamespace) {}
-  
+
   async recordRequest(request: Request, response: Response, duration: number) {
     const key = this.getMetricKey('requests', new Date());
     const metrics = await this.getMetrics(key);
-    
+
     metrics.requestCount++;
     if (response.status >= 400) {
       metrics.errorCount++;
     }
-    
+
     // 이동 평균 계산
-    metrics.averageResponseTime = 
-      (metrics.averageResponseTime * (metrics.requestCount - 1) + duration) / 
+    metrics.averageResponseTime =
+      (metrics.averageResponseTime * (metrics.requestCount - 1) + duration) /
       metrics.requestCount;
-    
+
     await this.storeMetrics(key, metrics);
   }
-  
+
   async recordWebRTCConnection(type: 'audio' | 'video', success: boolean) {
     const key = this.getMetricKey('webrtc', new Date());
     const metrics = await this.getMetrics(key);
-    
+
     if (success) {
       metrics.webrtcConnections++;
     } else {
       metrics.errorCount++;
     }
-    
+
     await this.storeMetrics(key, metrics);
   }
-  
+
   async recordLevelTestCompletion(language: string, level: string, score: number) {
     const key = this.getMetricKey('level_tests', new Date());
     const metrics = await this.getMetrics(key);
-    
+
     metrics.levelTestsCompleted++;
-    
+
     // 언어별, 레벨별 통계 별도 저장
     const langKey = this.getMetricKey(`level_tests_${language}`, new Date());
     const langMetrics = await this.getMetrics(langKey);
     langMetrics.levelTestsCompleted++;
-    
+
     await Promise.all([
       this.storeMetrics(key, metrics),
       this.storeMetrics(langKey, langMetrics),
       this.recordScore(language, level, score)
     ]);
   }
-  
+
   private async recordScore(language: string, level: string, score: number) {
     const scoresKey = `scores_${language}_${level}_${this.getDateString(new Date())}`;
     const existingScores = await this.kv.get(scoresKey, 'json') as number[] || [];
     existingScores.push(score);
-    
+
     await this.kv.put(scoresKey, JSON.stringify(existingScores), {
       expirationTtl: 86400 * 30 // 30일 보관
     });
   }
-  
+
   private async getMetrics(key: string): Promise<WorkerMetrics> {
     const existing = await this.kv.get(key, 'json') as WorkerMetrics;
     return existing || {
@@ -582,47 +885,47 @@ class WorkersAnalytics {
       levelTestsCompleted: 0
     };
   }
-  
+
   private async storeMetrics(key: string, metrics: WorkerMetrics) {
     await this.kv.put(key, JSON.stringify(metrics), {
       expirationTtl: 86400 * 7 // 7일 보관
     });
   }
-  
+
   private getMetricKey(type: string, date: Date): string {
     return `metrics_${type}_${this.getDateString(date)}_${this.getHour(date)}`;
   }
-  
+
   private getDateString(date: Date): string {
     return date.toISOString().split('T')[0];
   }
-  
+
   private getHour(date: Date): string {
     return date.getHours().toString().padStart(2, '0');
   }
-  
+
   // 메트릭 조회 API
   async getHourlyMetrics(type: string, date: string): Promise<WorkerMetrics[]> {
     const metrics: WorkerMetrics[] = [];
-    
+
     for (let hour = 0; hour < 24; hour++) {
       const key = `metrics_${type}_${date}_${hour.toString().padStart(2, '0')}`;
       const hourMetrics = await this.getMetrics(key);
       metrics.push(hourMetrics);
     }
-    
+
     return metrics;
   }
-  
+
   async getDailyMetrics(type: string, days: number = 7): Promise<Record<string, WorkerMetrics>> {
     const dailyMetrics: Record<string, WorkerMetrics> = {};
     const today = new Date();
-    
+
     for (let i = 0; i < days; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateString = this.getDateString(date);
-      
+
       const hourlyData = await this.getHourlyMetrics(type, dateString);
       dailyMetrics[dateString] = hourlyData.reduce((acc, curr) => ({
         requestCount: acc.requestCount + curr.requestCount,
@@ -632,7 +935,7 @@ class WorkersAnalytics {
         levelTestsCompleted: acc.levelTestsCompleted + curr.levelTestsCompleted
       }));
     }
-    
+
     return dailyMetrics;
   }
 }
@@ -644,17 +947,17 @@ export async function handleAnalyticsRequest(
 ): Promise<Response> {
   const analytics = new WorkersAnalytics(env.ANALYTICS_KV);
   const url = new URL(request.url);
-  
+
   if (url.pathname === '/analytics/metrics') {
     const type = url.searchParams.get('type') || 'requests';
     const days = parseInt(url.searchParams.get('days') || '7');
-    
+
     const metrics = await analytics.getDailyMetrics(type, days);
     return new Response(JSON.stringify(metrics), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
-  
+
   return new Response('Not found', { status: 404 });
 }
 ```
@@ -673,7 +976,6 @@ Sentry.init({
   environment: import.meta.env.MODE,
   integrations: [
     new BrowserTracing({
-      // 라우팅 추적
       routingInstrumentation: Sentry.reactRouterV6Instrumentation(
         React.useEffect,
         useLocation,
@@ -685,7 +987,6 @@ Sentry.init({
   ],
   tracesSampleRate: 0.1, // 10% 샘플링
   beforeSend: (event, hint) => {
-    // 개발 환경에서는 콘솔에도 출력
     if (import.meta.env.DEV) {
       console.error('Sentry Error:', event, hint);
     }
@@ -711,12 +1012,12 @@ class ErrorReporter {
           scope.setExtra(key, value);
         });
       }
-      
+
       scope.setLevel('error');
       Sentry.captureException(error);
     });
   }
-  
+
   reportWarning(message: string, context?: Record<string, any>) {
     Sentry.withScope((scope) => {
       if (context) {
@@ -724,16 +1025,16 @@ class ErrorReporter {
           scope.setExtra(key, value);
         });
       }
-      
+
       scope.setLevel('warning');
       Sentry.captureMessage(message);
     });
   }
-  
+
   setUser(user: { id: string; email?: string; username?: string }) {
     Sentry.setUser(user);
   }
-  
+
   addBreadcrumb(message: string, category: string, data?: any) {
     Sentry.addBreadcrumb({
       message,
@@ -805,12 +1106,12 @@ class AlertingSystem {
       cooldownMinutes: 5
     }
   ];
-  
+
   constructor(private kv: KVNamespace) {}
-  
+
   async checkAlerts(metrics: any) {
     const activeAlerts = [];
-    
+
     for (const rule of this.alertRules) {
       if (await this.shouldTriggerAlert(rule, metrics)) {
         const alert = await this.createAlert(rule, metrics);
@@ -819,16 +1120,15 @@ class AlertingSystem {
         await this.recordAlertTrigger(rule.name);
       }
     }
-    
+
     return activeAlerts;
   }
-  
+
   private async shouldTriggerAlert(rule: AlertRule, metrics: any): Promise<boolean> {
-    // 조건 확인
     if (!rule.condition(metrics)) {
       return false;
     }
-    
+
     // 쿨다운 확인
     const lastTriggered = await this.getLastAlertTime(rule.name);
     if (lastTriggered) {
@@ -837,10 +1137,10 @@ class AlertingSystem {
         return false;
       }
     }
-    
+
     return true;
   }
-  
+
   private async createAlert(rule: AlertRule, metrics: any) {
     return {
       id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -851,7 +1151,7 @@ class AlertingSystem {
       timestamp: Date.now()
     };
   }
-  
+
   private generateAlertMessage(rule: AlertRule, metrics: any): string {
     switch (rule.name) {
       case 'high_error_rate':
@@ -866,7 +1166,7 @@ class AlertingSystem {
         return `Alert triggered: ${rule.name}`;
     }
   }
-  
+
   private async sendAlert(alert: any) {
     // Slack webhook으로 알림 전송
     const slackPayload = {
@@ -880,29 +1180,29 @@ class AlertingSystem {
         ]
       }]
     };
-    
+
     await fetch(process.env.SLACK_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(slackPayload)
     });
-    
+
     // 이메일 알림 (critical 등급만)
     if (alert.severity === 'critical') {
       await this.sendEmailAlert(alert);
     }
   }
-  
+
   private getSeverityColor(severity: string): string {
     const colors = {
-      low: '#36a64f',     // 녹색
-      medium: '#ff9500',  // 주황색
-      high: '#ff0000',    // 빨간색
-      critical: '#800080' // 보라색
+      low: '#36a64f',
+      medium: '#ff9500',
+      high: '#ff0000',
+      critical: '#800080'
     };
     return colors[severity] || '#cccccc';
   }
-  
+
   private async sendEmailAlert(alert: any) {
     // SendGrid나 다른 이메일 서비스를 통한 이메일 발송
     const emailPayload = {
@@ -914,22 +1214,16 @@ class AlertingSystem {
         <p><strong>Message:</strong> ${alert.message}</p>
         <p><strong>Severity:</strong> ${alert.severity}</p>
         <p><strong>Time:</strong> ${new Date(alert.timestamp).toISOString()}</p>
-        <hr>
-        <p><strong>Metrics:</strong></p>
-        <pre>${JSON.stringify(alert.metrics, null, 2)}</pre>
       `
     };
-    
-    // 실제 이메일 서비스 API 호출
-    // await sendEmail(emailPayload);
   }
-  
+
   private async getLastAlertTime(alertName: string): Promise<number | null> {
     const key = `alert_last_${alertName}`;
     const lastTime = await this.kv.get(key);
     return lastTime ? parseInt(lastTime) : null;
   }
-  
+
   private async recordAlertTrigger(alertName: string) {
     const key = `alert_last_${alertName}`;
     await this.kv.put(key, Date.now().toString(), {
@@ -975,7 +1269,7 @@ interface DashboardMetrics {
 export function MonitoringDashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d'>('24h');
-  
+
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -986,17 +1280,17 @@ export function MonitoringDashboard() {
         console.error('Failed to fetch metrics:', error);
       }
     };
-    
+
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 30000); // 30초마다 업데이트
-    
+
     return () => clearInterval(interval);
   }, [timeRange]);
-  
+
   if (!metrics) {
     return <div className="loading">Loading dashboard...</div>;
   }
-  
+
   return (
     <div className="monitoring-dashboard">
       <div className="dashboard-header">
@@ -1013,7 +1307,7 @@ export function MonitoringDashboard() {
           ))}
         </div>
       </div>
-      
+
       {/* Core Web Vitals */}
       <div className="metrics-grid">
         <div className="metric-card">
@@ -1021,25 +1315,19 @@ export function MonitoringDashboard() {
           <div className="web-vitals">
             <div className="vital">
               <span className="label">LCP</span>
-              <span className={`value ${getVitalRating(metrics.webVitals.lcp)}`}>
-                {formatMs(average(metrics.webVitals.lcp))}
-              </span>
+              <span className="value">{formatMs(average(metrics.webVitals.lcp))}</span>
             </div>
             <div className="vital">
               <span className="label">FID</span>
-              <span className={`value ${getVitalRating(metrics.webVitals.fid)}`}>
-                {formatMs(average(metrics.webVitals.fid))}
-              </span>
+              <span className="value">{formatMs(average(metrics.webVitals.fid))}</span>
             </div>
             <div className="vital">
               <span className="label">CLS</span>
-              <span className={`value ${getVitalRating(metrics.webVitals.cls)}`}>
-                {average(metrics.webVitals.cls).toFixed(3)}
-              </span>
+              <span className="value">{average(metrics.webVitals.cls).toFixed(3)}</span>
             </div>
           </div>
         </div>
-        
+
         {/* 사용자 참여도 */}
         <div className="metric-card">
           <h3>사용자 참여도</h3>
@@ -1058,7 +1346,7 @@ export function MonitoringDashboard() {
             </div>
           </div>
         </div>
-        
+
         {/* 시스템 상태 */}
         <div className="metric-card">
           <h3>시스템 상태</h3>
@@ -1074,70 +1362,30 @@ export function MonitoringDashboard() {
                     backgroundColor: ['#4CAF50', '#F44336']
                   }]
                 }}
-                options={{
-                  plugins: {
-                    legend: { display: false }
-                  }
-                }}
               />
               <div className="health-label">
                 <span>에러율</span>
                 <span>{(metrics.systemHealth.errorRate * 100).toFixed(2)}%</span>
               </div>
             </div>
-            
+
             <div className="response-time">
               <span className="label">평균 응답 시간</span>
               <span className="value">{formatMs(metrics.systemHealth.averageResponseTime)}</span>
             </div>
-            
+
             <div className="uptime">
               <span className="label">가동시간</span>
               <span className="value">{(metrics.systemHealth.uptime * 100).toFixed(2)}%</span>
             </div>
           </div>
         </div>
-        
-        {/* 비즈니스 메트릭 */}
-        <div className="metric-card">
-          <h3>비즈니스 지표</h3>
-          <Bar
-            data={{
-              labels: ['매칭 성공률', '레벨테스트 완료', '사용자 만족도'],
-              datasets: [{
-                data: [
-                  metrics.businessMetrics.matchingSuccessRate * 100,
-                  metrics.businessMetrics.levelTestsCompleted,
-                  metrics.businessMetrics.userSatisfaction * 100
-                ],
-                backgroundColor: ['#2196F3', '#FF9800', '#4CAF50']
-              }]
-            }}
-            options={{
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  max: 100
-                }
-              },
-              plugins: {
-                legend: { display: false }
-              }
-            }}
-          />
-        </div>
-      </div>
-      
-      {/* 실시간 로그 */}
-      <div className="real-time-logs">
-        <h3>실시간 활동</h3>
-        <RealtimeLogs />
       </div>
     </div>
   );
 }
 
-// 헬퍼 함수들
+// 헬퍼 함수
 function average(arr: number[]): number {
   return arr.reduce((sum, val) => sum + val, 0) / arr.length;
 }
@@ -1151,16 +1399,229 @@ function formatTime(seconds: number): string {
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toFixed(0).padStart(2, '0')}`;
 }
-
-function getVitalRating(values: number[]): 'good' | 'needs-improvement' | 'poor' {
-  const avg = average(values);
-  // LCP 기준으로 예시 (실제로는 각 vital별로 다른 기준 적용)
-  if (avg <= 2500) return 'good';
-  if (avg <= 4000) return 'needs-improvement';
-  return 'poor';
-}
 ```
+
+## 🔧 성능 최적화
+
+### 캐싱 전략
+```javascript
+// sw.js - Service Worker 캐싱
+const CACHE_NAME = 'studymate-v1';
+const urlsToCache = [
+  '/',
+  '/static/css/main.css',
+  '/static/js/main.js',
+  '/fonts/Pretendard.woff2'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(urlsToCache))
+  );
+});
+```
+
+### 이미지 최적화
+```javascript
+// src/components/common/OptimizedImage.tsx
+interface OptimizedImageProps {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  loading?: 'lazy' | 'eager';
+}
+
+const OptimizedImage: React.FC<OptimizedImageProps> = ({
+  src,
+  alt,
+  width,
+  height,
+  loading = 'lazy'
+}) => {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="relative overflow-hidden">
+      {!loaded && <div className="skeleton" style={{ width, height }} />}
+      <img
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={loading}
+        onLoad={() => setLoaded(true)}
+        className={`transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  );
+};
+```
+
+## 🚨 트러블슈팅
+
+### 일반적인 배포 문제
+
+#### 1. 빌드 실패
+```bash
+# 문제: 의존성 설치 실패
+# 해결: package-lock.json 확인 및 재설치
+rm -rf node_modules package-lock.json
+npm install
+
+# 문제: 메모리 부족
+# 해결: Node.js 메모리 증가
+export NODE_OPTIONS="--max_old_space_size=4096"
+npm run build
+```
+
+#### 2. 환경 변수 문제
+```bash
+# 문제: 환경 변수가 빌드에 포함되지 않음
+# 해결: VITE_ 접두사 확인
+# ❌ API_URL=https://api.example.com
+# ✅ VITE_API_URL=https://api.example.com
+```
+
+#### 3. 라우팅 문제
+```javascript
+// 문제: SPA 라우팅이 404 에러 발생
+// 해결: _redirects 파일 생성
+// public/_redirects
+/* /index.html 200
+```
+
+#### 4. CORS 에러
+```javascript
+// 문제: API 호출 시 CORS 에러
+// 해결: 백엔드 CORS 설정 확인 또는 프록시 설정
+// vite.config.js
+export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.languagemate.kr',
+        changeOrigin: true,
+        secure: true
+      }
+    }
+  }
+});
+```
+
+### 롤백 프로세스
+
+#### 자동 롤백
+```yaml
+# GitHub Actions - 자동 롤백
+- name: Rollback on failure
+  if: failure()
+  run: |
+    wrangler pages deployment rollback --project-name=studymate-client
+```
+
+#### 수동 롤백
+```bash
+# 1. 배포 이력 확인
+wrangler pages deployment list --project-name=studymate-client
+
+# 2. 특정 배포로 롤백
+wrangler pages deployment rollback --project-name=studymate-client --deployment-id=<deployment-id>
+
+# 3. 커밋 레벨 롤백
+git revert <commit-hash>
+git push origin main
+```
+
+## 🔐 보안 설정
+
+### Cloudflare 보안 설정
+```yaml
+# Security Settings
+SSL/TLS: Full (strict)
+Always Use HTTPS: On
+HSTS: Enabled
+Security Level: Medium
+Browser Integrity Check: On
+```
+
+### CSP 헤더 설정
+```javascript
+// _headers 파일
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.languagemate.kr wss://api.languagemate.kr;
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+```
+
+## 📅 배포 스케줄
+
+### 정기 배포 일정
+- **프로덕션 배포**: 매주 금요일 오후 6시 (KST)
+- **스테이징 배포**: 매일 오전 10시 (KST)
+- **핫픽스 배포**: 필요 시 즉시
+
+### 배포 전 체크리스트
+- [ ] 코드 리뷰 완료
+- [ ] 단위 테스트 통과
+- [ ] E2E 테스트 통과
+- [ ] 스테이징 환경 검증
+- [ ] 성능 테스트 완료
+- [ ] 보안 검사 완료
+- [ ] 백엔드 호환성 확인
+- [ ] 배포 공지 발송
+
+## 📝 배포 문서화
+
+### 배포 로그 템플릿
+```markdown
+# 배포 로그 - YYYY-MM-DD
+
+## 배포 정보
+- **배포 시각**: YYYY-MM-DD HH:MM KST
+- **배포자**: Name
+- **브랜치**: main
+- **커밋 해시**: abc123def
+- **배포 환경**: Production
+
+## 변경사항
+- 새로운 기능 추가
+- UI 개선
+- 성능 최적화
+
+## 테스트 결과
+- [x] 단위 테스트: 통과
+- [x] E2E 테스트: 통과
+- [x] 성능 테스트: 통과
+- [x] 보안 테스트: 통과
+
+## 배포 후 확인사항
+- [x] 사이트 정상 접속
+- [x] 주요 기능 동작 확인
+- [x] API 통신 정상
+- [x] 에러 로그 확인
+
+## 이슈 및 해결
+- 이슈: 설명
+- 해결: 조치 내용
+```
+
+## 📞 긴급 대응
+
+### 장애 대응 절차
+1. **장애 감지**: 모니터링 알림 또는 사용자 신고
+2. **영향도 파악**: 장애 범위 및 심각도 평가
+3. **긴급 대응**: 롤백 또는 핫픽스 배포
+4. **사용자 공지**: 장애 상황 안내
+5. **원인 분석**: 사후 분석 및 재발 방지
+
+### 비상 연락처
+- **DevOps 담당자**: (필요 시 추가)
+- **백엔드 담당자**: (필요 시 추가)
+- **프론트엔드 담당자**: (필요 시 추가)
 
 ---
 
-*이 모니터링 가이드는 STUDYMATE의 운영 안정성과 사용자 경험 최적화를 위한 포괄적인 관찰성 시스템을 제시합니다.*
+*이 인프라 가이드는 STUDYMATE의 안정적인 배포와 운영을 위한 포괄적인 지침을 제공합니다. 모니터링과 관찰성을 통해 사용자 경험을 지속적으로 최적화합니다.*

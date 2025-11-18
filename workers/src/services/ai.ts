@@ -59,7 +59,8 @@ async function processAudioChunk(
             chunkSize: audioChunk.byteLength,
             options
         });
-        return { text: '[Error transcribing chunk]', word_count: 0 };
+        // ✅ 에러를 상위로 전파하여 HTTP 500 반환
+        throw new Error(`Whisper transcription failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
 
