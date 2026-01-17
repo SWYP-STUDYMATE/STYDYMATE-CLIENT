@@ -13,9 +13,11 @@ import {
     Loader2
 } from 'lucide-react';
 import CommonButton from '../../components/CommonButton';
+import CustomConfirm from '../../components/ui/CustomConfirm';
 import useMatchingStore from '../../store/matchingStore';
 import useSessionStore from '../../store/sessionStore';
 import { useAlert } from '../../hooks/useAlert';
+import { useCustomConfirm } from '../../hooks/useCustomConfirm';
 import { getUserProfile } from '../../api/profile';
 import { getUserScheduleInfoById, getUserLanguageInfoById, getUserMotivationInfoById } from '../../api/user';
 import { getOnboardingSummaryById } from '../../api/onboarding';
@@ -36,10 +38,37 @@ export default function MatchingProfile() {
         matchedUsers,
         selectPartner,
         acceptMatch,
-        rejectMatch
+        rejectMatch,
+        receivedRequests,
+        fetchReceivedRequests
     } = useMatchingStore();
 
     const { scheduleSession } = useSessionStore();
+    const { confirmState, showConfirm } = useCustomConfirm();
+
+    // 받은 매칭 요청 목록 가져오기 (requestId를 찾기 위해)
+    useEffect(() => {
+        // receivedRequests가 비어있으면 가져옴
+        if (receivedRequests.length === 0) {
+            fetchReceivedRequests('pending').catch(err => {
+                console.warn('Failed to fetch received requests:', err);
+            });
+        }
+    }, [fetchReceivedRequests, receivedRequests.length]);
+
+    // userId로 해당하는 requestId 찾기
+    const findRequestId = () => {
+        if (!userId || !receivedRequests || receivedRequests.length === 0) {
+            return null;
+        }
+        // receivedRequests에서 sender_id 또는 senderId가 현재 userId와 일치하는 request 찾기
+        const request = receivedRequests.find(
+            req => req.senderId === userId ||
+                   req.sender_id === userId ||
+                   req.senderUserId === userId
+        );
+        return request?.requestId || request?.request_id || request?.id || null;
+    };
 
     // userId로 프로필 정보 가져오기
     useEffect(() => {
@@ -310,8 +339,16 @@ export default function MatchingProfile() {
 
     const handleAcceptMatch = async () => {
         if (!user) return;
+
+        const requestId = findRequestId();
+        if (!requestId) {
+            console.error('Request ID not found for user:', userId);
+            showError('매칭 요청 정보를 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+            return;
+        }
+
         try {
-            await acceptMatch(user.id);
+            await acceptMatch(requestId);
             setIsScheduling(true);
         } catch (error) {
             console.error('Failed to accept match:', error);
@@ -321,9 +358,25 @@ export default function MatchingProfile() {
 
     const handleRejectMatch = async () => {
         if (!user) return;
-        if (window.confirm('이 매칭을 거절하시겠습니까?')) {
+
+        const requestId = findRequestId();
+        if (!requestId) {
+            console.error('Request ID not found for user:', userId);
+            showError('매칭 요청 정보를 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+            return;
+        }
+
+        const confirmed = await showConfirm({
+            title: '매칭 거절',
+            message: '이 매칭 요청을 거절하시겠습니까?',
+            confirmText: '거절',
+            cancelText: '취소',
+            type: 'warning'
+        });
+
+        if (confirmed) {
             try {
-                await rejectMatch(user.id);
+                await rejectMatch(requestId);
                 navigate('/matching');
             } catch (error) {
                 console.error('Failed to reject match:', error);
@@ -484,8 +537,8 @@ export default function MatchingProfile() {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Content - 하단 버튼 + BottomNav 공간 확보 */}
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-[180px] lg:pb-[120px]">
                 {activeTab === 'profile' ? (
                     <>
                         {/* Bio */}
@@ -562,8 +615,8 @@ export default function MatchingProfile() {
                 )}
             </div>
 
-            {/* Bottom Actions */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E7E7E7] p-4 sm:p-6 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-6">
+            {/* Bottom Actions - BottomNav 위에 위치 */}
+            <div className="fixed bottom-[60px] lg:bottom-0 left-0 right-0 bg-white border-t border-[#E7E7E7] p-4 sm:p-6 z-40">
                 {!isScheduling ? (
                     <div className="flex space-x-2 sm:space-x-3">
                         <CommonButton
@@ -604,6 +657,18 @@ export default function MatchingProfile() {
                     </div>
                 )}
             </div>
+
+            {/* 커스텀 확인 팝업 */}
+            <CustomConfirm
+                isOpen={confirmState.isOpen}
+                onClose={confirmState.onCancel}
+                onConfirm={confirmState.onConfirm}
+                title={confirmState.title}
+                message={confirmState.message}
+                confirmText={confirmState.confirmText}
+                cancelText={confirmState.cancelText}
+                type={confirmState.type}
+            />
         </div>
     );
 }

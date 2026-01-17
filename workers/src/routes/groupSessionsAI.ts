@@ -136,8 +136,8 @@ aiRoutes.post('/translate', async (c) => {
 
 const matchSchema = z.object({
   userId: z.string().min(1),
-  userProfile: z.record(z.unknown()).optional(),
-  availableSessions: z.array(z.record(z.unknown())).optional()
+  userProfile: z.record(z.string(), z.unknown()).optional(),
+  availableSessions: z.array(z.record(z.string(), z.unknown())).optional()
 });
 
 aiRoutes.post('/match-recommendation', async (c) => {

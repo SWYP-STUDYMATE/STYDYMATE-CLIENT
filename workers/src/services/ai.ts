@@ -280,10 +280,12 @@ function normalizeAiResponseBody(raw: unknown): string {
     return '';
 }
 
-export function sanitizeJsonResponse(raw: string | undefined | null): string {
+export function sanitizeJsonResponse(raw: string | { text: string } | undefined | null): string {
     if (!raw) return '';
 
-    let text = raw.trim();
+    // LLMResponse 객체인 경우 text 필드 추출
+    let text = typeof raw === 'string' ? raw : raw.text;
+    text = text.trim();
 
     if (text.startsWith('```')) {
         text = text.replace(/^```(?:json)?\s*/i, '');
@@ -728,6 +730,17 @@ export interface LLMResponse {
         total_tokens: number;
     };
     tool_calls?: ToolCall[];
+}
+
+/**
+ * LLMResponse에서 텍스트 추출 헬퍼 함수
+ * string 또는 LLMResponse 타입을 모두 처리
+ */
+export function extractLLMText(response: string | LLMResponse): string {
+    if (typeof response === 'string') {
+        return response;
+    }
+    return response.text;
 }
 
 export interface ChatMessage {

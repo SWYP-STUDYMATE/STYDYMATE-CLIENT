@@ -30,6 +30,7 @@ interface LevelTestAnswer {
     feedback: string;
     suggestions: string[];
     estimatedLevel?: string;
+    comprehensiveData?: unknown;  // Store comprehensive evaluation data
   };
 }
 
@@ -374,12 +375,12 @@ async function evaluateSession(env: Env, session: LevelTestSession): Promise<Lev
 Confidence: ${Math.round(comprehensiveEval.confidenceScore)}%
 
 Pronunciation: ${comprehensiveEval.pronunciationAnalysis.overallScore}/100 - ${comprehensiveEval.pronunciationAnalysis.clarity} clarity
-Grammar: ${comprehensiveEval.grammarAnalysis.accuracyScore}/100 - ${comprehensiveEval.grammarAnalysis.complexity} complexity
-Vocabulary: ${comprehensiveEval.vocabularyAnalysis.rangeScore}/100 - ${comprehensiveEval.vocabularyAnalysis.sophisticationLevel} level
-Fluency: ${comprehensiveEval.fluencyAnalysis.overallScore}/100 - ${comprehensiveEval.fluencyAnalysis.speedLevel} speed`;
+Grammar: ${comprehensiveEval.grammarAnalysis.accuracyScore ?? 0}/100 - ${comprehensiveEval.grammarAnalysis.complexity} complexity
+Vocabulary: ${comprehensiveEval.vocabularyAnalysis.rangeScore ?? 0}/100 - ${comprehensiveEval.vocabularyAnalysis.sophisticationLevel ?? 'unknown'} level
+Fluency: ${comprehensiveEval.fluencyAnalysis.overallScore}/100 - ${comprehensiveEval.fluencyAnalysis.speedLevel ?? 'moderate'} speed`;
 
         const suggestions: string[] = [
-          ...comprehensiveEval.pronunciationAnalysis.improvementAreas.map(area => `Pronunciation: ${area}`),
+          ...(comprehensiveEval.pronunciationAnalysis.improvementAreas ?? []).map(area => `Pronunciation: ${area}`),
           ...comprehensiveEval.grammarAnalysis.commonErrors.slice(0, 2).map(err => `Grammar: ${err}`),
           ...comprehensiveEval.studyPlan.shortTerm.slice(0, 2)
         ];
@@ -394,7 +395,7 @@ Fluency: ${comprehensiveEval.fluencyAnalysis.overallScore}/100 - ${comprehensive
         };
       } catch (error) {
         // Fallback to basic evaluation
-        log.warn('Comprehensive evaluation failed, using basic evaluation:', error);
+        log.error('Comprehensive evaluation failed, using basic evaluation', error);
         const evaluation = await evaluateLanguageLevel(env.AI, answer.transcription, question.text);
         const scores: Record<ScoreKey, number> = {
           pronunciation: pickScore(evaluation?.scores?.pronunciation) ?? 0,
@@ -637,11 +638,12 @@ levelTestRoutes.post('/voice/transcribe', auth(), async (c) => {
   if (contentType.startsWith('multipart/form-data')) {
     const formData = await c.req.formData();
     const audio = formData.get('audio');
-    if (!(audio instanceof File)) {
+    if (!audio || typeof audio === 'string') {
       throw new AppError('audio file is required', 400, 'LEVEL_TEST_AUDIO_REQUIRED');
     }
-    audioBuffer = await audio.arrayBuffer();
-    mimeType = audio.type || mimeType;
+    const audioFile = audio as unknown as File;
+    audioBuffer = await audioFile.arrayBuffer();
+    mimeType = audioFile.type || mimeType;
     whisperOptions = {
       language: formData.get('language') || undefined,
       task: formData.get('task') || undefined,
@@ -674,8 +676,9 @@ levelTestRoutes.post('/voice/transcribe', auth(), async (c) => {
     throw new AppError('audio payload is required', 400, 'LEVEL_TEST_AUDIO_REQUIRED');
   }
 
+  const taskValue = whisperOptions.task as string | undefined;
   const transcription = await processAudio(c.env.AI, audioBuffer, {
-    task: (whisperOptions.task as string) || 'transcribe',
+    task: (taskValue === 'translate' ? 'translate' : 'transcribe'),
     language: (whisperOptions.language as string) || 'auto',
     vad_filter: whisperOptions.vad_filter !== undefined ? Boolean(whisperOptions.vad_filter) : true,
     initial_prompt: whisperOptions.initial_prompt as string | undefined,
@@ -883,15 +886,16 @@ levelTestRoutes.get('/:testId/answer/:questionId/detailed', auth(), async (c) =>
   const session = await requireSession(env, testId);
   ensureOwnership(session, userId);
 
-  const answer = session.answers.find(a => a.questionId === questionId);
+  const questionIdNum = Number.parseInt(questionId, 10);
+  const answer = session.answers.find(a => a.questionId === questionIdNum);
   if (!answer) {
     throw new AppError('Answer not found', 404, 'ANSWER_NOT_FOUND');
   }
 
   // Return comprehensive evaluation data if available
-  if (answer.evaluation && 'comprehensiveData' in answer.evaluation) {
+  if (answer.evaluation?.comprehensiveData) {
     return successResponse(c, {
-      questionId,
+      questionId: questionIdNum,
       transcription: answer.transcription,
       evaluation: answer.evaluation.comprehensiveData
     });

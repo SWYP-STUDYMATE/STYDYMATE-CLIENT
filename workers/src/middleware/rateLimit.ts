@@ -5,6 +5,7 @@
 
 import { Context } from 'hono';
 import { AppBindings } from '../index';
+import { Variables } from '../types';
 
 interface RateLimitOptions {
   windowMs: number;      // 시간 윈도우 (밀리초)
@@ -117,7 +118,7 @@ export class RateLimiter {
 export function rateLimitMiddleware(options: RateLimitOptions) {
   const limiter = new RateLimiter(options);
 
-  return async (c: Context<{ Bindings: AppBindings }>, next: () => Promise<void>) => {
+  return async (c: Context<{ Bindings: AppBindings; Variables: Variables }>, next: () => Promise<void>) => {
     const kv = c.env.CACHE;
 
     if (!kv) {
@@ -126,7 +127,7 @@ export function rateLimitMiddleware(options: RateLimitOptions) {
     }
 
     // 식별자 결정 (사용자 ID 또는 IP)
-    const userId = c.get('userId');
+    const userId = c.var.userId;
     const ip = c.req.header('CF-Connecting-IP') ||
                c.req.header('X-Forwarded-For') ||
                c.req.header('X-Real-IP') ||

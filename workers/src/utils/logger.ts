@@ -28,6 +28,8 @@ export interface LogContext {
     status?: number;
     component?: string;
     operation?: string;
+    // 동적 속성 지원 (aiMatching, levelTest 등에서 사용)
+    [key: string]: unknown;
 }
 
 export interface LogEntry {
@@ -135,9 +137,11 @@ export class WorkersLogger {
         this.output(entry);
     }
 
-    error(message: string, error?: Error, context?: LogContext, metadata?: Record<string, any>) {
+    error(message: string, error?: Error | unknown, context?: LogContext, metadata?: Record<string, any>) {
         if (!this.shouldLog(LOG_LEVELS.ERROR)) return;
-        const entry = this.createLogEntry('ERROR', message, context, error, metadata);
+        // unknown 타입을 Error로 변환
+        const err = error instanceof Error ? error : error ? new Error(String(error)) : undefined;
+        const entry = this.createLogEntry('ERROR', message, context, err, metadata);
         this.output(entry);
     }
 
@@ -251,7 +255,7 @@ export const log = {
     debug: (msg: string, ctx?: LogContext, meta?: Record<string, any>) => logger.debug(msg, ctx, meta),
     info: (msg: string, ctx?: LogContext, meta?: Record<string, any>) => logger.info(msg, ctx, meta),
     warn: (msg: string, ctx?: LogContext, meta?: Record<string, any>) => logger.warn(msg, ctx, meta),
-    error: (msg: string, err?: Error, ctx?: LogContext, meta?: Record<string, any>) => logger.error(msg, err, ctx, meta),
+    error: (msg: string, err?: Error | unknown, ctx?: LogContext, meta?: Record<string, any>) => logger.error(msg, err, ctx, meta),
     api: (method: string, path: string, status: number, duration: number, ctx?: LogContext) => 
         logger.apiCall(method, path, status, duration, ctx),
     perf: (operation: string, duration: number, ctx?: LogContext) => 

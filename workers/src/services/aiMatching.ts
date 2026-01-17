@@ -265,11 +265,23 @@ export async function convertToExtendedProfile(
     [userId]
   );
 
+  // Handle nativeLanguage union type (string | { id, name, code })
+  let nativeLangName = '';
+  let nativeLangCode: string | undefined;
+  if (profile.nativeLanguage) {
+    if (typeof profile.nativeLanguage === 'string') {
+      nativeLangName = profile.nativeLanguage;
+    } else {
+      nativeLangName = profile.nativeLanguage.name || '';
+      nativeLangCode = profile.nativeLanguage.code;
+    }
+  }
+
   const extended: ExtendedMatchingProfile = {
     userId,
     name: profile.englishName || profile.name || 'Unknown',
-    nativeLanguage: profile.nativeLanguage?.name || '',
-    nativeLanguageCode: profile.nativeLanguage?.code,
+    nativeLanguage: nativeLangName,
+    nativeLanguageCode: nativeLangCode,
     targetLanguages: targetLangs.map(t => ({
       language: t.language_name,
       languageCode: t.language_code,
@@ -298,7 +310,11 @@ export async function convertToExtendedProfile(
 
   // 위치 (location이 있는 경우)
   if ('location' in profile && profile.location) {
-    extended.location = profile.location.country + (profile.location.city ? `, ${profile.location.city}` : '');
+    if (typeof profile.location === 'string') {
+      extended.location = profile.location;
+    } else {
+      extended.location = profile.location.country + (profile.location.city ? `, ${profile.location.city}` : '');
+    }
   } else if ('locationCountry' in profile && profile.locationCountry) {
     extended.location = profile.locationCountry + (profile.locationCity ? `, ${profile.locationCity}` : '');
   }

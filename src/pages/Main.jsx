@@ -444,7 +444,11 @@ export default function Main() {
     || state.languageProfile?.learningLanguages?.[0]?.level
     || state.profile?.targetLanguage
     || null;
-  const greetingLevel = toDisplayText(directLevel, "레벨 정보 없음");
+  // 줄바꿈 문자를 공백으로 치환하여 자연스러운 표시
+  const rawLevel = toDisplayText(directLevel, "레벨 정보 없음");
+  const greetingLevel = typeof rawLevel === 'string'
+    ? rawLevel.replace(/\\n/g, ' ').replace(/\n/g, ' ').trim()
+    : rawLevel;
 
   const matesEmptyMessage = state.matesError
     || "최근 매칭된 메이트가 없습니다.";

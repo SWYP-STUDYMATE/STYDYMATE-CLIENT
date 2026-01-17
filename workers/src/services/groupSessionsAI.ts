@@ -70,7 +70,7 @@ function parseJsonWithFallback<T>(text: string, fallback: T): T {
   try {
     return JSON.parse(text) as T;
   } catch (error) {
-    log.warn('Failed to parse AI JSON response', error as Error, {
+    log.error('Failed to parse AI JSON response', error, {
       component: 'GROUP_SESSION_AI',
       preview: text.slice(0, 240)
     });
@@ -374,7 +374,7 @@ export async function saveLearningProgress(
     try {
       history = JSON.parse(existingRaw) as LearningProgressRecord[];
     } catch (error) {
-      log.warn('Failed to parse existing learning progress history', error as Error, {
+      log.error('Failed to parse existing learning progress history', error, {
         component: 'GROUP_SESSION_AI'
       });
       history = [];
@@ -404,7 +404,7 @@ export async function listLearningProgress(env: Env, userId: string): Promise<Le
   try {
     return JSON.parse(raw) as LearningProgressRecord[];
   } catch (error) {
-    log.warn('Failed to parse stored learning progress', error as Error, {
+    log.error('Failed to parse stored learning progress', error, {
       component: 'GROUP_SESSION_AI'
     });
     return [];

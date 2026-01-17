@@ -33,13 +33,14 @@ pronunciationRoutes.post('/evaluate', async (c) => {
   try {
     // Multipart form data 파싱
     const formData = await c.req.formData();
-    const audioFile = formData.get('audio') as File;
+    const audioEntry = formData.get('audio');
     const targetLanguage = (formData.get('targetLanguage') as string) || 'English';
     const expectedText = formData.get('text') as string | null;
 
-    if (!audioFile) {
+    if (!audioEntry || typeof audioEntry === 'string') {
       throw new AppError('Audio file is required', 400, 'MISSING_AUDIO');
     }
+    const audioFile = audioEntry as unknown as File;
 
     // 음성 파일을 ArrayBuffer로 변환
     const audioBuffer = await audioFile.arrayBuffer();

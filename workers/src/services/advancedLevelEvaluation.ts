@@ -30,7 +30,7 @@ export interface DetailedScores {
 // 발음 상세 분석
 export interface PronunciationAnalysis {
   overallScore: number;
-  clarity: number;              // 명확성 (0-100)
+  clarity: number | string;     // 명확성 (0-100 또는 "clear"/"unclear")
   intonation: number;           // 억양 (0-100)
   rhythm: number;               // 리듬 (0-100)
   stress: number;               // 강세 (0-100)
@@ -40,15 +40,17 @@ export interface PronunciationAnalysis {
     suggestion: string;
   }[];
   nativelikeness: number;       // 원어민 유사도 (0-100)
+  improvementAreas?: string[];  // 개선 필요 영역 (optional)
 }
 
 // 문법 상세 분석
 export interface GrammarAnalysis {
   overallScore: number;
   accuracy: number;             // 정확성 (0-100)
-  complexity: number;           // 복잡도 (0-100)
+  accuracyScore?: number;       // 정확성 별칭 (레벨테스트 호환, optional)
+  complexity: number | string;  // 복잡도 (0-100 또는 "simple"/"complex")
   range: number;                // 다양성 (0-100)
-  commonErrors: {
+  commonErrors: string[] | {
     type: string;
     example: string;
     correction: string;
@@ -61,8 +63,10 @@ export interface GrammarAnalysis {
 export interface VocabularyAnalysis {
   overallScore: number;
   range: number;                // 범위 (0-100)
+  rangeScore?: number;          // 범위 별칭 (레벨테스트 호환, optional)
   appropriateness: number;      // 적절성 (0-100)
   sophistication: number;       // 고급도 (0-100)
+  sophisticationLevel?: string; // 고급도 레벨 (basic/intermediate/advanced, optional)
   academicLevel: string;        // 학술 수준 (basic/intermediate/advanced)
   keyVocabulary: string[];
   collocations: string[];       // 연어
@@ -73,6 +77,7 @@ export interface VocabularyAnalysis {
 export interface FluencyAnalysis {
   overallScore: number;
   speed: number;                // 속도 (0-100)
+  speedLevel?: string;          // 속도 레벨 (slow/normal/fast, optional)
   pauses: number;               // 휴지 처리 (0-100)
   repetition: number;           // 반복 최소화 (0-100)
   selfCorrection: number;       // 자가 수정 능력 (0-100)

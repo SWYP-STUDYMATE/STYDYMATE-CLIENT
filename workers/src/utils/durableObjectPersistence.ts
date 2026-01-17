@@ -5,8 +5,29 @@
  * - 데이터 무결성 검증
  */
 
-// Cloudflare Workers Durable Objects 타입
-type DurableObjectState = any;
+// Cloudflare Workers Durable Objects Storage 타입
+interface DurableObjectStorage {
+  get<T = unknown>(key: string): Promise<T | undefined>;
+  get<T = unknown>(keys: string[]): Promise<Map<string, T>>;
+  put<T>(key: string, value: T): Promise<void>;
+  put<T>(entries: Record<string, T>): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  delete(keys: string[]): Promise<number>;
+  deleteAll(): Promise<void>;
+  list<T = unknown>(options?: { start?: string; end?: string; prefix?: string; reverse?: boolean; limit?: number }): Promise<Map<string, T>>;
+}
+
+// Cloudflare Workers Durable Objects State 타입
+interface DurableObjectState {
+  storage: DurableObjectStorage;
+  id: {
+    toString(): string;
+    equals(other: unknown): boolean;
+    readonly name?: string;
+  };
+  waitUntil(promise: Promise<unknown>): void;
+  blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>;
+}
 
 export interface StateSnapshot<T = any> {
   timestamp: string;

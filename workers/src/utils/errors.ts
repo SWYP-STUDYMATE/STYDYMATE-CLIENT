@@ -22,6 +22,11 @@ export class AppError extends Error {
     this.details = details;
     Object.setPrototypeOf(this, AppError.prototype);
   }
+
+  // 별칭: matching.ts 등에서 error.code 접근 지원
+  get code(): string {
+    return this.errorCode;
+  }
 }
 
 // Common error types

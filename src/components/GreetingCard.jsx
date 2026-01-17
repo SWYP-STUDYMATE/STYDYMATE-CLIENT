@@ -34,7 +34,7 @@ export default function GreetingCard({ userName = "Alison", age = null, level = 
         </div>
         <div className='w-fit min-w-[120px] sm:min-w-[140px] lg:min-w-[163px] flex gap-0 items-center justify-center mr-4 lg:mr-6 px-2 lg:px-4'>
           <p
-            className='text-[#00C471] text-base sm:text-lg lg:text-[20px] font-bold leading-[24px] lg:leading-[30px] whitespace-nowrap'
+            className='text-[#00C471] text-base sm:text-lg lg:text-[20px] font-bold leading-[24px] lg:leading-[30px] text-center'
             aria-label={`영어 수준: ${displayLevel}`}
           >
             {displayLevel}

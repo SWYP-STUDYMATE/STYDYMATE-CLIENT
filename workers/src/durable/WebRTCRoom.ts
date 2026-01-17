@@ -16,6 +16,12 @@ export class WebRTCRoom extends DurableObject {
     // Initialize room ID from Durable Object ID
     this.roomId = state.id.toString();
     
+    // Set auto ping/pong response for hibernation (Cloudflare recommended)
+    // This allows automatic ping/pong handling without waking the Durable Object
+    this.ctx.setWebSocketAutoResponse(
+      new WebSocketRequestResponsePair('ping', 'pong')
+    );
+
     // Initialize room data
     this.roomData = {
       id: this.roomId,

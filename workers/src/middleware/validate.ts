@@ -135,9 +135,10 @@ export function validateHeaders<T extends ZodSchema>(schema: T) {
 function formatZodErrors(error: z.ZodError): Record<string, string[]> {
   const errors: Record<string, string[]> = {};
 
-  error.errors.forEach((err) => {
-    const path = err.path.join('.');
-    const message = err.message;
+  // Zod v4에서는 .issues 사용
+  error.issues.forEach((issue) => {
+    const path = issue.path.join('.');
+    const message = issue.message;
 
     if (!errors[path]) {
       errors[path] = [];

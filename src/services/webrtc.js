@@ -204,7 +204,7 @@ class WebRTCConnectionManager {
         }
         break;
 
-      case 'participant-joined':
+      case 'participant-joined': {
         // payload 또는 participant 필드 지원
         const joinedParticipant = participant || payload || messageData;
         if (!joinedParticipant) {
@@ -213,11 +213,12 @@ class WebRTCConnectionManager {
         }
         this.handleParticipantJoined(joinedParticipant);
         break;
+      }
 
-      case 'participant-left':
+      case 'participant-left': {
         // payload, participant, 또는 participantId/userId 필드 지원
         let leftParticipant = participant || payload || messageData;
-        
+
         // participantId나 userId만 있는 경우 객체로 변환
         if (!leftParticipant && (participantId || userId || data.userId)) {
           leftParticipant = {
@@ -225,40 +226,43 @@ class WebRTCConnectionManager {
             id: participantId || userId || data.userId
           };
         }
-        
+
         if (!leftParticipant) {
           console.warn('⚠️ [WebRTC] participant-left message missing participant data:', data);
           return;
         }
         this.handleParticipantLeft(leftParticipant);
         break;
+      }
 
       case 'participants-list':
         await this.handleParticipantsList(payload?.participants || messageData?.participants || data.participants);
         break;
 
-      case 'offer':
+      case 'offer': {
         // 서버는 { type: 'offer', from: userId, data: offer } 형식으로 보냄
         // messageData가 직접 SDP 객체 { type: 'offer', sdp: '...' }
         const offerSdp = messageData || payload;
         console.log('📥 [WebRTC] Offer 메시지 수신:', { type, from, sdp: offerSdp });
         await this.handleOffer(from, offerSdp);
         break;
+      }
 
-      case 'answer':
+      case 'answer': {
         // 서버는 { type: 'answer', from: userId, data: answer } 형식으로 보냄
         // messageData가 직접 SDP 객체 { type: 'answer', sdp: '...' }
         const answerSdp = messageData || payload;
         console.log('📥 [WebRTC] Answer 메시지 수신:', { type, from, sdp: answerSdp });
         await this.handleAnswer(from, answerSdp);
         break;
+      }
 
-      case 'ice-candidate':
+      case 'ice-candidate': {
         // 서버는 { type: 'ice-candidate', from: userId, data: candidate } 형식으로 보냄
         // 하지만 실제로는 data가 { to, candidate } 형식일 수 있음
         // 서버가 data.signal || data를 보내므로, data가 { to, candidate }이면 그대로 전달됨
         let candidatePayload = messageData || payload;
-        
+
         // payload가 { to, candidate } 형식인지 확인
         if (candidatePayload && candidatePayload.candidate && candidatePayload.to) {
           // candidate 필드 추출
@@ -267,9 +271,10 @@ class WebRTCConnectionManager {
         } else {
           console.log('📥 [WebRTC] ICE candidate 메시지 수신:', { type, from, candidate: candidatePayload });
         }
-        
+
         await this.handleIceCandidate(from, candidatePayload);
         break;
+      }
 
       case 'chat-message':
         if (this.callbacks.onChatMessage) {
@@ -277,7 +282,7 @@ class WebRTCConnectionManager {
         }
         break;
 
-      case 'participant-updated':
+      case 'participant-updated': {
         // 참가자 상태 업데이트 (음소거, 카메라 등)
         const updatedParticipant = participant || payload || messageData;
         if (updatedParticipant) {
@@ -290,6 +295,7 @@ class WebRTCConnectionManager {
           }
         }
         break;
+      }
 
       default:
         console.warn('Unknown message type:', type, data);

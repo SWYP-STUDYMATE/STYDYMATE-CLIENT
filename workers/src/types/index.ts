@@ -39,6 +39,7 @@ export interface Variables {
 // Context Variable Map for Hono
 export interface ContextVariableMap {
     user: AuthUser;
+    userId: string;
 }
 
 // 인증 정보 타입
@@ -188,8 +189,17 @@ export interface MatchingPartner {
     selfBio?: string;
     age?: number;
     gender?: string;
-    location?: string;
-    nativeLanguage?: string;
+    location?: string | {
+        id: number;
+        country: string;
+        city?: string;
+        timeZone?: string;
+    };
+    nativeLanguage?: string | {
+        id: number;
+        name: string;
+        code: string;
+    };
     targetLanguages?: Array<{
         languageName: string;
         currentLevel?: string;
@@ -201,6 +211,14 @@ export interface MatchingPartner {
     compatibilityLevel?: 'HIGH' | 'MEDIUM' | 'LOW';
     onlineStatus?: string;
     lastActiveTime?: string;
+    // aiMatching 서비스 호환 필드
+    name?: string;
+    birthyear?: string;
+    communicationMethod?: string;
+    dailyMinute?: string;
+    learningExpectation?: string;
+    locationCountry?: string;
+    locationCity?: string;
 }
 
 export interface CompatibilityCategoryDetail {

@@ -1,20 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  MessageSquare, 
-  Users, 
-  Calendar, 
+import {
+  Home,
+  MessageSquare,
+  Users,
+  Calendar,
   User,
   Bell,
   Video,
   BarChart3
 } from 'lucide-react';
 import NotificationBadge from './NotificationBadge';
+import { getTotalUnreadCount } from '../api/chat';
 
 const BottomNav = ({ className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  // 읽지 않은 채팅 메시지 수 로드
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const count = await getTotalUnreadCount();
+        setUnreadChatCount(count || 0);
+      } catch (error) {
+        console.error('Failed to load unread chat count:', error);
+      }
+    };
+
+    loadUnreadCount();
+
+    // 주기적으로 업데이트 (30초마다)
+    const interval = setInterval(loadUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems = [
     {
@@ -100,14 +121,16 @@ const BottomNav = ({ className = '' }) => {
             >
               <div className="relative">
                 <Icon className="w-6 h-6 mb-1" />
-                
-                {/* 채팅 알림 배지 (예시) */}
-                {item.id === 'chat' && (
-                  <div 
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
-                    aria-label="읽지 않은 메시지 2개"
+
+                {/* 채팅 알림 배지 */}
+                {item.id === 'chat' && unreadChatCount > 0 && (
+                  <div
+                    className="absolute -top-2 -right-2 min-w-5 h-5 px-1 bg-red-500 text-white rounded-full flex items-center justify-center"
+                    aria-label={`읽지 않은 메시지 ${unreadChatCount}개`}
                   >
-                    <span className="text-[10px] font-bold">2</span>
+                    <span className="text-[10px] font-bold">
+                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                    </span>
                   </div>
                 )}
               </div>

@@ -1,24 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Chart as ChartJS,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
+  RadarChart as RechartsRadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ResponsiveContainer,
   Tooltip,
-  Legend,
-} from 'chart.js';
-import { Radar } from 'react-chartjs-2';
-
-// Chart.js Radar 차트 등록
-ChartJS.register(
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend
-);
+} from 'recharts';
 
 export default function RadarChart({ scores = {}, animate = true, scoreKeys = [], labels = {} }) {
   const categories = useMemo(() => {
@@ -76,69 +65,14 @@ export default function RadarChart({ scores = {}, animate = true, scoreKeys = []
     ? Math.round(targetScores.reduce((sum, score) => sum + (score || 0), 0) / categories.length)
     : 0;
 
-  const data = {
-    labels: categories.map((category) => category.label),
-    datasets: [
-      {
-        label: '점수',
-        data: animatedScores,
-        backgroundColor: 'rgba(0, 196, 113, 0.3)',
-        borderColor: '#00C471',
-        borderWidth: 2,
-        pointBackgroundColor: '#00C471',
-        pointBorderColor: '#00C471',
-        pointHoverBackgroundColor: '#00C471',
-        pointHoverBorderColor: '#00C471',
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: {
-      duration: animate ? 1500 : 0,
-      easing: 'easeOutCubic',
-    },
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const skill = categories[context.dataIndex];
-            return `${skill.label}: ${context.parsed.r}점`;
-          }
-        }
-      }
-    },
-    scales: {
-      r: {
-        beginAtZero: true,
-        max: 100,
-        ticks: {
-          stepSize: 20,
-          callback: function(value) {
-            return value;
-          }
-        },
-        grid: {
-          color: '#E7E7E7'
-        },
-        angleLines: {
-          color: '#E7E7E7'
-        },
-        pointLabels: {
-          color: '#666666',
-          font: {
-            size: 14,
-            weight: 500
-          }
-        }
-      }
-    }
-  };
+  // recharts 데이터 형식으로 변환
+  const data = useMemo(() => {
+    return categories.map((category, index) => ({
+      subject: category.label,
+      score: animatedScores[index] || 0,
+      fullMark: 100,
+    }));
+  }, [categories, animatedScores]);
 
   if (categories.length === 0) {
     return (
@@ -150,7 +84,40 @@ export default function RadarChart({ scores = {}, animate = true, scoreKeys = []
 
   return (
     <div className="relative w-full h-full min-h-[300px]">
-      <Radar data={data} options={options} />
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsRadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
+          <PolarGrid stroke="#E7E7E7" />
+          <PolarAngleAxis
+            dataKey="subject"
+            tick={{ fill: '#666666', fontSize: 14, fontWeight: 500 }}
+          />
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, 100]}
+            tickCount={6}
+            tick={{ fill: '#999999', fontSize: 10 }}
+            axisLine={false}
+          />
+          <Radar
+            name="점수"
+            dataKey="score"
+            stroke="#00C471"
+            strokeWidth={2}
+            fill="rgba(0, 196, 113, 0.3)"
+            dot={{ fill: '#00C471', strokeWidth: 0, r: 4 }}
+            isAnimationActive={false}
+          />
+          <Tooltip
+            formatter={(value, name) => [`${value}점`, '점수']}
+            contentStyle={{
+              backgroundColor: 'white',
+              border: '1px solid #E7E7E7',
+              borderRadius: '6px',
+              fontSize: '14px',
+            }}
+          />
+        </RechartsRadarChart>
+      </ResponsiveContainer>
 
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
         <div className="bg-white/90 rounded-full px-4 py-2">
