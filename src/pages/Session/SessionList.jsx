@@ -457,11 +457,11 @@ export default function SessionList() {
             <div className="p-3 sm:p-4">
                 <CommonButton
                     onClick={() => setFilterOpen(!filterOpen)}
-                    variant="outline"
+                    variant="secondary"
                     size="small"
                     fullWidth={false}
                     icon={<Filter />}
-                    className="border border-[var(--black-50)] bg-white text-[var(--black-300)] hover:bg-[var(--neutral-100)] touch-manipulation break-words"
+                    className="touch-manipulation"
                 >
                     필터
                 </CommonButton>
@@ -541,14 +541,14 @@ export default function SessionList() {
                                 <div className="space-y-2">
                                     <CommonButton
                                         onClick={() => navigate('/sessions/create')}
-                                        variant="primary"
+                                        variant="success"
                                         className="w-full sm:w-auto text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                                     >
                                         새 세션 만들기
                                     </CommonButton>
                                     <CommonButton
                                         onClick={() => navigate('/matching')}
-                                        variant="secondary"
+                                        variant="outline"
                                         className="w-full sm:w-auto text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                                     >
                                         매칭으로 상대 찾기
@@ -570,7 +570,7 @@ export default function SessionList() {
                                 </p>
                                 <CommonButton
                                     onClick={() => navigate('/matching')}
-                                    variant="primary"
+                                    variant="success"
                                     className="w-full sm:w-auto text-[14px] sm:text-[15px] md:text-base py-[14px] touch-manipulation"
                                 >
                                     매칭 시작하기
