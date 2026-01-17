@@ -68,6 +68,11 @@ const NotificationList = lazyLoad(() => import('../pages/Notifications/Notificat
 const AchievementsPage = lazyLoad(() => import('../pages/Achievements/AchievementsPage'));
 const MatesPage = lazyLoad(() => import('../pages/Mates/MatesPage'));
 
+// 그룹 세션
+const GroupSessionPage = lazyLoad(() => import('../pages/GroupSession/GroupSessionPage'));
+const GroupSessionDetailPage = lazyLoad(() => import('../pages/GroupSession/GroupSessionDetailPage'));
+const GroupSessionRoomPage = lazyLoad(() => import('../pages/GroupSession/GroupSessionRoomPage'));
+
 /**
  * 라우트 타입 정의
  * - public: 인증 불필요
@@ -393,5 +398,25 @@ export const routes = [
     component: MatesPage,
     type: ROUTE_TYPES.PROTECTED,
     layout: true,
+  },
+
+  // ========== 그룹 세션 (온보딩 완료 필요, Layout 포함) ==========
+  {
+    path: '/group-session',
+    component: GroupSessionPage,
+    type: ROUTE_TYPES.PROTECTED,
+    layout: true,
+  },
+  {
+    path: '/group-session/:sessionId',
+    component: GroupSessionDetailPage,
+    type: ROUTE_TYPES.PROTECTED,
+    layout: true,
+  },
+  {
+    path: '/group-session/room/:sessionId',
+    component: GroupSessionRoomPage,
+    type: ROUTE_TYPES.PROTECTED,
+    layout: false,
   },
 ];

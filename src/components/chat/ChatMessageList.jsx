@@ -1,6 +1,52 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import EmptyPlaceholder from "./EmptyPlaceholder";
 import VoiceMessage from "./VoiceMessage";
+
+// 이미지 로드 에러 시 표시할 Fallback 컴포넌트
+function ImageWithFallback({ src, alt, className }) {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleError = useCallback(() => {
+    console.warn('[ChatMessageList] 이미지 로드 실패:', src);
+    setHasError(true);
+    setIsLoading(false);
+  }, [src]);
+
+  const handleLoad = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className={`${className} bg-gray-100 flex items-center justify-center min-w-[120px] min-h-[80px] rounded-lg border border-gray-200`}>
+        <div className="text-center text-gray-400 p-2">
+          <svg className="w-8 h-8 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-xs">이미지 로드 실패</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {isLoading && (
+        <div className={`absolute inset-0 ${className} bg-gray-100 flex items-center justify-center min-w-[120px] min-h-[80px] rounded-lg`}>
+          <div className="animate-pulse bg-gray-200 w-full h-full rounded-lg" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
+        onError={handleError}
+        onLoad={handleLoad}
+      />
+    </div>
+  );
+}
 
 export default function ChatMessageList({
   messages,
@@ -81,7 +127,7 @@ export default function ChatMessageList({
                         msg.imageUrls.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {msg.imageUrls.map((url, imgIdx) => (
-                            <img
+                            <ImageWithFallback
                               key={imgIdx}
                               src={url}
                               alt="채팅 이미지"
@@ -122,7 +168,7 @@ export default function ChatMessageList({
                         msg.imageUrls.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {msg.imageUrls.map((url, imgIdx) => (
-                            <img
+                            <ImageWithFallback
                               key={imgIdx}
                               src={url}
                               alt="채팅 이미지"

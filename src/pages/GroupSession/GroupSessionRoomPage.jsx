@@ -16,7 +16,7 @@ import {
   saveSessionFeedback,
   getSessionTopicRecommendations,
   getRolePlayScenario,
-  recommendSessionMatches,
+  getSessionMatchRecommendations,
   trackLearningProgress
 } from '../../api/groupSessionAI';
 import Header from '../../components/Header';
@@ -209,7 +209,7 @@ export default function GroupSessionRoomPage() {
           ? available.data
           : [];
 
-      const response = await recommendSessionMatches(
+      const response = await getSessionMatchRecommendations(
         currentUserId,
         {
           language: sessionInfo.language || sessionInfo.targetLanguage,
