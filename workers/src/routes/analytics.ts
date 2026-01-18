@@ -361,14 +361,13 @@ app.get('/learning-pattern', authMiddleware as any, async (c) => {
     }
 });
 
-// 학습 진행 상황 요약
+// 학습 진행 상황 요약 (AI 분석 포함 - Paid Plan)
 app.get('/progress-summary', authMiddleware as any, async (c) => {
     try {
         const userId = c.get('userId');
         if (!userId) {
-            console.warn('User ID not found in context for progress-summary');
             return successResponse(c, {
-                currentLevel: 'A1',
+                currentLevel: 'B1',
                 sessionsThisWeek: 0,
                 consistency: 0,
                 nextMilestone: '학습을 시작하세요',
@@ -378,9 +377,8 @@ app.get('/progress-summary', authMiddleware as any, async (c) => {
             });
         }
 
-        // AI 바인딩이 없는 경우 기본값 반환
-        if (!c.env.AI) {
-            console.warn('AI binding not available, returning default progress summary');
+        // DB가 없으면 기본값 반환
+        if (!c.env.DB) {
             return successResponse(c, {
                 currentLevel: 'B1',
                 sessionsThisWeek: 0,
@@ -392,55 +390,78 @@ app.get('/progress-summary', authMiddleware as any, async (c) => {
             });
         }
 
-        // DB 바인딩이 없는 경우에도 기본값 반환
-        if (!c.env.DB) {
-            console.warn('DB binding not available, returning default progress summary');
-            return successResponse(c, {
-                currentLevel: 'B1',
-                sessionsThisWeek: 0,
-                consistency: 0,
-                nextMilestone: '학습 데이터를 수집 중입니다',
-                topStrength: null,
-                topWeakness: null,
-                fallback: true
-            });
-        }
+        // 기본 DB 조회
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        // 타임아웃 설정으로 AI 분석이 너무 오래 걸리면 기본값 반환
-        const timeoutPromise = new Promise<null>((resolve) => {
-            setTimeout(() => resolve(null), 3000); // 3초 타임아웃
-        });
+        // 이번 주 세션 수 조회
+        const sessionsResult = await c.env.DB.prepare(`
+            SELECT COUNT(*) as count FROM sessions
+            WHERE (creator_id = ? OR partner_id = ?)
+            AND created_at >= ? AND status = 'completed'
+        `).bind(userId, userId, weekAgo).first<{ count: number }>();
 
-        const analysisPromise = analyzeLearningPattern(c.env, userId, 1);
+        // 사용자 레벨 조회
+        const userResult = await c.env.DB.prepare(`
+            SELECT language_level FROM users WHERE id = ?
+        `).bind(userId).first<{ language_level: string }>();
 
-        const pattern = await Promise.race([analysisPromise, timeoutPromise]);
+        const sessionsThisWeek = sessionsResult?.count || 0;
+        const currentLevel = userResult?.language_level || 'B1';
 
-        if (!pattern) {
-            console.warn('Learning pattern analysis timed out');
-            return successResponse(c, {
-                currentLevel: 'B1',
-                sessionsThisWeek: 0,
-                consistency: 0,
-                nextMilestone: '학습 분석 중입니다',
-                topStrength: null,
-                topWeakness: null,
-                fallback: true
-            });
+        // 일관성 계산 (이번 주 세션 / 목표 세션 3회)
+        const consistency = Math.min(100, Math.round((sessionsThisWeek / 3) * 100));
+
+        // AI 분석 수행 (Paid Plan - 최대 30초 CPU 시간 허용)
+        let topStrength = null;
+        let topWeakness = null;
+        let nextMilestone = sessionsThisWeek >= 3 ? '이번 주 목표 달성!' : `이번 주 ${3 - sessionsThisWeek}회 더 연습하세요`;
+
+        try {
+            // 1개월 데이터로 빠른 분석
+            const pattern = await analyzeLearningPattern(c.env, userId, 1);
+
+            // 강점 추출
+            if (pattern.strengths && pattern.strengths.length > 0) {
+                const top = pattern.strengths[0];
+                topStrength = {
+                    area: top.area,
+                    score: top.score,
+                    trend: top.trend
+                };
+            }
+
+            // 약점 추출
+            if (pattern.weaknesses && pattern.weaknesses.length > 0) {
+                const top = pattern.weaknesses[0];
+                topWeakness = {
+                    area: top.area,
+                    score: top.score,
+                    recommendations: top.recommendations?.slice(0, 2) || []
+                };
+            }
+
+            // AI 생성 마일스톤 사용
+            if (pattern.insights?.milestones && pattern.insights.milestones.length > 0) {
+                nextMilestone = pattern.insights.milestones[0].title;
+            } else if (pattern.insights?.recommendations && pattern.insights.recommendations.length > 0) {
+                nextMilestone = pattern.insights.recommendations[0];
+            }
+        } catch (aiError) {
+            console.error('AI analysis failed, using basic data:', aiError);
+            // AI 분석 실패 시 기본 데이터만 사용 (fallback)
         }
 
         return successResponse(c, {
-            currentLevel: pattern.progress?.currentLevel || 'B1',
-            sessionsThisWeek: Math.round(pattern.studyHabits?.sessionsPerWeek || 0),
-            consistency: pattern.studyHabits?.consistency || 0,
-            nextMilestone: pattern.insights?.milestones?.[0]?.title || '계속 학습하세요',
-            topStrength: pattern.strengths?.[0]?.area || null,
-            topWeakness: pattern.weaknesses?.[0]?.area || null,
+            currentLevel,
+            sessionsThisWeek,
+            consistency,
+            nextMilestone,
+            topStrength,
+            topWeakness,
             fallback: false
         });
     } catch (error) {
         console.error('Progress summary error:', error);
-
-        // 모든 에러 발생 시 안전한 기본값 반환 (500 에러 대신 graceful degradation)
         return successResponse(c, {
             currentLevel: 'B1',
             sessionsThisWeek: 0,

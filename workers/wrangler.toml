@@ -48,8 +48,8 @@ id = "997f23f600f34a3eb5b402919078933e"
 # D1 Database (development)
 [[d1_databases]]
 binding = "DB"
-database_name = "studymate-dev"
-database_id = "local-studymate-dev"
+database_name = "studymate-db"
+database_id = "3f35333b-2760-40c6-b6ec-fd9d9d094aeb"
 
 # Development Environment Variables
 [vars]
@@ -188,9 +188,11 @@ local_protocol = "http"
 upstream_protocol = "https"
 
 # Limits
+# Free Plan: 10ms (고정), Paid Plan: 최대 300,000ms (5분)
+# AI 분석 등 CPU 집약적 작업을 위해 30초로 설정
 [limits]
-cpu_ms = 50
-startup_cpu_ms = 100
+cpu_ms = 30000
+startup_cpu_ms = 400
 
 # Analytics Engine binding
 [[analytics_engine_datasets]]

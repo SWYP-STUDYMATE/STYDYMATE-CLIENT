@@ -55,6 +55,7 @@ export async function authMiddleware(
 
   // Store user in context
   c.set('user', user);
+  c.set('userId', user.id);
 
   await next();
 }
@@ -72,6 +73,7 @@ export async function optionalAuthMiddleware(
     const user = await verifyToken(token, secret);
     if (user) {
       c.set('user', user);
+      c.set('userId', user.id);
     }
   }
 
